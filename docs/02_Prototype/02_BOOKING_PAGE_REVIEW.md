@@ -1,6 +1,6 @@
 # 02. Booking & Payment Page Review (V2)
 > Created: 2026-02-07 17:01
-> Last Updated: 2026-02-07 19:00
+> Last Updated: 2026-02-07 21:00
 
 ## 1. Prototype Link/Screenshot
 *   **Project Name**: Rural Rest V2
@@ -42,3 +42,4 @@
 - **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `bookings` 및 `activities` 테이블 구조
 - **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - Booking Process API 엔드포인트 (Section 3.4)
 - **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직
+- **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 셔틀 서비스 예약 로직 (Step 3: Transport Option)

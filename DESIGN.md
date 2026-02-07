@@ -20,7 +20,7 @@ The interface aims to evoke the feeling of a peaceful, sun-drenched afternoon in
 
 ## 4. Component Stylings
 *   **Buttons:**
-    *   **Primary:** `rounded-xl`, `bg-primary`, `text-white`, `font-bold`. Active state scales down (`active:scale-95`).
+    *   **Primary/Secondary/Action:** `rounded-xl` (ROUND_TWELVE). **Global Rule:** Every button in the platform, including Login, Save, and Preview, must share this exact curvature to maintain brand consistency. Active state scales down (`active:scale-95`).
     *   **Icon Buttons:** `rounded-full`, `bg-white`, `shadow-sm`, `border`.
 *   **Cards (Properties):**
     *   **Shape:** Generously rounded (`rounded-3xl`).

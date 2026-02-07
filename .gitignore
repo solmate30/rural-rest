@@ -34,3 +34,10 @@ yarn-error.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# Database
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+.drizzle/
