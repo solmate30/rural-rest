@@ -1,6 +1,6 @@
 # Project Overview & Feature Specs
 > Created: 2026-02-07 16:21
-> Last Updated: 2026-02-07 19:00
+> Last Updated: 2026-02-07 21:00
 
 ## 1. Project Concept
 **Rural Rest** is a platform connecting global travelers with authentic Korean rural experiences through renovated empty houses (빈집). It emphasizes **community, authenticity, and sustainability**.

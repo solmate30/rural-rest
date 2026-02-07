@@ -1,6 +1,6 @@
 # 01. Database Schema Specification (Turso + Drizzle ORM)
 > Created: 2026-02-07 17:15
-> Last Updated: 2026-02-07 17:15
+> Last Updated: 2026-02-07 21:00
 
 ## 1. Technology Stack
 *   **Database**: **Turso** (Build on libSQL, SQLite compatible Edge DB).
@@ -121,3 +121,4 @@ export const listings = sqliteTable('listings', {
 - **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직
 - **Logic**: [Digital Key System](../04_Logic/03_DIGITAL_KEY_SYSTEM.md) - QR 체크인 로직
 - **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 채팅 자동 번역 데이터 저장 방식
+- **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 셔틀 서비스 예약 데이터 저장 방식
