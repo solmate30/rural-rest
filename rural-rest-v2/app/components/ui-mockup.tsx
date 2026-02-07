@@ -1,6 +1,7 @@
 import * as React from "react";
 import { authClient } from "~/lib/auth.client";
 import { cn } from "~/lib/utils";
+import { useToast } from "~/hooks/use-toast";
 
 export function Button({
     className,
@@ -55,10 +56,19 @@ export function Header() {
     const sessionRes = authClient?.useSession();
     const session = sessionRes?.data;
     const isPending = sessionRes?.isPending || false;
+    const { toast } = useToast();
 
     const handleSignOut = async () => {
         await authClient.signOut();
-        window.location.href = "/";
+        toast({
+            title: "로그아웃되었습니다",
+            description: "다음에 또 만나요!",
+            variant: "success",
+        });
+        // Toast가 표시된 후 페이지 이동
+        setTimeout(() => {
+            window.location.href = "/";
+        }, 500);
     };
 
     return (
@@ -68,7 +78,7 @@ export function Header() {
                     <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
                         <span className="text-white font-bold">R</span>
                     </div>
-                    <span className="text-xl font-bold tracking-tight text-foreground text-primary">Rural Rest</span>
+                    <span className="text-xl font-bold tracking-tight text-primary">Rural Rest</span>
                 </div>
                 <nav className="hidden md:flex items-center gap-6">
                     <a href="/" className="text-sm font-medium hover:text-primary transition-colors">Find a Stay</a>

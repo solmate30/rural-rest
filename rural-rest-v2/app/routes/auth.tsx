@@ -4,6 +4,7 @@ import { getSession } from "../lib/auth.server";
 import { redirect } from "react-router";
 import type { Route } from "./+types/auth";
 import { useState } from "react";
+import { useToast } from "../hooks/use-toast";
 
 export async function loader({ request }: Route.LoaderArgs) {
     const session = await getSession(request);
@@ -19,46 +20,97 @@ export default function Auth() {
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const { toast } = useToast();
 
     const handleGoogleSignIn = async () => {
-        await signIn.social({
-            provider: "google",
-            callbackURL: "/",
-        });
+        try {
+            await signIn.social({
+                provider: "google",
+                callbackURL: "/",
+            });
+        } catch (error) {
+            toast({
+                title: "소셜 로그인 실패",
+                description: "소셜 로그인 중 오류가 발생했습니다. 다시 시도해주세요.",
+                variant: "destructive",
+            });
+        }
     };
 
     const handleKakaoSignIn = async () => {
-        await signIn.social({
-            provider: "kakao",
-            callbackURL: "/",
-        });
+        try {
+            await signIn.social({
+                provider: "kakao",
+                callbackURL: "/",
+            });
+        } catch (error) {
+            toast({
+                title: "소셜 로그인 실패",
+                description: "소셜 로그인 중 오류가 발생했습니다. 다시 시도해주세요.",
+                variant: "destructive",
+            });
+        }
     };
 
     const handleAuthSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        setError(null);
 
         try {
             if (isLogin) {
-                const { error: signInError } = await signIn.email({
+                const { data, error: signInError } = await signIn.email({
                     email,
                     password,
                     callbackURL: "/",
                 });
-                if (signInError) setError(signInError.message || "로그인에 실패했습니다.");
+                if (signInError) {
+                    toast({
+                        title: "로그인 실패",
+                        description: signInError.message || "이메일 또는 비밀번호가 올바르지 않습니다.",
+                        variant: "destructive",
+                    });
+                } else if (data?.user) {
+                    toast({
+                        title: "로그인되었습니다",
+                        description: `${data.user.name}님, 환영합니다!`,
+                        variant: "success",
+                    });
+                    // Toast가 표시된 후 리다이렉트
+                    setTimeout(() => {
+                        window.location.href = "/";
+                    }, 500);
+                }
             } else {
-                const { error: signUpError } = await signUp.email({
+                const { data, error: signUpError } = await signUp.email({
                     email,
                     password,
                     name,
                     callbackURL: "/",
                 });
-                if (signUpError) setError(signUpError.message || "회원가입에 실패했습니다.");
+                if (signUpError) {
+                    toast({
+                        title: "회원가입 실패",
+                        description: signUpError.message || "이미 가입된 이메일입니다.",
+                        variant: "destructive",
+                    });
+                } else if (data?.user) {
+                    toast({
+                        title: "회원가입 완료",
+                        description: "Rural Rest에 오신 것을 환영합니다!",
+                        variant: "success",
+                    });
+                    // Toast가 표시된 후 리다이렉트
+                    setTimeout(() => {
+                        window.location.href = "/";
+                    }, 500);
+                }
             }
         } catch (err) {
-            setError("알 수 없는 오류가 발생했습니다.");
+            toast({
+                title: "오류 발생",
+                description: "알 수 없는 오류가 발생했습니다.",
+                variant: "destructive",
+            });
         } finally {
             setIsLoading(false);
         }
@@ -95,12 +147,6 @@ export default function Auth() {
                             {isLogin ? "Rural Rest와 함께 특별한 여정을 시작하세요." : "지금 가입하고 마을의 이야기를 만나보세요."}
                         </p>
                     </div>
-
-                    {error && (
-                        <div className="mb-6 p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg text-center font-medium">
-                            {error}
-                        </div>
-                    )}
 
                     <div className="space-y-4">
                         {/* Social Logins */}
