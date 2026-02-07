@@ -107,3 +107,4 @@ These helper functions are used across multiple loaders and actions to ensure se
 - **Logic**: [Search Algorithm](../04_Logic/02_SEARCH_ALGORITHM.md) - 검색 및 필터링 알고리즘
 - **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 번역 API 연동 로직
 - **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 예약 서비스 로직
+- **Logic**: [Auth & Session](../04_Logic/06_AUTH_AND_SESSION_LOGIC.md) - 인증 및 세션 관리 로직

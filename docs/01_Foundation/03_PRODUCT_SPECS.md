@@ -71,6 +71,7 @@ The primary accommodation type is **Modernized Dormitory (70%)** for social inte
 - **Prototype**: [Booking Page Review](../02_Prototype/02_BOOKING_PAGE_REVIEW.md) - 예약 및 결제 페이지 프로토타입
 - **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 호스트 대시보드 프로토타입
 - **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - 데이터 모델 설계
-- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - API 엔드포인트 명세
-- **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 실시간 자동 번역 로직
-- **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 로컬 교통 연동 및 셔틀 예약 로직
+- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - API 엔드포인트 명세 ([Auth & Session](../04_Logic/06_AUTH_AND_SESSION_LOGIC.md) 관련)
+- **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 번역 API 연동 로직
+- **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 예약 서비스 로직
+- **Logic**: [Auth & Session](../04_Logic/06_AUTH_AND_SESSION_LOGIC.md) - Better Auth 기반 인증 및 역할 관리
