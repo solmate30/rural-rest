@@ -1,4 +1,4 @@
-import { Header, Button, Input, Card } from "../components/ui-mockup";
+import { Header, Button, Input, Card, Footer } from "../components/ui-mockup";
 import { signIn, signUp } from "../lib/auth.client";
 import { getSession } from "../lib/auth.server";
 import { redirect } from "react-router";
@@ -235,6 +235,7 @@ export default function Auth() {
                     </p>
                 </Card>
             </main>
+            <Footer />
         </div>
     );
 }

@@ -53,13 +53,14 @@ These helper functions are used across multiple loaders and actions to ensure se
 ### 3.2. Search Results (`/search`)
 *   **Loader (GET)**:
     *   **Query Params**:
-        *   `location`: string (optional)
+        *   `location`: string (optional) - e.g., `seoul-suburbs`, `busan-suburbs`
+        *   `maxPrice`: number (optional) - 최대 숙박 예산
         *   `checkIn`: string (ISO Date)
         *   `checkOut`: string (ISO Date)
         *   `guests`: number (default: 1)
     *   **Logic**:
         1.  Parse params using **Zod**.
-        2.  Query DB for listings matching location.
+        2.  Query DB for listings matching location and price range (`pricePerNight <= maxPrice`).
         3.  Filter out listings booked during the requested date range (using **Luxon** interval check).
     *   **Return Type**: `{ listings: Listing[], totalCount: number }`
 
@@ -209,7 +210,8 @@ toast({
 - **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - Toast 컴포넌트 디자인 가이드라인 (Section 5.3)
 - **Specs**: [Database Schema](./01_DB_SCHEMA.md) - 데이터베이스 스키마 명세
 - **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 생성 및 승인 로직 (에러 처리 포함)
-- **Logic**: [Search Algorithm](../04_Logic/02_SEARCH_ALGORITHM.md) - 검색 및 필터링 알고리즘
+- [Logic]: [Search Algorithm](../04_Logic/02_SEARCH_ALGORITHM.md) - 상세 검색 필터링 알고리즘
+- [Logic]: [Search & Filter UI Logic](../04_Logic/07_SEARCH_AND_FILTER_LOGIC.md) - 스마트 검색 바 작동 원리
 - **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 번역 API 연동 로직
 - **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 예약 서비스 로직
 - **Logic**: [Auth & Session](../04_Logic/06_AUTH_AND_SESSION_LOGIC.md) - 인증 및 세션 관리 로직

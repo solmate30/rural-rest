@@ -63,7 +63,31 @@ The interface blends **rustic warmth** with **modern clarity**. It evokes the fe
     *   **네트워크 오류 알림**: 연결 실패, 타임아웃 등
 *   **Accessibility**: ARIA labels 및 키보드 닫기 지원 필수
 
-## 6. Related Documents
+## 6. Global Layout (Header & Footer)
+Standard design for shared layouts across all pages.
+
+### 6.1. Header (Navigation)
+*   **Logo**: "R" Icon (Primary Green) + "Rural Rest" text.
+*   **Nav Links**: "Find a Stay", "Host your Home".
+*   **Auth State**:
+    *   **Guest**: "Login" Button (Outline).
+    *   **User**: Avatar (with 2px white border + ring) + Name + "Logout" Button.
+*   **Blur Effect**: `backdrop-blur` applied for premium visibility.
+
+### 6.2. Footer (Information & Trust)
+The Footer provides essential credibility and navigation at the bottom of every page.
+*   **Background**: Soft Stone (`bg-stone-50`) or warm off-white.
+*   **Structure (4 Columns)**:
+    1.  **Brand**: Logo + Emotional Slogan ("비어있던 집, 다시 숨을 쉬다").
+    2.  **Discovery**: Find a Stay, Popular Regions (Seoul, Busan, Gyeongju), Seasonal Picks.
+    3.  **Hosting**: Why Host, Host Resources, Community Stories.
+    4.  **Support**: Help Center, Safety Information, Cancellation Options.
+*   **Bottom Bar**:
+    *   **Legal**: Privacy Policy, Terms, Sitemap.
+    *   **Social**: Instagram, YouTube icons.
+    *   **Copy**: "© 2026 Rural Rest Inc. All rights reserved."
+
+## 7. Related Documents
 - **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - 사이트맵 및 사용자 플로우
 - **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 UX 원칙
 - **Foundation**: [Happy Path Scenarios](./07_HAPPY_PATH_SCENARIOS.md) - 디자인이 구현되는 사용자 여정 및 시나리오

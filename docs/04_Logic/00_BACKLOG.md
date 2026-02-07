@@ -13,8 +13,9 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 
 ## 2. Backlog (Upcoming)
 ### Frontend Implementation
-*   [ ] Implement Landing Page (Hero, Search Bar, Featured List).
-*   [ ] Implement Search Results Page (Filters, Map View).
+*   [x] **Task 2.5**: Implement Smart Search UI (Location Badges, Price Slider). → [Search & Filter Logic](./07_SEARCH_AND_FILTER_LOGIC.md)
+*   [x] **Task 2.7**: Implement Global Layout (Header/Footer). → [UI Design](../01_Foundation/05_UI_DESIGN.md)
+*   [ ] **Task 2.6**: Implement Search Results Page (Filters, Map View).
 *   [ ] Implement Property Detail Page (Gallery Modal, Info Cards).
 *   [ ] Implement Booking Flow (Date Selection, Guest Count, Payment Fake).
 
