@@ -1,6 +1,6 @@
 # Booking State Machine Design
 > Created: 2026-02-07 18:00
-> Last Updated: 2026-02-07 18:00
+> Last Updated: 2026-02-07 19:00
 
 ## 1. Context
 예약(Booking) 상태 관리는 Rural Rest 플랫폼의 핵심 비즈니스 로직입니다. 게스트가 예약을 생성한 후부터 체크아웃 완료까지의 전체 생명주기를 관리하며, 호스트의 승인/거절, 취소 정책, 결제 상태 등을 추적합니다.
@@ -164,3 +164,11 @@ async function completePastBookings() {
 - **Payment Failure**: 결제 실패 시 `pending` 상태 유지, 게스트에게 재시도 알림
 - **Host No Response**: 24시간 미응답 시 자동 거절 및 게스트 알림
 - **Double Booking**: Availability check를 DB 트랜잭션 내에서 수행
+
+## 6. Related Documents
+- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 예약 플로우 사이트맵 (Section 3.A.4)
+- **Prototype**: [Booking Page Review](../02_Prototype/02_BOOKING_PAGE_REVIEW.md) - 예약 페이지 UI 프로토타입
+- **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 호스트 승인/거절 UI 프로토타입
+- **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `bookings` 테이블 구조 및 상태 필드
+- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - Booking Process API 엔드포인트 (Section 3.4)
+- **Test**: [Test Scenarios](../05_Test/01_TEST_SCENARIOS.md) - 예약 관련 테스트 케이스 (Section 2.2, 3.1)

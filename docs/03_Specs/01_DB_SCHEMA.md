@@ -32,6 +32,8 @@ Stores rural accommodation details.
 *   **location**: Text [Not Null] (Village Name / Address)
 *   **amenities**: Text (JSON String) [Default: '[]'] (Flexibility for WiFi, BBQ, etc.)
 *   **images**: Text (JSON Array of URLs) [Default: '[]']
+*   **transport_support**: Integer (Boolean 0/1) [Default: 0]
+*   **smart_lock_enabled**: Integer (Boolean 0/1) [Default: 0]
 *   **created_at**: Integer (Timestamp)
 
 ### 2.3. `bookings` Table
@@ -44,6 +46,8 @@ Manages reservations and payments.
 *   **total_price**: Integer [Not Null]
 *   **status**: Text ('pending', 'confirmed', 'cancelled', 'completed') [Default: 'pending']
 *   **payment_intent_id**: Text [Nullable] (Stripe/PayPal Transaction ID)
+*   **qr_code_token**: Text [Nullable] (Digital Key)
+*   **qr_code_expires_at**: Integer [Nullable]
 *   **created_at**: Integer (Timestamp)
 
 ### 2.4. `reviews` Table
@@ -64,6 +68,25 @@ Manages add-on rural experiences (Bul-meong, Kimchi Making).
 *   **price**: Integer [Not Null] (Add-on Cost)
 *   **max_participants**: Integer [Nullable]
 *   **is_active**: Integer (Boolean 0/1) [Default: 1]
+
+### 2.6. `messages` Table (Chat)
+Supports auto-translated communication.
+*   **id**: Text (UUID v4) [Primary Key]
+*   **booking_id**: Text [Foreign Key -> bookings.id]
+*   **sender_id**: Text [Foreign Key -> users.id]
+*   **original_content**: Text [Not Null]
+*   **translated_content**: Text [Nullable]
+*   **is_translation_success**: Integer (Boolean)
+*   **created_at**: Integer (Timestamp)
+
+### 2.7. `transport_requests` Table
+Shuttle service and airport/terminal pickup requests.
+*   **id**: Text (UUID v4) [Primary Key]
+*   **booking_id**: Text [Foreign Key -> bookings.id]
+*   **pickup_point**: Text [Not Null]
+*   **arrival_time**: Integer (Timestamp)
+*   **status**: Text ('scheduled', 'completed', 'cancelled')
+*   **created_at**: Integer (Timestamp)
 
 ## 3. Drizzle Schema Example (TypeScript)
 ```typescript
@@ -94,4 +117,7 @@ export const listings = sqliteTable('listings', {
 ## 5. Related Documents
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - MVP 기능 명세 및 사이트맵
 - **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - 디자인 시스템 가이드라인
+- **Specs**: [Admin Management Spec](./04_ADMIN_MANAGEMENT_SPEC.md) - 호스트용 관리 기능 명세
 - **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직
+- **Logic**: [Digital Key System](../04_Logic/03_DIGITAL_KEY_SYSTEM.md) - QR 체크인 로직
+- **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 채팅 자동 번역 데이터 저장 방식

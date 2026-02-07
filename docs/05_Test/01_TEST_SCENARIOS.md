@@ -1,6 +1,6 @@
 # Test Scenarios & User Journey Tests
 > Created: 2026-02-07 18:00
-> Last Updated: 2026-02-07 18:00
+> Last Updated: 2026-02-07 19:00
 
 ## 1. Overview
 이 문서는 Rural Rest 플랫폼의 주요 사용자 시나리오에 대한 테스트 케이스를 정의합니다. End-to-End 사용자 여정을 중심으로 작성되었으며, 각 Phase별 핵심 기능의 정상 작동 여부를 검증합니다.
@@ -81,6 +81,14 @@
 - [ ] **TC-P-002**: 결제 실패 시 예약 상태는 `pending` 유지, 게스트에게 재시도 알림
 - [ ] **TC-P-003**: 취소 정책에 따라 환불 금액이 올바르게 계산됨 (24시간 전 무료 취소)
 
+### 4.3. Transport & Logistics
+**시나리오**: 교통 서비스 예약 및 정보 전달이 정상적으로 작동합니다.
+
+**테스트 케이스**:
+- [ ] **TC-L-001**: 예약 과정에서 셔틀 서비스 선택 시 요청 내역이 `transport_requests` 테이블에 정상 저장됨
+- [ ] **TC-L-002**: 도보 이동 거리 및 셔틀 소요 시간 정보가 상세 페이지에 정확히 노출됨
+- [ ] **TC-L-003**: 호스트 대시보드의 'Upcoming Arrivals' 목록에 셔틀 요청 시간과 인원이 표시됨
+
 ### 4.2. Database Integration
 **시나리오**: 데이터베이스 작업이 정상적으로 수행됩니다.
 
@@ -149,3 +157,17 @@
 - 테스트 환경: [Local/Staging/Production]
 - 통과율: [X%]
 - 발견된 이슈: [링크 또는 참조]
+
+## 10. Related Documents
+- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 사용자 플로우 및 사이트맵 (테스트 시나리오 기반)
+- **Prototype**: [Landing Page Review](../02_Prototype/00_LANDING_PAGE_REVIEW.md) - 랜딩 페이지 테스트 대상
+- **Prototype**: [Property Detail Review](../02_Prototype/01_DETAIL_PAGE_REVIEW.md) - 프로퍼티 상세 페이지 테스트 대상
+- **Prototype**: [Booking Page Review](../02_Prototype/02_BOOKING_PAGE_REVIEW.md) - 예약 페이지 테스트 대상
+- **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 호스트 대시보드 테스트 대상
+- **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - 데이터베이스 통합 테스트 참조
+- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - API 엔드포인트 테스트 참조
+- **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직 테스트 참조
+- **Logic**: [Search Algorithm](../04_Logic/02_SEARCH_ALGORITHM.md) - 검색 알고리즘 테스트 참조
+- **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 자동 번역 채팅 테스트 참조
+- **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 서비스 예약 테스트 참조
+- **Test**: [QA Checklist](./02_QA_CHECKLIST.md) - 릴리스 기준 및 체크리스트

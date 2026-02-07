@@ -1,6 +1,6 @@
 # Search Algorithm Design
 > Created: 2026-02-07 18:00
-> Last Updated: 2026-02-07 18:00
+> Last Updated: 2026-02-07 19:00
 
 ## 1. Context
 검색 알고리즘은 Rural Rest 플랫폼의 핵심 기능으로, 게스트가 원하는 조건(위치, 날짜, 인원수)에 맞는 숙소를 효율적으로 찾아주는 역할을 합니다. 특히 날짜 기반 가용성 필터링과 다양한 정렬 옵션을 제공합니다.
@@ -255,3 +255,11 @@ LIMIT ? OFFSET ?;
 - **No Results**: 검색 결과 없을 때 유사한 대안 제안 (날짜 조정, 위치 확대)
 - **Invalid Date Range**: checkOut이 checkIn보다 이전인 경우 에러 반환
 - **Timezone Handling**: Luxon을 사용하여 사용자 타임존에 맞게 날짜 처리
+
+## 7. Related Documents
+- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 검색 기능 명세 및 사이트맵 (Section 3.A.2)
+- **Prototype**: [Landing Page Review](../02_Prototype/00_LANDING_PAGE_REVIEW.md) - 검색 바 UI 프로토타입
+- **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `listings` 테이블 구조 및 인덱스 설계
+- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - Search Results API 엔드포인트 (Section 3.2)
+- **Logic**: [Booking State Machine](./01_BOOKING_STATE_MACHINE.md) - 가용성 필터링 로직 참조
+- **Test**: [Test Scenarios](../05_Test/01_TEST_SCENARIOS.md) - 검색 관련 테스트 케이스 (Section 2.1)

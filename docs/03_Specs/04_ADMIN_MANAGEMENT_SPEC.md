@@ -47,6 +47,9 @@
 *   **Optimistic Updates**: 상태 변경(예: 예약 수락) 시 UI에서 먼저 반영하고 서버 통신 결과에 따라 보정.
 
 ## 6. Related Documents
-- **Specs**: [Database Schema](./01_DB_SCHEMA.md) - `listings` 및 `activities` 테이블 참조
-- **Specs**: [Storage Policy](./03_STORAGE_POLICY.md) - 사진 업로드 보완 정책
+- **Foundation**: [Admin Strategy](../01_Foundation/06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 기능 우선순위
+- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - Host (Admin) Side 사이트맵
 - **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 기존 디자인 리뷰 결과
+- **Specs**: [Database Schema](./01_DB_SCHEMA.md) - `listings` 및 `activities` 테이블 참조
+- **Specs**: [API Specs](./02_API_SPECS.md) - Admin Dashboard API 엔드포인트
+- **Specs**: [Storage Policy](./03_STORAGE_POLICY.md) - 사진 업로드 보완 정책

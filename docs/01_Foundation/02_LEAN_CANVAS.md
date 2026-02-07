@@ -1,6 +1,6 @@
 # Lean Canvas (Business Model)
 > Created: 2026-02-07 16:44
-> Last Updated: 2026-02-07 18:00
+> Last Updated: 2026-02-07 19:00
 
 ## 1. Problem (The Pain)
 1.  **Lack of Authentic Local Experience**: Global travelers are tired of generic hotels and "tourist trap" courses in Seoul/Busan. They crave "Real Korea" but can't find it.
@@ -36,3 +36,9 @@
 *   **Commission**: 10-15% fee on bookings.
 *   **Experience Add-ons**: Margin on "Bul-meong Kit", "BBQ Set", "Local Tours".
 *   **Concierge Fee**: Small fee for transport arrangements.
+
+## 8. Related Documents
+- **Foundation**: [Vision & Core Values](./01_VISION_CORE.md) - 프로젝트 정체성 및 미션
+- **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - 핵심 기능 상세 명세
+- **Foundation**: [Roadmap](./04_ROADMAP.md) - 단계별 실행 계획
+- **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 수익 구조

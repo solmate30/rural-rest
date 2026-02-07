@@ -1,6 +1,6 @@
 # Project Overview & Feature Specs
 > Created: 2026-02-07 16:21
-> Last Updated: 2026-02-07 18:00
+> Last Updated: 2026-02-07 19:00
 
 ## 1. Project Concept
 **Rural Rest** is a platform connecting global travelers with authentic Korean rural experiences through renovated empty houses (빈집). It emphasizes **community, authenticity, and sustainability**.
@@ -55,3 +55,21 @@ The primary accommodation type is **Modernized Dormitory (70%)** for social inte
 2.  **Property Management**: Room inventory, Pricing calendar, Upload photos.
 3.  **Activity Manager**: Create/Edit local events (Set max participants, price).
 4.  **Reservation Management**: Approve/Reject requests, Handle cancellations.
+
+**상세 전략 및 운영 원칙**: [Admin Strategy](./06_ADMIN_STRATEGY.md) 참조
+
+## 4. Related Documents
+- **Foundation**: [Vision & Core Values](./01_VISION_CORE.md) - 프로젝트 비전 및 타겟 오디언스
+- **Foundation**: [Lean Canvas](./02_LEAN_CANVAS.md) - 비즈니스 모델 및 핵심 기능 배경
+- **Foundation**: [Roadmap](./04_ROADMAP.md) - 기능 우선순위 및 단계별 계획
+- **Foundation**: [UI Design](./05_UI_DESIGN.md) - 디자인 시스템 및 컴포넌트 가이드라인
+- **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 관리 기능 우선순위
+- **Prototype**: [Landing Page Review](../02_Prototype/00_LANDING_PAGE_REVIEW.md) - 랜딩 페이지 프로토타입
+- **Prototype**: [Search & Explore Review](../02_Prototype/04_SEARCH_EXPLORE_REVIEW.md) - 검색 및 지도 탐색 프로토타입
+- **Prototype**: [Property Detail Review](../02_Prototype/01_DETAIL_PAGE_REVIEW.md) - 프로퍼티 상세 페이지 프로토타입
+- **Prototype**: [Booking Page Review](../02_Prototype/02_BOOKING_PAGE_REVIEW.md) - 예약 및 결제 페이지 프로토타입
+- **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 호스트 대시보드 프로토타입
+- **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - 데이터 모델 설계
+- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - API 엔드포인트 명세
+- **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 실시간 자동 번역 로직
+- **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 로컬 교통 연동 및 셔틀 예약 로직

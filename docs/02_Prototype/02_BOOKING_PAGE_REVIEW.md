@@ -1,6 +1,6 @@
 # 02. Booking & Payment Page Review (V2)
 > Created: 2026-02-07 17:01
-> Last Updated: 2026-02-07 17:01
+> Last Updated: 2026-02-07 19:00
 
 ## 1. Prototype Link/Screenshot
 *   **Project Name**: Rural Rest V2
@@ -33,3 +33,12 @@
 
 ## 4. Next Step
 *   Design the **Admin Dashboard (Host View)** to complete the V2 prototype set.
+
+## 5. Related Documents
+- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 예약 및 결제 플로우 사이트맵 (Section 3.A.4)
+- **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - 디자인 시스템 및 폼 컴포넌트 가이드라인
+- **Prototype**: [Property Detail Review](./01_DETAIL_PAGE_REVIEW.md) - 이전 단계 프로토타입
+- **Prototype**: [Admin Dashboard Review](./03_ADMIN_DASHBOARD_REVIEW.md) - 다음 단계 프로토타입
+- **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `bookings` 및 `activities` 테이블 구조
+- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - Booking Process API 엔드포인트 (Section 3.4)
+- **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직

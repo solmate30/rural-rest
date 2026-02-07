@@ -1,6 +1,6 @@
 # Product Roadmap (Now/Next/Later)
 > Created: 2026-02-07 16:45
-> Last Updated: 2026-02-07 18:30
+> Last Updated: 2026-02-07 19:00
 
 This roadmap defines the strategic execution plan for **Rural Rest**, prioritizing the most critical features for solving key problems first (e.g., transport barriers).
 
@@ -36,3 +36,10 @@ This roadmap defines the strategic execution plan for **Rural Rest**, prioritizi
 *   **Gamification**: Introduce "Eco-Points" or "Rural Stamps" for sustainable travel behavior.
 *   **Village Governance**: Empower local communities to manage bookings and reinvest profits directly.
 *   **Global Expansion**: Replicate the model in other countries facing rural depopulation (e.g., Japan's Akiya).
+
+## 4. Related Documents
+- **Foundation**: [Vision & Core Values](./01_VISION_CORE.md) - 장기 목표 및 성공 지표
+- **Foundation**: [Lean Canvas](./02_LEAN_CANVAS.md) - 비즈니스 모델 및 수익 구조
+- **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - MVP 기능 명세
+- **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 기능 우선순위
+- **Logic**: [Digital Key System](../04_Logic/03_DIGITAL_KEY_SYSTEM.md) - Phase 2 기능 상세 설계

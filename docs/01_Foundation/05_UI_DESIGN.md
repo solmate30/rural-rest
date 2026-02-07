@@ -1,6 +1,6 @@
 # UI Design System & Guidelines
 > Created: 2026-02-07 16:22
-> Last Updated: 2026-02-07 18:00
+> Last Updated: 2026-02-07 19:00
 
 ## 1. Design Philosophy
 **Keywords**: Warm, Earthy, Vintage, Authentic, Lively Community.
@@ -41,3 +41,11 @@ The interface blends **rustic warmth** with **modern clarity**. It evokes the fe
 *   **Structure**: Clean photo on top, handwritten title below.
 *   **Background**: White card on `#FAF9F6` background.
 *   **Shadow**: Soft, diffused shadow (`shadow-sm`) to lift content slightly.
+
+## 6. Related Documents
+- **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - 사이트맵 및 사용자 플로우
+- **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 UX 원칙
+- **Prototype**: [Landing Page Review](../02_Prototype/00_LANDING_PAGE_REVIEW.md) - 랜딩 페이지 디자인 적용 사례
+- **Prototype**: [Property Detail Review](../02_Prototype/01_DETAIL_PAGE_REVIEW.md) - 프로퍼티 상세 페이지 디자인 적용 사례
+- **Prototype**: [Booking Page Review](../02_Prototype/02_BOOKING_PAGE_REVIEW.md) - 예약 페이지 디자인 적용 사례
+- **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 대시보드 디자인 적용 사례

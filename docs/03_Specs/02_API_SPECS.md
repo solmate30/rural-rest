@@ -81,6 +81,20 @@ These helper functions are used across multiple loaders and actions to ensure se
     *   **Purpose**: Approve/Reject booking requests.
     *   **Form Data**: `bookingId`, `status` ('confirmed' | 'rejected').
 
+### 3.6. Chat & Translation (`/api/chat/translate`)
+*   **Action (POST)**:
+    *   **Purpose**: Real-time message translation.
+    *   **Payload**: `{ text: string, targetLang: string }`
+    *   **Integration**: DeepL/Google Translation API.
+    *   **Return Type**: `{ translatedText: string }`
+
+### 3.7. Transport Concierge (`/api/trips/:id/transport`)
+*   **Action (POST)**:
+    *   **Purpose**: Request or update shuttle service.
+    *   **Payload**: `{ pickupPoint: string, arrivalTime: number }`
+    *   **Logic**: Updates `transport_requests` table and notifies host.
+    *   **Return Type**: `{ success: boolean, requestId: string }`
+
 ## 4. Error Handling
 *   **401 Unauthorized**: Redirect to `/login`.
 *   **404 Not Found**: Show custom `ErrorMessage` component.
@@ -91,3 +105,5 @@ These helper functions are used across multiple loaders and actions to ensure se
 - **Specs**: [Database Schema](./01_DB_SCHEMA.md) - 데이터베이스 스키마 명세
 - **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 생성 및 승인 로직
 - **Logic**: [Search Algorithm](../04_Logic/02_SEARCH_ALGORITHM.md) - 검색 및 필터링 알고리즘
+- **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 번역 API 연동 로직
+- **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 예약 서비스 로직

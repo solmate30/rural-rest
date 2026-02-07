@@ -1,6 +1,6 @@
 # Vision & Core Values
 > Created: 2026-02-07 16:17
-> Last Updated: 2026-02-07 18:00
+> Last Updated: 2026-02-07 19:00
 
 ## 1. Project Identity
 **Project Name**: Rural Rest (가칭)
@@ -37,3 +37,10 @@
 *   **재방문율 (Retention Rate)**: "빈집 활용의 지속가능성"을 증명하는 가장 중요한 지표. 한 번 방문한 게스트가 다시 찾는다는 것은 그 경험(환대, 편안함)이 성공적이었음을 의미함.
 *   **외국인 예약 비중**: 전체 예약 중 외국인 게스트가 차지하는 비율 (목표: 40% 이상).
 *   **지자체 협력 건수**: 교통 지원 등 공공 부문과의 파트너십 체결 수.
+
+## 7. Related Documents
+- **Foundation**: [Lean Canvas](./02_LEAN_CANVAS.md) - 비즈니스 모델 및 수익 구조
+- **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - MVP 기능 명세 및 사이트맵
+- **Foundation**: [Roadmap](./04_ROADMAP.md) - 단계별 실행 전략
+- **Foundation**: [UI Design](./05_UI_DESIGN.md) - 디자인 시스템 가이드라인
+- **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략

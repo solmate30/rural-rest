@@ -1,6 +1,6 @@
 # 03. Admin Dashboard Review (Host View V2)
 > Created: 2026-02-07 17:04
-> Last Updated: 2026-02-07 17:04
+> Last Updated: 2026-02-07 19:00
 
 ## 1. Prototype Link/Screenshot
 *   **Project Name**: Rural Rest V2
@@ -35,3 +35,13 @@
 ## 4. Next Step
 *   **Prototype Phase Complete.**
 *   Proceed to **Specs Phase (03_Specs)** to define **Database Schema** and **API Endpoints**.
+
+## 5. Related Documents
+- **Foundation**: [Admin Strategy](../01_Foundation/06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 기능 우선순위
+- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 호스트 대시보드 사이트맵 (Section 3.B)
+- **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - 디자인 시스템 및 데이터 시각화 가이드라인
+- **Prototype**: [Booking Page Review](./02_BOOKING_PAGE_REVIEW.md) - 이전 단계 프로토타입
+- **Specs**: [Admin Management Spec](../03_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 상세 기능 명세
+- **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `bookings`, `listings`, `activities` 테이블 구조
+- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - Admin Dashboard API 엔드포인트 (Section 3.5)
+- **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 승인/거절 로직
