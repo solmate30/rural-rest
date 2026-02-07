@@ -49,7 +49,8 @@
 ## 6. Related Documents
 - **Foundation**: [Admin Strategy](../01_Foundation/06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 기능 우선순위
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - Host (Admin) Side 사이트맵
-- **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 기존 디자인 리뷰 결과
+- **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 상위 대시보드 화면
+- **Prototype**: [Host Property Editor Review](../02_Prototype/05_ADMIN_EDITOR_REVIEW.md) - 상세 편집기 UI 리뷰
 - **Specs**: [Database Schema](./01_DB_SCHEMA.md) - `listings` 및 `activities` 테이블 참조
 - **Specs**: [API Specs](./02_API_SPECS.md) - Admin Dashboard API 엔드포인트
 - **Specs**: [Storage Policy](./03_STORAGE_POLICY.md) - 사진 업로드 보완 정책
