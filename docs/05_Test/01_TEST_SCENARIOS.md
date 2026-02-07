@@ -1,13 +1,35 @@
 # Test Scenarios & User Journey Tests
 > Created: 2026-02-07 18:00
-> Last Updated: 2026-02-07 19:00
+> Last Updated: 2026-02-08 00:20
 
 ## 1. Overview
 이 문서는 Rural Rest 플랫폼의 주요 사용자 시나리오에 대한 테스트 케이스를 정의합니다. End-to-End 사용자 여정을 중심으로 작성되었으며, 각 Phase별 핵심 기능의 정상 작동 여부를 검증합니다.
 
-## 2. Guest User Journey Tests
+## 2. Authentication & Session Tests
 
-### 2.1. Search & Discovery Flow
+### 2.1. Login & Sign Up Flow
+**시나리오**: 사용자가 로그인 및 회원가입을 수행하고 적절한 피드백을 받습니다.
+
+**테스트 케이스**:
+- [ ] **TC-A-001**: 이메일/비밀번호 로그인 성공 시 Toast로 "로그인되었습니다" 메시지 표시
+- [ ] **TC-A-002**: 이메일/비밀번호 로그인 실패 시 Toast로 "이메일 또는 비밀번호가 올바르지 않습니다" 메시지 표시
+- [ ] **TC-A-003**: 회원가입 성공 시 Toast로 "회원가입 완료" 메시지 표시
+- [ ] **TC-A-004**: 회원가입 실패 시 (이메일 중복 등) Toast로 적절한 에러 메시지 표시
+- [ ] **TC-A-005**: Google 소셜 로그인 성공 시 Toast로 "로그인되었습니다" 메시지 표시
+- [ ] **TC-A-006**: Kakao 소셜 로그인 성공 시 Toast로 "로그인되었습니다" 메시지 표시
+- [ ] **TC-A-007**: 소셜 로그인 실패 시 Toast로 "소셜 로그인에 실패했습니다" 메시지 표시
+- [ ] **TC-A-008**: 로그아웃 성공 시 Toast로 "로그아웃되었습니다" 메시지 표시
+- [ ] **TC-A-009**: 로그인 성공 Toast는 3-5초 후 자동으로 사라짐
+- [ ] **TC-A-010**: 로그인 실패 Toast는 사용자가 수동으로 닫을 때까지 유지됨
+
+**검증 포인트**:
+- Toast 메시지가 적절한 위치에 표시됨 (우측 상단 또는 하단)
+- Toast 메시지가 한글로 표시됨
+- 성공/실패에 따른 Toast 색상 구분 (Success: default, Error: destructive)
+
+## 3. Guest User Journey Tests
+
+### 3.1. Search & Discovery Flow
 **시나리오**: 게스트가 랜딩 페이지에서 숙소를 검색하고 상세 정보를 확인합니다.
 
 **테스트 케이스**:
@@ -22,7 +44,7 @@
 - Empty State UI 깨짐 없음
 - 로딩 상태 적절히 표시됨
 
-### 2.2. Property Detail & Booking Flow
+### 3.2. Property Detail & Booking Flow
 **시나리오**: 게스트가 숙소 상세 정보를 확인하고 예약을 진행합니다.
 
 **테스트 케이스**:
@@ -38,7 +60,7 @@
 - 에러 발생 시 사용자에게 적절한 피드백 제공
 - 결제 프로세스 (Stripe/PayPal) 정상 작동
 
-### 2.3. Communication Flow
+### 3.3. Communication Flow
 **시나리오**: 게스트가 호스트와 자동 번역 채팅을 통해 소통합니다.
 
 **테스트 케이스**:
@@ -46,7 +68,7 @@
 - [ ] **TC-G-013**: 호스트 응답이 게스트 언어로 자동 번역되어 표시됨
 - [ ] **TC-G-014**: 채팅 히스토리가 예약별로 올바르게 그룹화됨
 
-## 3. Host User Journey Tests
+## 4. Host User Journey Tests
 
 ### 3.1. Dashboard & Management Flow
 **시나리오**: 호스트가 대시보드에서 예약을 관리하고 활동을 생성합니다.
@@ -107,15 +129,20 @@
 - [ ] **TC-E-002**: 필수 필드 누락 시 인라인 에러 메시지 표시
 - [ ] **TC-E-003**: 이메일 형식이 잘못된 경우 유효성 검사 에러 표시
 
-### 5.2. System Errors
+### 6.2. System Errors
 **시나리오**: 시스템 오류 발생 시 사용자에게 적절한 피드백이 제공됩니다.
 
 **테스트 케이스**:
 - [ ] **TC-E-004**: 401 Unauthorized 시 로그인 페이지로 리다이렉트
-- [ ] **TC-E-005**: 404 Not Found 시 커스텀 에러 페이지 표시
-- [ ] **TC-E-006**: 500 Server Error 시 사용자 친화적 에러 메시지 표시
+- [ ] **TC-E-005**: 페이지 레벨 404 (존재하지 않는 라우트) 시 ErrorBoundary에서 "404 - 페이지를 찾을 수 없습니다" 에러 페이지 표시
+- [ ] **TC-E-005-2**: API 리소스 404 (존재하지 않는 property ID 등) 시 Toast로 "요청한 리소스를 찾을 수 없습니다" 메시지 표시
+- [ ] **TC-E-006**: 500 Server Error 시 Toast로 "서버 오류가 발생했습니다" 메시지 표시
+- [ ] **TC-E-007**: API 에러 응답 시 Toast 컴포넌트가 적절한 위치에 표시됨 (우측 상단 또는 하단)
+- [ ] **TC-E-008**: 에러 Toast는 사용자가 수동으로 닫을 때까지 유지됨
+- [ ] **TC-E-009**: 성공 Toast는 3-5초 후 자동으로 사라짐
+- [ ] **TC-E-010**: Toast 메시지는 한글로 표시되며 사용자가 이해하기 쉬운 문구 사용
 
-## 6. Performance Tests
+## 7. Performance Tests
 
 ### 6.1. Load Tests
 **시나리오**: 다수의 동시 사용자 요청을 처리할 수 있습니다.
@@ -158,7 +185,7 @@
 - 통과율: [X%]
 - 발견된 이슈: [링크 또는 참조]
 
-## 10. Related Documents
+## 11. Related Documents
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 사용자 플로우 및 사이트맵 (테스트 시나리오 기반)
 - **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) - 본 테스트 케이스의 기준이 되는 핵심 사용자 여정
 - **Prototype**: [Landing Page Review](../02_Prototype/00_LANDING_PAGE_REVIEW.md) - 랜딩 페이지 테스트 대상
@@ -171,5 +198,8 @@
 - **Logic**: [Search Algorithm](../04_Logic/02_SEARCH_ALGORITHM.md) - 검색 알고리즘 테스트 참조
 - **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 자동 번역 채팅 테스트 참조
 - **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 서비스 예약 테스트 참조
-- **Logic**: [Auth & Session](../04_Logic/06_AUTH_AND_SESSION_LOGIC.md) - 로그인 및 권한 검증 테스트 참조 (TC-G-010, TC-E-004)
+- **Logic**: [Auth & Session](../04_Logic/06_AUTH_AND_SESSION_LOGIC.md) - 로그인/로그아웃 플로우 및 Toast 메시지 정의 (Section 4.4), 권한 검증 테스트 참조 (TC-G-010, TC-E-004)
+- **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 에러 핸들링 테스트 참조 (Section 5.1)
+- **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - Toast 컴포넌트 디자인 가이드라인 (Section 5.3)
+- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - 에러 핸들링 전략 및 Toast 사용 가이드 (Section 4)
 - **Test**: [QA Checklist](./02_QA_CHECKLIST.md) - 릴리스 기준 및 체크리스트

@@ -1,6 +1,6 @@
 # Auth and Session Logic (Better Auth)
 > Created: 2026-02-07 23:45
-> Last Updated: 2026-02-08 00:00
+> Last Updated: 2026-02-08 00:20
 
 본 문서는 **Better Auth**를 활용한 Rural Rest 서비스의 인증 시스템과 세션 관리 로직을 정의합니다. 사용자 시나리오(민수, 엠마)에서 정의된 "빠르고 편리한 로그인" 경험을 구현하는 기술적 토대가 됩니다.
 
@@ -48,6 +48,8 @@
     *   기존 사용자라면: 최근 로그인 시간 업데이트.
 5.  DB 세션 생성 및 브라우저에 보안 쿠키(HTTP Only) 발급.
 6.  홈 페이지 또는 이전 페이지로 리다이렉트.
+7.  **사용자 피드백**: 리다이렉트 후 Toast로 "로그인되었습니다" 성공 메시지 표시 (shadcn/ui Toast 사용).
+    *   **에러 처리**: OAuth 인증 실패 시 Toast로 "소셜 로그인에 실패했습니다. 다시 시도해주세요" 메시지 표시.
 
 ### 4.2. Authentication Flow (Email/Password)
 1.  사용자가 Auth Page에서 '이메일로 로그인' 또는 '회원가입' 선택.
@@ -58,6 +60,9 @@
     *   회원가입: `users` 테이블에 레코드 생성 (role: 'guest', preferredLang: 'en').
 5.  DB 세션 생성 및 브라우저에 보안 쿠키(HTTP Only) 발급.
 6.  홈 페이지 또는 이전 페이지로 리다이렉트.
+7.  **사용자 피드백**: 
+    *   **성공 시**: Toast로 "로그인되었습니다" 또는 "회원가입이 완료되었습니다" 메시지 표시 (shadcn/ui Toast 사용).
+    *   **에러 시**: Toast로 에러 메시지 표시 (예: "이메일 또는 비밀번호가 올바르지 않습니다", "이미 가입된 이메일입니다").
 
 ### 4.3. Middleware & Role Protection (loader/action)
 ```typescript
@@ -100,6 +105,72 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 ```
 
+### 4.4. User Feedback & Toast Messages
+
+모든 인증 관련 액션은 shadcn/ui Toast 컴포넌트를 통해 사용자에게 피드백을 제공합니다.
+
+#### 4.4.1. 로그인 성공/실패 Toast
+```typescript
+// 로그인 성공
+toast({
+  title: "로그인되었습니다",
+  description: `${user.name}님, 환영합니다!`,
+  variant: "default", // Success 스타일
+});
+
+// 로그인 실패
+toast({
+  title: "로그인 실패",
+  description: error.message || "이메일 또는 비밀번호가 올바르지 않습니다.",
+  variant: "destructive", // Error 스타일
+});
+```
+
+#### 4.4.2. 회원가입 성공/실패 Toast
+```typescript
+// 회원가입 성공
+toast({
+  title: "회원가입 완료",
+  description: "Rural Rest에 오신 것을 환영합니다!",
+  variant: "default", // Success 스타일
+});
+
+// 회원가입 실패 (이메일 중복 등)
+toast({
+  title: "회원가입 실패",
+  description: error.message || "이미 가입된 이메일입니다.",
+  variant: "destructive", // Error 스타일
+});
+```
+
+#### 4.4.3. 로그아웃 Toast
+```typescript
+// 로그아웃 성공
+const handleSignOut = async () => {
+  await signOut();
+  toast({
+    title: "로그아웃되었습니다",
+    description: "다음에 또 만나요!",
+    variant: "default", // Success 스타일
+  });
+  window.location.href = "/";
+};
+```
+
+#### 4.4.4. 소셜 로그인 에러 처리
+```typescript
+// 소셜 로그인 실패 시 (OAuth 에러)
+try {
+  await signIn.social({ provider: "google", callbackURL: "/" });
+} catch (error) {
+  toast({
+    title: "소셜 로그인 실패",
+    description: "소셜 로그인 중 오류가 발생했습니다. 다시 시도해주세요.",
+    variant: "destructive",
+  });
+}
+```
+
 ---
 
 ## 5. Related Documents
@@ -107,5 +178,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 - **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) - 민수와 엠마의 빠른 로그인 경험
 - **Prototype**: [Landing Page Review](../02_Prototype/00_LANDING_PAGE_REVIEW.md) - 로그인 진입점 UI (랜딩 페이지)
 - **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `users`, `sessions`, `accounts` 테이블 정의
-- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - `requireUser` 및 인증 API 인터페이스
+- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - `requireUser` 및 인증 API 인터페이스, 에러 핸들링 전략 (Section 4)
+- **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - Toast 컴포넌트 디자인 가이드라인 (Section 5.3)
 - **Test**: [Test Scenarios](../05_Test/01_TEST_SCENARIOS.md) - 로그인 및 권한 우회 시도 테스트 케이스

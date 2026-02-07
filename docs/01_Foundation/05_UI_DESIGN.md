@@ -1,6 +1,6 @@
 # UI Design System & Guidelines
 > Created: 2026-02-07 16:22
-> Last Updated: 2026-02-07 19:00
+> Last Updated: 2026-02-08 00:20
 
 ## 1. Design Philosophy
 **Keywords**: Warm, Earthy, Vintage, Authentic, Lively Community.
@@ -41,6 +41,27 @@ The interface blends **rustic warmth** with **modern clarity**. It evokes the fe
 *   **Structure**: Clean photo on top, handwritten title below.
 *   **Background**: White card on `#FAF9F6` background.
 *   **Shadow**: Soft, diffused shadow (`shadow-sm`) to lift content slightly.
+
+### 5.3. Toast Notifications (User Feedback)
+*   **Library**: shadcn/ui Toast component (`@radix-ui/react-toast` 기반)
+*   **Purpose**: 사용자 액션에 대한 즉각적인 피드백 제공 (성공, 에러, 정보, 경고)
+*   **Design Guidelines**:
+    *   **Position**: 화면 우측 상단 또는 하단 (모바일: 하단 중앙)
+    *   **Duration**: 기본 3-5초 (에러 메시지는 수동 닫기까지 유지)
+    *   **Animation**: 부드러운 슬라이드 인/아웃 효과
+    *   **Color Coding**:
+        *   **Success**: Primary Green (`#4CAF50`) - 예약 성공, 저장 완료 등
+        *   **Error**: Destructive Red (`#EF5350`) - API 에러, 유효성 검사 실패 등
+        *   **Warning**: Accent Orange (`#FFAB91`) - 주의가 필요한 상황
+        *   **Info**: Neutral Gray (`#757575`) - 정보성 메시지
+*   **Usage Scenarios**:
+    *   **인증 관련**: 로그인 성공/실패, 회원가입 성공/실패, 로그아웃 성공, 소셜 로그인 에러
+    *   **API 에러 응답**: 400, 401, 403, 404, 500 등 HTTP 에러 상태 코드
+    *   **폼 유효성 검사 실패**: 입력값 검증 에러 (서버 측 검증 실패 시)
+    *   **비즈니스 로직 에러**: 결제 실패, 예약 불가, 권한 부족 등
+    *   **성공 메시지**: 예약 완료, 설정 저장, 데이터 업데이트 완료 등
+    *   **네트워크 오류 알림**: 연결 실패, 타임아웃 등
+*   **Accessibility**: ARIA labels 및 키보드 닫기 지원 필수
 
 ## 6. Related Documents
 - **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - 사이트맵 및 사용자 플로우
