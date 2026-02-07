@@ -1,6 +1,6 @@
 # 02. API Specification (React Router v7 Pattern)
 > Created: 2026-02-07 17:25
-> Last Updated: 2026-02-08 00:20
+> Last Updated: 2026-02-08 12:00
 
 ## 1. Architecture Overview
 *   **Framework**: React Router v7 (Serverless Functions via Vercel).
@@ -46,9 +46,12 @@ These helper functions are used across multiple loaders and actions to ensure se
 
 ### 3.1. Landing Page (`/`)
 *   **Loader (GET)**:
-    *   **Purpose**: Fetch featured listings and popular categories.
-    *   **Return Type**: `{ featuredListings: Listing[] }`
+    *   **Purpose**: Fetch featured listings for the home page. Used by Smart Search + Featured Stays real-time filtering (location, maxPrice).
+    *   **Return Type**: `{ featuredListings: Listing[] }`  
+        *   **권장 개수**: 홈 Featured Stays 실시간 필터용으로 약 50건 (또는 서비스 정책에 따른 상한).
+        *   **Listing 필수 필드**: `id`, `location` (거점 값, e.g. `seoul-suburbs`, `busan-suburbs`, `gyeongju`, `incheon`, `jeju`), `pricePerNight` (숙박 단가). 그 외 제목, 이미지, 지역명 등 표시용 필드.
     *   **Caching**: Cache-Control: s-maxage=3600 (1 hour).
+    *   **참조**: [Search & Filter Logic](../04_Logic/07_SEARCH_AND_FILTER_LOGIC.md) Section 3.4 - 클라이언트에서 `location`/`pricePerNight` 기준 필터링.
 
 ### 3.2. Search Results (`/search`)
 *   **Loader (GET)**:

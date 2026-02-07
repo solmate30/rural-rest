@@ -1,8 +1,8 @@
 # Search and Filter Logic (Smart Search)
 > Created: 2026-02-08 02:25
-> Last Updated: 2026-02-08 02:25
+> Last Updated: 2026-02-08 12:00
 
-본 문서는 Rural Rest 서비스의 핵심 기능인 **'스마트 검색 바(Smart Search Bar)'**의 작동 원리와 필터링 로직을 정의합니다. 사용자 시나리오(민수)의 "서울 근처 조용한 휴식처 찾기" 경험을 기술적으로 뒷받침합니다.
+본 문서는 Rural Rest 서비스의 핵심 기능인 **'스마트 검색 바(Smart Search Bar)'**의 작동 원리와 **홈 Featured Stays 실시간 필터링** 로직을 정의합니다. 사용자 시나리오(민수)의 "서울 근처 조용한 휴식처 찾기" 경험을 기술적으로 뒷받침합니다.
 
 ## 1. 개요 (Overview)
 Rural Rest의 검색 시스템은 전통적인 키워드 검색 방식 대신, 사용자의 **거점 도시(Location Hub)**와 **예산(Price Range)**을 중심으로 한 직관적인 탐색 경험을 제공합니다.
@@ -53,6 +53,18 @@ where(
 )
 ```
 
+### 3.4. 홈 Featured Stays 실시간 필터링 (Client-side)
+홈 화면의 **Featured Stays** 섹션은 스마트 검색 바의 선택 상태에 따라 **같은 페이지에서 즉시** 필터링됩니다. 별도 검색 결과 페이지로 이동하지 않습니다.
+
+*   **데이터 소스**: Landing Page Loader(`/`)에서 반환한 목록(기본 약 50건). 각 항목은 `location`(거점 값), `pricePerNight`(1박 가격) 필드를 가짐.
+*   **필터 규칙**:
+    1.  **지역**: `selectedLocation === null`이면 지역 필터 미적용(전체). 값이 있으면 `listing.location === selectedLocation`인 카드만 표시.
+    2.  **가격**: `listing.pricePerNight <= maxPrice`인 카드만 표시.
+    3.  **둘 다 적용**: 위 두 조건을 AND로 결합한 결과만 표시.
+*   **표시 개수**: 필터 적용 후 남은 카드 수가 N개이면, 스마트 검색 카드 하단 문구는 **"현재 N곳의 빈집이 기다리고 있어요"**로 갱신.
+*   **Empty State**: 필터 결과가 0건일 때는 "조건에 맞는 숙소가 없어요. 지역이나 예산을 바꿔 보세요." 등 안내 문구 표시.
+*   **구현 위치**: `Home` 라우트에서 loader로 받은 목록을 `useMemo` 또는 동일 상태 기반으로 `selectedLocation`, `maxPrice`에 따라 필터링한 뒤 카드 목록으로 렌더.
+
 ---
 
 ## 4. 디자인 시스템 가이드 (UI/UX)
@@ -60,12 +72,13 @@ where(
 *   **심미성**: 
     *   **Glassmorphism**: `bg-white/95 backdrop-blur shadow-2xl` 적용.
     *   **Micro-interaction**: 버튼 및 배지 클릭 시 `active:scale-95` 스케일 피드백 제공.
-    *   **Real-time Feedback**: "현재 N곳의 빈집이 기다리고 있어요" 문구를 통해 데이터 현황 가이드 제공.
+    *   **Real-time Feedback**: "현재 N곳의 빈집이 기다리고 있어요" 문구는 **필터 적용 후 결과 개수(N)**로 갱신 (Section 3.4 참조).
 
 ---
 
 ## 5. 관련 문서 (Related Documents)
 - **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) - 민수의 검색 시나리오
-- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - 검색 쿼리 파라미터 정의 (Section 3.2)
+- **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - Home Featured Stays 실시간 필터 (Section 5.4)
+- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - Landing Page Loader 및 검색 쿼리 파라미터 (Section 3.1, 3.2)
 - **Prototype**: [Home Page Implementation](../../rural-rest-v2/app/routes/home.tsx) - 실제 구현 코드
 - **Logic**: [Search Algorithm](./02_SEARCH_ALGORITHM.md) - 상세 검색 필터링 알고리즘

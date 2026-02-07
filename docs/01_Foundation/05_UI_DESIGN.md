@@ -1,6 +1,6 @@
 # UI Design System & Guidelines
 > Created: 2026-02-07 16:22
-> Last Updated: 2026-02-08 00:20
+> Last Updated: 2026-02-08 12:00
 
 ## 1. Design Philosophy
 **Keywords**: Warm, Earthy, Vintage, Authentic, Lively Community.
@@ -62,6 +62,13 @@ The interface blends **rustic warmth** with **modern clarity**. It evokes the fe
     *   **성공 메시지**: 예약 완료, 설정 저장, 데이터 업데이트 완료 등
     *   **네트워크 오류 알림**: 연결 실패, 타임아웃 등
 *   **Accessibility**: ARIA labels 및 키보드 닫기 지원 필수
+
+### 5.4. Home Featured Stays (실시간 필터 목록)
+*   **위치**: 랜딩 페이지 Hero 아래, Featured Stays 섹션.
+*   **동작**: 스마트 검색 바(거점 배지, 예산 슬라이더) 선택에 따라 **같은 페이지에서** 카드 목록이 즉시 필터링됨. 기본 약 50개 표시, 지역 선택 또는 가격 하향 시 조건에 맞는 카드만 남아 개수가 줄어듦.
+*   **피드백**: "현재 N곳의 빈집이 기다리고 있어요" 문구는 필터 결과 개수(N)로 갱신.
+*   **Empty State**: 조건에 맞는 숙소가 0건일 때 "조건에 맞는 숙소가 없어요. 지역이나 예산을 바꿔 보세요." 등 안내 문구 표시.
+*   **참조**: [Search & Filter Logic](../04_Logic/07_SEARCH_AND_FILTER_LOGIC.md) Section 3.4.
 
 ## 6. Global Layout (Header & Footer)
 Standard design for shared layouts across all pages.
