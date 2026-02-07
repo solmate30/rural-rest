@@ -14,6 +14,10 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 ## 2. Backlog (Upcoming)
 ### Frontend Implementation
 *   [x] **Task 2.5**: Implement Smart Search UI (Location Badges, Price Slider). → [Search & Filter Logic](./07_SEARCH_AND_FILTER_LOGIC.md)
+*   [ ] **Task 2.8**: [REMOVED] Upgrade Location Selection to Interactive SVG Rural Map.
+*   [ ] **Task 2.9**: Integrate Professional Map API (Kakao/Naver) for Property Detail Pages.
+*   [ ] **Task 2.10**: Setup LangGraph & Gemini 2.5 Flash Integration (Environment & Orchestration). → [AI Concierge Logic](./08_AI_CONCIERGE_LOGIC.md)
+*   [ ] **Task 2.11**: Implement AI Global Concierge Tools (Kakao, KTO API & DB Connectors). → [AI Concierge Spec](../03_Specs/04_AI_CONCIERGE_SPEC.md), [AI Concierge Logic](./08_AI_CONCIERGE_LOGIC.md)
 *   [x] **Task 2.7**: Implement Global Layout (Header/Footer). → [UI Design](../01_Foundation/05_UI_DESIGN.md)
 *   [ ] **Task 2.6**: Implement Search Results Page (Filters, Map View).
 *   [ ] Implement Property Detail Page (Gallery Modal, Info Cards).

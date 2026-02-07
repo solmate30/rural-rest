@@ -65,10 +65,21 @@ The interface blends **rustic warmth** with **modern clarity**. It evokes the fe
 
 ### 5.4. Home Featured Stays (실시간 필터 목록)
 *   **위치**: 랜딩 페이지 Hero 아래, Featured Stays 섹션.
-*   **동작**: 스마트 검색 바(거점 배지, 예산 슬라이더) 선택에 따라 **같은 페이지에서** 카드 목록이 즉시 필터링됨. 기본 약 50개 표시, 지역 선택 또는 가격 하향 시 조건에 맞는 카드만 남아 개수가 줄어듦.
+*   **동작**: 스마트 검색 바(거점 지도, 예산 슬라이더) 선택에 따라 **같은 페이지에서** 카드 목록이 즉시 필터링됨. 기본 약 50개 표시, 지역 선택 또는 가격 하향 시 조건에 맞는 카드만 남아 개수가 줄어듦.
 *   **피드백**: "현재 N곳의 빈집이 기다리고 있어요" 문구는 필터 결과 개수(N)로 갱신.
 *   **Empty State**: 조건에 맞는 숙소가 0건일 때 "조건에 맞는 숙소가 없어요. 지역이나 예산을 바꿔 보세요." 등 안내 문구 표시.
 *   **참조**: [Search & Filter Logic](../04_Logic/07_SEARCH_AND_FILTER_LOGIC.md) Section 3.4.
+
+### 5.5. Interactive Rural Map (거점 선택 지도)
+*   **Concept**: 단순 배지 목록 대신, 한국 지도의 실루엣 위에 주요 거점을 포인트로 표시하여 시각적 탐색 경험 제공.
+*   **Visual Style**:
+    *   **SVG 기반**: 가벼운 벡터 지도로 로딩 최적화.
+    *   **Colors**: 지도 배경은 `#F5F5F0`(Soft Neutral), 선택되지 않은 포인트는 `#D7CCC8`, 선택된 포인트는 `Primary (#8D6E63)`.
+    *   **Hand-drawn Feel**: 딱딱한 실사 지도가 아닌, Rural Rest의 톤에 맞춘 부드러운 라인의 일러스트형 SVG 활용.
+*   **Interactions**:
+    *   **Hover**: 포인트 위에 마우스 오버 시 지역명 툴팁(Tooltip) 노출 및 포인트 크기 확대 (`scale-125`).
+    *   **Click**: 포인트 클릭 시 해당 지역 활성화. 이미 선택된 지역 클릭 시 전체 지역으로 초기화.
+    *   **Responsiveness**: 모바일에서는 지도가 너무 작아질 수 있으므로, 탭 가능한 충분한 크기의 포인트 아이콘 또는 하단 배지 목록 병행 검토.
 
 ## 6. Global Layout (Header & Footer)
 Standard design for shared layouts across all pages.
@@ -94,6 +105,12 @@ The Footer provides essential credibility and navigation at the bottom of every 
     *   **Social**: Instagram, YouTube icons.
     *   **Copy**: "© 2026 Rural Rest Inc. All rights reserved."
 
+### 6.3. AI Concierge Entry Point (Ask AI)
+*   **목적**: 게스트가 AI 컨시어지(교통·정책·한국 여행 정보)에 진입하는 UI.
+*   **권장 위치**: 헤더 우측(로그인/아바타 근처) 고정 아이콘 또는 플로팅 버튼. 모바일에서는 하단 네비게이션 또는 플로팅 액션.
+*   **노출 페이지**: 전역(모든 게스트 페이지) 또는 Property Detail·Booking 등 컨텍스트가 있는 페이지부터 단계적 노출. (구현 시 결정)
+*   **참조**: [AI Concierge Spec](../03_Specs/04_AI_CONCIERGE_SPEC.md), [AI Concierge Logic](../04_Logic/08_AI_CONCIERGE_LOGIC.md).
+
 ## 7. Related Documents
 - **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - 사이트맵 및 사용자 플로우
 - **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 UX 원칙
@@ -102,3 +119,5 @@ The Footer provides essential credibility and navigation at the bottom of every 
 - **Prototype**: [Property Detail Review](../02_Prototype/01_DETAIL_PAGE_REVIEW.md) - 프로퍼티 상세 페이지 디자인 적용 사례
 - **Prototype**: [Booking Page Review](../02_Prototype/02_BOOKING_PAGE_REVIEW.md) - 예약 페이지 디자인 적용 사례
 - **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 대시보드 디자인 적용 사례
+- **Specs**: [AI Concierge Spec](../03_Specs/04_AI_CONCIERGE_SPEC.md) - AI 진입점 연계 (Section 6.3)
+- **Logic**: [AI Concierge Logic](../04_Logic/08_AI_CONCIERGE_LOGIC.md) - 에이전트 워크플로우

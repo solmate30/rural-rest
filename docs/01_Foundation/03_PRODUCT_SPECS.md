@@ -17,7 +17,10 @@ The primary accommodation type is **Modernized Dormitory (70%)** for social inte
 
 ### 2.2. Value-Add Services (Solving Pain Points)
 *   **Auto-Translation Chat**: Seamless communication between foreign guests and local hosts. (MVP Must-Have)
-*   **Transport Concierge**: Integration with local transport or shuttle service booking to solve "hard to reach" issues. (Essential - Requires Local Govt Partnership)
+*   **AI Global Concierge (Gemini 2.5 Flash)**: 
+    *   **Scope**: Provides transport guidance (shuttle/taxi), web-wide application help (bookings, policies), and general South Korea travel information.
+    *   **Technology**: Built with **LangGraph** for stateful, complex reasoning and **Gemini 2.5 Flash** for high-speed, multimodal intelligence.
+    *   **Goal**: Act as a "Local Buddy" (시골 친구) that knows everything about the stay and the surrounding region. (Strategic Essential)
 *   **Local Guide Curation**: Detailed guides on hidden local spots, walking trails, and village stories.
 
 ### 2.3. Community & Experience (The Vibe)
@@ -75,3 +78,6 @@ The primary accommodation type is **Modernized Dormitory (70%)** for social inte
 - **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 번역 API 연동 로직
 - **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 예약 서비스 로직
 - **Logic**: [Auth & Session](../04_Logic/06_AUTH_AND_SESSION_LOGIC.md) - Better Auth 기반 인증 및 역할 관리
+- **Specs**: [AI Concierge Spec](../03_Specs/04_AI_CONCIERGE_SPEC.md) - AI 컨시어지 기술 스택 및 도구 명세 (Section 2.2 연계)
+- **Logic**: [AI Concierge Logic](../04_Logic/08_AI_CONCIERGE_LOGIC.md) - LangGraph 워크플로우 설계
+- **Test**: [AI Concierge Test Plan](../05_Test/03_AI_CONCIERGE_TEST_PLAN.md) - AI 컨시어지 시나리오 검증
