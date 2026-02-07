@@ -1,7 +1,15 @@
 import { Header, Button, Card, Badge, Slider, Footer } from "../components/ui-mockup";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useLoaderData } from "react-router";
+import { getFeaturedListings } from "../data/listings";
+
+export async function loader() {
+  const featuredListings = await getFeaturedListings();
+  return { featuredListings };
+}
 
 export default function Home() {
+  const { featuredListings } = useLoaderData<typeof loader>();
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [maxPrice, setMaxPrice] = useState(300000);
 
@@ -12,6 +20,14 @@ export default function Home() {
     { name: "인천 근처", value: "incheon" },
     { name: "제주도", value: "jeju" },
   ];
+
+  const filteredListings = useMemo(() => {
+    return featuredListings.filter((listing) => {
+      const matchesLocation = !selectedLocation || listing.location === selectedLocation;
+      const matchesPrice = listing.pricePerNight <= maxPrice;
+      return matchesLocation && matchesPrice;
+    });
+  }, [featuredListings, selectedLocation, maxPrice]);
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -41,7 +57,7 @@ export default function Home() {
                 <div className="space-y-3">
                   <label className="text-xs font-bold text-stone-500 uppercase tracking-widest pl-1">Where to?</label>
                   <div className="flex flex-wrap gap-2">
-                    {locations.slice(0, 4).map((loc) => (
+                    {locations.map((loc) => (
                       <Badge
                         key={loc.value}
                         variant={selectedLocation === loc.value ? "default" : "outline"}
@@ -80,7 +96,7 @@ export default function Home() {
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span>현재 서울 근처 12곳의 빈집이 기다리고 있어요</span>
+                  <span>현재 {selectedLocation ? locations.find(l => l.value === selectedLocation)?.name : "전체 지역"} {filteredListings.length}곳의 빈집이 기다리고 있어요</span>
                 </div>
                 <Button className="w-full sm:w-auto h-12 px-10 text-md font-bold rounded-full shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
                   숙소 찾기
@@ -94,33 +110,62 @@ export default function Home() {
         <section className="container mx-auto py-16 px-4 sm:px-8">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold tracking-tight">Featured Stays</h2>
-            <Button variant="ghost">View all</Button>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-stone-400 font-medium">{filteredListings.length}곳</span>
+              <Button variant="ghost">View all</Button>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="overflow-hidden group cursor-pointer border-none shadow-lg">
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img
-                    src="/house.png"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    alt="Rural House"
-                  />
-                </div>
-                <div className="p-6 bg-white">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-primary tracking-widest uppercase">Gangwon-do</span>
-                    <span className="text-sm font-medium">★ 4.9</span>
+
+          {filteredListings.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {filteredListings.map((listing) => (
+                <Card key={listing.id} className="overflow-hidden group cursor-pointer border-none shadow-lg">
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img
+                      src={listing.image}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      alt={listing.title}
+                    />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Grandma's Stone House</h3>
-                  <p className="text-muted-foreground text-sm line-clamp-2 mb-4">A peaceful retreat in a traditional stone house surrounded by orange groves.</p>
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <span className="text-lg font-bold">₩120,000 <span className="text-sm font-normal text-muted-foreground">/ night</span></span>
-                    <Button onClick={() => window.location.href = '/property/1'}>Details</Button>
+                  <div className="p-6 bg-white">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-primary tracking-widest uppercase">{listing.locationLabel}</span>
+                      <span className="text-sm font-medium">★ {listing.rating}</span>
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">{listing.title}</h3>
+                    <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{listing.description}</p>
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <span className="text-lg font-bold">₩{listing.pricePerNight.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">/ night</span></span>
+                      <Button onClick={(e) => {
+                        e.stopPropagation();
+                        window.location.href = `/property/${listing.id}`;
+                      }}>Details</Button>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="py-24 text-center">
+              <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-stone-50 mb-6">
+                <svg className="h-10 w-10 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-stone-900 mb-2">조건에 맞는 숙소가 없어요</h3>
+              <p className="text-stone-500 max-w-xs mx-auto">지역이나 예산을 바꿔 가며 당신만의 휴식처를 찾아보세요.</p>
+              <Button
+                variant="outline"
+                className="mt-8"
+                onClick={() => {
+                  setSelectedLocation(null);
+                  setMaxPrice(500000);
+                }}
+              >
+                필터 초기화
+              </Button>
+            </div>
+          )}
         </section>
       </main>
       <Footer />
