@@ -1,6 +1,6 @@
 # 01. Database Schema Specification (Turso + Drizzle ORM)
 > Created: 2026-02-07 17:15
-> Last Updated: 2026-02-07 21:00
+> Last Updated: 2026-02-08 00:00
 
 ## 1. Technology Stack
 *   **Database**: **Turso** (Build on libSQL, SQLite compatible Edge DB).
@@ -11,17 +11,57 @@
 ## 2. Core Entities (ERD Overview)
 The schema is designed for speed and simplicity, leveraging SQLite's JSON capabilities for flexibility.
 
-### 2.1. `users` Table
-Stores authentication and profile information.
+### 2.1. `users` Table (Better Auth)
+Stores authentication and profile information. Better Auth 기본 스키마를 확장하여 사용.
 *   **id**: Text (UUID v4) [Primary Key]
 *   **email**: Text [Unique, Not Null]
-*   **password_hash**: Text [Not Null] (Argon2 or similar)
 *   **name**: Text [Not Null] (Display Name)
-*   **role**: Text ('guest', 'host', 'admin') [Default: 'guest']
-*   **avatar_url**: Text [Nullable]
-*   **created_at**: Integer (Timestamp) [Not Null, Default: now()]
+*   **email_verified**: Integer (Boolean) [Default: false]
+*   **image**: Text [Nullable] (Avatar URL)
+*   **role**: Text ('guest', 'host', 'admin') [Default: 'guest'] - 추가 필드 (Better Auth `additionalFields`)
+*   **preferred_lang**: Text [Default: 'en'] - 추가 필드 (자동 번역 채팅 기능에서 활용)
+*   **created_at**: Integer (Timestamp) [Not Null]
+*   **updated_at**: Integer (Timestamp) [Not Null]
+*   **Note**: `password_hash`는 Better Auth의 `accounts` 테이블에 저장됨 (이메일/비밀번호 인증 시)
 
-### 2.2. `listings` Table
+### 2.2. `sessions` Table (Better Auth)
+Stores active user sessions for authentication.
+*   **id**: Text (UUID v4) [Primary Key]
+*   **expires_at**: Integer (Timestamp) [Not Null]
+*   **token**: Text [Unique, Not Null]
+*   **created_at**: Integer (Timestamp) [Not Null]
+*   **updated_at**: Integer (Timestamp) [Not Null]
+*   **ip_address**: Text [Nullable]
+*   **user_agent**: Text [Nullable]
+*   **user_id**: Text [Foreign Key -> users.id, Not Null]
+
+### 2.3. `accounts` Table (Better Auth)
+Stores OAuth provider accounts and email/password credentials.
+*   **id**: Text (UUID v4) [Primary Key]
+*   **account_id**: Text [Not Null] (Provider-specific user ID)
+*   **provider_id**: Text [Not Null] ('google', 'kakao', 'credential')
+*   **user_id**: Text [Foreign Key -> users.id, Not Null]
+*   **access_token**: Text [Nullable]
+*   **refresh_token**: Text [Nullable]
+*   **id_token**: Text [Nullable]
+*   **access_token_expires_at**: Integer (Timestamp) [Nullable]
+*   **refresh_token_expires_at**: Integer (Timestamp) [Nullable]
+*   **scope**: Text [Nullable]
+*   **password**: Text [Nullable] (Hashed password for email/password auth)
+*   **created_at**: Integer (Timestamp) [Not Null]
+*   **updated_at**: Integer (Timestamp) [Not Null]
+
+### 2.4. `verification` Table (Better Auth)
+Stores email verification tokens and password reset tokens.
+*   **id**: Text (UUID v4) [Primary Key]
+*   **identifier**: Text [Not Null] (Email address)
+*   **value**: Text [Not Null] (Verification token)
+*   **expires_at**: Integer (Timestamp) [Not Null]
+*   **created_at**: Integer (Timestamp) [Nullable]
+*   **updated_at**: Integer (Timestamp) [Nullable]
+
+
+### 2.6. `listings` Table
 Stores rural accommodation details.
 *   **id**: Text (UUID v4) [Primary Key]
 *   **host_id**: Text [Foreign Key -> users.id]
@@ -36,7 +76,7 @@ Stores rural accommodation details.
 *   **smart_lock_enabled**: Integer (Boolean 0/1) [Default: 0]
 *   **created_at**: Integer (Timestamp)
 
-### 2.3. `bookings` Table
+### 2.7. `bookings` Table
 Manages reservations and payments.
 *   **id**: Text (UUID v4) [Primary Key]
 *   **listing_id**: Text [Foreign Key -> listings.id]
@@ -50,7 +90,7 @@ Manages reservations and payments.
 *   **qr_code_expires_at**: Integer [Nullable]
 *   **created_at**: Integer (Timestamp)
 
-### 2.4. `reviews` Table
+### 2.8. `reviews` Table
 Stores guest feedback and ratings.
 *   **id**: Text (UUID v4) [Primary Key]
 *   **booking_id**: Text [Foreign Key -> bookings.id]
@@ -59,7 +99,7 @@ Stores guest feedback and ratings.
 *   **comment**: Text [Nullable]
 *   **created_at**: Integer (Timestamp)
 
-### 2.5. `activities` Table
+### 2.9. `activities` Table
 Manages add-on rural experiences (Bul-meong, Kimchi Making).
 *   **id**: Text (UUID v4) [Primary Key]
 *   **listing_id**: Text [Foreign Key -> listings.id]
@@ -69,7 +109,7 @@ Manages add-on rural experiences (Bul-meong, Kimchi Making).
 *   **max_participants**: Integer [Nullable]
 *   **is_active**: Integer (Boolean 0/1) [Default: 1]
 
-### 2.6. `messages` Table (Chat)
+### 2.10. `messages` Table (Chat)
 Supports auto-translated communication.
 *   **id**: Text (UUID v4) [Primary Key]
 *   **booking_id**: Text [Foreign Key -> bookings.id]
@@ -79,7 +119,7 @@ Supports auto-translated communication.
 *   **is_translation_success**: Integer (Boolean)
 *   **created_at**: Integer (Timestamp)
 
-### 2.7. `transport_requests` Table
+### 2.11. `transport_requests` Table
 Shuttle service and airport/terminal pickup requests.
 *   **id**: Text (UUID v4) [Primary Key]
 *   **booking_id**: Text [Foreign Key -> bookings.id]
@@ -122,3 +162,4 @@ export const listings = sqliteTable('listings', {
 - **Logic**: [Digital Key System](../04_Logic/03_DIGITAL_KEY_SYSTEM.md) - QR 체크인 로직
 - **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 채팅 자동 번역 데이터 저장 방식
 - **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 셔틀 서비스 예약 데이터 저장 방식
+- **Logic**: [Auth & Session](../04_Logic/06_AUTH_AND_SESSION_LOGIC.md) - `users`, `sessions`, `accounts` 테이블 사용 로직

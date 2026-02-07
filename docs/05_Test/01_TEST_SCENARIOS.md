@@ -171,4 +171,5 @@
 - **Logic**: [Search Algorithm](../04_Logic/02_SEARCH_ALGORITHM.md) - 검색 알고리즘 테스트 참조
 - **Logic**: [Translation Engine](../04_Logic/04_TRANSLATION_ENGINE.md) - 자동 번역 채팅 테스트 참조
 - **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 서비스 예약 테스트 참조
+- **Logic**: [Auth & Session](../04_Logic/06_AUTH_AND_SESSION_LOGIC.md) - 로그인 및 권한 검증 테스트 참조 (TC-G-010, TC-E-004)
 - **Test**: [QA Checklist](./02_QA_CHECKLIST.md) - 릴리스 기준 및 체크리스트

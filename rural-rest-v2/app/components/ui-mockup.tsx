@@ -1,10 +1,6 @@
 import * as React from "react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
-}
+import { authClient } from "~/lib/auth.client";
+import { cn } from "~/lib/utils";
 
 export function Button({
     className,
@@ -56,19 +52,54 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
 }
 
 export function Header() {
+    const sessionRes = authClient?.useSession();
+    const session = sessionRes?.data;
+    const isPending = sessionRes?.isPending || false;
+
+    const handleSignOut = async () => {
+        await authClient.signOut();
+        window.location.href = "/";
+    };
+
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-8">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
                     <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
                         <span className="text-white font-bold">R</span>
                     </div>
-                    <span className="text-xl font-bold tracking-tight text-foreground">Rural Rest</span>
+                    <span className="text-xl font-bold tracking-tight text-foreground text-primary">Rural Rest</span>
                 </div>
                 <nav className="hidden md:flex items-center gap-6">
                     <a href="/" className="text-sm font-medium hover:text-primary transition-colors">Find a Stay</a>
                     <a href="/admin" className="text-sm font-medium hover:text-primary transition-colors">Host your Home</a>
-                    <Button variant="outline" className="ml-4" onClick={() => window.location.href = '/auth'}>Login</Button>
+                    {!isPending && (
+                        session ? (
+                            <div className="flex items-center gap-4 ml-4">
+                                <div className="flex items-center gap-2.5">
+                                    {session.user.image ? (
+                                        <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-white ring-1 ring-stone-200 shadow-sm">
+                                            <img
+                                                src={session.user.image}
+                                                alt={session.user.name}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center border-2 border-white ring-1 ring-primary/20 shadow-sm">
+                                            <span className="text-xs font-bold text-primary">
+                                                {session.user.name?.charAt(0).toUpperCase()}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <span className="text-sm font-semibold text-foreground/80">{session.user.name}님</span>
+                                </div>
+                                <Button variant="outline" onClick={handleSignOut} className="h-9 px-4 text-xs font-bold">로그아웃</Button>
+                            </div>
+                        ) : (
+                            <Button variant="outline" className="ml-4" onClick={() => window.location.href = '/auth'}>Login</Button>
+                        )
+                    )}
                 </nav>
             </div>
         </header>

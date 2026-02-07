@@ -1,4 +1,11 @@
 import { Header, Button, Card } from "../components/ui-mockup";
+import { requireUser } from "../lib/auth.server";
+import type { Route } from "./+types/admin.dashboard";
+
+export async function loader({ request }: Route.LoaderArgs) {
+    // Only hosts and admins can access the dashboard
+    return await requireUser(request, ["host", "admin"]);
+}
 
 export default function AdminDashboard() {
     return (

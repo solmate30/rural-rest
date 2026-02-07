@@ -7,4 +7,5 @@ export default [
     route("book/:id", "routes/book.tsx"),
     route("admin", "routes/admin.dashboard.tsx"),
     route("admin/edit/:id", "routes/admin.edit.tsx"),
+    route("auth/*", "routes/auth.$.tsx"),
 ] satisfies RouteConfig;

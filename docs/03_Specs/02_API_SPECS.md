@@ -1,6 +1,6 @@
 # 02. API Specification (React Router v7 Pattern)
 > Created: 2026-02-07 17:25
-> Last Updated: 2026-02-07 17:25
+> Last Updated: 2026-02-08 00:00
 
 ## 1. Architecture Overview
 *   **Framework**: React Router v7 (Serverless Functions via Vercel).
@@ -13,10 +13,28 @@
 ## 2. Shared Utilities (Server-Side)
 These helper functions are used across multiple loaders and actions to ensure security and consistency.
 
-### 2.1. `requireUser(request: Request)`
-*   **Purpose**: Validates the session token from cookies/headers. Throws a redirect to `/login` if unauthorized.
-*   **Returns**: `User` object (id, email, role).
+### 2.1. `requireUser(request: Request, allowedRoles?: string[])`
+*   **Purpose**: Validates the session token from cookies/headers and checks user role. Throws a redirect to `/auth` if unauthorized.
+*   **Parameters**:
+    *   `request: Request` - HTTP request object
+    *   `allowedRoles?: string[]` - 허용된 역할 배열 (기본값: `["guest", "host", "admin"]`)
+*   **Returns**: `User` object (id, email, role, preferredLang).
+*   **Throws**: 
+    *   `redirect("/auth")` - 세션이 없을 경우
+    *   `Response("Forbidden", { status: 403 })` - 허용되지 않은 역할일 경우
 *   **Usage**: Must be called at the start of any protected `loader` or `action`.
+*   **Example**:
+    ```typescript
+    // 호스트/관리자만 접근 가능
+    export async function loader({ request }: Route.LoaderArgs) {
+      return await requireUser(request, ["host", "admin"]);
+    }
+    
+    // 모든 로그인 사용자 접근 가능 (기본값 사용)
+    export async function loader({ request }: Route.LoaderArgs) {
+      return await requireUser(request);
+    }
+    ```
 
 ### 2.2. `getSupabaseServerClient(request: Request)`
 *   **Purpose**: Returns an authenticated Supabase client instance for server-side DB operations.

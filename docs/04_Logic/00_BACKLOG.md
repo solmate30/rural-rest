@@ -1,6 +1,6 @@
 # 00. Product Backlog & Implementation Status
 > Created: 2026-02-07 17:34
-> Last Updated: 2026-02-07 17:34
+> Last Updated: 2026-02-07 23:50
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
@@ -9,7 +9,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [ ] **Task 2.1**: Setup Tech Stack (React Router v7, Drizzle, Turso).
 *   [ ] **Task 2.2**: Implement Database Schema (Tables: Users, Listings, Bookings).
 *   [ ] **Task 2.3**: Configure Cloudinary & Storage Utilities.
-*   [ ] **Task 2.4**: Implement Auth Logic (Sign Up/Login with Zod Validation).
+*   [x] **Task 2.4**: Implement Auth Logic (Better Auth integration, Social Login UI, requireUser utility). → [Auth & Session Logic](./06_AUTH_AND_SESSION_LOGIC.md)
 
 ## 2. Backlog (Upcoming)
 ### Frontend Implementation

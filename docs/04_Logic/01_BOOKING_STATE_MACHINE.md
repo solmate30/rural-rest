@@ -172,4 +172,5 @@ async function completePastBookings() {
 - **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 호스트 승인/거절 UI 프로토타입
 - **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `bookings` 테이블 구조 및 상태 필드
 - **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - Booking Process API 엔드포인트 (Section 3.4)
+- **Logic**: [Auth & Session](./06_AUTH_AND_SESSION_LOGIC.md) - 예약 생성 시 인증 검증 로직 (Unauthorized 처리)
 - **Test**: [Test Scenarios](../05_Test/01_TEST_SCENARIOS.md) - 예약 관련 테스트 케이스 (Section 2.2, 3.1)
