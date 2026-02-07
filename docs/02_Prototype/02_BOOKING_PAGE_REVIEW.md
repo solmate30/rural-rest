@@ -37,6 +37,7 @@
 ## 5. Related Documents
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 예약 및 결제 플로우 사이트맵 (Section 3.A.4)
 - **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - 디자인 시스템 및 폼 컴포넌트 가이드라인
+- **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) - 게스트 시나리오 Step 3 (원스톱 예약 및 Add-ons)
 - **Prototype**: [Property Detail Review](./01_DETAIL_PAGE_REVIEW.md) - 이전 단계 프로토타입
 - **Prototype**: [Admin Dashboard Review](./03_ADMIN_DASHBOARD_REVIEW.md) - 다음 단계 프로토타입
 - **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `bookings` 및 `activities` 테이블 구조

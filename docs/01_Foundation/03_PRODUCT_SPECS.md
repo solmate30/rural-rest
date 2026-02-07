@@ -61,6 +61,7 @@ The primary accommodation type is **Modernized Dormitory (70%)** for social inte
 ## 4. Related Documents
 - **Foundation**: [Vision & Core Values](./01_VISION_CORE.md) - 프로젝트 비전 및 타겟 오디언스
 - **Foundation**: [Lean Canvas](./02_LEAN_CANVAS.md) - 비즈니스 모델 및 핵심 기능 배경
+- **Foundation**: [Happy Path Scenarios](./07_HAPPY_PATH_SCENARIOS.md) - 핵심 사용자 여정 및 시나리오
 - **Foundation**: [Roadmap](./04_ROADMAP.md) - 기능 우선순위 및 단계별 계획
 - **Foundation**: [UI Design](./05_UI_DESIGN.md) - 디자인 시스템 및 컴포넌트 가이드라인
 - **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 관리 기능 우선순위

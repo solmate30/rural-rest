@@ -160,6 +160,7 @@
 
 ## 10. Related Documents
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 사용자 플로우 및 사이트맵 (테스트 시나리오 기반)
+- **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) - 본 테스트 케이스의 기준이 되는 핵심 사용자 여정
 - **Prototype**: [Landing Page Review](../02_Prototype/00_LANDING_PAGE_REVIEW.md) - 랜딩 페이지 테스트 대상
 - **Prototype**: [Property Detail Review](../02_Prototype/01_DETAIL_PAGE_REVIEW.md) - 프로퍼티 상세 페이지 테스트 대상
 - **Prototype**: [Booking Page Review](../02_Prototype/02_BOOKING_PAGE_REVIEW.md) - 예약 페이지 테스트 대상

@@ -44,6 +44,7 @@ Designed to address hygiene concerns common in rural stays.
 ## 5. Related Documents
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 프로퍼티 상세 페이지 사이트맵 및 사용자 플로우 (Section 3.A.3)
 - **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - 디자인 시스템 및 컬러 팔레트 (#8D6E63 Warm Brown)
+- **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) - 게스트 시나리오 Step 2 (Village Story 몰입)
 - **Prototype**: [Landing Page Review](./00_LANDING_PAGE_REVIEW.md) - 이전 단계 프로토타입
 - **Prototype**: [Booking Page Review](./02_BOOKING_PAGE_REVIEW.md) - 다음 단계 프로토타입
 - **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `listings` 테이블 구조

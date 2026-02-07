@@ -68,6 +68,7 @@ async function schedulePickup(bookingId: string, pickupData: { point: string, ar
 
 ## 5. Related Documents
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - Section 2.2 교통 컨시어지 기획 근거
+- **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) - 게스트 시나리오 Step 3, 4 (셔틀 예약 및 이용)
 - **Prototype**: [Booking Page Review](../02_Prototype/02_BOOKING_PAGE_REVIEW.md) - 셔틀 추가 옵션 선택 UI
 - **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 호스트용 도착 예정 내역 대시보드
 - **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - 관련 테이블 확장 필요

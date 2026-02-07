@@ -167,6 +167,7 @@ async function completePastBookings() {
 
 ## 6. Related Documents
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 예약 플로우 사이트맵 (Section 3.A.4)
+- **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) - 게스트 시나리오 Step 4, 호스트 시나리오 Step 2 (예약 승인)
 - **Prototype**: [Booking Page Review](../02_Prototype/02_BOOKING_PAGE_REVIEW.md) - 예약 페이지 UI 프로토타입
 - **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 호스트 승인/거절 UI 프로토타입
 - **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `bookings` 테이블 구조 및 상태 필드

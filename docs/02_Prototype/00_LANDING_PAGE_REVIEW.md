@@ -31,4 +31,5 @@
 ## 5. Related Documents
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 랜딩 페이지 사이트맵 및 사용자 플로우 (Section 3.A.1)
 - **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - 디자인 시스템 및 컴포넌트 가이드라인
+- **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) - 게스트 시나리오 Step 1 (발견 및 탐색)
 - **Prototype**: [Property Detail Page Review](./01_DETAIL_PAGE_REVIEW.md) - 다음 단계 프로토타입

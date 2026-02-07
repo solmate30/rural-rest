@@ -42,4 +42,5 @@ This roadmap defines the strategic execution plan for **Rural Rest**, prioritizi
 - **Foundation**: [Lean Canvas](./02_LEAN_CANVAS.md) - 비즈니스 모델 및 수익 구조
 - **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - MVP 기능 명세
 - **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 기능 우선순위
+- **Foundation**: [Happy Path Scenarios](./07_HAPPY_PATH_SCENARIOS.md) - 단계별 기능이 구현되는 사용자 여정
 - **Logic**: [Digital Key System](../04_Logic/03_DIGITAL_KEY_SYSTEM.md) - Phase 2 기능 상세 설계

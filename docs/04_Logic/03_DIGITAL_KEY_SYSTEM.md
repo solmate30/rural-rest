@@ -347,6 +347,7 @@ backup_keybox_code: Text [Nullable] // Fallback keybox code
 ## 9. Related Documents
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 체크인 프로세스 명세
 - **Foundation**: [Roadmap](../01_Foundation/04_ROADMAP.md) - 단계적 도입 전략
+- **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) - 게스트 시나리오 Step 4 (QR 코드 체크인)
 - **Logic**: [Booking State Machine](./01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리
 - **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - 스키마 확장 사항
 

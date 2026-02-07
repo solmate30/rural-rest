@@ -40,6 +40,7 @@
 - **Foundation**: [Admin Strategy](../01_Foundation/06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 기능 우선순위
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 호스트 대시보드 사이트맵 (Section 3.B)
 - **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - 디자인 시스템 및 데이터 시각화 가이드라인
+- **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) - 호스트 시나리오 (예약 승인, 자동 번역 소통)
 - **Prototype**: [Booking Page Review](./02_BOOKING_PAGE_REVIEW.md) - 이전 단계 프로토타입
 - **Specs**: [Admin Management Spec](../03_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 상세 기능 명세
 - **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `bookings`, `listings`, `activities` 테이블 구조

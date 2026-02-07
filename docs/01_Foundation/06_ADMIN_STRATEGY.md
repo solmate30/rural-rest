@@ -126,6 +126,7 @@ Admin 페이지는 Rural Rest 플랫폼의 **호스트(Host) 운영 전략**을 
 - **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - Host (Admin) Side 사이트맵 (Section 3.B)
 - **Foundation**: [Roadmap](./04_ROADMAP.md) - 단계별 기능 우선순위
 - **Foundation**: [UI Design](./05_UI_DESIGN.md) - 디자인 시스템 및 컴포넌트 가이드라인
+- **Foundation**: [Happy Path Scenarios](./07_HAPPY_PATH_SCENARIOS.md) - 호스트 시나리오 (Section 2) 및 운영 전략 구현 사례
 - **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 대시보드 프로토타입 리뷰
 - **Specs**: [Admin Management Spec](../03_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 상세 기능 명세
 - **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - Admin Dashboard API 엔드포인트

@@ -40,6 +40,7 @@
 
 ## 7. Related Documents
 - **Foundation**: [Lean Canvas](./02_LEAN_CANVAS.md) - 비즈니스 모델 및 수익 구조
+- **Foundation**: [Happy Path Scenarios](./07_HAPPY_PATH_SCENARIOS.md) - 핵심 사용자 여정 및 시나리오
 - **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - MVP 기능 명세 및 사이트맵
 - **Foundation**: [Roadmap](./04_ROADMAP.md) - 단계별 실행 전략
 - **Foundation**: [UI Design](./05_UI_DESIGN.md) - 디자인 시스템 가이드라인
