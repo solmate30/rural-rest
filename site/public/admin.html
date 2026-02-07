@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Admin Dashboard - Guest House</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Font: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#17cf54",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#112116",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: "Plus Jakarta Sans", sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-[#111813] dark:text-white antialiased">
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+<!-- Top App Bar -->
+<header class="flex items-center bg-white dark:bg-background-dark px-4 py-4 justify-between border-b border-[#dce5df] dark:border-white/10 shrink-0">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary/20" data-alt="Professional profile picture of the house owner" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBcn1sceg1SRy2c6EzUmVzTY9yYAgVdhtomw8KzNllpAHMr_vBo1-hSnPlDQDdN78KR_blf5bkDbPWRUOaEVCpsRWrS7ZRuHBN7caZak8ZlrOlgKctsG8wGN8TCrvKEKWzO62S3CUSwSNatSJPLOculMJ2RM9tZD7QPVNH0hyfRJcGVry4v2QKOSEw8Fkz4oPDiyfjYuJU3Od8ZAeROJ471fT-fvL2JGLnjifH5IVDaag7CLdYp5S28O-fq9PTAjlmTyD6LTu4Ki7I");'></div>
+<div class="flex flex-col">
+<p class="text-xs text-[#63886f] dark:text-gray-400 font-medium">Welcome back,</p>
+<h2 class="text-[#111813] dark:text-white text-base font-bold leading-tight">Alex Rivera</h2>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center justify-center rounded-full size-10 bg-background-light dark:bg-white/5 text-[#111813] dark:text-white">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Content (Scrollable) -->
+<main class="flex-1 overflow-y-auto pb-24">
+<!-- Key Metrics Section -->
+<div class="p-4">
+<h3 class="text-[#111813] dark:text-white text-sm font-bold uppercase tracking-wider mb-3">Today's Overview</h3>
+<div class="grid grid-cols-2 gap-3">
+<div class="flex flex-col gap-2 rounded-xl p-4 bg-white dark:bg-white/5 border border-[#dce5df] dark:border-white/10">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-primary">login</span>
+<span class="text-primary text-xs font-bold">+12%</span>
+</div>
+<p class="text-[#63886f] dark:text-gray-400 text-xs font-medium">Check-ins</p>
+<p class="text-[#111813] dark:text-white text-2xl font-extrabold leading-none">5</p>
+</div>
+<div class="flex flex-col gap-2 rounded-xl p-4 bg-white dark:bg-white/5 border border-[#dce5df] dark:border-white/10">
+<div class="flex items-center justify-between">
+<span class="material-symbols-outlined text-orange-500">logout</span>
+<span class="text-orange-500 text-xs font-bold">+5%</span>
+</div>
+<p class="text-[#63886f] dark:text-gray-400 text-xs font-medium">Check-outs</p>
+<p class="text-[#111813] dark:text-white text-2xl font-extrabold leading-none">3</p>
+</div>
+<div class="col-span-2 flex items-center justify-between gap-2 rounded-xl p-5 bg-primary/10 border border-primary/20">
+<div class="flex flex-col gap-1">
+<p class="text-[#111813] dark:text-white text-sm font-semibold">Monthly Revenue</p>
+<p class="text-[#111813] dark:text-white text-3xl font-extrabold tracking-tight">$12,450.00</p>
+</div>
+<div class="bg-primary/20 p-3 rounded-full">
+<span class="material-symbols-outlined text-primary text-3xl">payments</span>
+</div>
+</div>
+</div>
+</div>
+<!-- House Status Quick Action -->
+<div class="px-4 pb-4">
+<div class="flex flex-1 items-center justify-between gap-4 rounded-xl border border-[#dce5df] dark:border-white/10 bg-white dark:bg-white/5 p-5">
+<div class="flex items-center gap-4">
+<div class="bg-primary/10 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary">home_work</span>
+</div>
+<div class="flex flex-col">
+<p class="text-[#111813] dark:text-white text-base font-bold leading-tight">House Status</p>
+<p class="text-[#63886f] dark:text-gray-400 text-sm font-normal">Property is currently <span class="text-primary font-semibold">Open</span></p>
+</div>
+</div>
+<label class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-primary p-0.5 justify-end">
+<div class="h-[27px] w-[27px] rounded-full bg-white shadow-md"></div>
+<input checked="" class="invisible absolute" type="checkbox"/>
+</label>
+</div>
+</div>
+<!-- Recent Reservations Section -->
+<div class="px-4">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-[#111813] dark:text-white text-lg font-bold">Recent Reservations</h3>
+<button class="text-primary text-sm font-bold">View all</button>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Reservation Item 1 -->
+<div class="flex items-center justify-between bg-white dark:bg-white/5 border border-[#dce5df] dark:border-white/10 p-4 rounded-xl">
+<div class="flex items-center gap-3">
+<div class="size-11 rounded-full bg-background-light dark:bg-white/10 flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Avatar of Sarah Miller" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCd8bs2Law_O75RH7SSaKm25maeUEnpJ-2_0HJQLlfAOgsxMRB-7HwsadNvdgx_vocLQBC_BMrfnGPhkRz7kblcShlUOKn8Tjda3HA_4ziPgegW-KjpZ9wCpDJEsZ_qx22pF72cUR30JATkF4jcDbWEcibHMRkPiCgmxRTM71aMq5T5lJ1urFchB1eceM34VtjdroItnF5sAzxw8sNVAotZf43tdMlEdrFTi6m6wFEYPZN-ttVvG9bkts5aE0Ez1rYpw4CT4Kvxy9E"/>
+</div>
+<div class="flex flex-col">
+<p class="text-[#111813] dark:text-white font-bold text-sm">Sarah Miller</p>
+<p class="text-[#63886f] dark:text-gray-400 text-xs">Oct 14 - Oct 17</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">Confirmed</span>
+</div>
+<!-- Reservation Item 2 -->
+<div class="flex items-center justify-between bg-white dark:bg-white/5 border border-[#dce5df] dark:border-white/10 p-4 rounded-xl">
+<div class="flex items-center gap-3">
+<div class="size-11 rounded-full bg-background-light dark:bg-white/10 flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Avatar of James Wilson" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdlucohkXj8mj4TM_HDI3Tg72GunLdHx-O5mGwtadluqWqWXmI-jvex2HjULZEvrTOdFrgkkVLd9VhwGYF0GTCpu1y7lo8mDWz3W0RW-FwVxjDdxVlmTPXjUMt5olKXE8FZ5UsDRBUWkQcrJEXebuDYQsRq2uQqlgFXAFXv-5x9U1DudZ8VtNg39bfj5pAn0R4T7WxeI2QqLUU4k1OsK6DTduMhZt0m9C34e6OXh3xX4m-4FyOBWi_QpF6_T_Wk0XSpx8drgZgRKo"/>
+</div>
+<div class="flex flex-col">
+<p class="text-[#111813] dark:text-white font-bold text-sm">James Wilson</p>
+<p class="text-[#63886f] dark:text-gray-400 text-xs">Oct 16 - Oct 20</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase tracking-wider">Pending</span>
+</div>
+<!-- Reservation Item 3 -->
+<div class="flex items-center justify-between bg-white dark:bg-white/5 border border-[#dce5df] dark:border-white/10 p-4 rounded-xl">
+<div class="flex items-center gap-3">
+<div class="size-11 rounded-full bg-background-light dark:bg-white/10 flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Avatar of Elena Rodriguez" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_-ga1JrPNVu4vhgTbAXPFYMl88eZRXJQ2qXGP9AiAEyFtBuCQYXBlzvGREh6kc0LFabv8l_eXeYEdSb5CF0LJwvhd8Jk0YZOGwpBz2zpuI8983kSro89UkAmn17dp0Cj0_fZqwmpRhBXyXlnWkMdfKUmXKLSTa7f_Avf6fodGwdI-nZsPNvizM4HXd8KfSen1xRc1p7v6J93n9rdhufQ-DqfR9zo5MyRnDfdRXKELm93BqetU6fzV9jciRp_MWVG5mqqpFO6Fs6k"/>
+</div>
+<div class="flex flex-col">
+<p class="text-[#111813] dark:text-white font-bold text-sm">Elena Rodriguez</p>
+<p class="text-[#63886f] dark:text-gray-400 text-xs">Oct 18 - Oct 19</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">Confirmed</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar (iOS Style) -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-t border-[#dce5df] dark:border-white/10 pb-6 pt-2 px-6 flex justify-between items-center z-50">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined text-[28px]">dashboard</span>
+<span class="text-[10px] font-bold">Dashboard</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-[#63886f] dark:text-gray-400" href="#">
+<span class="material-symbols-outlined text-[28px]">calendar_month</span>
+<span class="text-[10px] font-medium">Reservations</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-[#63886f] dark:text-gray-400" href="#">
+<span class="material-symbols-outlined text-[28px]">apartment</span>
+<span class="text-[10px] font-medium">Houses</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-[#63886f] dark:text-gray-400" href="#">
+<span class="material-symbols-outlined text-[28px]">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</a>
+</nav>
+</div>
+</body></html>
