@@ -66,7 +66,8 @@ When the user asks to "document X" or "update documentation for X", follow these
         3.  **What (Value & Differentiation)**: What is our Unique Value Proposition? Why would they pay/use us over competitors?
         4.  **How (Feasibility)**: What must be in MVP (v1.0)? Platform constraints (Web/Mobile)? Legal/Security concerns?
         5.  **Distribution Strategy**: Output format (Responsive Web/PWA/App)? Hosting Platform (Vercel/Netlify)? Domain strategy?
-        6.  **Success (Strategy & Metrics)**: What are the KPIs? What are the biggest risks? Maintenance plan?
+        6.  **Global Layout & Brand Consistency**: Discuss the standard **Header and Footer** early. What links, logo, and legal information must be present on every page?
+        7.  **Success (Strategy & Metrics)**: What are the KPIs? What are the biggest risks? Maintenance plan?
     *   **Specs Phase**: Ask the following questions before creating `01_DB_SCHEMA.md` or `02_API_SPECS.md`:
         1.  **Tech Stack & Architecture**: Which Framework (Next.js/React)? Which DB (Supabase/Postgres/MySQL)? ORM (Prisma/Drizzle)?
         2.  **Data Models**: Which entities are core? (e.g., Users, Listings, Bookings). Key relationships? (1:N, N:M). Store images in DB or Storage (S3)?
