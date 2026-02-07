@@ -13,6 +13,8 @@ All documentation must reside in `docs/` and follow this hierarchy:
 
 | Layer | Directory | Purpose | Examples |
 | :--- | :--- | :--- | :--- |
+| **Root (Mgmt)** | `/` | **Project Management.** Git, Specs, Rules. | `AGENTS.md`, `docs/`, `.git/` |
+| **App (Impl)** | `/app-name/` | **Implementation.** Source Code, Build Config. | `src/`, `package.json`, `vite.config.ts` |
 | **Foundation** | `docs/01_Foundation/` | **Planning, Purpose, UI Design.** The "Constitution". | `01_LEAN_CANVAS.md`, `02_PRODUCT_SPECS.md`, `03_ROADMAP.md` |
 | **Prototype** | `docs/02_Prototype/` | **UI Results, Screen Flows.** The "Visual Proof". | `PROTOTYPE_REVIEW.md`, `SCREEN_FLOW.md` |
 | **Specs** | `docs/03_Specs/` | Detailed feature specifications, API inputs/outputs. The "Blueprints". | `auth_flow.md`, `db_schema.md` |
