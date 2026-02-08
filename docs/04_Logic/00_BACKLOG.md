@@ -1,6 +1,6 @@
 # 00. Product Backlog & Implementation Status
 > Created: 2026-02-07 17:34
-> Last Updated: 2026-02-08 21:50
+> Last Updated: 2026-02-08 22:10
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
@@ -20,11 +20,11 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [ ] **Task 2.11**: Implement AI Global Concierge Tools (Kakao, KTO API & DB Connectors). → [AI Concierge Spec](../03_Specs/04_AI_CONCIERGE_SPEC.md), [AI Concierge Logic](./08_AI_CONCIERGE_LOGIC.md)
 *   [x] **Task 2.7**: Implement Global Layout (Header/Footer). → [UI Design](../01_Foundation/05_UI_DESIGN.md)
 *   [x] **Task 2.6**: Implement Search Results Page (Filters, Map View). → 코드 구현 완료 (search.tsx, home.tsx 연동)
-*   [ ] Implement Property Detail Page (Gallery Modal, Info Cards).
+*   [x] Implement Property Detail Page (Gallery Modal, Info Cards). → 코드 구현 완료 (property.tsx 동적 데이터 연동)
 *   [ ] Implement Booking Flow (Date Selection, Guest Count, Payment Fake).
 
 ### Backend Logic
-*   [ ] Create API: `loader` for Listing Details.
+*   [x] Create API: `loader` for Listing Details. → 코드 구현 완료 (property.tsx loader)
 *   [ ] Create API: `action` for Booking Creation.
 *   [ ] Implement Admin Dashboard Data Fetching (Revenue/Occupancy).
 
