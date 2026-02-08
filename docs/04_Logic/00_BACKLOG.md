@@ -1,14 +1,14 @@
 # 00. Product Backlog & Implementation Status
 > Created: 2026-02-07 17:34
-> Last Updated: 2026-02-07 23:50
+> Last Updated: 2026-02-08 21:50
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
 ## 1. Current Sprint (High Priority)
 **(Focus: MVP Database & API Setup)**
-*   [ ] **Task 2.1**: Setup Tech Stack (React Router v7, Drizzle, Turso).
-*   [ ] **Task 2.2**: Implement Database Schema (Tables: Users, Listings, Bookings).
-*   [ ] **Task 2.3**: Configure Cloudinary & Storage Utilities.
+*   [x] **Task 2.1**: Setup Tech Stack (React Router v7, Drizzle, Turso). → 코드 구현 완료 (package.json, drizzle.config.ts, db/index.server.ts)
+*   [x] **Task 2.2**: Implement Database Schema (Tables: Users, Listings, Bookings). → 코드 구현 완료 (db/schema.ts: 8개 테이블)
+*   [x] **Task 2.3**: Configure Cloudinary & Storage Utilities. → 코드 구현 완료 (cloudinary.server.ts, use-cloudinary-upload.ts, api.sign-cloudinary.ts)
 *   [x] **Task 2.4**: Implement Auth Logic (Better Auth integration, Social Login UI, requireUser utility). → [Auth & Session Logic](./06_AUTH_AND_SESSION_LOGIC.md)
 
 ## 2. Backlog (Upcoming)
@@ -19,7 +19,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [ ] **Task 2.10**: Setup LangGraph & Gemini 2.5 Flash Integration (Environment & Orchestration). → [AI Concierge Logic](./08_AI_CONCIERGE_LOGIC.md)
 *   [ ] **Task 2.11**: Implement AI Global Concierge Tools (Kakao, KTO API & DB Connectors). → [AI Concierge Spec](../03_Specs/04_AI_CONCIERGE_SPEC.md), [AI Concierge Logic](./08_AI_CONCIERGE_LOGIC.md)
 *   [x] **Task 2.7**: Implement Global Layout (Header/Footer). → [UI Design](../01_Foundation/05_UI_DESIGN.md)
-*   [ ] **Task 2.6**: Implement Search Results Page (Filters, Map View).
+*   [x] **Task 2.6**: Implement Search Results Page (Filters, Map View). → 코드 구현 완료 (search.tsx, home.tsx 연동)
 *   [ ] Implement Property Detail Page (Gallery Modal, Info Cards).
 *   [ ] Implement Booking Flow (Date Selection, Guest Count, Payment Fake).
 

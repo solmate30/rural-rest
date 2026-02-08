@@ -8,4 +8,6 @@ export default [
     route("admin", "routes/admin.dashboard.tsx"),
     route("admin/edit/:id", "routes/admin.edit.tsx"),
     route("auth/*", "routes/auth.$.tsx"),
+    route("api/sign-cloudinary", "routes/api.sign-cloudinary.ts"),
+    route("search", "routes/search.tsx"),
 ] satisfies RouteConfig;

@@ -1,6 +1,33 @@
 import { Header, Button, Input, Card } from "../components/ui-mockup";
+import { useCloudinaryUpload } from "~/hooks/use-cloudinary-upload";
+import { useState, useRef } from "react";
 
 export default function AdminEdit() {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [images, setImages] = useState<string[]>([]);
+
+    // Cloudinary Upload Hook
+    const { upload, isUploading, progress } = useCloudinaryUpload({
+        type: "listing",
+        listingId: "listing_1", // Placeholder for testing
+        onSuccess: (result) => {
+            setImages((prev) => [...prev, result.secureUrl]);
+            console.log("Upload Success:", result);
+        },
+        onError: (error) => {
+            alert("Upload failed: " + error);
+        }
+    });
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        for (let i = 0; i < files.length; i++) {
+            await upload(files[i]);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-stone-50/50">
             <Header />
@@ -23,15 +50,55 @@ export default function AdminEdit() {
                             <span className="h-6 w-1 bg-primary rounded-full" />
                             Photo Manager
                         </h2>
-                        <Card className="p-10 border-dashed border-2 bg-stone-50 flex flex-col items-center justify-center space-y-4 min-h-[300px]">
-                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" x2="12" y1="3" y2="15" /></svg>
-                            </div>
-                            <div className="text-center">
-                                <p className="font-bold">Click to upload or drag and drop</p>
-                                <p className="text-sm text-muted-foreground">Highest quality (JPG/PNG) recommended.</p>
-                            </div>
-                            <Button variant="outline">Browse Files</Button>
+                        <input
+                            type="file"
+                            multiple
+                            className="hidden"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            accept="image/*"
+                        />
+                        <Card className="p-10 border-dashed border-2 bg-stone-50 flex flex-col items-center justify-center space-y-4 min-h-[300px] relative overflow-hidden">
+                            {isUploading && (
+                                <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center space-y-2">
+                                    <div className="w-48 h-2 bg-stone-200 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-primary transition-all duration-300"
+                                            style={{ width: `${progress}%` }}
+                                        />
+                                    </div>
+                                    <p className="text-xs font-medium text-primary uppercase tracking-widest">{progress}% Uploading...</p>
+                                </div>
+                            )}
+
+                            {images.length > 0 ? (
+                                <div className="grid grid-cols-3 gap-4 w-full">
+                                    {images.map((url, idx) => (
+                                        <div key={idx} className="aspect-video rounded-xl overflow-hidden border shadow-sm group relative">
+                                            <img src={url} alt={`Listing ${idx}`} className="w-full h-full object-cover" />
+                                            <button className="absolute top-2 right-2 h-6 w-6 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-stone-100 transition-colors"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                                        <span className="text-xs mt-1 font-medium">Add More</span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" x2="12" y1="3" y2="15" /></svg>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="font-bold">Click to upload or drag and drop</p>
+                                        <p className="text-sm text-muted-foreground">Highest quality (JPG/PNG) recommended.</p>
+                                    </div>
+                                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Browse Files</Button>
+                                </>
+                            )}
                         </Card>
                     </section>
 

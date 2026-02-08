@@ -1,6 +1,6 @@
 import { Header, Button, Card, Badge, Slider, Footer } from "../components/ui-mockup";
 import { useState, useMemo } from "react";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { getFeaturedListings } from "../data/listings";
 
 export async function loader() {
@@ -12,6 +12,16 @@ export default function Home() {
   const { featuredListings } = useLoaderData<typeof loader>();
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [maxPrice, setMaxPrice] = useState(300000);
+  const navigate = useNavigate();
+
+  function handleSearch() {
+    const params = new URLSearchParams();
+    if (selectedLocation) {
+      params.set("location", selectedLocation);
+    }
+    params.set("maxPrice", String(maxPrice));
+    navigate(`/search?${params.toString()}`);
+  }
 
   const locations = [
     { name: "서울 근처", value: "seoul-suburbs" },
@@ -98,7 +108,10 @@ export default function Home() {
                   </svg>
                   <span>현재 {selectedLocation ? locations.find(l => l.value === selectedLocation)?.name : "전체 지역"} {filteredListings.length}곳의 빈집이 기다리고 있어요</span>
                 </div>
-                <Button className="w-full sm:w-auto h-12 px-10 text-md font-bold rounded-full shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                <Button
+                  onClick={handleSearch}
+                  className="w-full sm:w-auto h-12 px-10 text-md font-bold rounded-full shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                >
                   숙소 찾기
                 </Button>
               </div>
@@ -138,7 +151,7 @@ export default function Home() {
                       <span className="text-lg font-bold">₩{listing.pricePerNight.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">/ night</span></span>
                       <Button onClick={(e) => {
                         e.stopPropagation();
-                        window.location.href = `/property/${listing.id}`;
+                        navigate(`/property/${listing.id}`);
                       }}>Details</Button>
                     </div>
                   </div>
