@@ -1,6 +1,6 @@
 # 03. Storage Policy (Cloudinary)
 > Created: 2026-02-07 17:32
-> Last Updated: 2026-02-07 17:32
+> Last Updated: 2026-02-08 21:30
 
 ## 1. Overview
 We use **Cloudinary** for storing and serving images. This ensures optimized delivery (WebP, auto-resize) and secure uploads without burdening our server.
@@ -37,5 +37,6 @@ To prevent unauthorized uploads, we use **Signed Uploads**.
 *   When a listing or user is deleted from DB, a trigger (or Action) must call Cloudinary Admin API to delete the associated folder.
 
 ## 5. Related Documents
-- **Specs**: [Database Schema](./01_DB_SCHEMA.md) - `listings.images` 및 `users.avatar_url` 필드 참조
+- **Specs**: [Cloudinary Implementation Guide](./05_CLOUDINARY_IMPLEMENTATION_GUIDE.md) - 본 정책의 코드 수준 구현 가이드
+- **Specs**: [Database Schema](./01_DB_SCHEMA.md) - `listings.images` 및 `user.image` 필드 참조
 - **Specs**: [API Specs](./02_API_SPECS.md) - 이미지 업로드 API 엔드포인트 명세
