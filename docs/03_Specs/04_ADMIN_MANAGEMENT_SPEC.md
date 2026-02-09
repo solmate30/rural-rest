@@ -1,9 +1,17 @@
 # 04. Admin Management Specification (Host Operations)
 > Created: 2026-02-07 20:36
-> Last Updated: 2026-02-07 20:36
+> Last Updated: 2026-02-10 12:00
 
 ## 1. Overview
 호스트가 자신의 숙소를 효율적으로 관리하고 운영할 수 있는 실질적인 도구들에 대한 상세 명세입니다. 단순히 지표를 보는 것을 넘어, 콘텐츠를 생산하고 수정하는 기능에 집중합니다.
+
+### 1.1. 구현 상태 (Implementation Status)
+| 기능 | 상태 | 비고 |
+|------|------|------|
+| Admin Dashboard (지표·숙소 목록) | 완료 | `admin.dashboard.tsx` loader, `admin-dashboard.server.ts` (매출/투숙률/대기 예약/오늘 체크인/호스트 숙소 목록) |
+| Admin Edit (숙소 편집 UI) | UI만 | Cloudinary 업로드 연동, 폼 필드 표시. **DB 저장(create/update) 미구현** |
+| Listing Create/Update to DB | 미구현 | 폼 제출 시 `listings` 테이블 insert/update 필요 |
+| 예약 승인/거절 Action | 미구현 | [API Specs](./02_API_SPECS.md) Section 3.5 Action 참조 |
 
 ## 2. Listing Content Management (숙소 콘텐츠 관리)
 
@@ -49,8 +57,9 @@
 ## 6. Related Documents
 - **Foundation**: [Admin Strategy](../01_Foundation/06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 기능 우선순위
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - Host (Admin) Side 사이트맵
-- **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 상위 대시보드 화면
-- **Prototype**: [Host Property Editor Review](../02_Prototype/05_ADMIN_EDITOR_REVIEW.md) - 상세 편집기 UI 리뷰
+- **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 대시보드 UI 및 Loader 구현 상태
+- **Prototype**: [Host Property Editor Review](../02_Prototype/05_ADMIN_EDITOR_REVIEW.md) - 상세 편집기 UI 리뷰 (Listing Create/Update 연동 대상)
 - **Specs**: [Database Schema](./01_DB_SCHEMA.md) - `listings` 및 `activities` 테이블 참조
-- **Specs**: [API Specs](./02_API_SPECS.md) - Admin Dashboard API 엔드포인트
+- **Specs**: [API Specs](./02_API_SPECS.md) - Admin Dashboard API 엔드포인트 (Section 3.5)
 - **Specs**: [Storage Policy](./03_STORAGE_POLICY.md) - 사진 업로드 보완 정책
+- **Logic**: [Backlog](../04_Logic/00_BACKLOG.md) - Admin Dashboard 데이터 연동 완료, Listing Create/Update 및 예약 승인 미구현 (Section 2)

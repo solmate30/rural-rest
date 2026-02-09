@@ -1,6 +1,8 @@
 # 03. Admin Dashboard Review (Host View V2)
 > Created: 2026-02-07 17:04
-> Last Updated: 2026-02-07 19:00
+> Last Updated: 2026-02-10 12:00
+
+**구현**: `/admin`, `/admin/dashboard` 라우트에서 Loader 연동 완료. 지표(매출·투숙률·대기 예약·오늘 체크인)·호스트 숙소 목록은 DB 조회 결과로 표시. 예약 승인/거절 Action 및 Recent Bookings 리스트는 미구현.
 
 ## 1. Prototype Link/Screenshot
 *   **Project Name**: Rural Rest V2
@@ -42,7 +44,9 @@
 - **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - 디자인 시스템 및 데이터 시각화 가이드라인
 - **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) - 호스트 시나리오 (예약 승인, 자동 번역 소통)
 - **Prototype**: [Booking Page Review](./02_BOOKING_PAGE_REVIEW.md) - 이전 단계 프로토타입
-- **Specs**: [Admin Management Spec](../03_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 상세 기능 명세
+- **Prototype**: [Host Property Editor Review](./05_ADMIN_EDITOR_REVIEW.md) - 숙소 편집 UI (Listing Create 연동 대상)
+- **Specs**: [Admin Management Spec](../03_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 상세 기능 명세 및 구현 상태 (Section 1.1)
 - **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `bookings`, `listings`, `activities` 테이블 구조
 - **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - Admin Dashboard API 엔드포인트 (Section 3.5)
+- **Logic**: [Backlog](../04_Logic/00_BACKLOG.md) - 대시보드 데이터 연동 완료, 예약 승인 및 Listing Create/Update 미구현 (Section 2)
 - **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 승인/거절 로직

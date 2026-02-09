@@ -1,6 +1,6 @@
 # 00. Product Backlog & Implementation Status
 > Created: 2026-02-07 17:34
-> Last Updated: 2026-02-09 22:00
+> Last Updated: 2026-02-10 12:00
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
@@ -27,7 +27,8 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] Create API: `loader` for Listing Details. → 코드 구현 완료 (property.tsx loader)
 *   [x] Create API: `action` for Booking Creation. → 코드 구현 완료 (book.tsx action: Mock 기반 성공 응답, 폼 검증 4종)
 *   [x] **Task 2.12**: Implement AI Global Concierge Chat UI. → 구현 완료 (Floating Chat UI, Global Layout 연동)
-*   [ ] Implement Admin Dashboard Data Fetching (Revenue/Occupancy).
+*   [x] Implement Admin Dashboard Data Fetching (Revenue/Occupancy). → 코드 구현 완료 (`admin-dashboard.server.ts`, `admin.dashboard.tsx` loader 연동)
+*   [ ] **Listing Create/Update to DB**: Admin Edit 페이지에서 폼 제출 시 `listings` 테이블에 insert/update. (현재 admin.edit.tsx는 UI만 있으며 action·loader 미구현)
 
 ### Design System
 *   [~] **Task 2.13**: Setup Shadcn/UI Components (Button, Card, Input, Dialog, ScrollArea, Avatar). → 기본 컴포넌트 설치 완료
@@ -38,3 +39,13 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] **Phase 1: Foundation** → [PHASE_1_FOUNDATION.md](00_ARCHIVE/PHASE_1_FOUNDATION.md)
 *   [x] **Phase 2: Prototype** → [PHASE_2_PROTOTYPE.md](00_ARCHIVE/PHASE_2_PROTOTYPE.md)
 *   [x] **Phase 3: Specs** → [PHASE_3_SPECS.md](00_ARCHIVE/PHASE_3_SPECS.md)
+
+## 4. Related Documents
+- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - MVP 기능 명세 및 호스트/게스트 사이트맵
+- **Foundation**: [Roadmap](../01_Foundation/04_ROADMAP.md) - NOW/NEXT/LATER 실행 계획
+- **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 대시보드 UI 및 구현 상태
+- **Prototype**: [Host Property Editor Review](../02_Prototype/05_ADMIN_EDITOR_REVIEW.md) - 숙소 편집 UI (Listing Create/Update 연동 대상)
+- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - Admin Dashboard Section 3.5 및 Booking/Listing API
+- **Specs**: [Admin Management Spec](../03_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 호스트 관리 명세 및 구현 상태 (Section 1.1)
+- **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `listings`, `bookings` 테이블 참조
+- **Test**: [Test Scenarios](../05_Test/01_TEST_SCENARIOS.md) - 핵심 시나리오 검증
