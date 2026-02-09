@@ -115,3 +115,21 @@ export const transportRequests = sqliteTable("transport_requests", {
     status: text("status", { enum: ["scheduled", "completed", "cancelled"] }).notNull().default("scheduled"),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });
+
+export const aiChatThreads = sqliteTable("ai_chat_threads", {
+    id: text("id").primaryKey(), // UUID v4 or Custom Thread ID
+    userId: text("user_id").notNull().references(() => user.id),
+    title: text("title"),
+    metadata: text("metadata", { mode: "json" }).default("{}"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+});
+
+export const aiChatMessages = sqliteTable("ai_chat_messages", {
+    id: text("id").primaryKey(), // UUID v4
+    threadId: text("thread_id").notNull().references(() => aiChatThreads.id),
+    role: text("role", { enum: ["system", "user", "assistant", "tool"] }).notNull(),
+    content: text("content").notNull(),
+    metadata: text("metadata", { mode: "json" }).default("{}"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+});

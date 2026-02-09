@@ -1,6 +1,6 @@
 # 07. Property Detail Page Implementation Guide
 > Created: 2026-02-08 22:10
-> Last Updated: 2026-02-08 22:10
+> Last Updated: 2026-02-09 15:00
 
 본 문서는 Property Detail Page 및 Listing Details Loader 구현을 위한 코드 수준 상세 가이드이다.
 
@@ -11,10 +11,10 @@
 | 항목 | 결정 |
 |:---|:---|
 | 데이터 소스 | Mock data 확장 (`app/data/listings.ts`) |
-| 섹션 | Gallery Grid + About + Amenities + Host Info + Reviews(목 데이터) + Booking Card(Sticky) |
+| 섹션 | Gallery Grid + About + Amenities + Host Info + **Location & Map (Mock)** + **Getting Here (Transport)** + Reviews + Booking Card(Sticky) |
 | Gallery | Modal 구현 (Masonry 레이아웃, "모든 사진 보기" 버튼) |
 | Booking Card | `/book/:id`로 네비게이션 (로그인 체크 없이 이동) |
-| 지도 | 미포함 -- Task 2.9 (카카오/네이버 맵 API)에서 추가 |
+| 지도 | Mock 지도 (CSS 그라디언트 + SVG 등고선) -- Kakao Map API 확보 시 교체 |
 
 ### 1.2. 사용자 흐름
 
@@ -25,6 +25,8 @@
                                  - About This Home
                                  - Amenities
                                  - Host Info
+                                 - Location & Map (Mock)
+                                 - Getting Here (Transport)
                                  - Reviews
                                  - Booking Card (Sticky)
                                    "Reserve Now" 클릭
@@ -37,6 +39,27 @@
 기존 `Listing` 인터페이스를 확장하여 상세 페이지에 필요한 필드를 추가한다.
 
 ```typescript
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+export interface TransportOption {
+  mode: "train" | "bus" | "taxi" | "shuttle";
+  label: string;
+  routeName: string;
+  estimatedTime: string;
+  estimatedCost: string;
+  description: string;
+}
+
+export interface PickupPoint {
+  id: string;
+  name: string;
+  description: string;
+  estimatedTimeToProperty: string;
+}
+
 export interface Listing {
   id: string;
   title: string;
@@ -55,6 +78,11 @@ export interface Listing {
   hostBio: string;      // 호스트 소개
   about: string;        // 상세 설명 (description보다 긴 텍스트)
   reviews: Review[];    // 리뷰 목록
+  // -- 지도 & 교통 확장 필드 --
+  coordinates: Coordinates;
+  nearbyLandmarks: string[];
+  transportOptions: TransportOption[];
+  pickupPoints: PickupPoint[];
 }
 
 export interface Review {
@@ -179,6 +207,8 @@ property.tsx
   │     │     ├── About This Home
   │     │     ├── Amenities Grid
   │     │     ├── Host Info Card
+  │     │     ├── Location & Map (Mock) ← NEW
+  │     │     ├── Getting Here (Transport) ← NEW
   │     │     └── Reviews Section
   │     └── Right (lg:col-span-1)
   │           └── Booking Card (Sticky)
@@ -312,7 +342,48 @@ const [showGallery, setShowGallery] = useState(false);
 </section>
 ```
 
-### 4.7. Reviews Section
+### 4.7. Location & Map (Mock)
+
+CSS 그라디언트 배경과 SVG 등고선 패턴으로 지형을 시뮬레이션하는 Mock 지도이다. Kakao Map API 확보 시 `h-[280px]` div 블록만 `<Map>` 컴포넌트로 교체하면 된다.
+
+**구성 요소:**
+- `h-[280px]` 컨테이너: `bg-gradient-to-br from-green-50 via-emerald-50 to-lime-50`
+- SVG 등고선 패턴: `<pattern>` 엘리먼트로 타원형 반복
+- 중앙 핀 마커: Primary 색상 SVG 아이콘
+- 좌하단: 지역명 오버레이 (`listing.locationLabel`)
+- 우하단: 좌표 표시 (`listing.coordinates.lat`, `lng`)
+- 하단: 주변 랜드마크 pill 배지 목록 (`listing.nearbyLandmarks`)
+- 안내 배너: "Interactive Map -- coming soon" (`bg-primary/5`)
+
+**API 교체 경계:**
+
+| Mock 요소 | 실제 API 교체 대상 | 교체 범위 |
+|:---|:---|:---|
+| CSS 그라디언트 지도 div | `react-kakao-maps-sdk` `<Map>` + `<MapMarker>` | `h-[280px]` div 교체 |
+| `listing.coordinates` | DB listings 테이블 또는 Geocoding API | 동일 `{lat, lng}` 형식 유지 |
+| `listing.nearbyLandmarks` | Kakao Local API 또는 Admin 수동 입력 | 동일 `string[]` 형식 유지 |
+
+### 4.8. Getting Here (Transport)
+
+교통수단 카드를 2열 그리드로 표시하고, 셔틀 픽업 포인트를 하위 섹션으로 제공한다.
+
+**구성 요소:**
+- 2열 그리드: `TransportOption` 카드 (train/bus/taxi/shuttle)
+- 각 카드: `TransportIcon` (mode별 SVG) + label + routeName + description + 소요시간 + 예상비용
+- 셔틀 카드: `bg-primary/5 border-primary/20` 강조 스타일
+- 비용 "무료": `text-primary` 강조
+- 셔틀 픽업 포인트 하위 섹션: 포인트별 이름, 설명, 숙소까지 소요시간
+
+**헬퍼 함수:** `TransportIcon({ mode })` -- mode별 SVG 아이콘 반환 (train/bus/taxi/shuttle)
+
+**API 교체 경계:**
+
+| Mock 요소 | 실제 API 교체 대상 | 교체 범위 |
+|:---|:---|:---|
+| `listing.transportOptions` | Kakao Mobility Directions API | 동일 `TransportOption` 인터페이스, 서버 함수로 래핑 |
+| `listing.pickupPoints` | Admin 관리 → DB `pickup_points` 테이블 | 동일 `PickupPoint` 인터페이스 |
+
+### 4.9. Reviews Section
 
 ```tsx
 <section className="space-y-4">
@@ -354,7 +425,7 @@ const [showGallery, setShowGallery] = useState(false);
 </section>
 ```
 
-### 4.8. Booking Card (Sticky)
+### 4.10. Booking Card (Sticky)
 
 프로토타입의 Booking Card를 동적 데이터로 교체한다.
 
@@ -468,7 +539,8 @@ web/
 |:---|:---|:---|
 | 날짜 선택 | Booking Flow | Booking Card에 DatePicker 추가, nights 동적 계산 |
 | 인원 선택 | Booking Flow | Guests 드롭다운, maxGuests 검증 |
-| 지도 섹션 | Task 2.9 | Kakao/Naver Map API, 위치 핀, 교통 정보 |
+| 지도 섹션 | Task 2.9 (Mock 완료) | Mock 지도를 `react-kakao-maps-sdk` `<Map>` 컴포넌트로 교체 (Section 4.7 참조) |
+| 교통 안내 실시간화 | Task 2.9 (Mock 완료) | `TransportOption` 데이터를 Kakao Mobility API로 교체 (Section 4.8 참조) |
 | Activities 섹션 | Backlog | activities 테이블 연동, 추가 체험 목록 |
 | Village Story | Backlog | 빈집 재생 스토리 콘텐츠 |
 | DB 연동 | Backlog | Loader의 mock 조회를 Drizzle 쿼리로 교체 (Section 3.2 참조) |
@@ -482,6 +554,7 @@ web/
 - **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) Section 3.A.3 - Property Detail 사이트맵
 - **Foundation**: [Happy Path Scenarios](../01_Foundation/07_HAPPY_PATH_SCENARIOS.md) Step 2 - Village Story 몰입 시나리오
 - **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - 디자인 토큰 및 컴포넌트 가이드라인
-- **Logic**: [Future Roadmap Memo](../04_Logic/09_FUTURE_ROADMAP_MEMO.md) Section 2 - 카카오맵 연동 계획
+- **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 셔틀 예약 로직 및 Mock 데이터 모델 (Section 4.7-4.8 연계)
+- **Logic**: [Future Roadmap Memo](../04_Logic/09_FUTURE_ROADMAP_MEMO.md) Section 2 - 카카오맵 연동 계획 및 Mock-to-Real 전환 경로
 - **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 상태 전환 (Reserve -> Pending)
 - **Test**: [Test Scenarios](../05_Test/01_TEST_SCENARIOS.md) - Property Detail 관련 테스트 케이스

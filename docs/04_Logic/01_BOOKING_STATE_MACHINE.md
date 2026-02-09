@@ -1,11 +1,33 @@
 # Booking State Machine Design
 > Created: 2026-02-07 18:00
-> Last Updated: 2026-02-07 19:00
+> Last Updated: 2026-02-09 22:00
 
 ## 1. Context
 예약(Booking) 상태 관리는 Rural Rest 플랫폼의 핵심 비즈니스 로직입니다. 게스트가 예약을 생성한 후부터 체크아웃 완료까지의 전체 생명주기를 관리하며, 호스트의 승인/거절, 취소 정책, 결제 상태 등을 추적합니다.
 
 **관련 UI**: Property Detail Page → Booking Flow → My Trips Page → Admin Dashboard
+
+## 1.1. MVP 구현 상태 (2026-02-09)
+
+Booking Flow MVP가 `web/app/routes/book.tsx`에 구현되었다. 현재는 Mock 데이터 기반이며 DB insert 없이 action이 성공 응답을 반환한다.
+
+**구현된 상태 전이:**
+```
+Guest -> POST /book/:id -> action 검증 통과 -> { success: true, booking: { status: "pending" } }
+```
+
+**구현된 검증 로직 (action):**
+1. `requireUser(request)` -- 비인증 사용자 `/auth` 리다이렉트
+2. 필수 필드 검사 (checkIn, checkOut, guests)
+3. 날짜 순서 검사 (checkIn < checkOut)
+4. 과거 날짜 방지 (checkIn >= today)
+5. 최대 인원 검사 (guests <= listing.maxGuests)
+
+**Mock-to-Real 전환 시 필요한 작업:**
+- action 내부에서 `db.insert(bookings).values(...)` 호출 추가
+- 가용성 검사 (checkAvailability) 추가
+- 호스트 알림 로직 추가
+- 성공 시 redirect to `/trips/:id` 또는 별도 Confirmation 페이지로 전환
 
 ## 2. Business Rules
 - [ ] **Rule 1**: 게스트는 예약 생성 시 즉시 `pending` 상태로 시작 (호스트 승인 필요)

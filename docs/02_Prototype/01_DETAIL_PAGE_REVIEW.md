@@ -1,6 +1,6 @@
 # 01. Property Detail Page Review (V2)
 > Created: 2026-02-07 16:59
-> Last Updated: 2026-02-07 19:00
+> Last Updated: 2026-02-09 15:00
 
 ## 1. Prototype Link/Screenshot
 *   **Project Name**: Rural Rest V2
@@ -34,8 +34,8 @@ Designed to address hygiene concerns common in rural stays.
 *   **Whitespace**: Excellent use of spacing makes the dense text (descriptions, amenities) feel light.
 
 ### 3.2. Issues & To-Do (Fix before Logic)
-*   [ ] **Gallery View**: The hero image needs a "View All Photos" button or grid indicator.
-*   [ ] **Map Integration**: A small map snippet is still needed to show location context.
+*   [x] **Gallery View**: The hero image needs a "View All Photos" button or grid indicator. → 구현 완료 ("+N Photos" 버튼 + Gallery Modal)
+*   [x] **Map Integration**: A small map snippet is still needed to show location context. → Mock 지도 구현 완료 (CSS 그라디언트 + SVG 등고선 + 주변 랜드마크). Kakao Map API 확보 시 실제 지도로 교체 예정. → [Property Detail Guide](../03_Specs/07_PROPERTY_DETAIL_IMPLEMENTATION_GUIDE.md) Section 4.7
 *   [ ] **Review Summary**: Clicking the star rating should anchor down to the review section.
 
 ## 4. Next Step
@@ -48,4 +48,6 @@ Designed to address hygiene concerns common in rural stays.
 - **Prototype**: [Landing Page Review](./00_LANDING_PAGE_REVIEW.md) - 이전 단계 프로토타입
 - **Prototype**: [Booking Page Review](./02_BOOKING_PAGE_REVIEW.md) - 다음 단계 프로토타입
 - **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `listings` 테이블 구조
+- **Specs**: [Property Detail Guide](../03_Specs/07_PROPERTY_DETAIL_IMPLEMENTATION_GUIDE.md) - Section 4.7-4.8 Mock 지도 및 교통 안내 구현 상세
 - **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - Property Details API 엔드포인트 (Section 3.3)
+- **Logic**: [Transport Concierge](../04_Logic/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 컨시어지 로직 및 Mock 데이터 모델
