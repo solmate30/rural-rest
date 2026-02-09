@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "~/lib/auth.client";
 import { cn } from "~/lib/utils";
 import { useToast } from "~/hooks/use-toast";
@@ -103,6 +104,8 @@ export function Slider({
 }
 
 export function Header() {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
     const sessionRes = authClient?.useSession();
     const session = sessionRes?.data;
     const isPending = sessionRes?.isPending || false;
@@ -133,7 +136,7 @@ export function Header() {
                 <nav className="hidden md:flex items-center gap-6">
                     <a href="/" className="text-sm font-medium hover:text-primary transition-colors">Find a Stay</a>
                     <a href="/admin" className="text-sm font-medium hover:text-primary transition-colors">Host your Home</a>
-                    {!isPending && (
+                    {mounted && !isPending && (
                         session ? (
                             <div className="flex items-center gap-4 ml-4">
                                 <div className="flex items-center gap-2.5">

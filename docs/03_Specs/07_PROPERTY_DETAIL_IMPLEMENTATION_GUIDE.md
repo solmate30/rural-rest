@@ -1,6 +1,6 @@
 # 07. Property Detail Page Implementation Guide
 > Created: 2026-02-08 22:10
-> Last Updated: 2026-02-09 15:00
+> Last Updated: 2026-02-11 14:00
 
 본 문서는 Property Detail Page 및 Listing Details Loader 구현을 위한 코드 수준 상세 가이드이다.
 
@@ -11,10 +11,10 @@
 | 항목 | 결정 |
 |:---|:---|
 | 데이터 소스 | Mock data 확장 (`app/data/listings.ts`) |
-| 섹션 | Gallery Grid + About + Amenities + Host Info + **Location & Map (Mock)** + **Getting Here (Transport)** + Reviews + Booking Card(Sticky) |
+| 섹션 | Gallery Grid + About + Amenities + Host Info + **Location & Map (Google Maps)** + **Getting Here (Transport)** + Reviews + Booking Card(Sticky) |
 | Gallery | Modal 구현 (Masonry 레이아웃, "모든 사진 보기" 버튼) |
 | Booking Card | `/book/:id`로 네비게이션 (로그인 체크 없이 이동) |
-| 지도 | Mock 지도 (CSS 그라디언트 + SVG 등고선) -- Kakao Map API 확보 시 교체 |
+| 지도 | **Google Maps** 적용 완료. `app/components/PropertyMap.tsx`, `VITE_GOOGLE_MAPS_API_KEY` 사용. API 키 미설정 시 그라디언트 폴백 |
 
 ### 1.2. 사용자 흐름
 
@@ -25,7 +25,7 @@
                                  - About This Home
                                  - Amenities
                                  - Host Info
-                                 - Location & Map (Mock)
+                                 - Location & Map (Google Maps)
                                  - Getting Here (Transport)
                                  - Reviews
                                  - Booking Card (Sticky)
@@ -342,9 +342,9 @@ const [showGallery, setShowGallery] = useState(false);
 </section>
 ```
 
-### 4.7. Location & Map (Mock)
+### 4.7. Location & Map (Google Maps)
 
-CSS 그라디언트 배경과 SVG 등고선 패턴으로 지형을 시뮬레이션하는 Mock 지도이다. Kakao Map API 확보 시 `h-[280px]` div 블록만 `<Map>` 컴포넌트로 교체하면 된다.
+**구현**: `PropertyMap` 컴포넌트가 Google Maps JavaScript API를 동적 로드하여 `listing.coordinates`(lat/lng)에 마커를 표시한다. 환경 변수 `VITE_GOOGLE_MAPS_API_KEY`가 없거나 로드 실패 시 CSS 그라디언트 폴백을 표시한다.
 
 **구성 요소:**
 - `h-[280px]` 컨테이너: `bg-gradient-to-br from-green-50 via-emerald-50 to-lime-50`
@@ -353,15 +353,14 @@ CSS 그라디언트 배경과 SVG 등고선 패턴으로 지형을 시뮬레이�
 - 좌하단: 지역명 오버레이 (`listing.locationLabel`)
 - 우하단: 좌표 표시 (`listing.coordinates.lat`, `lng`)
 - 하단: 주변 랜드마크 pill 배지 목록 (`listing.nearbyLandmarks`)
-- 안내 배너: "Interactive Map -- coming soon" (`bg-primary/5`)
 
 **API 교체 경계:**
 
-| Mock 요소 | 실제 API 교체 대상 | 교체 범위 |
+| 요소 | 구현 | 비고 |
 |:---|:---|:---|
-| CSS 그라디언트 지도 div | `react-kakao-maps-sdk` `<Map>` + `<MapMarker>` | `h-[280px]` div 교체 |
-| `listing.coordinates` | DB listings 테이블 또는 Geocoding API | 동일 `{lat, lng}` 형식 유지 |
-| `listing.nearbyLandmarks` | Kakao Local API 또는 Admin 수동 입력 | 동일 `string[]` 형식 유지 |
+| 지도 | Google Maps (`PropertyMap.tsx`, `VITE_GOOGLE_MAPS_API_KEY`) | API 키 미설정 시 그라디언트 폴백 |
+| `listing.coordinates` | Mock / DB | 동일 `{lat, lng}` 형식. DB 또는 Geocoding 연동 시 유지 |
+| `listing.nearbyLandmarks` | Mock / Kakao Local 또는 Admin | 동일 `string[]` 형식 유지 |
 
 ### 4.8. Getting Here (Transport)
 
@@ -539,7 +538,7 @@ web/
 |:---|:---|:---|
 | 날짜 선택 | Booking Flow | Booking Card에 DatePicker 추가, nights 동적 계산 |
 | 인원 선택 | Booking Flow | Guests 드롭다운, maxGuests 검증 |
-| 지도 섹션 | Task 2.9 (Mock 완료) | Mock 지도를 `react-kakao-maps-sdk` `<Map>` 컴포넌트로 교체 (Section 4.7 참조) |
+| 지도 섹션 | Task 2.9 완료 | Google Maps 적용 (`PropertyMap`, Section 4.7) |
 | 교통 안내 실시간화 | Task 2.9 (Mock 완료) | `TransportOption` 데이터를 Kakao Mobility API로 교체 (Section 4.8 참조) |
 | Activities 섹션 | Backlog | activities 테이블 연동, 추가 체험 목록 |
 | Village Story | Backlog | 빈집 재생 스토리 콘텐츠 |

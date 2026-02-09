@@ -15,7 +15,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 ### Frontend Implementation
 *   [x] **Task 2.5**: Implement Smart Search UI (Location Badges, Price Slider). → [Search & Filter Logic](./07_SEARCH_AND_FILTER_LOGIC.md)
 *   [ ] **Task 2.8**: [REMOVED] Upgrade Location Selection to Interactive SVG Rural Map.
-*   [~] **Task 2.9**: Integrate Professional Map API (Kakao/Naver) for Property Detail Pages. → **Mock 완료** (CSS 그라디언트 지도 + 교통 안내 UI). Kakao API 키 확보 시 실제 API 교체 예정. → [Property Detail Guide](../03_Specs/07_PROPERTY_DETAIL_IMPLEMENTATION_GUIDE.md) Section 4.7-4.8
+*   [x] **Task 2.9**: Integrate Professional Map API for Property Detail Pages. → **Google Maps** 적용 완료 (`PropertyMap.tsx`, `VITE_GOOGLE_MAPS_API_KEY`). 교통 안내 UI는 Mock 유지. → [Property Detail Guide](../03_Specs/07_PROPERTY_DETAIL_IMPLEMENTATION_GUIDE.md) Section 4.7-4.8
 *   [x] **Task 2.10**: Setup LangGraph & Gemini Integration (Environment & Orchestration). → 구현 완료 (LangGraph workflow, DB Schema 확장)
 *   [x] **Task 2.11**: Implement AI Global Concierge Tools (Kakao, KTO API & DB Connectors). → 구현 완료 (Simulator 기반 상용 API 연동 및 실제 DB Connector 연결)
 *   [x] **Task 2.7**: Implement Global Layout (Header/Footer). → [UI Design](../01_Foundation/05_UI_DESIGN.md)
