@@ -34,7 +34,7 @@
 ## 2. 패키지 설치
 
 ```bash
-cd rural-rest-v2
+cd rural-rest
 npm install cloudinary
 ```
 
@@ -80,7 +80,7 @@ export { cloudinary };
 
 /**
  * 서명 업로드를 위한 파라미터 생성
- * @param folder - 업로드 대상 폴더 (e.g., "rural-rest-v2/listings/{id}")
+ * @param folder - 업로드 대상 폴더 (e.g., "rural-rest/listings/{id}")
  * @param preset - 변환 프리셋 이름
  */
 export function generateSignedParams(folder: string, preset?: string) {
@@ -180,12 +180,12 @@ export async function action({ request }: Route.ActionArgs) {
           { status: 400 }
         );
       }
-      folder = `rural-rest-v2/listings/${listingId}`;
+      folder = `rural-rest/listings/${listingId}`;
       preset = "listing_preset";
       break;
     }
     case "avatar": {
-      folder = `rural-rest-v2/users/${user.id}`;
+      folder = `rural-rest/users/${user.id}`;
       preset = "avatar_preset";
       break;
     }
@@ -425,7 +425,7 @@ await db
 import { deleteImage } from "~/lib/cloudinary.server";
 
 // public_id는 URL에서 추출하거나 별도 저장
-// 예: "rural-rest-v2/listings/abc123/hero" 형태
+// 예: "rural-rest/listings/abc123/hero" 형태
 await deleteImage(publicId);
 ```
 
@@ -435,7 +435,7 @@ await deleteImage(publicId);
 import { deleteFolder } from "~/lib/cloudinary.server";
 
 // Listing 삭제 action에서
-await deleteFolder(`rural-rest-v2/listings/${listingId}`);
+await deleteFolder(`rural-rest/listings/${listingId}`);
 await db.delete(listings).where(eq(listings.id, listingId));
 ```
 
@@ -454,7 +454,7 @@ await db.delete(listings).where(eq(listings.id, listingId));
 구현 완료 시 추가/수정되는 파일 목록:
 
 ```
-rural-rest-v2/
+rural-rest/
   app/
     lib/
       cloudinary.server.ts    # [신규] Cloudinary 설정 및 유틸리티

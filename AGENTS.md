@@ -45,6 +45,6 @@
 
 ### 3.1. 프로젝트 구조 표준 (Monorepo Strategy)
 - **Root Directory (`/`)**: 프로젝트의 **관리(Management)** 영역이다. Git, 문서(docs), 설정(AGENTS.md)을 포함한다.
-- **App Directory (`/rural-rest-v2`)**: 실제 **구현(Implementation)** 영역이다. 소스 코드, 빌드 설정, 의존성(package.json)을 포함한다.
+- **App Directory (`/web`)**: 실제 **구현(Implementation)** 영역이다. 소스 코드, 빌드 설정, 의존성(package.json)을 포함한다.
 - **Git 관리**: 반드시 **Root Directory**에서 수행하여 문서와 코드를 통합 관리한다.
 - **배포 설정**: 배포 서비스의 Root Directory를 **App Directory**로 지정한다.

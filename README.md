@@ -35,10 +35,10 @@
   - `docs/`: 5단계 문서 구조 (Foundation, Prototype, Specs, Logic, Test)
   - `AGENTS.md`, `CLAUDE.md`: AI·개발 규칙 및 컨벤션
   - `.env.example`: 환경 변수 템플릿 (실제 값은 커밋하지 않음)
-- **앱 (`/rural-rest-v2`)**: 구현 코드
+- **앱 (`/web`)**: 구현 코드
   - React Router SPA/SSR, 라우트·컴포넌트·API·DB 스키마·스타일
 
-배포 시 루트가 아닌 **앱 디렉터리(`rural-rest-v2`)를 루트로** 사용하는 것을 권장합니다.
+배포 시 루트가 아닌 **앱 디렉터리(`web`)를 루트로** 사용하는 것을 권장합니다.
 
 ---
 
@@ -54,7 +54,7 @@
 1. 저장소 클론 후 앱 디렉터리로 이동:
 
    ```bash
-   cd rural-rest-v2
+   cd web
    ```
 
 2. 의존성 설치:
@@ -64,7 +64,7 @@
    ```
 
 3. 환경 변수 설정:
-   - 프로젝트 **루트**의 `.env.example`을 참고하여 `rural-rest-v2/` 또는 루트에 `.env` 또는 `.env.local` 생성
+   - 프로젝트 **루트**의 `.env.example`을 참고하여 `web/` 또는 루트에 `.env` 또는 `.env.local` 생성
    - Better Auth, OAuth(Google/Kakao/Twitter), Cloudinary, Turso 등 필요한 값만 채워도 됨
 
 4. 개발 서버 실행:
@@ -83,7 +83,7 @@ npm run build
 npm run start
 ```
 
-Docker 사용 시 `rural-rest-v2/Dockerfile` 및 해당 디렉터리의 `README.md`를 참고하세요.
+Docker 사용 시 `web/Dockerfile` 및 해당 디렉터리의 `README.md`를 참고하세요.
 
 ---
 
@@ -103,7 +103,7 @@ Docker 사용 시 `rural-rest-v2/Dockerfile` 및 해당 디렉터리의 `README.
 
 ---
 
-## 스크립트 (rural-rest-v2)
+## 스크립트 (web)
 
 | 명령 | 설명 |
 |------|------|

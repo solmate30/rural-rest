@@ -10,8 +10,8 @@
 
 | 구분 | 구현 위치 | 참조 문서 |
 |------|-----------|-----------|
-| Footer | `rural-rest-v2/app/components/ui-mockup.tsx` (Footer) | `01_Foundation/05_UI_DESIGN.md` Section 6.2 |
-| Smart Search | `rural-rest-v2/app/routes/home.tsx` | `04_Logic/07_SEARCH_AND_FILTER_LOGIC.md`, `03_Specs/02_API_SPECS.md` Section 3.2 |
+| Footer | `web/app/components/ui-mockup.tsx` (Footer) | `01_Foundation/05_UI_DESIGN.md` Section 6.2 |
+| Smart Search | `web/app/routes/home.tsx` | `04_Logic/07_SEARCH_AND_FILTER_LOGIC.md`, `03_Specs/02_API_SPECS.md` Section 3.2 |
 | Backlog | - | `04_Logic/00_BACKLOG.md` |
 
 ---
@@ -59,7 +59,7 @@
 ## 4. 문서 구조 점검
 
 - **05_UI_DESIGN.md**: Section 5 다음을 6(Global Layout), 7(Related Documents)로 번호 정리 완료.
-- **07_SEARCH_AND_FILTER_LOGIC.md** 관련 문서 링크: `../../rural-rest-v2/app/routes/home.tsx` 경로는 `docs/04_Logic/` 기준으로 올바름.
+- **07_SEARCH_AND_FILTER_LOGIC.md** 관련 문서 링크: `../../web/app/routes/home.tsx` 경로는 `docs/04_Logic/` 기준으로 올바름.
 - **00_BACKLOG.md**: Task 2.5, 2.7 완료 반영 적절. Last Updated가 2026-02-07 23:50으로 되어 있어, Footer/검색 반영 후라면 날짜 갱신 권장.
 
 ---

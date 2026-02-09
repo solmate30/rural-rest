@@ -454,7 +454,7 @@ Gallery Grid:
 ## 6. 파일 구조 요약
 
 ```
-rural-rest-v2/
+web/
   app/
     routes/
       property.tsx     # [수정] loader 추가 + 동적 데이터 컴포넌트로 교체

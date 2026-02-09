@@ -6,7 +6,7 @@
 We use **Cloudinary** for storing and serving images. This ensures optimized delivery (WebP, auto-resize) and secure uploads without burdening our server.
 
 ## 2. Folder Structure
-*   **Root Folder**: `rural-rest-v2/`
+*   **Root Folder**: `rural-rest/`
     *   `listings/`
         *   `{listing_id}/` (e.g., `listing-uuid-123/`)
             *   `hero.jpg`

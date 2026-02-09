@@ -415,7 +415,7 @@ export default function SearchResults() {
 ## 7. 파일 구조 요약
 
 ```
-rural-rest-v2/
+web/
   app/
     routes/
       search.tsx       # [신규] Search Results 라우트 (loader + component)

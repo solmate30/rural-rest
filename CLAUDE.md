@@ -10,13 +10,13 @@ Rural Rest is an Airbnb-style platform for renovated abandoned houses in rural K
 
 This is a **split-root** project:
 - **Root (`/`)** -- Management layer: Git, documentation (`docs/`), project-level config (`AGENTS.md`, `DESIGN.md`)
-- **App (`/rural-rest-v2/`)** -- Implementation layer: all source code, dependencies, build config
+- **App (`/web/`)** -- Implementation layer: all source code, dependencies, build config
 
-Git operations run from root. App commands (`npm run dev`, etc.) run from `rural-rest-v2/`.
+Git operations run from root. App commands (`npm run dev`, etc.) run from `web/`.
 
 ## Development Commands
 
-All commands must be run from the `rural-rest-v2/` directory:
+All commands must be run from the `web/` directory:
 
 ```bash
 npm run dev          # Start dev server (Vite HMR, port 5173)
@@ -27,7 +27,7 @@ npm run typecheck    # react-router typegen && tsc
 
 No test runner or linter is currently configured. Type checking is the only verification step.
 
-Database migrations use Drizzle Kit (config at `rural-rest-v2/drizzle.config.ts`):
+Database migrations use Drizzle Kit (config at `web/drizzle.config.ts`):
 ```bash
 npx drizzle-kit generate   # Generate migration
 npx drizzle-kit push        # Push schema to database

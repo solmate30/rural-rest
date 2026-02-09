@@ -33,12 +33,12 @@ export async function action({ request }: Route.ActionArgs) {
                     { status: 400 }
                 );
             }
-            folder = `rural-rest-v2/listings/${listingId}`;
+            folder = `rural-rest/listings/${listingId}`;
             preset = "listing_preset";
             break;
         }
         case "avatar": {
-            folder = `rural-rest-v2/users/${user.id}`;
+            folder = `rural-rest/users/${user.id}`;
             preset = "avatar_preset";
             break;
         }

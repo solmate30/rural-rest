@@ -10,8 +10,8 @@
 
 | 구분 | 파일 | 문서 |
 |------|------|------|
-| 필터 로직·UI | `rural-rest-v2/app/routes/home.tsx` | 07_SEARCH_AND_FILTER_LOGIC.md Section 3.4 |
-| 목데이터 | `rural-rest-v2/app/data/listings.ts` | API_SPECS 3.1 (Listing 필드) |
+| 필터 로직·UI | `web/app/routes/home.tsx` | 07_SEARCH_AND_FILTER_LOGIC.md Section 3.4 |
+| 목데이터 | `web/app/data/listings.ts` | API_SPECS 3.1 (Listing 필드) |
 
 ---
 

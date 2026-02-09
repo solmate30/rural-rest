@@ -10,7 +10,7 @@ export { cloudinary };
 
 /**
  * 서명 업로드를 위한 파라미터 생성
- * @param folder - 업로드 대상 폴더 (e.g., "rural-rest-v2/listings/{id}")
+ * @param folder - 업로드 대상 폴더 (e.g., "rural-rest/listings/{id}")
  * @param preset - 변환 프리셋 이름
  */
 export function generateSignedParams(folder: string, preset?: string) {
