@@ -1,6 +1,6 @@
 # UI Design System & Guidelines
 > Created: 2026-02-07 16:22
-> Last Updated: 2026-02-08 12:00
+> Last Updated: 2026-02-11 12:00
 
 ## 1. Design Philosophy
 **Keywords**: Warm, Earthy, Vintage, Authentic, Lively Community.
@@ -111,6 +111,11 @@ The Footer provides essential credibility and navigation at the bottom of every 
 *   **노출 페이지**: 전역(모든 게스트 페이지) 또는 Property Detail·Booking 등 컨텍스트가 있는 페이지부터 단계적 노출. (구현 시 결정)
 *   **참조**: [AI Concierge Spec](../03_Specs/04_AI_CONCIERGE_SPEC.md), [AI Concierge Logic](../04_Logic/08_AI_CONCIERGE_LOGIC.md).
 
+### 6.4. 디자인 토큰 구현 상태 (Theme Implementation)
+*   **CSS 변수**: `app/app.css`의 `:root`에 Section 2 팔레트 반영 (Primary #8D6E63, Secondary #D7CCC8, Accent #FFAB91, Background #FAF9F6, Foreground #3E2723).
+*   **폰트**: Section 3 Body 폰트 적용. `tailwind.config.js`의 `fontFamily.sans`에 Noto Sans KR·Pretendard, `root.tsx` links에서 Google Fonts Noto Sans KR 로드.
+*   **컴포넌트**: Shadcn/UI (Button, Card, Input, Dialog, ScrollArea, Avatar, Toast) 설치 완료. `app/components/ui/` 참조. [Backlog](../04_Logic/00_BACKLOG.md) Section 2 Design System.
+
 ## 7. Related Documents
 - **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - 사이트맵 및 사용자 플로우
 - **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 UX 원칙
@@ -120,4 +125,5 @@ The Footer provides essential credibility and navigation at the bottom of every 
 - **Prototype**: [Booking Page Review](../02_Prototype/02_BOOKING_PAGE_REVIEW.md) - 예약 페이지 디자인 적용 사례
 - **Prototype**: [Admin Dashboard Review](../02_Prototype/03_ADMIN_DASHBOARD_REVIEW.md) - 대시보드 디자인 적용 사례
 - **Specs**: [AI Concierge Spec](../03_Specs/04_AI_CONCIERGE_SPEC.md) - AI 진입점 연계 (Section 6.3)
+- **Logic**: [Backlog](../04_Logic/00_BACKLOG.md) - 디자인 시스템 구현 상태 (Task 2.13, Tailwind Theme, Section 2)
 - **Logic**: [AI Concierge Logic](../04_Logic/08_AI_CONCIERGE_LOGIC.md) - 에이전트 워크플로우

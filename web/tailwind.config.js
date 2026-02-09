@@ -61,7 +61,8 @@ export default {
   		},
   		fontFamily: {
   			sans: [
-  				'Inter',
+  				'Pretendard',
+  				'Noto Sans KR',
   				'sans-serif'
   			]
   		},

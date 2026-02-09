@@ -1,6 +1,6 @@
 # 02. API Specification (React Router v7 Pattern)
 > Created: 2026-02-07 17:25
-> Last Updated: 2026-02-10 12:00
+> Last Updated: 2026-02-11 12:00
 
 ## 1. Architecture Overview
 *   **Framework**: React Router v7 (Serverless Functions via Vercel).
@@ -93,7 +93,8 @@ These helper functions are used across multiple loaders and actions to ensure se
         4.  (Optional) Trigger Payment Gateway.
     *   **Redirect**: `/trips` or `/payment/success`
 
-### 3.5. Admin Dashboard (`/admin`, `/admin/dashboard`)
+### 3.5. Admin Dashboard (`/admin`)
+*   **경로**: 호스트 대시보드는 `/admin` 단일 경로만 사용 (중복 route id 방지를 위해 `/admin/dashboard` 별도 라우트 없음).
 *   **구현 상태**: Loader 및 대시보드 UI 연동 완료. Action(예약 승인/거절)은 미구현.
 *   **Loader (GET)**:
     *   **Security**: `requireUser(request, ["host", "admin"])`.

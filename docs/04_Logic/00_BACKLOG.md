@@ -1,6 +1,6 @@
 # 00. Product Backlog & Implementation Status
 > Created: 2026-02-07 17:34
-> Last Updated: 2026-02-10 12:00
+> Last Updated: 2026-02-11 12:00
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
@@ -31,8 +31,8 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [ ] **Listing Create/Update to DB**: Admin Edit 페이지에서 폼 제출 시 `listings` 테이블에 insert/update. (현재 admin.edit.tsx는 UI만 있으며 action·loader 미구현)
 
 ### Design System
-*   [~] **Task 2.13**: Setup Shadcn/UI Components (Button, Card, Input, Dialog, ScrollArea, Avatar). → 기본 컴포넌트 설치 완료
-*   [ ] Configure Tailwind Theme (Colors, Fonts).
+*   [x] **Task 2.13**: Setup Shadcn/UI Components (Button, Card, Input, Dialog, ScrollArea, Avatar). → Button, Card, Input, Dialog, ScrollArea, Avatar, Toast 설치 완료 (`app/components/ui/`)
+*   [x] Configure Tailwind Theme (Colors, Fonts). → `app.css` :root를 Warm Heritage(05_UI_DESIGN)에 맞춤 (Primary #8D6E63, Secondary #D7CCC8, Accent #FFAB91, Background #FAF9F6). `tailwind.config.js` fontFamily Noto Sans KR 반영, `root.tsx` 폰트 링크 추가
 
 ## 3. Completed (History)
 **(Archived to `docs/04_Logic/00_ARCHIVE/`)**

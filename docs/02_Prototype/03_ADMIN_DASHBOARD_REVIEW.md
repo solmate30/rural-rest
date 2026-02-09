@@ -1,8 +1,8 @@
 # 03. Admin Dashboard Review (Host View V2)
 > Created: 2026-02-07 17:04
-> Last Updated: 2026-02-10 12:00
+> Last Updated: 2026-02-11 12:00
 
-**구현**: `/admin`, `/admin/dashboard` 라우트에서 Loader 연동 완료. 지표(매출·투숙률·대기 예약·오늘 체크인)·호스트 숙소 목록은 DB 조회 결과로 표시. 예약 승인/거절 Action 및 Recent Bookings 리스트는 미구현.
+**구현**: `/admin` 라우트에서 Loader 연동 완료. 지표(매출·투숙률·대기 예약·오늘 체크인)·호스트 숙소 목록은 DB 조회 결과로 표시. 예약 승인/거절 Action 및 Recent Bookings 리스트는 미구현.
 
 ## 1. Prototype Link/Screenshot
 *   **Project Name**: Rural Rest V2

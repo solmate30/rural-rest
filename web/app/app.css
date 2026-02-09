@@ -4,45 +4,46 @@
 
 @layer base {
   :root {
-    /* Warm Heritage Minimalism Tokens */
-    --background: 34 33% 98%;
-    /* #fcfaf7 (Warm Beige) */
-    --foreground: 32 25% 23%;
-    /* #4a3b2c (Deep Wood) */
+    /* Warm Heritage Minimalism (05_UI_DESIGN.md) */
+    --background: 40 20% 97%;
+    /* #FAF9F6 Off-White */
+    --foreground: 12 28% 19%;
+    /* #3E2723 Charcoal */
 
     --card: 0 0% 100%;
-    --card-foreground: 32 25% 23%;
+    --card-foreground: 12 28% 19%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 32 25% 23%;
+    --popover-foreground: 12 28% 19%;
 
-    --primary: 140 62% 29%;
-    /* #2E7D32 (Primary Green) */
+    --primary: 17 18% 47%;
+    /* #8D6E63 Warm Brown */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 35 20% 90%;
-    --secondary-foreground: 32 25% 23%;
+    --secondary: 20 18% 81%;
+    /* #D7CCC8 Soft Clay */
+    --secondary-foreground: 12 28% 19%;
 
-    --muted: 35 10% 94%;
+    --muted: 35 15% 94%;
     --muted-foreground: 32 15% 45%;
 
-    --accent: 140 20% 94%;
-    --accent-foreground: 140 62% 29%;
+    --accent: 14 100% 78%;
+    /* #FFAB91 Terracotta */
+    --accent-foreground: 12 28% 19%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 35 15% 88%;
     --input: 35 15% 88%;
-    --ring: 140 62% 29%;
+    --ring: 17 18% 47%;
 
-    /* 12px rounding for absolute consistency */
     --radius: 0.75rem;
 
-    --chart-1: 140 62% 29%;
-    --chart-2: 32 25% 23%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
+    --chart-1: 17 18% 47%;
+    --chart-2: 12 28% 19%;
+    --chart-3: 20 18% 81%;
+    --chart-4: 14 100% 78%;
     --chart-5: 27 87% 67%;
   }
 
