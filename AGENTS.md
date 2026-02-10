@@ -8,29 +8,37 @@
 - **근거 기반 답변**: "아마도 그럴 것이다" 식의 추측을 금지하고, 반드시 도구(Tool)로 현재 상태를 검증한 후 답변한다.
 
 ## 2. 문서 관리 표준 (5-Layer Structure)
-개발 문서는 다음 **순번이 매겨진 5단계 구조**를 엄격히 준수한다.
+개발 문서는 다음 **폴더명과 역할**을 갖는 5단계 구조를 엄격히 준수한다.
 
-### 2.1. `docs/01_Concept_Design` (컨셉 & 디자인, 기존 Foundation)
-- 프로젝트의 **기획, 목적, 개요, UI 디자인, 기능 설명**을 포함한다. 컨셉과 디자인 가이드가 여기 있음을 명시.
-- **포함 내용**: `VISION.md`, `OVERVIEW.md`, `UI_DESIGN.md`
+| 순번 | 폴더명 | 역할 |
+| :--- | :--- | :--- |
+| 1 | `docs/01_Concept_Design/` | 컨셉과 디자인 가이드. 기획, 비전, 개요, UI 디자인, 기능 설명. |
+| 2 | `docs/02_UI_Screens/` | UI 스크린. 페이지별 완성된 모습·프로토타입 리뷰·화면 흐름 확인. |
+| 3 | `docs/03_Technical_Specs/` | 기술 명세. 데이터·API 등 기술적 약속, DB 스키마·구현 가이드. |
+| 4 | `docs/04_Logic_Progress/` | 로직과 진행. 백로그(진행 상태) + 비즈니스 로직·상태 관리·알고리즘. |
+| 5 | `docs/05_QA_Validation/` | QA와 검증. 테스트 시나리오·QA 체크리스트·시스템 검증. |
 
-### 2.2. `docs/02_UI_Screens` (UI 스크린, 기존 Prototype)
-- **UI-First 전략**에 따라 제작된 프로토타입의 결과물(스크린샷, 흐름도)이나 리뷰를 기록한다. 페이지별 완성된 모습을 확인하는 곳.
-- **포함 내용**: `PROTOTYPE_REVIEW.md`, `SCREEN_FLOW.md`
+### 2.1. `docs/01_Concept_Design` — 컨셉·디자인
+- **역할**: 프로젝트의 기획, 목적, 개요, UI 디자인, 기능 설명을 담는 컨셉·디자인 가이드.
+- **포함 예**: `VISION.md`, `OVERVIEW.md`, `UI_DESIGN.md`, `ROADMAP.md`
 
-### 2.3. `docs/03_Technical_Specs` (기술 명세, 기존 Specs)
-- 실제 코드를 작성하기 위해 **개발자가 참고해야 할 구체적인 지시서**이다. 데이터와 API 등 기술적 약속.
-- **포함 내용**: `login_spec.md`, `api_endpoints.md`, `db_schema.md`
+### 2.2. `docs/02_UI_Screens` — UI 스크린
+- **역할**: UI-First 전략에 따른 프로토타입 결과물(스크린샷, 흐름도) 및 리뷰. 페이지별 완성 모습 확인.
+- **포함 예**: `PROTOTYPE_REVIEW.md`, `SCREEN_FLOW.md`, 페이지별 리뷰 문서
 
-### 2.4. `docs/04_Logic_Progress` (로직 & 진행, 기존 Logic)
-- **백로그(진행 상태)**와 **비즈니스 로직, 상태 관리, 알고리즘**을 결합한다. UI와 데이터(DB/API)를 연결하는 설계.
-- **포함 내용**: `00_BACKLOG.md`, `business_rules.md`, `state_management.md`, `algorithm_design.md`
+### 2.3. `docs/03_Technical_Specs` — 기술 명세
+- **역할**: 개발자가 참고하는 구체적 지시서. 데이터·API 등 기술적 약속.
+- **포함 예**: `DB_SCHEMA.md`, `API_SPECS.md`, `STORAGE_POLICY.md`, 구현 가이드
 
-### 2.5. `docs/05_QA_Validation` (QA & 검증, 기존 Test)
-- 구현된 기능이 의도대로 동작하는지 **검증하는 문서**이다. 단순 테스트를 넘어 시스템 검증의 의미를 둔다.
-- **포함 내용**: `test_scenarios.md`, `qa_reports.md`
+### 2.4. `docs/04_Logic_Progress` — 로직·진행
+- **역할**: 백로그(진행 상태)와 비즈니스 로직·상태 관리·알고리즘 결합. UI와 데이터(DB/API) 연결 설계.
+- **포함 예**: `00_BACKLOG.md`, `00_ARCHIVE/`, 상태 머신·알고리즘 설계 문서
 
-### 2.5. 문서 작성 표준 (Metadata & Naming)
+### 2.5. `docs/05_QA_Validation` — QA·검증
+- **역할**: 구현 기능의 검증. 단순 테스트를 넘어 시스템 검증.
+- **포함 예**: `test_scenarios.md`, `qa_checklist.md`, 리뷰·감사 문서
+
+### 2.6. 문서 작성 표준 (Metadata & Naming)
 - **날짜 기록 필수**: 모든 문서의 최상단에는 **작성 일시(Created Date)**와 **최종 수정 일시(Last Updated Date)**를 반드시 명시한다.
 - **날짜 형식**: `YYYY-MM-DD HH:mm` 포맷을 사용한다.
 - **파일 네이밍**: 모든 파일명 앞에는 `01_`과 같은 **순번(Numbering)**을 반드시 붙여 생성 순서와 계층을 명확히 한다. (예: `01_VISION.md`, `02_UI_DESIGN.md`)

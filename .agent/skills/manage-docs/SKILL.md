@@ -9,15 +9,23 @@ This skill helps you maintain the project's documentation structure, ensuring co
 
 ## 1. Structure Overview
 
-All documentation must reside in `docs/` and follow this hierarchy:
+All documentation must reside in `docs/` and follow this hierarchy. **폴더명과 역할**은 아래와 같다.
 
-| Layer | Directory | Purpose | Examples |
+| 순번 | 폴더명 | 역할 |
+| :--- | :--- | :--- |
+| 1 | `docs/01_Concept_Design/` | 컨셉·디자인 가이드. 기획, 비전, UI 디자인, 로드맵. |
+| 2 | `docs/02_UI_Screens/` | UI 스크린. 페이지별 완성 모습·프로토타입 리뷰·화면 흐름. |
+| 3 | `docs/03_Technical_Specs/` | 기술 명세. 데이터·API 약속, DB 스키마·구현 가이드. |
+| 4 | `docs/04_Logic_Progress/` | 로직·진행. 백로그 + 비즈니스 로직·상태 관리·알고리즘. |
+| 5 | `docs/05_QA_Validation/` | QA·검증. 테스트 시나리오, QA 체크리스트, 시스템 검증. |
+
+| Layer | Directory | Purpose (EN) | Examples |
 | :--- | :--- | :--- | :--- |
-| **Concept & Design** | `docs/01_Concept_Design/` | **Planning, Purpose, UI Design.** The "Constitution". | `01_VISION_CORE.md`, `02_LEAN_CANVAS.md`, `03_PRODUCT_SPECS.md`, `04_ROADMAP.md`, `05_UI_DESIGN.md` |
-| **UI Screens** | `docs/02_UI_Screens/` | **UI Results, Screen Flows.** The "Visual Proof". | `00_LANDING_PAGE_REVIEW.md`, `01_DETAIL_PAGE_REVIEW.md`, `02_BOOKING_PAGE_REVIEW.md` |
-| **Technical Specs** | `docs/03_Technical_Specs/` | Data, API, implementation specs. The "Blueprints". | `01_DB_SCHEMA.md`, `02_API_SPECS.md`, `03_STORAGE_POLICY.md` |
-| **Logic & Progress** | `docs/04_Logic_Progress/` | **Backlog + Business Rules, Algorithms.** The "Brain". | `01_BOOKING_STATE_MACHINE.md`, `02_SEARCH_ALGORITHM.md`, `00_BACKLOG.md` |
-| **QA & Validation** | `docs/05_QA_Validation/` | Test scenarios, checklists, system validation. The "Audit Trails". | `01_TEST_SCENARIOS.md`, `02_QA_CHECKLIST.md` |
+| Concept_Design | `docs/01_Concept_Design/` | Planning, Purpose, UI Design. | `01_VISION_CORE.md`, `05_UI_DESIGN.md`, `04_ROADMAP.md` |
+| UI_Screens | `docs/02_UI_Screens/` | UI results, screen flows. | `00_LANDING_PAGE_REVIEW.md`, `01_DETAIL_PAGE_REVIEW.md` |
+| Technical_Specs | `docs/03_Technical_Specs/` | Data, API, implementation specs. | `01_DB_SCHEMA.md`, `02_API_SPECS.md` |
+| Logic_Progress | `docs/04_Logic_Progress/` | Backlog + business rules, algorithms. | `00_BACKLOG.md`, `01_BOOKING_STATE_MACHINE.md` |
+| QA_Validation | `docs/05_QA_Validation/` | Test scenarios, QA checklists, validation. | `01_TEST_SCENARIOS.md`, `02_QA_CHECKLIST.md` |
 
 ### 1.1. Layer Roles & Context Flow
 

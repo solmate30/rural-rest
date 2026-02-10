@@ -6,23 +6,23 @@
 2. 문서를 독단적으로 작성하지 않는다. 초안 작성 전, 반드시 사용자에게 핵심 질문을 던지고 답변을 바탕으로 작성한다 (Ask before Write).
 3. 기존 문서가 있으면 반드시 먼저 읽고, 컨텍스트와 스타일을 유지하며 업데이트한다. 덮어쓰지 않는다.
 
-## 5-Layer 구조
+## 5-Layer 구조 (폴더명 · 역할)
 
-| Layer | Directory | Purpose |
+| 순번 | 폴더명 | 역할 |
 | :--- | :--- | :--- |
-| Concept & Design | `docs/01_Concept_Design/` | 컨셉과 디자인 가이드 (기획, 비전, UI 디자인, 로드맵) |
-| UI Screens | `docs/02_UI_Screens/` | 페이지별 완성된 모습 확인 (UI 프로토타입 리뷰, 화면 흐름) |
-| Technical Specs | `docs/03_Technical_Specs/` | 데이터와 API 등 기술적 약속 (DB 스키마, API 명세, 구현 가이드) |
-| Logic & Progress | `docs/04_Logic_Progress/` | 백로그(진행상태)와 비즈니스 로직 결합 |
-| QA & Validation | `docs/05_QA_Validation/` | 단순 테스트를 넘어 시스템 검증 (테스트 시나리오, QA 체크리스트) |
+| 1 | `docs/01_Concept_Design/` | 컨셉·디자인 가이드. 기획, 비전, UI 디자인, 로드맵. |
+| 2 | `docs/02_UI_Screens/` | UI 스크린. 페이지별 완성 모습·프로토타입 리뷰·화면 흐름. |
+| 3 | `docs/03_Technical_Specs/` | 기술 명세. 데이터·API 약속, DB 스키마·구현 가이드. |
+| 4 | `docs/04_Logic_Progress/` | 로직·진행. 백로그 + 비즈니스 로직·상태 관리·알고리즘. |
+| 5 | `docs/05_QA_Validation/` | QA·검증. 테스트 시나리오, QA 체크리스트, 시스템 검증. |
 
-## 레이어 판별
+## 레이어 판별 (어디에 둘지)
 
-- 기획/UI 디자인/로드맵 → 01_Concept_Design
-- UI 프로토타입 결과/리뷰 → 02_UI_Screens
-- 상세 구현 명세 (DB, API) → 03_Technical_Specs
-- 비즈니스 로직/상태 머신/백로그 → 04_Logic_Progress
-- 테스트 계획/QA 보고 → 05_QA_Validation
+- 기획·UI 디자인·로드맵 → **01_Concept_Design**
+- UI 프로토타입 결과·리뷰 → **02_UI_Screens**
+- 상세 구현 명세 (DB, API) → **03_Technical_Specs**
+- 비즈니스 로직·상태 머신·백로그 → **04_Logic_Progress**
+- 테스트 계획·QA 보고 → **05_QA_Validation**
 
 ## 파일 작성 규칙
 

@@ -91,13 +91,13 @@ Docker 사용 시 `web/Dockerfile` 및 해당 디렉터리의 `README.md`를 참
 
 상세 기획·명세·비즈니스 로직은 `docs/` 아래 5단계 구조로 정리되어 있습니다.
 
-| 계층 | 경로 | 내용 |
+| 계층 | 폴더명 | 역할 |
 |------|------|------|
-| 1. Concept & Design | `docs/01_Concept_Design/` | 비전, 린 캔버스, 제품 명세, UI 디자인, 로드맵 |
-| 2. UI Screens | `docs/02_UI_Screens/` | 랜딩·상세·예약·관리자 등 프로토타입 리뷰 (페이지별 완성 모습) |
-| 3. Technical Specs | `docs/03_Technical_Specs/` | DB 스키마, API, 스토리지, 검색/상세 구현 가이드 |
-| 4. Logic & Progress | `docs/04_Logic_Progress/` | 백로그, 예약 상태, 검색·필터, 인증·세션, AI 컨시어지 등 로직 |
-| 5. QA & Validation | `docs/05_QA_Validation/` | 테스트 시나리오, QA 체크리스트, 리뷰 문서 |
+| 1 | `docs/01_Concept_Design/` | 컨셉·디자인 가이드. 기획, 비전, UI 디자인, 로드맵. |
+| 2 | `docs/02_UI_Screens/` | UI 스크린. 페이지별 완성 모습·프로토타입 리뷰·화면 흐름. |
+| 3 | `docs/03_Technical_Specs/` | 기술 명세. 데이터·API 약속, DB 스키마·구현 가이드. |
+| 4 | `docs/04_Logic_Progress/` | 로직·진행. 백로그 + 비즈니스 로직·상태 관리·알고리즘. |
+| 5 | `docs/05_QA_Validation/` | QA·검증. 테스트 시나리오, QA 체크리스트, 시스템 검증. |
 
 새 기능 구현 전에는 해당 계층 문서를 먼저 확인하는 것을 권장합니다.
 
