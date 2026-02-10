@@ -140,3 +140,4 @@ Rural Rest는 한국 농촌 빈집을 리모델링한 숙소를 글로벌 여행
 - **Foundation**: [Blockchain Roadmap](./09_BLOCKCHAIN_ROADMAP.md) - 블록체인 기능별 단계적 실행 전략
 - **Specs**: [Blockchain Infra Spec](../03_Technical_Specs/08_BLOCKCHAIN_INFRA_SPEC.md) - Solana 기술 스택 상세
 - **Logic**: [RWA Tokenization Logic](../04_Logic_Progress/12_RWA_TOKENIZATION_LOGIC.md) - RWA 비즈니스 로직
+- **Concept_Design**: [AI x Blockchain Synergy](./11_AI_BLOCKCHAIN_SYNERGY.md) - AI와 블록체인의 교차 시너지 비전
