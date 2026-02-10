@@ -39,14 +39,14 @@
 *   Proceed to **Technical Specs (03_Technical_Specs)** to define **Database Schema** and **API Endpoints**.
 
 ## 5. Related Documents
-- **Foundation**: [Admin Strategy](../01_Concept_&_Design/06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 기능 우선순위
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 호스트 대시보드 사이트맵 (Section 3.B)
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - 디자인 시스템 및 데이터 시각화 가이드라인
-- **Foundation**: [Happy Path Scenarios](../01_Concept_&_Design/07_HAPPY_PATH_SCENARIOS.md) - 호스트 시나리오 (예약 승인, 자동 번역 소통)
+- **Foundation**: [Admin Strategy](../01_Concept_Design/06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 기능 우선순위
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - 호스트 대시보드 사이트맵 (Section 3.B)
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - 디자인 시스템 및 데이터 시각화 가이드라인
+- **Foundation**: [Happy Path Scenarios](../01_Concept_Design/07_HAPPY_PATH_SCENARIOS.md) - 호스트 시나리오 (예약 승인, 자동 번역 소통)
 - **Prototype**: [Booking Page Review](./02_BOOKING_PAGE_REVIEW.md) - 이전 단계 프로토타입
 - **Prototype**: [Host Property Editor Review](./05_ADMIN_EDITOR_REVIEW.md) - 숙소 편집 UI (Listing Create 연동 대상)
 - **Specs**: [Admin Management Spec](../03_Technical_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 상세 기능 명세 및 구현 상태 (Section 1.1)
 - **Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - `bookings`, `listings`, `activities` 테이블 구조
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - Admin Dashboard API 엔드포인트 (Section 3.5)
-- **Logic**: [Backlog](../04_Logic_&_Progress/00_BACKLOG.md) - 대시보드 데이터 연동 완료, 예약 승인 및 Listing Create/Update 미구현 (Section 2)
-- **Logic**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 승인/거절 로직
+- **Logic**: [Backlog](../04_Logic_Progress/00_BACKLOG.md) - 대시보드 데이터 연동 완료, 예약 승인 및 Listing Create/Update 미구현 (Section 2)
+- **Logic**: [Booking State Machine](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 승인/거절 로직

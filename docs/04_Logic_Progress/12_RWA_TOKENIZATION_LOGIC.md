@@ -268,9 +268,9 @@ async function distributeDividends(tokenMint: string, period: string) {
 ---
 
 ## 8. Related Documents
-- **Foundation**: [Blockchain Vision](../01_Concept_&_Design/08_BLOCKCHAIN_VISION.md) - RWA 전략적 배경
-- **Foundation**: [Blockchain Roadmap](../01_Concept_&_Design/09_BLOCKCHAIN_ROADMAP.md) - Phase 3 마일스톤
+- **Foundation**: [Blockchain Vision](../01_Concept_Design/08_BLOCKCHAIN_VISION.md) - RWA 전략적 배경
+- **Foundation**: [Blockchain Roadmap](../01_Concept_Design/09_BLOCKCHAIN_ROADMAP.md) - Phase 3 마일스톤
 - **Prototype**: [RWA Dashboard Review](../02_UI_Screens/08_RWA_DASHBOARD_REVIEW.md) - 투자 대시보드 UI
 - **Specs**: [RWA Token Spec](../03_Technical_Specs/10_RWA_TOKEN_SPEC.md) - Anchor Program 명세, 토큰 설계
 - **Specs**: [Blockchain Infra Spec](../03_Technical_Specs/08_BLOCKCHAIN_INFRA_SPEC.md) - 온체인 인프라
-- **Test**: [Blockchain Test Scenarios](../05_QA_&_Validation/06_BLOCKCHAIN_TEST_SCENARIOS.md) - TC-BC-040~044
+- **Test**: [Blockchain Test Scenarios](../05_QA_Validation/06_BLOCKCHAIN_TEST_SCENARIOS.md) - TC-BC-040~044

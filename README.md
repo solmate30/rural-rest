@@ -32,7 +32,7 @@
 ## 저장소 구조 (Monorepo)
 
 - **루트 (`/`)**: 프로젝트 관리·문서·설정
-  - `docs/`: 5단계 문서 구조 (01_Concept_&_Design, 02_UI_Screens, 03_Technical_Specs, 04_Logic_&_Progress, 05_QA_&_Validation)
+  - `docs/`: 5단계 문서 구조 (01_Concept_Design, 02_UI_Screens, 03_Technical_Specs, 04_Logic_Progress, 05_QA_Validation)
   - `AGENTS.md`, `CLAUDE.md`: AI·개발 규칙 및 컨벤션
   - `.env.example`: 환경 변수 템플릿 (실제 값은 커밋하지 않음)
 - **앱 (`/web`)**: 구현 코드
@@ -93,11 +93,11 @@ Docker 사용 시 `web/Dockerfile` 및 해당 디렉터리의 `README.md`를 참
 
 | 계층 | 경로 | 내용 |
 |------|------|------|
-| 1. Concept & Design | `docs/01_Concept_&_Design/` | 비전, 린 캔버스, 제품 명세, UI 디자인, 로드맵 |
+| 1. Concept & Design | `docs/01_Concept_Design/` | 비전, 린 캔버스, 제품 명세, UI 디자인, 로드맵 |
 | 2. UI Screens | `docs/02_UI_Screens/` | 랜딩·상세·예약·관리자 등 프로토타입 리뷰 (페이지별 완성 모습) |
 | 3. Technical Specs | `docs/03_Technical_Specs/` | DB 스키마, API, 스토리지, 검색/상세 구현 가이드 |
-| 4. Logic & Progress | `docs/04_Logic_&_Progress/` | 백로그, 예약 상태, 검색·필터, 인증·세션, AI 컨시어지 등 로직 |
-| 5. QA & Validation | `docs/05_QA_&_Validation/` | 테스트 시나리오, QA 체크리스트, 리뷰 문서 |
+| 4. Logic & Progress | `docs/04_Logic_Progress/` | 백로그, 예약 상태, 검색·필터, 인증·세션, AI 컨시어지 등 로직 |
+| 5. QA & Validation | `docs/05_QA_Validation/` | 테스트 시나리오, QA 체크리스트, 리뷰 문서 |
 
 새 기능 구현 전에는 해당 계층 문서를 먼저 확인하는 것을 권장합니다.
 

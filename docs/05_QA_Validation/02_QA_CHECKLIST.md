@@ -207,14 +207,14 @@
 - [ ] 성능 메트릭 대시보드 모니터링
 
 ## 11. Related Documents
-- **Foundation**: [Roadmap](../01_Concept_&_Design/04_ROADMAP.md) - Phase별 완료 조건 및 우선순위
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 기능 명세 및 사이트맵
+- **Foundation**: [Roadmap](../01_Concept_Design/04_ROADMAP.md) - Phase별 완료 조건 및 우선순위
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - 기능 명세 및 사이트맵
 - **Prototype**: [Landing Page Review](../02_UI_Screens/00_LANDING_PAGE_REVIEW.md) - Phase 1 프로토타입 검증 대상
 - **Prototype**: [Property Detail Review](../02_UI_Screens/01_DETAIL_PAGE_REVIEW.md) - Phase 1 프로토타입 검증 대상
 - **Prototype**: [Booking Page Review](../02_UI_Screens/02_BOOKING_PAGE_REVIEW.md) - Phase 1 프로토타입 검증 대상
 - **Prototype**: [Admin Dashboard Review](../02_UI_Screens/03_ADMIN_DASHBOARD_REVIEW.md) - Phase 1 프로토타입 검증 대상
 - **Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - Phase 2 데이터베이스 검증 대상
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - Phase 2 API 검증 대상
-- **Logic**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - Phase 3 비즈니스 로직 검증 대상
-- **Logic**: [Search Algorithm](../04_Logic_&_Progress/02_SEARCH_ALGORITHM.md) - Phase 3 비즈니스 로직 검증 대상
+- **Logic**: [Booking State Machine](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) - Phase 3 비즈니스 로직 검증 대상
+- **Logic**: [Search Algorithm](../04_Logic_Progress/02_SEARCH_ALGORITHM.md) - Phase 3 비즈니스 로직 검증 대상
 - **Test**: [Test Scenarios](./01_TEST_SCENARIOS.md) - 상세 테스트 케이스 정의

@@ -55,8 +55,8 @@ AI 에이전트가 실행할 수 있는 도구 목록:
 *   **Error Handling**: API 레벨 try-catch + 클라이언트 에러 UI 피드백.
 
 ## 5. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - Section 2.2 AI Global Concierge 기획 근거
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - Section 2.2 AI Global Concierge 기획 근거
 - **Specs**: [API Specs](./02_API_SPECS.md) - 외부 API (Kakao, KTO) 연동 명세
-- **Logic**: [AI Concierge Logic](../04_Logic_&_Progress/08_AI_CONCIERGE_LOGIC.md) - LangGraph 5노드 그래프 설계
-- **Logic**: [Transport Concierge](../04_Logic_&_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 관련 기초 비즈니스 룰
-- **Test**: [AI Concierge Test Plan](../05_QA_&_Validation/03_AI_CONCIERGE_TEST_PLAN.md) - 시나리오 기반 검증 계획
+- **Logic**: [AI Concierge Logic](../04_Logic_Progress/08_AI_CONCIERGE_LOGIC.md) - LangGraph 5노드 그래프 설계
+- **Logic**: [Transport Concierge](../04_Logic_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 관련 기초 비즈니스 룰
+- **Test**: [AI Concierge Test Plan](../05_QA_Validation/03_AI_CONCIERGE_TEST_PLAN.md) - 시나리오 기반 검증 계획

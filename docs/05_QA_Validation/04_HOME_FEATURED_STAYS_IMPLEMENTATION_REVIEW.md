@@ -66,6 +66,6 @@
 
 ## 5. 관련 문서
 
-- **Logic**: [Search & Filter Logic](../04_Logic_&_Progress/07_SEARCH_AND_FILTER_LOGIC.md) - Section 3.4
+- **Logic**: [Search & Filter Logic](../04_Logic_Progress/07_SEARCH_AND_FILTER_LOGIC.md) - Section 3.4
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - Section 3.1
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - Section 5.4
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - Section 5.4

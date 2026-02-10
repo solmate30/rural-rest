@@ -31,8 +31,8 @@
 *   [ ] **Distance Info**: 마을 입구(정류장)로부터의 도보/셔틀 소요 시간 표시 필요.
 
 ## 4. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - Section 3.A.2 검색 결과 명세 참조
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - 지도 마커 및 카드 컴포넌트 디자인 가이드
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - Section 3.A.2 검색 결과 명세 참조
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - 지도 마커 및 카드 컴포넌트 디자인 가이드
 - **Prototype**: [Landing Page Review](./00_LANDING_PAGE_REVIEW.md) - 이전 단계 (검색 바 진입점)
 - **Prototype**: [Property Detail Review](./01_DETAIL_PAGE_REVIEW.md) - 다음 단계 (결과 클릭 시 이동)
-- **Logic**: [Search Algorithm](../04_Logic_&_Progress/02_SEARCH_ALGORITHM.md) - 거리 순, 체험 가중치 기반 검색 로직
+- **Logic**: [Search Algorithm](../04_Logic_Progress/02_SEARCH_ALGORITHM.md) - 거리 순, 체험 가중치 기반 검색 로직

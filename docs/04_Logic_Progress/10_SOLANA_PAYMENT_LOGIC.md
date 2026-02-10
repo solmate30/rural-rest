@@ -330,8 +330,8 @@ async function validateBalance(wallet: PublicKey, amount: number, tokenMint: str
 ---
 
 ## 7. Related Documents
-- **Foundation**: [Blockchain Roadmap](../01_Concept_&_Design/09_BLOCKCHAIN_ROADMAP.md) - Phase 1 결제 마일스톤
+- **Foundation**: [Blockchain Roadmap](../01_Concept_Design/09_BLOCKCHAIN_ROADMAP.md) - Phase 1 결제 마일스톤
 - **Specs**: [Solana Payment Spec](../03_Technical_Specs/09_SOLANA_PAYMENT_SPEC.md) - API 엔드포인트, 환율 처리
 - **Specs**: [Blockchain Infra Spec](../03_Technical_Specs/08_BLOCKCHAIN_INFRA_SPEC.md) - Payment Program 아키텍처
 - **Logic**: [Booking State Machine](./01_BOOKING_STATE_MACHINE.md) - 기존 예약 상태 머신
-- **Test**: [Blockchain Test Scenarios](../05_QA_&_Validation/06_BLOCKCHAIN_TEST_SCENARIOS.md) - TC-BC-010~016
+- **Test**: [Blockchain Test Scenarios](../05_QA_Validation/06_BLOCKCHAIN_TEST_SCENARIOS.md) - TC-BC-010~016

@@ -258,9 +258,9 @@ const WalletProvider = lazy(() => import('@solana/wallet-adapter-react'));
 ---
 
 ## 9. Related Documents
-- **Foundation**: [Blockchain Vision](../01_Concept_&_Design/08_BLOCKCHAIN_VISION.md) - Solana 선택 근거
-- **Foundation**: [Blockchain Roadmap](../01_Concept_&_Design/09_BLOCKCHAIN_ROADMAP.md) - Phase별 기술 도입 순서
+- **Foundation**: [Blockchain Vision](../01_Concept_Design/08_BLOCKCHAIN_VISION.md) - Solana 선택 근거
+- **Foundation**: [Blockchain Roadmap](../01_Concept_Design/09_BLOCKCHAIN_ROADMAP.md) - Phase별 기술 도입 순서
 - **Specs**: [Solana Payment Spec](./09_SOLANA_PAYMENT_SPEC.md) - 결제 프로그램 상세
 - **Specs**: [RWA Token Spec](./10_RWA_TOKEN_SPEC.md) - RWA 프로그램 상세
 - **Specs**: [DB Schema](./01_DB_SCHEMA.md) - 기존 DB 스키마 (확장 대상)
-- **Test**: [Blockchain Security Audit](../05_QA_&_Validation/07_BLOCKCHAIN_SECURITY_AUDIT.md) - 보안 감사 체크리스트
+- **Test**: [Blockchain Security Audit](../05_QA_Validation/07_BLOCKCHAIN_SECURITY_AUDIT.md) - 보안 감사 체크리스트

@@ -227,20 +227,20 @@
 - 발견된 이슈: [링크 또는 참조]
 
 ## 11. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 사용자 플로우 및 사이트맵 (테스트 시나리오 기반)
-- **Foundation**: [Happy Path Scenarios](../01_Concept_&_Design/07_HAPPY_PATH_SCENARIOS.md) - 본 테스트 케이스의 기준이 되는 핵심 사용자 여정
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - 사용자 플로우 및 사이트맵 (테스트 시나리오 기반)
+- **Foundation**: [Happy Path Scenarios](../01_Concept_Design/07_HAPPY_PATH_SCENARIOS.md) - 본 테스트 케이스의 기준이 되는 핵심 사용자 여정
 - **Prototype**: [Landing Page Review](../02_UI_Screens/00_LANDING_PAGE_REVIEW.md) - 랜딩 페이지 테스트 대상
 - **Prototype**: [Property Detail Review](../02_UI_Screens/01_DETAIL_PAGE_REVIEW.md) - 프로퍼티 상세 페이지 테스트 대상
 - **Prototype**: [Booking Page Review](../02_UI_Screens/02_BOOKING_PAGE_REVIEW.md) - 예약 페이지 테스트 대상
 - **Prototype**: [Admin Dashboard Review](../02_UI_Screens/03_ADMIN_DASHBOARD_REVIEW.md) - 호스트 대시보드 테스트 대상
 - **Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - 데이터베이스 통합 테스트 참조
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - API 엔드포인트 테스트 참조
-- **Logic**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직 테스트 참조
-- **Logic**: [Search Algorithm](../04_Logic_&_Progress/02_SEARCH_ALGORITHM.md) - 검색 알고리즘 테스트 참조
-- **Logic**: [Translation Engine](../04_Logic_&_Progress/04_TRANSLATION_ENGINE.md) - 자동 번역 채팅 테스트 참조
-- **Logic**: [Transport Concierge](../04_Logic_&_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 서비스 예약 테스트 참조
-- **Logic**: [Auth & Session](../04_Logic_&_Progress/06_AUTH_AND_SESSION_LOGIC.md) - 로그인/로그아웃 플로우 및 Toast 메시지 정의 (Section 4.4), 권한 검증 테스트 참조 (TC-G-010, TC-E-004)
-- **Logic**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 에러 핸들링 테스트 참조 (Section 5.1)
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - Toast 컴포넌트 디자인 가이드라인 (Section 5.3)
+- **Logic**: [Booking State Machine](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직 테스트 참조
+- **Logic**: [Search Algorithm](../04_Logic_Progress/02_SEARCH_ALGORITHM.md) - 검색 알고리즘 테스트 참조
+- **Logic**: [Translation Engine](../04_Logic_Progress/04_TRANSLATION_ENGINE.md) - 자동 번역 채팅 테스트 참조
+- **Logic**: [Transport Concierge](../04_Logic_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 서비스 예약 테스트 참조
+- **Logic**: [Auth & Session](../04_Logic_Progress/06_AUTH_AND_SESSION_LOGIC.md) - 로그인/로그아웃 플로우 및 Toast 메시지 정의 (Section 4.4), 권한 검증 테스트 참조 (TC-G-010, TC-E-004)
+- **Logic**: [Booking State Machine](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 에러 핸들링 테스트 참조 (Section 5.1)
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - Toast 컴포넌트 디자인 가이드라인 (Section 5.3)
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - 에러 핸들링 전략 및 Toast 사용 가이드 (Section 4)
 - **Test**: [QA Checklist](./02_QA_CHECKLIST.md) - 릴리스 기준 및 체크리스트

@@ -51,7 +51,7 @@ These helper functions are used across multiple loaders and actions to ensure se
         *   **권장 개수**: 홈 Featured Stays 실시간 필터용으로 약 50건 (또는 서비스 정책에 따른 상한).
         *   **Listing 필수 필드**: `id`, `location` (거점 값, e.g. `seoul-suburbs`, `busan-suburbs`, `gyeongju`, `incheon`, `jeju`), `pricePerNight` (숙박 단가). 그 외 제목, 이미지, 지역명 등 표시용 필드.
     *   **Caching**: Cache-Control: s-maxage=3600 (1 hour).
-    *   **참조**: [Search & Filter Logic](../04_Logic_&_Progress/07_SEARCH_AND_FILTER_LOGIC.md) Section 3.4 - 클라이언트에서 `location`/`pricePerNight` 기준 필터링.
+    *   **참조**: [Search & Filter Logic](../04_Logic_Progress/07_SEARCH_AND_FILTER_LOGIC.md) Section 3.4 - 클라이언트에서 `location`/`pricePerNight` 기준 필터링.
 
 ### 3.2. Search Results (`/search`)
 *   **Loader (GET)**:
@@ -215,16 +215,16 @@ toast({
 *   **Toast 에러**: 서버 측 유효성 검사 실패 또는 비즈니스 로직 에러는 Toast로 표시
 
 ## 5. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 사이트맵 및 사용자 플로우
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - Toast 컴포넌트 디자인 가이드라인 (Section 5.3)
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - 사이트맵 및 사용자 플로우
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - Toast 컴포넌트 디자인 가이드라인 (Section 5.3)
 - **Prototype**: [Admin Dashboard Review](../02_UI_Screens/03_ADMIN_DASHBOARD_REVIEW.md) - Admin Dashboard UI 및 Loader 구현 상태
 - **Specs**: [Database Schema](./01_DB_SCHEMA.md) - 데이터베이스 스키마 명세
 - **Specs**: [Admin Management Spec](./04_ADMIN_MANAGEMENT_SPEC.md) - 호스트 관리 명세 및 구현 상태 (Section 1.1)
-- **Logic**: [Backlog](../04_Logic_&_Progress/00_BACKLOG.md) - Admin Dashboard 데이터 연동 완료, Listing Create/Update 및 예약 승인 미구현 (Section 2)
-- **Logic**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 생성 및 승인 로직 (에러 처리 포함)
-- **Logic**: [Search Algorithm](../04_Logic_&_Progress/02_SEARCH_ALGORITHM.md) - 상세 검색 필터링 알고리즘
-- **Logic**: [Search & Filter UI Logic](../04_Logic_&_Progress/07_SEARCH_AND_FILTER_LOGIC.md) - 스마트 검색 바 작동 원리
-- **Logic**: [Translation Engine](../04_Logic_&_Progress/04_TRANSLATION_ENGINE.md) - 번역 API 연동 로직
-- **Logic**: [Transport Concierge](../04_Logic_&_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 예약 서비스 로직
-- **Logic**: [Auth & Session](../04_Logic_&_Progress/06_AUTH_AND_SESSION_LOGIC.md) - 인증 및 세션 관리 로직
-- **Test**: [Test Scenarios](../05_QA_&_Validation/01_TEST_SCENARIOS.md) - 에러 핸들링 테스트 케이스 (Section 4)
+- **Logic**: [Backlog](../04_Logic_Progress/00_BACKLOG.md) - Admin Dashboard 데이터 연동 완료, Listing Create/Update 및 예약 승인 미구현 (Section 2)
+- **Logic**: [Booking State Machine](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 생성 및 승인 로직 (에러 처리 포함)
+- **Logic**: [Search Algorithm](../04_Logic_Progress/02_SEARCH_ALGORITHM.md) - 상세 검색 필터링 알고리즘
+- **Logic**: [Search & Filter UI Logic](../04_Logic_Progress/07_SEARCH_AND_FILTER_LOGIC.md) - 스마트 검색 바 작동 원리
+- **Logic**: [Translation Engine](../04_Logic_Progress/04_TRANSLATION_ENGINE.md) - 번역 API 연동 로직
+- **Logic**: [Transport Concierge](../04_Logic_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 예약 서비스 로직
+- **Logic**: [Auth & Session](../04_Logic_Progress/06_AUTH_AND_SESSION_LOGIC.md) - 인증 및 세션 관리 로직
+- **Test**: [Test Scenarios](../05_QA_Validation/01_TEST_SCENARIOS.md) - 에러 핸들링 테스트 케이스 (Section 4)

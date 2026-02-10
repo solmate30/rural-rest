@@ -473,6 +473,6 @@ rural-rest/
 - **Specs**: [Database Schema](./01_DB_SCHEMA.md) - `listings.images`, `user.image` 필드 참조
 - **Specs**: [API Specs](./02_API_SPECS.md) - 라우트 패턴 및 에러 처리 가이드라인
 - **Specs**: [Admin Management Spec](./04_ADMIN_MANAGEMENT_SPEC.md) - 호스트 리스팅 편집 기능 명세
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - 디자인 시스템 가이드라인
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - 디자인 시스템 가이드라인
 - **Prototype**: [Admin Editor Review](../02_UI_Screens/05_ADMIN_EDITOR_REVIEW.md) - Photo Manager UI 프로토타입
-- **Logic**: [Auth & Session](../04_Logic_&_Progress/06_AUTH_AND_SESSION_LOGIC.md) - requireUser 인증 로직
+- **Logic**: [Auth & Session](../04_Logic_Progress/06_AUTH_AND_SESSION_LOGIC.md) - requireUser 인증 로직

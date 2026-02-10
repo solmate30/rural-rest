@@ -441,10 +441,10 @@ web/
 ## 9. Related Documents
 - **Prototype**: [Search & Explore Review](../02_UI_Screens/04_SEARCH_EXPLORE_REVIEW.md) - 검색 결과 화면 프로토타입 및 UI 피드백
 - **Specs**: [API Specs](./02_API_SPECS.md) Section 3.2 - `/search` 라우트 엔드포인트 명세
-- **Logic**: [Search Algorithm](../04_Logic_&_Progress/02_SEARCH_ALGORITHM.md) - 검색 필터링/정렬/페이지네이션 알고리즘 설계
-- **Logic**: [Search & Filter Logic](../04_Logic_&_Progress/07_SEARCH_AND_FILTER_LOGIC.md) - Smart Search 인터페이스 사양 및 상태 관리
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) Section 3.A.2 - 사이트맵 내 Search Results 정의
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - 디자인 토큰 및 컴포넌트 가이드라인
-- **Foundation**: [Happy Path Scenarios](../01_Concept_&_Design/07_HAPPY_PATH_SCENARIOS.md) - 게스트 검색 시나리오
-- **Test**: [Test Scenarios](../05_QA_&_Validation/01_TEST_SCENARIOS.md) Section 3.1 - 검색 테스트 케이스 (TC-G-001~005)
-- **Test**: [Footer & Search Review](../05_QA_&_Validation/03_FOOTER_AND_SEARCH_REVIEW.md) Section 3.2 - 미해결 이슈 (버튼 연결, 지역별 카운트)
+- **Logic**: [Search Algorithm](../04_Logic_Progress/02_SEARCH_ALGORITHM.md) - 검색 필터링/정렬/페이지네이션 알고리즘 설계
+- **Logic**: [Search & Filter Logic](../04_Logic_Progress/07_SEARCH_AND_FILTER_LOGIC.md) - Smart Search 인터페이스 사양 및 상태 관리
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) Section 3.A.2 - 사이트맵 내 Search Results 정의
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - 디자인 토큰 및 컴포넌트 가이드라인
+- **Foundation**: [Happy Path Scenarios](../01_Concept_Design/07_HAPPY_PATH_SCENARIOS.md) - 게스트 검색 시나리오
+- **Test**: [Test Scenarios](../05_QA_Validation/01_TEST_SCENARIOS.md) Section 3.1 - 검색 테스트 케이스 (TC-G-001~005)
+- **Test**: [Footer & Search Review](../05_QA_Validation/03_FOOTER_AND_SEARCH_REVIEW.md) Section 3.2 - 미해결 이슈 (버튼 연결, 지역별 카운트)

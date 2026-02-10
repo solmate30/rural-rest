@@ -292,8 +292,8 @@ export const ecoPointTransactions = sqliteTable("eco_point_transactions", {
 ---
 
 ## 7. Related Documents
-- **Foundation**: [Blockchain Vision](../01_Concept_&_Design/08_BLOCKCHAIN_VISION.md) - NFT/Gamification 전략
-- **Foundation**: [Blockchain Roadmap](../01_Concept_&_Design/09_BLOCKCHAIN_ROADMAP.md) - Phase 2 마일스톤
+- **Foundation**: [Blockchain Vision](../01_Concept_Design/08_BLOCKCHAIN_VISION.md) - NFT/Gamification 전략
+- **Foundation**: [Blockchain Roadmap](../01_Concept_Design/09_BLOCKCHAIN_ROADMAP.md) - Phase 2 마일스톤
 - **Prototype**: [NFT Gallery Review](../02_UI_Screens/07_NFT_GALLERY_REVIEW.md) - NFT/포인트 UI
 - **Specs**: [Blockchain Infra Spec](../03_Technical_Specs/08_BLOCKCHAIN_INFRA_SPEC.md) - Metaplex/Bubblegum 스택
-- **Test**: [Blockchain Test Scenarios](../05_QA_&_Validation/06_BLOCKCHAIN_TEST_SCENARIOS.md) - TC-BC-020~034
+- **Test**: [Blockchain Test Scenarios](../05_QA_Validation/06_BLOCKCHAIN_TEST_SCENARIOS.md) - TC-BC-020~034

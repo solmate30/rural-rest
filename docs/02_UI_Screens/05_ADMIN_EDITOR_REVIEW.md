@@ -40,9 +40,9 @@
 *   [ ] **Unsaved Changes Alarm**: 저장하지 않고 페이지를 나갈 때를 대비한 경고 모달 로직 연동.
 
 ## 4. Related Documents
-- **Foundation**: [Admin Strategy](../01_Concept_&_Design/06_ADMIN_STRATEGY.md) - 호스트 운영 효율화 전략 (Section 3.1)
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - Section 3.B.2 숙소 관리 사이트맵
+- **Foundation**: [Admin Strategy](../01_Concept_Design/06_ADMIN_STRATEGY.md) - 호스트 운영 효율화 전략 (Section 3.1)
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - Section 3.B.2 숙소 관리 사이트맵
 - **Prototype**: [Admin Dashboard Review](./03_ADMIN_DASHBOARD_REVIEW.md) - 상위 대시보드 화면
 - **Specs**: [Admin Management Spec](../03_Technical_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 상세 기능 및 데이터 명세
 - **Specs**: [Storage Policy](../03_Technical_Specs/03_STORAGE_POLICY.md) - Cloudinary 업로드 보안 정책
-- **Logic**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직
+- **Logic**: [Booking State Machine](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직

@@ -70,8 +70,8 @@ graph TD
 *   `get_listing_details`는 `hostId` 등 민감 필드를 제외하고 반환.
 
 ## 6. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - AI 컨시어지 범위 및 목표
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - AI 컨시어지 범위 및 목표
 - **Specs**: [AI Concierge Spec](../03_Technical_Specs/04_AI_CONCIERGE_SPEC.md) - 기술 스택 및 데이터 명세
 - **Logic**: [Transport Concierge](./05_TRANSPORT_CONCIERGE_LOGIC.md) - 교통 관련 기초 비즈니스 룰
 - **Logic**: [Translation Engine](./04_TRANSLATION_ENGINE.md) - 다국어 처리 연동
-- **Test**: [AI Concierge Test Plan](../05_QA_&_Validation/03_AI_CONCIERGE_TEST_PLAN.md) - 시나리오 기반 검증 계획
+- **Test**: [AI Concierge Test Plan](../05_QA_Validation/03_AI_CONCIERGE_TEST_PLAN.md) - 시나리오 기반 검증 계획

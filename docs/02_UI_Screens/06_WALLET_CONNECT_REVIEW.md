@@ -138,7 +138,7 @@
 ---
 
 ## 5. Related Documents
-- **Foundation**: [Blockchain Vision](../01_Concept_&_Design/08_BLOCKCHAIN_VISION.md) - 블록체인 결제 전략
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - 디자인 토큰 및 컴포넌트 시스템
+- **Foundation**: [Blockchain Vision](../01_Concept_Design/08_BLOCKCHAIN_VISION.md) - 블록체인 결제 전략
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - 디자인 토큰 및 컴포넌트 시스템
 - **Prototype**: [Booking Page Review](./02_BOOKING_PAGE_REVIEW.md) - 기존 예약 Flow UI
 - **Specs**: [Solana Payment Spec](../03_Technical_Specs/09_SOLANA_PAYMENT_SPEC.md) - 결제 API 명세

@@ -10,19 +10,19 @@
 
 | Layer | Directory | Purpose |
 | :--- | :--- | :--- |
-| Concept & Design | `docs/01_Concept_&_Design/` | 컨셉과 디자인 가이드 (기획, 비전, UI 디자인, 로드맵) |
+| Concept & Design | `docs/01_Concept_Design/` | 컨셉과 디자인 가이드 (기획, 비전, UI 디자인, 로드맵) |
 | UI Screens | `docs/02_UI_Screens/` | 페이지별 완성된 모습 확인 (UI 프로토타입 리뷰, 화면 흐름) |
 | Technical Specs | `docs/03_Technical_Specs/` | 데이터와 API 등 기술적 약속 (DB 스키마, API 명세, 구현 가이드) |
-| Logic & Progress | `docs/04_Logic_&_Progress/` | 백로그(진행상태)와 비즈니스 로직 결합 |
-| QA & Validation | `docs/05_QA_&_Validation/` | 단순 테스트를 넘어 시스템 검증 (테스트 시나리오, QA 체크리스트) |
+| Logic & Progress | `docs/04_Logic_Progress/` | 백로그(진행상태)와 비즈니스 로직 결합 |
+| QA & Validation | `docs/05_QA_Validation/` | 단순 테스트를 넘어 시스템 검증 (테스트 시나리오, QA 체크리스트) |
 
 ## 레이어 판별
 
-- 기획/UI 디자인/로드맵 → 01_Concept_&_Design
+- 기획/UI 디자인/로드맵 → 01_Concept_Design
 - UI 프로토타입 결과/리뷰 → 02_UI_Screens
 - 상세 구현 명세 (DB, API) → 03_Technical_Specs
-- 비즈니스 로직/상태 머신/백로그 → 04_Logic_&_Progress
-- 테스트 계획/QA 보고 → 05_QA_&_Validation
+- 비즈니스 로직/상태 머신/백로그 → 04_Logic_Progress
+- 테스트 계획/QA 보고 → 05_QA_Validation
 
 ## 파일 작성 규칙
 
@@ -47,16 +47,16 @@
 
 링크 규칙:
 - 같은 레이어: `./02_LEAN_CANVAS.md`
-- 다른 레이어: `../01_Concept_&_Design/03_PRODUCT_SPECS.md`
+- 다른 레이어: `../01_Concept_Design/03_PRODUCT_SPECS.md`
 - 특정 섹션 참조 시 Section 번호 명시
 
 ### 레이어별 필수 링크
 
-- **Concept_&_Design**: 같은 레이어 문서들 + 관련 UI_Screens/Technical_Specs (있을 경우)
-- **UI_Screens**: Concept_&_Design (Product Specs, UI Design) + 이전/다음 UI_Screens + Technical_Specs/Logic_&_Progress (있을 경우)
-- **Technical_Specs**: Concept_&_Design + UI_Screens + 다른 Technical_Specs (DB ↔ API ↔ Storage) + Logic_&_Progress (있을 경우)
-- **Logic_&_Progress**: Concept_&_Design + UI_Screens + Technical_Specs (DB, API) + QA_&_Validation (있을 경우)
-- **QA_&_Validation**: 모든 상위 레이어 참조
+- **Concept_Design**: 같은 레이어 문서들 + 관련 UI_Screens/Technical_Specs (있을 경우)
+- **UI_Screens**: Concept_Design (Product Specs, UI Design) + 이전/다음 UI_Screens + Technical_Specs/Logic_Progress (있을 경우)
+- **Technical_Specs**: Concept_Design + UI_Screens + 다른 Technical_Specs (DB ↔ API ↔ Storage) + Logic_Progress (있을 경우)
+- **Logic_Progress**: Concept_Design + UI_Screens + Technical_Specs (DB, API) + QA_Validation (있을 경우)
+- **QA_Validation**: 모든 상위 레이어 참조
 
 ## Interactive Process (Ask before Write)
 

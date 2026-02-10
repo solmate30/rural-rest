@@ -179,7 +179,7 @@
 ---
 
 ## 6. Related Documents
-- **Foundation**: [Blockchain Vision](../01_Concept_&_Design/08_BLOCKCHAIN_VISION.md) - RWA 전략
+- **Foundation**: [Blockchain Vision](../01_Concept_Design/08_BLOCKCHAIN_VISION.md) - RWA 전략
 - **Specs**: [RWA Token Spec](../03_Technical_Specs/10_RWA_TOKEN_SPEC.md) - 토큰 설계 명세
-- **Logic**: [RWA Tokenization Logic](../04_Logic_&_Progress/12_RWA_TOKENIZATION_LOGIC.md) - 배당 알고리즘
-- **Test**: [Blockchain Test Scenarios](../05_QA_&_Validation/06_BLOCKCHAIN_TEST_SCENARIOS.md) - RWA 테스트 케이스
+- **Logic**: [RWA Tokenization Logic](../04_Logic_Progress/12_RWA_TOKENIZATION_LOGIC.md) - 배당 알고리즘
+- **Test**: [Blockchain Test Scenarios](../05_QA_Validation/06_BLOCKCHAIN_TEST_SCENARIOS.md) - RWA 테스트 케이스

@@ -29,7 +29,7 @@ AI 컨시어지 관련 신규·수정 문서의 정합성 및 문서 간 맥락(
 ## 3. 수정·보완 반영 사항
 
 ### 3.1. 잘못된 경로 수정
-*   **08_AI_CONCIERGE_LOGIC.md** Related Documents: ../04_Logic_&_Progress/04_TRANSLATION_ENGINE.md` → `./04_TRANSLATION_ENGINE.md` (동일 레이어 내 상대 경로로 수정).
+*   **08_AI_CONCIERGE_LOGIC.md** Related Documents: ../04_Logic_Progress/04_TRANSLATION_ENGINE.md` → `./04_TRANSLATION_ENGINE.md` (동일 레이어 내 상대 경로로 수정).
 
 ### 3.2. 누락된 참조 추가
 *   **03_PRODUCT_SPECS.md** Related Documents: AI Concierge Spec, AI Concierge Logic, AI Concierge Test Plan 링크 추가 (Section 2.2와 연계).
@@ -64,7 +64,7 @@ AI 컨시어지 관련 신규·수정 문서의 정합성 및 문서 간 맥락(
 ## 6. 관련 문서
 
 - **Specs**: [AI Concierge Spec](../03_Technical_Specs/04_AI_CONCIERGE_SPEC.md)
-- **Logic**: [AI Concierge Logic](../04_Logic_&_Progress/08_AI_CONCIERGE_LOGIC.md)
+- **Logic**: [AI Concierge Logic](../04_Logic_Progress/08_AI_CONCIERGE_LOGIC.md)
 - **Test**: [AI Concierge Test Plan](./03_AI_CONCIERGE_TEST_PLAN.md)
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) Section 2.2
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) Section 6.3
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) Section 2.2
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) Section 6.3

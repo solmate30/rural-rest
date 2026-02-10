@@ -257,9 +257,9 @@ LIMIT ? OFFSET ?;
 - **Timezone Handling**: Luxon을 사용하여 사용자 타임존에 맞게 날짜 처리
 
 ## 7. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 검색 기능 명세 및 사이트맵 (Section 3.A.2)
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - 검색 기능 명세 및 사이트맵 (Section 3.A.2)
 - **Prototype**: [Landing Page Review](../02_UI_Screens/00_LANDING_PAGE_REVIEW.md) - 검색 바 UI 프로토타입
 - **Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - `listings` 테이블 구조 및 인덱스 설계
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - Search Results API 엔드포인트 (Section 3.2)
 - **Logic**: [Booking State Machine](./01_BOOKING_STATE_MACHINE.md) - 가용성 필터링 로직 참조
-- **Test**: [Test Scenarios](../05_QA_&_Validation/01_TEST_SCENARIOS.md) - 검색 관련 테스트 케이스 (Section 2.1)
+- **Test**: [Test Scenarios](../05_QA_Validation/01_TEST_SCENARIOS.md) - 검색 관련 테스트 케이스 (Section 2.1)

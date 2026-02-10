@@ -217,11 +217,11 @@
 ---
 
 ## 9. Related Documents
-- **Foundation**: [Blockchain Vision](../01_Concept_&_Design/08_BLOCKCHAIN_VISION.md) - 블록체인 기능 전략
+- **Foundation**: [Blockchain Vision](../01_Concept_Design/08_BLOCKCHAIN_VISION.md) - 블록체인 기능 전략
 - **Specs**: [Blockchain Infra Spec](../03_Technical_Specs/08_BLOCKCHAIN_INFRA_SPEC.md) - 기술 스택
 - **Specs**: [Solana Payment Spec](../03_Technical_Specs/09_SOLANA_PAYMENT_SPEC.md) - 결제 API 명세
 - **Specs**: [RWA Token Spec](../03_Technical_Specs/10_RWA_TOKEN_SPEC.md) - RWA 토큰 명세
-- **Logic**: [Solana Payment Logic](../04_Logic_&_Progress/10_SOLANA_PAYMENT_LOGIC.md) - 결제 상태 머신
-- **Logic**: [NFT Gamification Logic](../04_Logic_&_Progress/11_NFT_GAMIFICATION_LOGIC.md) - NFT/포인트 로직
-- **Logic**: [RWA Tokenization Logic](../04_Logic_&_Progress/12_RWA_TOKENIZATION_LOGIC.md) - RWA 비즈니스 로직
+- **Logic**: [Solana Payment Logic](../04_Logic_Progress/10_SOLANA_PAYMENT_LOGIC.md) - 결제 상태 머신
+- **Logic**: [NFT Gamification Logic](../04_Logic_Progress/11_NFT_GAMIFICATION_LOGIC.md) - NFT/포인트 로직
+- **Logic**: [RWA Tokenization Logic](../04_Logic_Progress/12_RWA_TOKENIZATION_LOGIC.md) - RWA 비즈니스 로직
 - **Test**: [Blockchain Security Audit](./07_BLOCKCHAIN_SECURITY_AUDIT.md) - 보안 감사 체크리스트

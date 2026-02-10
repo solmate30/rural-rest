@@ -81,8 +81,8 @@ where(
 ---
 
 ## 5. 관련 문서 (Related Documents)
-- **Foundation**: [Happy Path Scenarios](../01_Concept_&_Design/07_HAPPY_PATH_SCENARIOS.md) - 민수의 검색 시나리오
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - Home Featured Stays 실시간 필터 (Section 5.4)
+- **Foundation**: [Happy Path Scenarios](../01_Concept_Design/07_HAPPY_PATH_SCENARIOS.md) - 민수의 검색 시나리오
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - Home Featured Stays 실시간 필터 (Section 5.4)
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - Landing Page Loader 및 검색 쿼리 파라미터 (Section 3.1, 3.2)
 - **Prototype**: [Home Page Implementation](../../web/app/routes/home.tsx) - 실제 구현 코드
 - **Logic**: [Search Algorithm](./02_SEARCH_ALGORITHM.md) - 상세 검색 필터링 알고리즘

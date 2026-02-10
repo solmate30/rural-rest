@@ -55,11 +55,11 @@
 *   **Optimistic Updates**: 상태 변경(예: 예약 수락) 시 UI에서 먼저 반영하고 서버 통신 결과에 따라 보정.
 
 ## 6. Related Documents
-- **Foundation**: [Admin Strategy](../01_Concept_&_Design/06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 기능 우선순위
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - Host (Admin) Side 사이트맵
+- **Foundation**: [Admin Strategy](../01_Concept_Design/06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 기능 우선순위
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - Host (Admin) Side 사이트맵
 - **Prototype**: [Admin Dashboard Review](../02_UI_Screens/03_ADMIN_DASHBOARD_REVIEW.md) - 대시보드 UI 및 Loader 구현 상태
 - **Prototype**: [Host Property Editor Review](../02_UI_Screens/05_ADMIN_EDITOR_REVIEW.md) - 상세 편집기 UI 리뷰 (Listing Create/Update 연동 대상)
 - **Specs**: [Database Schema](./01_DB_SCHEMA.md) - `listings` 및 `activities` 테이블 참조
 - **Specs**: [API Specs](./02_API_SPECS.md) - Admin Dashboard API 엔드포인트 (Section 3.5)
 - **Specs**: [Storage Policy](./03_STORAGE_POLICY.md) - 사진 업로드 보완 정책
-- **Logic**: [Backlog](../04_Logic_&_Progress/00_BACKLOG.md) - Admin Dashboard 데이터 연동 완료, Listing Create/Update 및 예약 승인 미구현 (Section 2)
+- **Logic**: [Backlog](../04_Logic_Progress/00_BACKLOG.md) - Admin Dashboard 데이터 연동 완료, Listing Create/Update 및 예약 승인 미구현 (Section 2)

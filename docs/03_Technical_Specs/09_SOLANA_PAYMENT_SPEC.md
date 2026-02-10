@@ -202,9 +202,9 @@ export const walletTransactions = sqliteTable("wallet_transactions", {
 ---
 
 ## 9. Related Documents
-- **Foundation**: [Blockchain Roadmap](../01_Concept_&_Design/09_BLOCKCHAIN_ROADMAP.md) - Phase 1 결제 로드맵
+- **Foundation**: [Blockchain Roadmap](../01_Concept_Design/09_BLOCKCHAIN_ROADMAP.md) - Phase 1 결제 로드맵
 - **Prototype**: [Wallet Connect Review](../02_UI_Screens/06_WALLET_CONNECT_REVIEW.md) - 결제 UI
 - **Specs**: [Blockchain Infra Spec](./08_BLOCKCHAIN_INFRA_SPEC.md) - Payment Program 아키텍처
-- **Logic**: [Solana Payment Logic](../04_Logic_&_Progress/10_SOLANA_PAYMENT_LOGIC.md) - 결제 상태 머신
-- **Logic**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 기존 예약 상태 머신
-- **Test**: [Blockchain Test Scenarios](../05_QA_&_Validation/06_BLOCKCHAIN_TEST_SCENARIOS.md) - 결제 테스트 케이스
+- **Logic**: [Solana Payment Logic](../04_Logic_Progress/10_SOLANA_PAYMENT_LOGIC.md) - 결제 상태 머신
+- **Logic**: [Booking State Machine](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) - 기존 예약 상태 머신
+- **Test**: [Blockchain Test Scenarios](../05_QA_Validation/06_BLOCKCHAIN_TEST_SCENARIOS.md) - 결제 테스트 케이스

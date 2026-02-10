@@ -174,10 +174,10 @@ try {
 ---
 
 ## 5. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 사용자 인증 및 마이 페이지 기획
-- **Foundation**: [Happy Path Scenarios](../01_Concept_&_Design/07_HAPPY_PATH_SCENARIOS.md) - 민수와 엠마의 빠른 로그인 경험
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - 사용자 인증 및 마이 페이지 기획
+- **Foundation**: [Happy Path Scenarios](../01_Concept_Design/07_HAPPY_PATH_SCENARIOS.md) - 민수와 엠마의 빠른 로그인 경험
 - **Prototype**: [Landing Page Review](../02_UI_Screens/00_LANDING_PAGE_REVIEW.md) - 로그인 진입점 UI (랜딩 페이지)
 - **Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - `users`, `sessions`, `accounts` 테이블 정의
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - `requireUser` 및 인증 API 인터페이스, 에러 핸들링 전략 (Section 4)
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - Toast 컴포넌트 디자인 가이드라인 (Section 5.3)
-- **Test**: [Test Scenarios](../05_QA_&_Validation/01_TEST_SCENARIOS.md) - 로그인 및 권한 우회 시도 테스트 케이스
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - Toast 컴포넌트 디자인 가이드라인 (Section 5.3)
+- **Test**: [Test Scenarios](../05_QA_Validation/01_TEST_SCENARIOS.md) - 로그인 및 권한 우회 시도 테스트 케이스

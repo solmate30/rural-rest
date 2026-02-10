@@ -253,9 +253,9 @@ export const rwaDividends = sqliteTable("rwa_dividends", {
 ---
 
 ## 8. Related Documents
-- **Foundation**: [Blockchain Vision](../01_Concept_&_Design/08_BLOCKCHAIN_VISION.md) - RWA 전략적 배경
-- **Foundation**: [Blockchain Roadmap](../01_Concept_&_Design/09_BLOCKCHAIN_ROADMAP.md) - Phase 3 RWA 로드맵
+- **Foundation**: [Blockchain Vision](../01_Concept_Design/08_BLOCKCHAIN_VISION.md) - RWA 전략적 배경
+- **Foundation**: [Blockchain Roadmap](../01_Concept_Design/09_BLOCKCHAIN_ROADMAP.md) - Phase 3 RWA 로드맵
 - **Prototype**: [RWA Dashboard Review](../02_UI_Screens/08_RWA_DASHBOARD_REVIEW.md) - 투자 대시보드 UI
 - **Specs**: [Blockchain Infra Spec](./08_BLOCKCHAIN_INFRA_SPEC.md) - Anchor Program 아키텍처
-- **Logic**: [RWA Tokenization Logic](../04_Logic_&_Progress/12_RWA_TOKENIZATION_LOGIC.md) - 배당/환매 비즈니스 로직
-- **Test**: [Blockchain Test Scenarios](../05_QA_&_Validation/06_BLOCKCHAIN_TEST_SCENARIOS.md) - RWA 테스트 케이스
+- **Logic**: [RWA Tokenization Logic](../04_Logic_Progress/12_RWA_TOKENIZATION_LOGIC.md) - 배당/환매 비즈니스 로직
+- **Test**: [Blockchain Test Scenarios](../05_QA_Validation/06_BLOCKCHAIN_TEST_SCENARIOS.md) - RWA 테스트 케이스

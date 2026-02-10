@@ -116,12 +116,12 @@ async function schedulePickup(bookingId: string, pickupData: { point: string, ar
 ```
 
 ## 5. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - Section 2.2 교통 컨시어지 기획 근거
-- **Foundation**: [Happy Path Scenarios](../01_Concept_&_Design/07_HAPPY_PATH_SCENARIOS.md) - 게스트 시나리오 Step 3, 4 (셔틀 예약 및 이용)
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - Section 2.2 교통 컨시어지 기획 근거
+- **Foundation**: [Happy Path Scenarios](../01_Concept_Design/07_HAPPY_PATH_SCENARIOS.md) - 게스트 시나리오 Step 3, 4 (셔틀 예약 및 이용)
 - **Prototype**: [Detail Page Review](../02_UI_Screens/01_DETAIL_PAGE_REVIEW.md) - Map Integration 이슈 (Mock으로 해결)
 - **Prototype**: [Booking Page Review](../02_UI_Screens/02_BOOKING_PAGE_REVIEW.md) - 셔틀 추가 옵션 선택 UI
 - **Prototype**: [Admin Dashboard Review](../02_UI_Screens/03_ADMIN_DASHBOARD_REVIEW.md) - 호스트용 도착 예정 내역 대시보드
 - **Specs**: [Property Detail Guide](../03_Technical_Specs/07_PROPERTY_DETAIL_IMPLEMENTATION_GUIDE.md) - Section 4.7-4.8 Mock 지도 및 교통 안내 UI 구현 상세
 - **Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - 관련 테이블 확장 필요
 - **Logic**: [Future Roadmap Memo](./09_FUTURE_ROADMAP_MEMO.md) - Section 2 카카오맵 연동 및 Mock-to-Real 전환 계획
-- **Test**: [QA Checklist](../05_QA_&_Validation/02_QA_CHECKLIST.md) - 교통 정보 전달 도달률 체크
+- **Test**: [QA Checklist](../05_QA_Validation/02_QA_CHECKLIST.md) - 교통 정보 전달 도달률 체크

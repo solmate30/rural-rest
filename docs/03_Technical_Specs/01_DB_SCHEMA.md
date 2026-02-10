@@ -155,11 +155,11 @@ export const listings = sqliteTable('listings', {
 3.  **Timestamps**: Stored as Integers (Unix Epoch) for straightforward sorting and time zone independence.
 
 ## 5. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - MVP 기능 명세 및 사이트맵
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - 디자인 시스템 가이드라인
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - MVP 기능 명세 및 사이트맵
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - 디자인 시스템 가이드라인
 - **Specs**: [Admin Management Spec](./04_ADMIN_MANAGEMENT_SPEC.md) - 호스트용 관리 기능 명세
-- **Logic**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직
-- **Logic**: [Digital Key System](../04_Logic_&_Progress/03_DIGITAL_KEY_SYSTEM.md) - QR 체크인 로직
-- **Logic**: [Translation Engine](../04_Logic_&_Progress/04_TRANSLATION_ENGINE.md) - 채팅 자동 번역 데이터 저장 방식
-- **Logic**: [Transport Concierge](../04_Logic_&_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 셔틀 서비스 예약 데이터 저장 방식
-- **Logic**: [Auth & Session](../04_Logic_&_Progress/06_AUTH_AND_SESSION_LOGIC.md) - `users`, `sessions`, `accounts` 테이블 사용 로직
+- **Logic**: [Booking State Machine](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직
+- **Logic**: [Digital Key System](../04_Logic_Progress/03_DIGITAL_KEY_SYSTEM.md) - QR 체크인 로직
+- **Logic**: [Translation Engine](../04_Logic_Progress/04_TRANSLATION_ENGINE.md) - 채팅 자동 번역 데이터 저장 방식
+- **Logic**: [Transport Concierge](../04_Logic_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 셔틀 서비스 예약 데이터 저장 방식
+- **Logic**: [Auth & Session](../04_Logic_Progress/06_AUTH_AND_SESSION_LOGIC.md) - `users`, `sessions`, `accounts` 테이블 사용 로직

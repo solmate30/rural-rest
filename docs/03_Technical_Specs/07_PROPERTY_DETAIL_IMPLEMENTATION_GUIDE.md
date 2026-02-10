@@ -550,10 +550,10 @@ web/
 - **Specs**: [API Specs](./02_API_SPECS.md) Section 3.3 - `/rooms/:id` 라우트 명세 (`Listing + Host + Reviews` 반환)
 - **Specs**: [Database Schema](./01_DB_SCHEMA.md) - `listings`, `reviews`, `activities` 테이블 구조
 - **Specs**: [Cloudinary Implementation Guide](./05_CLOUDINARY_IMPLEMENTATION_GUIDE.md) - 이미지 URL 저장/관리
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) Section 3.A.3 - Property Detail 사이트맵
-- **Foundation**: [Happy Path Scenarios](../01_Concept_&_Design/07_HAPPY_PATH_SCENARIOS.md) Step 2 - Village Story 몰입 시나리오
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - 디자인 토큰 및 컴포넌트 가이드라인
-- **Logic**: [Transport Concierge](../04_Logic_&_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 셔틀 예약 로직 및 Mock 데이터 모델 (Section 4.7-4.8 연계)
-- **Logic**: [Future Roadmap Memo](../04_Logic_&_Progress/09_FUTURE_ROADMAP_MEMO.md) Section 2 - 카카오맵 연동 계획 및 Mock-to-Real 전환 경로
-- **Logic**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 상태 전환 (Reserve -> Pending)
-- **Test**: [Test Scenarios](../05_QA_&_Validation/01_TEST_SCENARIOS.md) - Property Detail 관련 테스트 케이스
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) Section 3.A.3 - Property Detail 사이트맵
+- **Foundation**: [Happy Path Scenarios](../01_Concept_Design/07_HAPPY_PATH_SCENARIOS.md) Step 2 - Village Story 몰입 시나리오
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - 디자인 토큰 및 컴포넌트 가이드라인
+- **Logic**: [Transport Concierge](../04_Logic_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 셔틀 예약 로직 및 Mock 데이터 모델 (Section 4.7-4.8 연계)
+- **Logic**: [Future Roadmap Memo](../04_Logic_Progress/09_FUTURE_ROADMAP_MEMO.md) Section 2 - 카카오맵 연동 계획 및 Mock-to-Real 전환 경로
+- **Logic**: [Booking State Machine](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 상태 전환 (Reserve -> Pending)
+- **Test**: [Test Scenarios](../05_QA_Validation/01_TEST_SCENARIOS.md) - Property Detail 관련 테스트 케이스

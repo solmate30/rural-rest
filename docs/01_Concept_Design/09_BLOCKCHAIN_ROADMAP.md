@@ -158,4 +158,4 @@ Phase 4 (생태계)
 - **Specs**: [Blockchain Infra Spec](../03_Technical_Specs/08_BLOCKCHAIN_INFRA_SPEC.md) - Solana 기술 스택
 - **Specs**: [Solana Payment Spec](../03_Technical_Specs/09_SOLANA_PAYMENT_SPEC.md) - 결제 API 명세
 - **Specs**: [RWA Token Spec](../03_Technical_Specs/10_RWA_TOKEN_SPEC.md) - RWA 토큰 명세
-- **Logic**: [NFT Gamification Logic](../04_Logic_&_Progress/11_NFT_GAMIFICATION_LOGIC.md) - NFT/포인트 비즈니스 로직
+- **Logic**: [NFT Gamification Logic](../04_Logic_Progress/11_NFT_GAMIFICATION_LOGIC.md) - NFT/포인트 비즈니스 로직

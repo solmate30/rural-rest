@@ -27,7 +27,7 @@ This roadmap defines the strategic execution plan for **Rural Rest**, prioritizi
     *   QR code-based smart lock integration for seamless check-in.
     *   Available as an optional upgrade for hosts with smart door locks.
     *   Maintains balance between convenience and hospitality (hybrid model).
-    *   See [Digital Key System Design](../04_Logic_&_Progress/03_DIGITAL_KEY_SYSTEM.md) for details.
+    *   See [Digital Key System Design](../04_Logic_Progress/03_DIGITAL_KEY_SYSTEM.md) for details.
 
 ## 3. LATER (Long-term: 1-3 Years)
 **(Focus: Ecosystem & Governance)**
@@ -43,4 +43,4 @@ This roadmap defines the strategic execution plan for **Rural Rest**, prioritizi
 - **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - MVP 기능 명세
 - **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 기능 우선순위
 - **Foundation**: [Happy Path Scenarios](./07_HAPPY_PATH_SCENARIOS.md) - 단계별 기능이 구현되는 사용자 여정
-- **Logic**: [Digital Key System](../04_Logic_&_Progress/03_DIGITAL_KEY_SYSTEM.md) - Phase 2 기능 상세 설계
+- **Logic**: [Digital Key System](../04_Logic_Progress/03_DIGITAL_KEY_SYSTEM.md) - Phase 2 기능 상세 설계

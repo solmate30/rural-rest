@@ -199,12 +199,12 @@ async function completePastBookings() {
     *   **에러 처리**: 폼 필드 인라인 에러 메시지 + Toast로 "입력 정보를 확인해주세요" 메시지 표시
 
 ## 6. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 예약 플로우 사이트맵 (Section 3.A.4)
-- **Foundation**: [Happy Path Scenarios](../01_Concept_&_Design/07_HAPPY_PATH_SCENARIOS.md) - 게스트 시나리오 Step 4, 호스트 시나리오 Step 2 (예약 승인)
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - 예약 플로우 사이트맵 (Section 3.A.4)
+- **Foundation**: [Happy Path Scenarios](../01_Concept_Design/07_HAPPY_PATH_SCENARIOS.md) - 게스트 시나리오 Step 4, 호스트 시나리오 Step 2 (예약 승인)
 - **Prototype**: [Booking Page Review](../02_UI_Screens/02_BOOKING_PAGE_REVIEW.md) - 예약 페이지 UI 프로토타입
 - **Prototype**: [Admin Dashboard Review](../02_UI_Screens/03_ADMIN_DASHBOARD_REVIEW.md) - 호스트 승인/거절 UI 프로토타입
 - **Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - `bookings` 테이블 구조 및 상태 필드
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - Booking Process API 엔드포인트 (Section 3.4) 및 에러 핸들링 전략 (Section 4)
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - Toast 컴포넌트 디자인 가이드라인 (Section 5.3)
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - Toast 컴포넌트 디자인 가이드라인 (Section 5.3)
 - **Logic**: [Auth & Session](./06_AUTH_AND_SESSION_LOGIC.md) - 예약 생성 시 인증 검증 로직 (Unauthorized 처리)
-- **Test**: [Test Scenarios](../05_QA_&_Validation/01_TEST_SCENARIOS.md) - 예약 관련 테스트 케이스 (Section 2.2, 3.1) 및 에러 핸들링 테스트 (Section 4)
+- **Test**: [Test Scenarios](../05_QA_Validation/01_TEST_SCENARIOS.md) - 예약 관련 테스트 케이스 (Section 2.2, 3.1) 및 에러 핸들링 테스트 (Section 4)

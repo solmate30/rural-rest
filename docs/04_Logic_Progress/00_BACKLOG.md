@@ -18,7 +18,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] **Task 2.9**: Integrate Professional Map API for Property Detail Pages. → **Google Maps** 적용 완료 (`PropertyMap.tsx`, `VITE_GOOGLE_MAPS_API_KEY`). 교통 안내 UI는 Mock 유지. → [Property Detail Guide](../03_Technical_Specs/07_PROPERTY_DETAIL_IMPLEMENTATION_GUIDE.md) Section 4.7-4.8
 *   [x] **Task 2.10**: Setup LangGraph & Gemini Integration (Environment & Orchestration). → 구현 완료 (LangGraph workflow, DB Schema 확장)
 *   [x] **Task 2.11**: Implement AI Global Concierge Tools (Kakao, KTO API & DB Connectors). → 구현 완료 (Simulator 기반 상용 API 연동 및 실제 DB Connector 연결)
-*   [x] **Task 2.7**: Implement Global Layout (Header/Footer). → [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md)
+*   [x] **Task 2.7**: Implement Global Layout (Header/Footer). → [UI Design](../01_Concept_Design/05_UI_DESIGN.md)
 *   [x] **Task 2.6**: Implement Search Results Page (Filters, Map View). → 코드 구현 완료 (search.tsx, home.tsx 연동)
 *   [x] Implement Property Detail Page (Gallery Modal, Info Cards). → 코드 구현 완료 (property.tsx 동적 데이터 연동)
 *   [x] Implement Booking Flow (Date Selection, Guest Count, Payment Fake). → 코드 구현 완료 (book.tsx 전면 재작성: loader/action, 동적 폼, 실시간 가격 계산, Confirmation UI)
@@ -35,17 +35,17 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] Configure Tailwind Theme (Colors, Fonts). → `app.css` :root를 Warm Heritage(05_UI_DESIGN)에 맞춤 (Primary #8D6E63, Secondary #D7CCC8, Accent #FFAB91, Background #FAF9F6). `tailwind.config.js` fontFamily Noto Sans KR 반영, `root.tsx` 폰트 링크 추가
 
 ## 3. Completed (History)
-**(Archived to `docs/04_Logic_&_Progress/00_ARCHIVE/`)**
+**(Archived to `docs/04_Logic_Progress/00_ARCHIVE/`)**
 *   [x] **Phase 1: Foundation** → [PHASE_1_FOUNDATION.md](00_ARCHIVE/PHASE_1_FOUNDATION.md)
 *   [x] **Phase 2: Prototype** → [PHASE_2_PROTOTYPE.md](00_ARCHIVE/PHASE_2_PROTOTYPE.md)
 *   [x] **Phase 3: Specs** → [PHASE_3_SPECS.md](00_ARCHIVE/PHASE_3_SPECS.md)
 
 ## 4. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - MVP 기능 명세 및 호스트/게스트 사이트맵
-- **Foundation**: [Roadmap](../01_Concept_&_Design/04_ROADMAP.md) - NOW/NEXT/LATER 실행 계획
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - MVP 기능 명세 및 호스트/게스트 사이트맵
+- **Foundation**: [Roadmap](../01_Concept_Design/04_ROADMAP.md) - NOW/NEXT/LATER 실행 계획
 - **Prototype**: [Admin Dashboard Review](../02_UI_Screens/03_ADMIN_DASHBOARD_REVIEW.md) - 대시보드 UI 및 구현 상태
 - **Prototype**: [Host Property Editor Review](../02_UI_Screens/05_ADMIN_EDITOR_REVIEW.md) - 숙소 편집 UI (Listing Create/Update 연동 대상)
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - Admin Dashboard Section 3.5 및 Booking/Listing API
 - **Specs**: [Admin Management Spec](../03_Technical_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 호스트 관리 명세 및 구현 상태 (Section 1.1)
 - **Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - `listings`, `bookings` 테이블 참조
-- **Test**: [Test Scenarios](../05_QA_&_Validation/01_TEST_SCENARIOS.md) - 핵심 시나리오 검증
+- **Test**: [Test Scenarios](../05_QA_Validation/01_TEST_SCENARIOS.md) - 핵심 시나리오 검증

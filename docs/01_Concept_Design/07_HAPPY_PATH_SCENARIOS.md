@@ -50,8 +50,8 @@
 - **Prototype**: [Property Detail Review](../02_UI_Screens/01_DETAIL_PAGE_REVIEW.md) - 시나리오 Step 2의 Village Story UI 구현체
 - **Prototype**: [Booking Page Review](../02_UI_Screens/02_BOOKING_PAGE_REVIEW.md) - 시나리오 Step 3의 UI 구현체
 - **Prototype**: [Admin Dashboard Review](../02_UI_Screens/03_ADMIN_DASHBOARD_REVIEW.md) - 호스트 시나리오 Step 2의 예약 승인 UI 구현체
-- **Logic**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 승인 및 상태 전환 로직
-- **Logic**: [Digital Key System](../04_Logic_&_Progress/03_DIGITAL_KEY_SYSTEM.md) - 시나리오 Step 4의 QR 코드 체크인 로직
-- **Logic**: [Translation Engine](../04_Logic_&_Progress/04_TRANSLATION_ENGINE.md) - 호스트 시나리오 Step 3의 자동 번역 채팅 로직
-- **Logic**: [Transport Concierge](../04_Logic_&_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 시나리오 Step 3, 4의 셔틀 서비스 예약 로직
-- **Test**: [Test Scenarios](../05_QA_&_Validation/01_TEST_SCENARIOS.md) - 본 시나리오를 기반으로 한 검증 케이스
+- **Logic**: [Booking State Machine](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 승인 및 상태 전환 로직
+- **Logic**: [Digital Key System](../04_Logic_Progress/03_DIGITAL_KEY_SYSTEM.md) - 시나리오 Step 4의 QR 코드 체크인 로직
+- **Logic**: [Translation Engine](../04_Logic_Progress/04_TRANSLATION_ENGINE.md) - 호스트 시나리오 Step 3의 자동 번역 채팅 로직
+- **Logic**: [Transport Concierge](../04_Logic_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 시나리오 Step 3, 4의 셔틀 서비스 예약 로직
+- **Test**: [Test Scenarios](../05_QA_Validation/01_TEST_SCENARIOS.md) - 본 시나리오를 기반으로 한 검증 케이스

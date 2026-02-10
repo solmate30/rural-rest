@@ -158,7 +158,7 @@ NFT가 없을 때:
 ---
 
 ## 5. Related Documents
-- **Foundation**: [Blockchain Vision](../01_Concept_&_Design/08_BLOCKCHAIN_VISION.md) - NFT/Gamification 전략
+- **Foundation**: [Blockchain Vision](../01_Concept_Design/08_BLOCKCHAIN_VISION.md) - NFT/Gamification 전략
 - **Prototype**: [Detail Page Review](./01_DETAIL_PAGE_REVIEW.md) - 숙소 상세 페이지 기존 UI
-- **Logic**: [NFT Gamification Logic](../04_Logic_&_Progress/11_NFT_GAMIFICATION_LOGIC.md) - 포인트 규칙, 등급 알고리즘
+- **Logic**: [NFT Gamification Logic](../04_Logic_Progress/11_NFT_GAMIFICATION_LOGIC.md) - 포인트 규칙, 등급 알고리즘
 - **Specs**: [Blockchain Infra Spec](../03_Technical_Specs/08_BLOCKCHAIN_INFRA_SPEC.md) - Metaplex/Bubblegum 스택

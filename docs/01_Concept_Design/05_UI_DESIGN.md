@@ -68,7 +68,7 @@ The interface blends **rustic warmth** with **modern clarity**. It evokes the fe
 *   **동작**: 스마트 검색 바(거점 지도, 예산 슬라이더) 선택에 따라 **같은 페이지에서** 카드 목록이 즉시 필터링됨. 기본 약 50개 표시, 지역 선택 또는 가격 하향 시 조건에 맞는 카드만 남아 개수가 줄어듦.
 *   **피드백**: "현재 N곳의 빈집이 기다리고 있어요" 문구는 필터 결과 개수(N)로 갱신.
 *   **Empty State**: 조건에 맞는 숙소가 0건일 때 "조건에 맞는 숙소가 없어요. 지역이나 예산을 바꿔 보세요." 등 안내 문구 표시.
-*   **참조**: [Search & Filter Logic](../04_Logic_&_Progress/07_SEARCH_AND_FILTER_LOGIC.md) Section 3.4.
+*   **참조**: [Search & Filter Logic](../04_Logic_Progress/07_SEARCH_AND_FILTER_LOGIC.md) Section 3.4.
 
 ### 5.5. Interactive Rural Map (거점 선택 지도)
 *   **Concept**: 단순 배지 목록 대신, 한국 지도의 실루엣 위에 주요 거점을 포인트로 표시하여 시각적 탐색 경험 제공.
@@ -109,12 +109,12 @@ The Footer provides essential credibility and navigation at the bottom of every 
 *   **목적**: 게스트가 AI 컨시어지(교통·정책·한국 여행 정보)에 진입하는 UI.
 *   **권장 위치**: 헤더 우측(로그인/아바타 근처) 고정 아이콘 또는 플로팅 버튼. 모바일에서는 하단 네비게이션 또는 플로팅 액션.
 *   **노출 페이지**: 전역(모든 게스트 페이지) 또는 Property Detail·Booking 등 컨텍스트가 있는 페이지부터 단계적 노출. (구현 시 결정)
-*   **참조**: [AI Concierge Spec](../03_Technical_Specs/04_AI_CONCIERGE_SPEC.md), [AI Concierge Logic](../04_Logic_&_Progress/08_AI_CONCIERGE_LOGIC.md).
+*   **참조**: [AI Concierge Spec](../03_Technical_Specs/04_AI_CONCIERGE_SPEC.md), [AI Concierge Logic](../04_Logic_Progress/08_AI_CONCIERGE_LOGIC.md).
 
 ### 6.4. 디자인 토큰 구현 상태 (Theme Implementation)
 *   **CSS 변수**: `app/app.css`의 `:root`에 Section 2 팔레트 반영 (Primary #8D6E63, Secondary #D7CCC8, Accent #FFAB91, Background #FAF9F6, Foreground #3E2723).
 *   **폰트**: Section 3 Body 폰트 적용. `tailwind.config.js`의 `fontFamily.sans`에 Noto Sans KR·Pretendard, `root.tsx` links에서 Google Fonts Noto Sans KR 로드.
-*   **컴포넌트**: Shadcn/UI (Button, Card, Input, Dialog, ScrollArea, Avatar, Toast) 설치 완료. `app/components/ui/` 참조. [Backlog](../04_Logic_&_Progress/00_BACKLOG.md) Section 2 Design System.
+*   **컴포넌트**: Shadcn/UI (Button, Card, Input, Dialog, ScrollArea, Avatar, Toast) 설치 완료. `app/components/ui/` 참조. [Backlog](../04_Logic_Progress/00_BACKLOG.md) Section 2 Design System.
 
 ## 7. Related Documents
 - **Foundation**: [Product Specs](./03_PRODUCT_SPECS.md) - 사이트맵 및 사용자 플로우
@@ -125,5 +125,5 @@ The Footer provides essential credibility and navigation at the bottom of every 
 - **Prototype**: [Booking Page Review](../02_UI_Screens/02_BOOKING_PAGE_REVIEW.md) - 예약 페이지 디자인 적용 사례
 - **Prototype**: [Admin Dashboard Review](../02_UI_Screens/03_ADMIN_DASHBOARD_REVIEW.md) - 대시보드 디자인 적용 사례
 - **Specs**: [AI Concierge Spec](../03_Technical_Specs/04_AI_CONCIERGE_SPEC.md) - AI 진입점 연계 (Section 6.3)
-- **Logic**: [Backlog](../04_Logic_&_Progress/00_BACKLOG.md) - 디자인 시스템 구현 상태 (Task 2.13, Tailwind Theme, Section 2)
-- **Logic**: [AI Concierge Logic](../04_Logic_&_Progress/08_AI_CONCIERGE_LOGIC.md) - 에이전트 워크플로우
+- **Logic**: [Backlog](../04_Logic_Progress/00_BACKLOG.md) - 디자인 시스템 구현 상태 (Task 2.13, Tailwind Theme, Section 2)
+- **Logic**: [AI Concierge Logic](../04_Logic_Progress/08_AI_CONCIERGE_LOGIC.md) - 에이전트 워크플로우

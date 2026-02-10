@@ -81,12 +81,12 @@ V2 프로토타입의 예약 페이지가 동적 데이터 기반 MVP로 구현 
 *   취소 정책 안내 링크 추가
 
 ## 6. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 예약 및 결제 플로우 사이트맵 (Section 3.A.4)
-- **Foundation**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - 디자인 시스템 및 폼 컴포넌트 가이드라인
-- **Foundation**: [Happy Path Scenarios](../01_Concept_&_Design/07_HAPPY_PATH_SCENARIOS.md) - 게스트 시나리오 Step 3 (원스톱 예약 및 Add-ons)
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - 예약 및 결제 플로우 사이트맵 (Section 3.A.4)
+- **Foundation**: [UI Design](../01_Concept_Design/05_UI_DESIGN.md) - 디자인 시스템 및 폼 컴포넌트 가이드라인
+- **Foundation**: [Happy Path Scenarios](../01_Concept_Design/07_HAPPY_PATH_SCENARIOS.md) - 게스트 시나리오 Step 3 (원스톱 예약 및 Add-ons)
 - **Prototype**: [Property Detail Review](./01_DETAIL_PAGE_REVIEW.md) - 이전 단계 프로토타입
 - **Prototype**: [Admin Dashboard Review](./03_ADMIN_DASHBOARD_REVIEW.md) - 다음 단계 프로토타입
 - **Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - `bookings` 및 `activities` 테이블 구조
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - Booking Process API 엔드포인트 (Section 3.4)
-- **Logic**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직
-- **Logic**: [Transport Concierge](../04_Logic_&_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 셔틀 서비스 예약 로직 (Step 3: Transport Option)
+- **Logic**: [Booking State Machine](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직
+- **Logic**: [Transport Concierge](../04_Logic_Progress/05_TRANSPORT_CONCIERGE_LOGIC.md) - 셔틀 서비스 예약 로직 (Step 3: Transport Option)

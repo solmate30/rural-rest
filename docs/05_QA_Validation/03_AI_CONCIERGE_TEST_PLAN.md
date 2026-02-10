@@ -53,8 +53,8 @@ AI 컨시어지의 5노드 그래프(router -> experts -> synthesizer)가 의도
 *   **Safety**: 한국 문화에 대해 편향되거나 잘못된 정보를 제공하지 않도록 모니터링.
 
 ## 4. Related Documents
-- **Foundation**: [Happy Path Scenarios](../01_Concept_&_Design/07_HAPPY_PATH_SCENARIOS.md) - 사용자 페르소나 및 핵심 여정
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - Section 2.2 AI 컨시어지 기획 근거
+- **Foundation**: [Happy Path Scenarios](../01_Concept_Design/07_HAPPY_PATH_SCENARIOS.md) - 사용자 페르소나 및 핵심 여정
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - Section 2.2 AI 컨시어지 기획 근거
 - **Specs**: [AI Concierge Spec](../03_Technical_Specs/04_AI_CONCIERGE_SPEC.md) - 도구/스코프 검증 기준, 5노드 아키텍처
-- **Logic**: [AI Concierge Logic](../04_Logic_&_Progress/08_AI_CONCIERGE_LOGIC.md) - 에이전트 추론 로직 및 State Schema
+- **Logic**: [AI Concierge Logic](../04_Logic_Progress/08_AI_CONCIERGE_LOGIC.md) - 에이전트 추론 로직 및 State Schema
 - **Test**: [QA Checklist](./02_QA_CHECKLIST.md) - 릴리스 전 최종 품질 기준

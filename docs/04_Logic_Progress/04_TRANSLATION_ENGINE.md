@@ -82,9 +82,9 @@ async function sendMessage(bookingId: string, senderId: string, content: string)
 ```
 
 ## 5. Related Documents
-- **Foundation**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - Section 2.2 자동 번역 채팅 기획 근거
-- **Foundation**: [Happy Path Scenarios](../01_Concept_&_Design/07_HAPPY_PATH_SCENARIOS.md) - 호스트 시나리오 Step 3 (자동 번역을 통한 소통)
+- **Foundation**: [Product Specs](../01_Concept_Design/03_PRODUCT_SPECS.md) - Section 2.2 자동 번역 채팅 기획 근거
+- **Foundation**: [Happy Path Scenarios](../01_Concept_Design/07_HAPPY_PATH_SCENARIOS.md) - 호스트 시나리오 Step 3 (자동 번역을 통한 소통)
 - **Prototype**: [Detail Page Review](../02_UI_Screens/01_DETAIL_PAGE_REVIEW.md) - 채팅 진입점 UI
 - **Prototype**: [Admin Dashboard Review](../02_UI_Screens/03_ADMIN_DASHBOARD_REVIEW.md) - 호스트 채팅 관리 UI
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - API 엔드포인트 참조
-- **Test**: [Test Scenarios](../05_QA_&_Validation/01_TEST_SCENARIOS.md) - TC-G-012, 013 번역 테스트 케이스
+- **Test**: [Test Scenarios](../05_QA_Validation/01_TEST_SCENARIOS.md) - TC-G-012, 013 번역 테스트 케이스

@@ -10,7 +10,7 @@
 ## 2. 문서 관리 표준 (5-Layer Structure)
 개발 문서는 다음 **순번이 매겨진 5단계 구조**를 엄격히 준수한다.
 
-### 2.1. `docs/01_Concept_&_Design` (컨셉 & 디자인, 기존 Foundation)
+### 2.1. `docs/01_Concept_Design` (컨셉 & 디자인, 기존 Foundation)
 - 프로젝트의 **기획, 목적, 개요, UI 디자인, 기능 설명**을 포함한다. 컨셉과 디자인 가이드가 여기 있음을 명시.
 - **포함 내용**: `VISION.md`, `OVERVIEW.md`, `UI_DESIGN.md`
 
@@ -22,11 +22,11 @@
 - 실제 코드를 작성하기 위해 **개발자가 참고해야 할 구체적인 지시서**이다. 데이터와 API 등 기술적 약속.
 - **포함 내용**: `login_spec.md`, `api_endpoints.md`, `db_schema.md`
 
-### 2.4. `docs/04_Logic_&_Progress` (로직 & 진행, 기존 Logic)
+### 2.4. `docs/04_Logic_Progress` (로직 & 진행, 기존 Logic)
 - **백로그(진행 상태)**와 **비즈니스 로직, 상태 관리, 알고리즘**을 결합한다. UI와 데이터(DB/API)를 연결하는 설계.
 - **포함 내용**: `00_BACKLOG.md`, `business_rules.md`, `state_management.md`, `algorithm_design.md`
 
-### 2.5. `docs/05_QA_&_Validation` (QA & 검증, 기존 Test)
+### 2.5. `docs/05_QA_Validation` (QA & 검증, 기존 Test)
 - 구현된 기능이 의도대로 동작하는지 **검증하는 문서**이다. 단순 테스트를 넘어 시스템 검증의 의미를 둔다.
 - **포함 내용**: `test_scenarios.md`, `qa_reports.md`
 
@@ -37,7 +37,7 @@
 - **Interactive Process**: 문서를 작성할 때 AI가 독단적으로 내용을 채우지 않는다. 초안 작성 전, **반드시 사용자에게 핵심 질문을 던지고 답변을 바탕으로 문서를 작성(Ask before Write)**한다.
 
 ## 3. 개발 표준 및 품질
-- **UI 중심 개발 전략 (UI-First)**: Concept_&_Design -> UI_Screens -> Technical_Specs -> Logic_&_Progress 순서를 따른다.
+- **UI 중심 개발 전략 (UI-First)**: Concept_Design -> UI_Screens -> Technical_Specs -> Logic_Progress 순서를 따른다.
 - **git commit 필수**: 중요 작업 전 반드시 git commit을 수행한다.
 - **커밋 메시지 형식**: `type(scope): subject` 포맷을 따른다.
   - **Type**: `feat`(기능), `fix`(버그), `docs`(문서), `style`(포맷), `refactor`(리팩토링), `test`(테스트), `chore`(기타)

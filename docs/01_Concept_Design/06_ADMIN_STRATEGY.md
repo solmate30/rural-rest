@@ -130,4 +130,4 @@ Admin 페이지는 Rural Rest 플랫폼의 **호스트(Host) 운영 전략**을 
 - **Prototype**: [Admin Dashboard Review](../02_UI_Screens/03_ADMIN_DASHBOARD_REVIEW.md) - 대시보드 프로토타입 리뷰
 - **Specs**: [Admin Management Spec](../03_Technical_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 상세 기능 명세
 - **Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - Admin Dashboard API 엔드포인트
-- **Logic**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 승인/거절 로직
+- **Logic**: [Booking State Machine](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 승인/거절 로직
