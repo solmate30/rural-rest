@@ -92,11 +92,11 @@ Key values from `DESIGN.md`:
 ## Documentation (5-Layer Structure)
 
 ```
-docs/01_Foundation/  -- Vision, specs, UI design, roadmap
-docs/02_Prototype/   -- UI prototypes, flow diagrams
-docs/03_Specs/       -- DB schema, API specs, implementation guides
-docs/04_Logic/       -- Business logic, state machines, algorithms
-docs/05_Test/        -- Test scenarios, QA checklists
+docs/01_Concept_&_Design/   -- Vision, specs, UI design, roadmap (concept & design guide)
+docs/02_UI_Screens/         -- UI prototypes, flow diagrams (page-by-page finished look)
+docs/03_Technical_Specs/    -- DB schema, API specs, implementation guides
+docs/04_Logic_&_Progress/   -- Backlog, business logic, state machines, algorithms
+docs/05_QA_&_Validation/    -- Test scenarios, QA checklists (system validation)
 ```
 
 Files are numbered (e.g., `01_VISION.md`) and must include creation/update dates in `YYYY-MM-DD HH:mm` format.

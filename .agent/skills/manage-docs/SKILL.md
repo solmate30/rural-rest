@@ -1,6 +1,6 @@
 ---
 name: manage-docs
-description: Create and manage project documentation according to the 5-layer standard (Foundation, Prototype, Specs, Logic, Test) with mandatory cross-layer context linking. Use when the user asks to document features, update documentation, create spec files, or manage project docs. Always include "Related Documents" sections to maintain context continuity across layers.
+description: Create and manage project documentation according to the 5-layer standard (01_Concept_&_Design, 02_UI_Screens, 03_Technical_Specs, 04_Logic_&_Progress, 05_QA_&_Validation) with mandatory cross-layer context linking. Use when the user asks to document features, update documentation, create spec files, or manage project docs. Always include "Related Documents" sections to maintain context continuity across layers.
 ---
 
 # Documentation Management Skill
@@ -13,46 +13,46 @@ All documentation must reside in `docs/` and follow this hierarchy:
 
 | Layer | Directory | Purpose | Examples |
 | :--- | :--- | :--- | :--- |
-| **Foundation** | `docs/01_Foundation/` | **Planning, Purpose, UI Design.** The "Constitution". | `01_VISION_CORE.md`, `02_LEAN_CANVAS.md`, `03_PRODUCT_SPECS.md`, `04_ROADMAP.md`, `05_UI_DESIGN.md` |
-| **Prototype** | `docs/02_Prototype/` | **UI Results, Screen Flows.** The "Visual Proof". | `00_LANDING_PAGE_REVIEW.md`, `01_DETAIL_PAGE_REVIEW.md`, `02_BOOKING_PAGE_REVIEW.md` |
-| **Specs** | `docs/03_Specs/` | Detailed feature specifications, API inputs/outputs. The "Blueprints". | `01_DB_SCHEMA.md`, `02_API_SPECS.md`, `03_STORAGE_POLICY.md` |
-| **Logic** | `docs/04_Logic/` | **Business Rules, Algorithms.** The "Brain". | `01_BOOKING_STATE_MACHINE.md`, `02_SEARCH_ALGORITHM.md`, `00_BACKLOG.md` |
-| **Test** | `docs/05_Test/` | Test scenarios, checklists, bug reports. The "Audit Trails". | `01_TEST_SCENARIOS.md`, `02_QA_CHECKLIST.md` |
+| **Concept & Design** | `docs/01_Concept_&_Design/` | **Planning, Purpose, UI Design.** The "Constitution". | `01_VISION_CORE.md`, `02_LEAN_CANVAS.md`, `03_PRODUCT_SPECS.md`, `04_ROADMAP.md`, `05_UI_DESIGN.md` |
+| **UI Screens** | `docs/02_UI_Screens/` | **UI Results, Screen Flows.** The "Visual Proof". | `00_LANDING_PAGE_REVIEW.md`, `01_DETAIL_PAGE_REVIEW.md`, `02_BOOKING_PAGE_REVIEW.md` |
+| **Technical Specs** | `docs/03_Technical_Specs/` | Data, API, implementation specs. The "Blueprints". | `01_DB_SCHEMA.md`, `02_API_SPECS.md`, `03_STORAGE_POLICY.md` |
+| **Logic & Progress** | `docs/04_Logic_&_Progress/` | **Backlog + Business Rules, Algorithms.** The "Brain". | `01_BOOKING_STATE_MACHINE.md`, `02_SEARCH_ALGORITHM.md`, `00_BACKLOG.md` |
+| **QA & Validation** | `docs/05_QA_&_Validation/` | Test scenarios, checklists, system validation. The "Audit Trails". | `01_TEST_SCENARIOS.md`, `02_QA_CHECKLIST.md` |
 
 ### 1.1. Layer Roles & Context Flow
 
 Each layer has a specific role and maintains context continuity with adjacent layers:
 
-**Foundation (01_Foundation/)**: 
+**Concept & Design (01_Concept_&_Design/)**: 
 - **Role**: 프로젝트의 비전, 목적, 전략, 디자인 원칙 정의
-- **Context Flow**: Foundation → Prototype (디자인 가이드라인 제공), Foundation → Specs (기능 명세 기반 제공)
+- **Context Flow**: Concept_&_Design → UI_Screens (디자인 가이드라인 제공), Concept_&_Design → Technical_Specs (기능 명세 기반 제공)
 
-**Prototype (02_Prototype/)**:
-- **Role**: UI 프로토타입 리뷰 및 사용자 플로우 검증
-- **Context Flow**: Prototype ← Foundation (디자인 시스템 참조), Prototype → Specs (구현 명세 요구사항 도출)
+**UI Screens (02_UI_Screens/)**:
+- **Role**: UI 프로토타입 리뷰 및 사용자 플로우 검증 (페이지별 완성된 모습 확인)
+- **Context Flow**: UI_Screens ← Concept_&_Design (디자인 시스템 참조), UI_Screens → Technical_Specs (구현 명세 요구사항 도출)
 
-**Specs (03_Specs/)**:
-- **Role**: 기술 명세 및 구현 가이드라인 정의
-- **Context Flow**: Specs ← Foundation (기능 명세 기반), Specs ← Prototype (UI 요구사항 반영), Specs → Logic (비즈니스 로직 설계 기반)
+**Technical Specs (03_Technical_Specs/)**:
+- **Role**: 기술 명세 및 구현 가이드라인 정의 (데이터, API 등 기술적 약속)
+- **Context Flow**: Technical_Specs ← Concept_&_Design (기능 명세 기반), Technical_Specs ← UI_Screens (UI 요구사항 반영), Technical_Specs → Logic_&_Progress (비즈니스 로직 설계 기반)
 
-**Logic (04_Logic/)**:
-- **Role**: 비즈니스 로직, 상태 관리, 알고리즘 설계
-- **Context Flow**: Logic ← Specs (데이터 모델 및 API 명세 참조), Logic ← Prototype (UI 인터랙션 요구사항 반영), Logic → Test (테스트 시나리오 기반)
+**Logic & Progress (04_Logic_&_Progress/)**:
+- **Role**: 백로그(진행 상태)와 비즈니스 로직, 상태 관리, 알고리즘 설계
+- **Context Flow**: Logic_&_Progress ← Technical_Specs (데이터 모델 및 API 명세 참조), Logic_&_Progress ← UI_Screens (UI 인터랙션 요구사항 반영), Logic_&_Progress → QA_&_Validation (테스트 시나리오 기반)
 
-**Test (05_Test/)**:
-- **Role**: 테스트 케이스 및 QA 기준 정의
-- **Context Flow**: Test ← 모든 상위 레이어 (Foundation, Prototype, Specs, Logic 모두 참조하여 테스트 시나리오 작성)
+**QA & Validation (05_QA_&_Validation/)**:
+- **Role**: 테스트 케이스 및 QA 기준 정의 (시스템 검증)
+- **Context Flow**: QA_&_Validation ← 모든 상위 레이어 (Concept_&_Design, UI_Screens, Technical_Specs, Logic_&_Progress 참조하여 테스트 시나리오 작성)
 
 ## 2. Usage Instructions
 
 When the user asks to "document X" or "update documentation for X", follow these steps:
 
 1.  **Identify the Layer**: Determine which of the 5 layers the document belongs to.
-    *   Is it high-level planning or UI Design? -> **01_Foundation**
-    *   Is it a result of UI prototyping? -> **02_Prototype**
-    *   Is it a detailed implementation spec? -> **03_Specs**
-    *   Is it business logic, state management, or algorithm design? -> **04_Logic**
-    *   Is it a test plan or QA report? -> **05_Test**
+    *   Is it high-level planning or UI Design? -> **01_Concept_&_Design**
+    *   Is it a result of UI prototyping? -> **02_UI_Screens**
+    *   Is it a detailed implementation spec? -> **03_Technical_Specs**
+    *   Is it business logic, state management, backlog, or algorithm design? -> **04_Logic_&_Progress**
+    *   Is it a test plan or QA report? -> **05_QA_&_Validation**
 
 2.  **Check Existing Docs**:
     *   Use `list_dir` to check if a relevant file already exists in the target directory.
@@ -92,7 +92,7 @@ When the user asks to "document X" or "update documentation for X", follow these
 
 ## 3. Templates
 
-### (A) Foundation Templates (`docs/01_Foundation/`)
+### (A) Concept & Design Templates (`docs/01_Concept_&_Design/`)
 Required Documents:
 1.  **`01_LEAN_CANVAS.md`**: Problem, Solution, UVP, Metrics
 2.  **`02_PRODUCT_SPECS.md`**: MVP Definition, Core Features
@@ -112,7 +112,7 @@ Required Documents:
 - **Foundation**: [Roadmap](./04_ROADMAP.md) - 단계별 실행 계획
 ```
 
-### (B) Prototype Template (`docs/02_Prototype/`)
+### (B) UI Screens Template (`docs/02_UI_Screens/`)
 Used for: Prototype Review, Screen Flow, UI Feedback
 
 ```markdown
@@ -130,12 +130,12 @@ Used for: Prototype Review, Screen Flow, UI Feedback
 (What needs to be changed before implementation?)
 
 ## 4. Related Documents
-- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 해당 페이지 사이트맵 및 사용자 플로우
-- **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - 디자인 시스템 및 컴포넌트 가이드라인
+- **Concept_&_Design**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 해당 페이지 사이트맵 및 사용자 플로우
+- **Concept_&_Design**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - 디자인 시스템 및 컴포넌트 가이드라인
 - **Prototype**: [Previous/Next Prototype](./XX_PREVIOUS_REVIEW.md) - 이전/다음 단계 프로토타입
 ```
 
-### (C) Specs Template (`docs/03_Specs/`)
+### (C) Technical Specs Template (`docs/03_Technical_Specs/`)
 Used for: Feature Specs, API Design, Database Schema
 
 ```markdown
@@ -146,13 +146,13 @@ Used for: Feature Specs, API Design, Database Schema
 [Document content...]
 
 ## X. Related Documents
-- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 기능 명세 및 사이트맵
-- **Prototype**: [Related Prototype Review](../02_Prototype/XX_REVIEW.md) - 관련 UI 프로토타입
-- **Specs**: [Database Schema](./01_DB_SCHEMA.md) - 데이터 모델 설계
-- **Logic**: [Related Logic Design](../04_Logic/XX_LOGIC.md) - 비즈니스 로직 설계
+- **Concept_&_Design**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 기능 명세 및 사이트맵
+- **UI_Screens**: [Related UI Review](../02_UI_Screens/XX_REVIEW.md) - 관련 UI 프로토타입
+- **Technical_Specs**: [Database Schema](./01_DB_SCHEMA.md) - 데이터 모델 설계
+- **Logic_&_Progress**: [Related Logic Design](../04_Logic_&_Progress/XX_LOGIC.md) - 비즈니스 로직 설계
 ```
 
-### (D) Logic Template (`docs/04_Logic/`)
+### (D) Logic & Progress Template (`docs/04_Logic_&_Progress/`)
 Used for: Business Rules, State Management, Algorithm Design
 
 Required Documents:
@@ -181,14 +181,14 @@ Required Documents:
 (Step-by-step logic description)
 
 ## 5. Related Documents
-- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 관련 기능 명세
-- **Prototype**: [Related UI Review](../02_Prototype/XX_REVIEW.md) - 관련 UI 프로토타입
-- **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - 데이터 모델 참조
-- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - API 엔드포인트 참조
-- **Test**: [Test Scenarios](../05_Test/01_TEST_SCENARIOS.md) - 관련 테스트 케이스
+- **Concept_&_Design**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 관련 기능 명세
+- **UI_Screens**: [Related UI Review](../02_UI_Screens/XX_REVIEW.md) - 관련 UI 프로토타입
+- **Technical_Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - 데이터 모델 참조
+- **Technical_Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - API 엔드포인트 참조
+- **QA_&_Validation**: [Test Scenarios](../05_QA_&_Validation/01_TEST_SCENARIOS.md) - 관련 테스트 케이스
 ```
 
-### (E) Test Template (`docs/05_Test/`)
+### (E) QA & Validation Template (`docs/05_QA_&_Validation/`)
 Used for: Test Plans, Checklists, Bug Reports
 
 ```markdown
@@ -199,12 +199,12 @@ Used for: Test Plans, Checklists, Bug Reports
 [Document content...]
 
 ## X. Related Documents
-- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 테스트 대상 기능 명세
-- **Prototype**: [Related Prototype Review](../02_Prototype/XX_REVIEW.md) - 테스트 대상 UI 프로토타입
-- **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - 데이터베이스 테스트 참조
-- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - API 테스트 참조
-- **Logic**: [Related Logic Design](../04_Logic/XX_LOGIC.md) - 비즈니스 로직 테스트 참조
-- **Test**: [QA Checklist](./02_QA_CHECKLIST.md) - 릴리스 기준 및 체크리스트
+- **Concept_&_Design**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 테스트 대상 기능 명세
+- **UI_Screens**: [Related UI Review](../02_UI_Screens/XX_REVIEW.md) - 테스트 대상 UI 프로토타입
+- **Technical_Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - 데이터베이스 테스트 참조
+- **Technical_Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - API 테스트 참조
+- **Logic_&_Progress**: [Related Logic Design](../04_Logic_&_Progress/XX_LOGIC.md) - 비즈니스 로직 테스트 참조
+- **QA_&_Validation**: [QA Checklist](./02_QA_CHECKLIST.md) - 릴리스 기준 및 체크리스트
 ```
 
 ## 4. Context Linking & Cross-References
@@ -250,8 +250,8 @@ Every document MUST include a "Related Documents" section at the end, before any
 **Example**:
 ```markdown
 ## 5. Related Documents
-- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 랜딩 페이지 사이트맵 및 사용자 플로우 (Section 3.A.1)
-- **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - 디자인 시스템 및 컴포넌트 가이드라인
+- **Concept_&_Design**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 랜딩 페이지 사이트맵 및 사용자 플로우 (Section 3.A.1)
+- **Concept_&_Design**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - 디자인 시스템 및 컴포넌트 가이드라인
 - **Prototype**: [Property Detail Page Review](./01_DETAIL_PAGE_REVIEW.md) - 다음 단계 프로토타입
 ```
 
@@ -265,11 +265,11 @@ Every document MUST include a "Related Documents" section at the end, before any
 **Example**:
 ```markdown
 ## 5. Related Documents
-- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - MVP 기능 명세 및 사이트맵
-- **Foundation**: [UI Design](../01_Foundation/05_UI_DESIGN.md) - 디자인 시스템 가이드라인
-- **Prototype**: [Property Detail Review](../02_Prototype/01_DETAIL_PAGE_REVIEW.md) - 프로토타입 리뷰
-- **Specs**: [Database Schema](./01_DB_SCHEMA.md) - 데이터베이스 스키마 명세
-- **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직
+- **Concept_&_Design**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - MVP 기능 명세 및 사이트맵
+- **Concept_&_Design**: [UI Design](../01_Concept_&_Design/05_UI_DESIGN.md) - 디자인 시스템 가이드라인
+- **UI_Screens**: [Property Detail Review](../02_UI_Screens/01_DETAIL_PAGE_REVIEW.md) - 프로토타입 리뷰
+- **Technical_Specs**: [Database Schema](./01_DB_SCHEMA.md) - 데이터베이스 스키마 명세
+- **Logic_&_Progress**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직
 ```
 
 #### Logic Layer Documents
@@ -283,11 +283,11 @@ Every document MUST include a "Related Documents" section at the end, before any
 **Example**:
 ```markdown
 ## 6. Related Documents
-- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 예약 플로우 사이트맵 (Section 3.A.4)
-- **Prototype**: [Booking Page Review](../02_Prototype/02_BOOKING_PAGE_REVIEW.md) - 예약 페이지 UI 프로토타입
-- **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - `bookings` 테이블 구조 및 상태 필드
-- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - Booking Process API 엔드포인트 (Section 3.4)
-- **Test**: [Test Scenarios](../05_Test/01_TEST_SCENARIOS.md) - 예약 관련 테스트 케이스 (Section 2.2)
+- **Concept_&_Design**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 예약 플로우 사이트맵 (Section 3.A.4)
+- **UI_Screens**: [Booking Page Review](../02_UI_Screens/02_BOOKING_PAGE_REVIEW.md) - 예약 페이지 UI 프로토타입
+- **Technical_Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - `bookings` 테이블 구조 및 상태 필드
+- **Technical_Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - Booking Process API 엔드포인트 (Section 3.4)
+- **QA_&_Validation**: [Test Scenarios](../05_QA_&_Validation/01_TEST_SCENARIOS.md) - 예약 관련 테스트 케이스 (Section 2.2)
 ```
 
 #### Test Layer Documents
@@ -301,11 +301,11 @@ Every document MUST include a "Related Documents" section at the end, before any
 **Example**:
 ```markdown
 ## 10. Related Documents
-- **Foundation**: [Product Specs](../01_Foundation/03_PRODUCT_SPECS.md) - 사용자 플로우 및 사이트맵 (테스트 시나리오 기반)
-- **Prototype**: [Landing Page Review](../02_Prototype/00_LANDING_PAGE_REVIEW.md) - 랜딩 페이지 테스트 대상
-- **Specs**: [Database Schema](../03_Specs/01_DB_SCHEMA.md) - 데이터베이스 통합 테스트 참조
-- **Specs**: [API Specs](../03_Specs/02_API_SPECS.md) - API 엔드포인트 테스트 참조
-- **Logic**: [Booking State Machine](../04_Logic/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직 테스트 참조
+- **Concept_&_Design**: [Product Specs](../01_Concept_&_Design/03_PRODUCT_SPECS.md) - 사용자 플로우 및 사이트맵 (테스트 시나리오 기반)
+- **UI_Screens**: [Landing Page Review](../02_UI_Screens/00_LANDING_PAGE_REVIEW.md) - 랜딩 페이지 테스트 대상
+- **Technical_Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - 데이터베이스 통합 테스트 참조
+- **Technical_Specs**: [API Specs](../03_Technical_Specs/02_API_SPECS.md) - API 엔드포인트 테스트 참조
+- **Logic_&_Progress**: [Booking State Machine](../04_Logic_&_Progress/01_BOOKING_STATE_MACHINE.md) - 예약 상태 관리 로직 테스트 참조
 ```
 
 ### 4.3. Link Path Format
@@ -316,9 +316,9 @@ Every document MUST include a "Related Documents" section at the end, before any
 
 **Path Examples**:
 - Same layer: `./02_LEAN_CANVAS.md`
-- Parent layer: `../01_Foundation/03_PRODUCT_SPECS.md`
-- Child layer: `../02_Prototype/00_LANDING_PAGE_REVIEW.md`
-- Sibling layer: `../03_Specs/01_DB_SCHEMA.md`
+- Parent layer: `../01_Concept_&_Design/03_PRODUCT_SPECS.md`
+- Child layer: `../02_UI_Screens/00_LANDING_PAGE_REVIEW.md`
+- Sibling layer: `../03_Technical_Specs/01_DB_SCHEMA.md`
 
 ### 4.4. Context Continuity Checklist
 
@@ -336,7 +336,7 @@ When creating or updating a document, verify:
 
 - **Keep it minimal**: Don't write fluff. Be precise.
 - **Maintain context continuity**: Always include "Related Documents" section to link across layers.
-- **Update the Map**: If you add a major new document, consider updating `docs/01_Foundation/04_ROADMAP.md` or a central index if one exists.
+- **Update the Map**: If you add a major new document, consider updating `docs/01_Concept_&_Design/04_ROADMAP.md` or a central index if one exists.
 - **Preserve existing content**: When updating documents, read existing files first and maintain context and style. Do not overwrite unnecessarily.
-- **Follow Interactive Process**: Always ask users key questions before creating Foundation or Specs documents. Never generate documents based solely on assumptions.
+- **Follow Interactive Process**: Always ask users key questions before creating Concept_&_Design or Technical_Specs documents. Never generate documents based solely on assumptions.
 - **Update Last Updated date**: When modifying a document, update the "Last Updated" timestamp in the metadata header.
