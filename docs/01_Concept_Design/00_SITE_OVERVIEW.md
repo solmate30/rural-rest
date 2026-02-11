@@ -2,7 +2,7 @@
 **Stitch Project ID:** `projects/3517571550003660935`
 
 ## 1. Vision
-Rural Rest is a premium booking platform connecting modern travelers with restored heritage homes in rural South Korea. The aesthetic is "Warm Minimalist," blending traditional Hanok elements with modern comfort. The platform focuses on unique architectural experiences and local storytelling.
+Rural Rest is a premium booking platform connecting modern travelers with restored heritage homes in rural South Korea. Each stay is managed as a **'Local Node'** under the technical brand **'localhost'**, blending traditional Hanok elements with modern smart infrastructure (AI/IoT). The platform focuses on unique architectural experiences, local storytelling, and autonomous stay management.
 
 ## 2. Core Features
 - **Discovery:** Curated lists of restorations (Hanok, Modern, Farmhouse).

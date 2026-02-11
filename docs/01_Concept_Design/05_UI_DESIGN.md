@@ -111,7 +111,20 @@ The Footer provides essential credibility and navigation at the bottom of every 
 *   **노출 페이지**: 전역(모든 게스트 페이지) 또는 Property Detail·Booking 등 컨텍스트가 있는 페이지부터 단계적 노출. (구현 시 결정)
 *   **참조**: [AI Concierge Spec](../03_Technical_Specs/04_AI_CONCIERGE_SPEC.md), [AI Concierge Logic](../04_Logic_Progress/08_AI_CONCIERGE_LOGIC.md).
 
-### 6.4. 디자인 토큰 구현 상태 (Theme Implementation)
+### 6.4. Node-based Naming System (localhost://xxxx)
+To bridge the gap between "Rural Tradition" and "Modern Technology", we use a protocol-style naming system for project nodes.
+*   **Visual Representation**:
+    *   **Font**: Monospace font (e.g., *'JetBrains Mono'* or *'Courier Prime'*) to contrast with the warm handwriting titles.
+    *   **Color**: Accent Orange (`#FFAB91`) or Primary Green, styled as a subtle code block or terminal-style badge.
+    *   **Placement**: 
+        *   **On Site**: Physical wooden or metal plaques at the entrance saying `localhost://5001`.
+        *   **In App**: Displayed in the header of the Property Detail page and on the My Trips booking card.
+*   **Meaning**:
+    *   `local`: The identity of the rural community and host.
+    *   `host`: The hospitality provided by the resident and the AI agent.
+    *   `://5001`: The unique port/node identifier in our global infrastructure.
+
+### 6.5. 디자인 토큰 구현 상태 (Theme Implementation)
 *   **CSS 변수**: `app/app.css`의 `:root`에 Section 2 팔레트 반영 (Primary #8D6E63, Secondary #D7CCC8, Accent #FFAB91, Background #FAF9F6, Foreground #3E2723).
 *   **폰트**: Section 3 Body 폰트 적용. `tailwind.config.js`의 `fontFamily.sans`에 Noto Sans KR·Pretendard, `root.tsx` links에서 Google Fonts Noto Sans KR 로드.
 *   **컴포넌트**: Shadcn/UI (Button, Card, Input, Dialog, ScrollArea, Avatar, Toast) 설치 완료. `app/components/ui/` 참조. [Backlog](../04_Logic_Progress/00_BACKLOG.md) Section 2 Design System.

@@ -3,8 +3,9 @@
 > Last Updated: 2026-02-07 19:00
 
 ## 1. Project Identity
-**Project Name**: Rural Rest (가칭)
-**Slogan**: "Rebirth of Empty Houses, Revival of Connections" (빈집의 재탄생, 연결의 부활)
+**Project Name**: Rural Rest (Platform) / **localhost** (Infrastructure)
+**Slogan**: "Local Hosts, Smart Nodes - Rebirth of Empty Houses"
+**Identifier System**: `localhost://[Node_Number]` (e.g., `localhost://0001`)
 
 ## 2. Core Mission (The "Why")
 본 프로젝트는 대한민국의 심각한 사회 문제인 **'빈집(Empty Houses)' 문제**를 해결함과 동시에, 전 세계 여행자들에게 **'한국적인 시골의 아름다움과 뜻밖의 환대(Authentic Hospitality)'**를 제공하는 **이중 가치(Dual Value)** 실현을 목표로 한다.
@@ -25,8 +26,9 @@
 | :--- | :--- | :--- |
 | **Inventory** | 일반 가정집, 펜션, 호텔 | **방치된 빈집 리모델링**, 고택, 농가주택 |
 | **Experience** | 숙박 중심 (Stay) | **시골 큐레이션 + 마을 체험** (Experience-first) |
+| **Naming** | 집 이름, 주소 | **localhost://5001** (프로토콜 기반 고유 노드 식별) |
 | **Community** | 호스트-게스트 1:1 소통 | **게스트 간 네트워킹**, 마을 주민과의 교류 프로그램 |
-| **Emotion** | 세련됨, 편리함 | **투박함, 정겨움, 낯선 곳에서의 환대와 편안함** |
+| **Emotion** | 세련됨, 편리함 | **투박함, 정겨움, 낯선 곳에서의 환대와 지능형 편안함** |
 
 ## 5. Strategic Roadmap (Goals)
 *   **Short-term (6 Months)**: **파일럿 숙소 5개 오픈** 및 운영 검증.
@@ -45,3 +47,5 @@
 - **Foundation**: [Roadmap](./04_ROADMAP.md) - 단계별 실행 전략
 - **Foundation**: [UI Design](./05_UI_DESIGN.md) - 디자인 시스템 가이드라인
 - **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략
+- **Foundation**: [Pitch Deck](./12_PITCH_DECK.md) - 3분 스토리텔링·6대 루브릭 기반 투자 피치 요약
+- **Foundation**: [Guest Acquisition Channels](./13_GUEST_ACQUISITION_CHANNELS.md) - 글로벌 투숙객 유치 채널(한국어학과·문화원·자매도시)

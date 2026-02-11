@@ -43,3 +43,4 @@
 - **Foundation**: [Roadmap](./04_ROADMAP.md) - 단계별 실행 계획
 - **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략 및 수익 구조
 - **Foundation**: [Happy Path Scenarios](./07_HAPPY_PATH_SCENARIOS.md) - 핵심 사용자 여정 및 시나리오
+- **Foundation**: [Pitch Deck](./12_PITCH_DECK.md) - 6대 루브릭·Phase 2/3 기반 투자·경쟁 제출용 피치 요약
