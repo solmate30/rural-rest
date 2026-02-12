@@ -83,8 +83,6 @@ npm run build
 npm run start
 ```
 
-Docker 사용 시 `web/Dockerfile` 및 해당 디렉터리의 `README.md`를 참고하세요.
-
 ---
 
 ## 문서

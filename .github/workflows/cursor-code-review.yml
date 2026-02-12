@@ -1,0 +1,64 @@
+# PR마다 Cursor Agent가 diff를 리뷰하고, gh pr review --comment 로 GitHub PR에 코멘트를 남깁니다.
+# 필수: 저장소 Settings > Secrets and variables > Actions 에 CURSOR_API_KEY 추가.
+# 참고: https://cursor.com/docs/cli/cookbook/code-review
+
+name: Cursor Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  code-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install Cursor CLI
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.cursor/bin" >> $GITHUB_PATH
+          echo "$HOME/.cursor/bin" >> $GITHUB_ENV
+
+      - name: Perform code review
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          export PATH="$HOME/.cursor/bin:$PATH"
+          agent --force --output-format=text --print "You are operating in a GitHub Actions runner performing automated code review. The gh CLI is available and authenticated via GH_TOKEN. You may comment on pull requests.
+
+          Context:
+          - Repo: ${{ github.repository }}
+          - PR Number: ${{ github.event.pull_request.number }}
+          - PR Head SHA: ${{ github.event.pull_request.head.sha }}
+          - PR Base SHA: ${{ github.event.pull_request.base.sha }}
+
+          Review criteria (align with project AGENTS.md and dev-conventions; no emoji, text only):
+          - Project conventions: monorepo (root = management, web/ = app), commit format type(scope): subject, TypeScript/Zod/Luxon, no .env in repo, docs in docs/01_Concept_Design etc.
+          - Clear issues: bugs, security (guard clauses, no secrets), performance.
+          - Use severity labels in comments: [Critical] [Security] [Performance] [Logic] [Improvement] [Resolved].
+
+          Procedure:
+          1) Get existing comments: gh pr view ${{ github.event.pull_request.number }} --json comments
+          2) Get diff: gh pr diff ${{ github.event.pull_request.number }}
+          3) If a previously reported issue appears fixed by nearby changes, reply: [Resolved] This issue appears to be resolved by the recent changes.
+          4) Avoid duplicates: skip if similar feedback already exists on or near the same lines.
+
+          Commenting rules:
+          - Max 10 inline comments total; prioritize the most critical issues.
+          - One issue per comment; place on the exact changed line.
+          - Natural tone, specific and actionable; do not mention automated or high-confidence.
+          - Use text labels only (no emoji): [Critical] [Security] [Performance] [Logic] [Resolved] [Improvement]
+
+          Submission:
+          - Submit one review containing inline comments plus a concise summary.
+          - Use only: gh pr review ${{ github.event.pull_request.number }} --comment
+          - Do not use: gh pr review --approve or --request-changes"
