@@ -1,12 +1,13 @@
 # Rural Rest: The Global Hospitality OS
 > **"Turning Global Rural Decay into Premium Hospitality Assets"**
-> Last Updated: 2026-02-12
+> Created: 2026-02-12
+> Last Updated: 2026-02-13
 
 ---
 
 ## [Slide 1] The Hook: One-Liner
 ### "빈집을 글로벌 핫플레이스로, Local Hosts를 Smart Nodes로."
-Rural Rest는 방치된 빈집을 AI·IoT 기반 무인 자율 운영 인프라인 **'localhost'**를 통해 글로벌 시장을 공략하는 프리미엄 호스피탈리티 운영 프로토콜입니다.
+Rural Rest는 **지역주민**, **RWA 투자자**, **지방정부**를 연결하는 자율 운영 인프라 **'localhost'**를 통해 방치된 빈집을 글로벌 시장에 맞춘 프리미엄 호스피탈리티 자산으로 재생하는 운영 프로토콜입니다.
 
 ---
 
@@ -20,9 +21,12 @@ Rural Rest는 방치된 빈집을 AI·IoT 기반 무인 자율 운영 인프라�
 
 ## [Slide 3] Solution: RWA Hospitality Protocol
 ### "빈집을 유동화하고 기술로 경영하는 RWA 프로젝트"
+금융(RWA) - 거버넌스(DAO) - 서비스(Rural Rest)로 이어지는 웹3 호스피탈리티의 삼각 편대.
+
 *   **RWA (Real World Asset)**: 방치된 부동산을 온체인 자산화하여 글로벌 투자 유치 및 투명한 수익 배분 실현.
 *   **Governance (DAO)**: RWA 투자자들이 DAO를 결성하여 마을 발전 기금 운용 및 주요 의사결정에 투표로 참여하는 액티브 거버넌스 구축.
 *   **Service (Rural Rest)**: 글로벌 여행자와 재생된 자산을 연결하여 'Real Local' 경험을 제공하는 전 세계적인 호스피탈리티 커뮤니티.
+*   **Open Protocol**: 다른 지자체·빌더가 재사용할 수 있는 개방형 호스피탈리티 운영 프로토콜로, 생태계 확장과 협업 가능성(Composability)을 지향합니다.
 
 ---
 
@@ -57,7 +61,7 @@ Rural Rest는 방치된 빈집을 AI·IoT 기반 무인 자율 운영 인프라�
 ### "글로벌 사회 문제를 해결하는 솔라나의 선한 영향력"
 *   **Reputation Boost**: 유휴 자산 재생이라는 글로벌 어젠다에 솔라나가 핵심 엔진으로 사용됨으로써, 기술을 넘어선 '사회적 평판(Blockchain for Good)' 확보.
 *   **Transaction Driver**: RWA 수익의 실시간 배분, DAO 투표, 글로벌 소액 결제 등을 통해 솔라나 네트워크의 실질적이고 지속 가능한 트랜잭션 볼륨 증대 기여.
-*   **Sustainable Ecosystem**: 매출의 5%를 마을 기금으로 환원하는 온체인 시스템을 통해 지역 주민과 상생하는 블록체인 기반의 '지속 가능한 상생 모델' 증명.
+*   **Sustainable Ecosystem**: 현지 마을에 인력을 채용하여 일자리를 창출하는 방식을 통해 지역 주민과 상생하는 블록체인 기반의 '지속 가능한 상생 모델' 증명.
 
 ---
 
@@ -77,6 +81,8 @@ Rural Rest는 방치된 빈집을 AI·IoT 기반 무인 자율 운영 인프라�
 
 ## 10. Related Documents
 - **Concept & Vision**: [01_VISION_CORE.md](./01_VISION_CORE.md)
+- **Business Model**: [02_LEAN_CANVAS.md](./02_LEAN_CANVAS.md)
+- **Execution Plan**: [04_ROADMAP.md](./04_ROADMAP.md)
 - **RWA Governance**: [11_RWA_DAO_GOVERNANCE_VISION.md](./11_RWA_DAO_GOVERNANCE_VISION.md)
 - **Guest Strategy**: [13_GUEST_ACQUISITION_CHANNELS.md](./13_GUEST_ACQUISITION_CHANNELS.md)
 - **Technical OS**: [11_AI_BLOCKCHAIN_SYNERGY.md](./11_AI_BLOCKCHAIN_SYNERGY.md)
