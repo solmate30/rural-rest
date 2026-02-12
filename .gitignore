@@ -36,6 +36,7 @@ yarn-error.log*
 # AI Agent & local config (not shared via Git)
 .agent/
 .claude/
+.cursor/
 AGENTS.md
 CLAUDE.md
 
