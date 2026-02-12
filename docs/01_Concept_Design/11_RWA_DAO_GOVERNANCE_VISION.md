@@ -1,6 +1,6 @@
 # 11. RWA DAO Governance Vision
 > Created: 2026-02-11 00:10
-> Last Updated: 2026-02-11 00:10
+> Last Updated: 2026-02-12 00:00
 
 ## 1. Overview
 'Rural Rest'의 RWA(Real World Asset) 투자는 단순한 수익 창출을 넘어, 투자자가 지역 사회의 의사결정에 참여하고 마을의 성장을 함께 이끄는 **DAO(탈중앙화 자율 조직) 기반 거버넌스**를 지향합니다. 본 문서는 공정한 투표 시스템, 지속 가능한 보상 체계, 그리고 마을 주민과의 상생 구조를 정의합니다.
@@ -61,5 +61,6 @@ DAO는 단순히 외부 투자자만의 조직이 아니라, **마을 주민이 
 - **Concept_Design**: [Vision Core](./01_VISION_CORE.md) - 프로젝트 전체 비전
 - **Concept_Design**: [Blockchain Vision](./08_BLOCKCHAIN_VISION.md) - RWA 및 블록체인 도입 전략
 - **Concept_Design**: [AI & IoT Managed Infra](./10_AI_IOT_INFRA_VISION.md) - 자율 운영 인프라 비전
+- **Concept_Design**: [Solana Transaction Growth Strategy](./15_SOLANA_TRANSACTION_GROWTH_STRATEGY.md) - 온체인 트랜잭션 증가 방안 (결제·보상 연계)
 - **Logic_Progress**: [RWA Tokenization Logic](../04_Logic_Progress/12_RWA_TOKENIZATION_LOGIC.md) - 데이터 기반 배당 알고리즘 상세
 - **Technical_Specs**: [Blockchain Infra Spec](../03_Technical_Specs/08_BLOCKCHAIN_INFRA_SPEC.md) - 온체인 거버넌스 인프라 기반
