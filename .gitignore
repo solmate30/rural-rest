@@ -37,8 +37,6 @@ yarn-error.log*
 .agent/
 .claude/
 .cursor/
-AGENTS.md
-CLAUDE.md
 
 # Database
 *.db
