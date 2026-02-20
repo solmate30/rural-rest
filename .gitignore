@@ -44,3 +44,6 @@ yarn-error.log*
 *.db-shm
 *.db-wal
 .drizzle/
+
+stitch.json
+web/stitch_*.html

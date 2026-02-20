@@ -11,4 +11,5 @@ export default [
     route("api/sign-cloudinary", "routes/api.sign-cloudinary.ts"),
     route("api/chat/concierge", "routes/api.chat.concierge.ts"),
     route("search", "routes/search.tsx"),
+    route("invest", "routes/invest.tsx"),
 ] satisfies RouteConfig;
