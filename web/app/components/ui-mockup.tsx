@@ -146,7 +146,7 @@ export function Header() {
                     {isInvestRoute ? (
                         mounted && (
                             <div className="ml-2 pl-6 border-l border-border h-10 flex items-center">
-                                <WalletMultiButton className="!border !border-input !bg-transparent !text-foreground !shadow-sm hover:!bg-accent hover:!text-accent-foreground !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />
+                                <WalletMultiButton className="!bg-[#17cf54] !text-white !border-none hover:!bg-[#14b847] !shadow-sm !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />
                             </div>
                         )
                     ) : (

@@ -94,11 +94,11 @@
   }
 }
 
-/* Solana Wallet Adapter Overrides */
+/* Solana Wallet Adapter Overrides - Primary Green */
 .wallet-adapter-button-trigger {
-  background-color: transparent !important;
-  color: hsl(var(--foreground)) !important;
-  border: 1px solid hsl(var(--input)) !important;
+  background-color: #17cf54 !important;
+  color: white !important;
+  border: none !important;
   border-radius: var(--radius) !important;
   height: 2.5rem !important;
   /* h-10 */
@@ -118,8 +118,8 @@
 }
 
 .wallet-adapter-button-trigger:not([disabled]):hover {
-  background-color: hsl(var(--accent)) !important;
-  color: hsl(var(--accent-foreground)) !important;
+  background-color: #14b847 !important;
+  color: white !important;
 }
 
 /* Utilities */
