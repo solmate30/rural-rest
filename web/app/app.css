@@ -93,3 +93,44 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Solana Wallet Adapter Overrides */
+.wallet-adapter-button-trigger {
+  background-color: transparent !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--input)) !important;
+  border-radius: var(--radius) !important;
+  height: 2.5rem !important;
+  /* h-10 */
+  padding-left: 1.5rem !important;
+  /* px-6 */
+  padding-right: 1.5rem !important;
+  /* px-6 */
+  font-size: 0.875rem !important;
+  /* text-sm */
+  font-weight: 500 !important;
+  /* font-medium */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  /* shadow-sm */
+  transition: all 0.15s ease-in-out !important;
+  font-family: inherit !important;
+  line-height: inherit !important;
+}
+
+.wallet-adapter-button-trigger:not([disabled]):hover {
+  background-color: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+/* Utilities */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari and Opera */
+}

@@ -44,7 +44,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 import { AiConcierge } from "./components/AiConcierge";
-
 export default function App() {
   return (
     <>

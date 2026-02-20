@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { authClient } from "~/lib/auth.client";
 import { cn } from "~/lib/utils";
 import { useToast } from "~/hooks/use-toast";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useLocation } from "react-router";
 
 export function Button({
     className,
@@ -110,6 +112,8 @@ export function Header() {
     const session = sessionRes?.data;
     const isPending = sessionRes?.isPending || false;
     const { toast } = useToast();
+    const location = useLocation();
+    const isInvestRoute = location.pathname.startsWith('/invest') || location.pathname.startsWith('/my-investments');
 
     const handleSignOut = async () => {
         await authClient.signOut();
@@ -136,31 +140,42 @@ export function Header() {
                 <nav className="hidden md:flex items-center gap-6">
                     <a href="/" className="text-sm font-medium hover:text-primary transition-colors">Find a Stay</a>
                     <a href="/admin" className="text-sm font-medium hover:text-primary transition-colors">Host your Home</a>
-                    {mounted && !isPending && (
-                        session ? (
-                            <div className="flex items-center gap-4 ml-4">
-                                <div className="flex items-center gap-2.5">
-                                    {session.user.image ? (
-                                        <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-white ring-1 ring-stone-200 shadow-sm">
-                                            <img
-                                                src={session.user.image}
-                                                alt={session.user.name}
-                                                className="h-full w-full object-cover"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center border-2 border-white ring-1 ring-primary/20 shadow-sm">
-                                            <span className="text-xs font-bold text-primary">
-                                                {session.user.name?.charAt(0).toUpperCase()}
-                                            </span>
-                                        </div>
-                                    )}
-                                    <span className="text-sm font-semibold text-foreground/80">{session.user.name}님</span>
-                                </div>
-                                <Button variant="outline" onClick={handleSignOut} className="h-9 px-4 text-xs font-bold">로그아웃</Button>
+                    <a href="/invest" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">Invest (RWA)</a>
+
+                    {/* Conditional Auth Rendering */}
+                    {isInvestRoute ? (
+                        mounted && (
+                            <div className="ml-2 pl-6 border-l border-border h-10 flex items-center">
+                                <WalletMultiButton className="!border !border-input !bg-transparent !text-foreground !shadow-sm hover:!bg-accent hover:!text-accent-foreground !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />
                             </div>
-                        ) : (
-                            <Button variant="outline" className="ml-4" onClick={() => window.location.href = '/auth'}>Login</Button>
+                        )
+                    ) : (
+                        mounted && !isPending && (
+                            session ? (
+                                <div className="flex items-center gap-4 ml-4">
+                                    <div className="flex items-center gap-2.5">
+                                        {session.user.image ? (
+                                            <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-white ring-1 ring-stone-200 shadow-sm">
+                                                <img
+                                                    src={session.user.image}
+                                                    alt={session.user.name}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center border-2 border-white ring-1 ring-primary/20 shadow-sm">
+                                                <span className="text-xs font-bold text-primary">
+                                                    {session.user.name?.charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <span className="text-sm font-semibold text-foreground/80">{session.user.name}님</span>
+                                    </div>
+                                    <Button variant="outline" onClick={handleSignOut} className="h-9 px-4 text-xs font-bold">로그아웃</Button>
+                                </div>
+                            ) : (
+                                <Button variant="outline" className="ml-4" onClick={() => window.location.href = '/auth'}>Login</Button>
+                            )
                         )
                     )}
                 </nav>
