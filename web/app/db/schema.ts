@@ -9,6 +9,8 @@ export const user = sqliteTable("user", {
     image: text("image"),
     role: text("role", { enum: ["guest", "host", "admin"] }).notNull().default("guest"),
     preferredLang: text("preferred_lang").notNull().default("en"),
+    walletAddress: text("wallet_address"), // Solana 지갑 주소
+    walletConnectedAt: text("wallet_connected_at"), // 지갑 연결 시간
     createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
