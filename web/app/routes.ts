@@ -12,4 +12,5 @@ export default [
     route("api/chat/concierge", "routes/api.chat.concierge.ts"),
     route("search", "routes/search.tsx"),
     route("invest", "routes/invest.tsx"),
+    route("invest/:listingId", "routes/invest.detail.tsx"),
 ] satisfies RouteConfig;
