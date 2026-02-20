@@ -1,9 +1,18 @@
-import { Header, Footer } from "~/components/ui-mockup";
+import { Header, Footer, Card, Button } from "~/components/ui-mockup";
 import RwaWalletProvider from "~/components/RwaWalletProvider";
 import { useNavigate } from "react-router";
+import { useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 
-export default function InvestDashboard() {
+function InvestDashboardContent() {
     const navigate = useNavigate();
+    const { connected } = useWallet();
+    const { setVisible } = useWalletModal();
+    const [showFilter, setShowFilter] = useState(false);
+    const [selectedRegion, setSelectedRegion] = useState("전체");
+    const [selectedSort, setSelectedSort] = useState("수익률순");
+    const [selectedStatus, setSelectedStatus] = useState("전체");
 
     const properties = [
         {
@@ -61,9 +70,8 @@ export default function InvestDashboard() {
     ];
 
     return (
-        <RwaWalletProvider>
-            <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-primary/20">
-                <Header />
+        <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-primary/20">
+            <Header />
 
                 <main className="flex-1">
                     <div className="container mx-auto py-16 px-4 sm:px-8">
@@ -73,24 +81,111 @@ export default function InvestDashboard() {
                                     Invest in Rural Korea
                                 </h1>
                             <p className="text-lg text-muted-foreground">
-                                한국 농촌의 작은 마을 한 켠을, 지금 소유하세요.<br />
-                                리모델링된 빈집이 매달 배당 수익을 만들고, 마을은 다시 살아납니다.
+                                빈집의 재탄생에 함께하세요.<br />
+                             
                             </p>
                             </div>
                             <div className="flex w-full md:w-auto items-center overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 hide-scrollbar">
                                 <div className="flex gap-2 items-center flex-nowrap w-max">
-                                    <button className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground/80 shadow-sm hover:bg-background shrink-0">
+                                    <button 
+                                        onClick={() => setShowFilter(!showFilter)}
+                                        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground/80 shadow-sm hover:bg-background shrink-0"
+                                    >
                                         <span className="material-symbols-outlined text-[18px]">tune</span>
                                         필터
                                     </button>
                                     <div className="h-9 w-[1px] bg-border mx-1 shrink-0 hidden sm:block"></div>
-                                    <button className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background shadow-sm shrink-0">전체 지역</button>
-                                    <button className="rounded-full bg-card px-4 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-background transition-colors shrink-0">전주</button>
-                                    <button className="rounded-full bg-card px-4 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-background transition-colors shrink-0">안동</button>
-                                    <button className="rounded-full bg-card px-4 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-background transition-colors shrink-0">강릉</button>
+                                    {["전체", "경기", "강원", "충청", "전라", "경상", "제주"].map((region) => (
+                                        <button
+                                            key={region}
+                                            onClick={() => setSelectedRegion(region)}
+                                            className={`rounded-full px-4 py-2 text-sm font-medium shadow-sm shrink-0 transition-colors ${
+                                                selectedRegion === region
+                                                    ? "bg-foreground text-background"
+                                                    : "bg-card text-foreground/70 hover:text-foreground hover:bg-background"
+                                            }`}
+                                        >
+                                            {region} {region === "전체" ? "지역" : ""}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         </div>
+
+                        {/* Filter Modal */}
+                        {showFilter && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                                <Card className="w-full max-w-md p-6 space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-xl font-bold">필터 옵션</h2>
+                                        <button onClick={() => setShowFilter(false)} className="p-2 hover:bg-secondary rounded-lg">
+                                            <span className="material-symbols-outlined">close</span>
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="text-sm font-medium mb-2 block">정렬</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {["수익률순", "최신순", "가격순"].map((sort) => (
+                                                    <button
+                                                        key={sort}
+                                                        onClick={() => setSelectedSort(sort)}
+                                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                            selectedSort === sort
+                                                                ? "bg-primary text-primary-foreground"
+                                                                : "bg-secondary text-foreground hover:bg-secondary/80"
+                                                        }`}
+                                                    >
+                                                        {sort}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-sm font-medium mb-2 block">상태</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {["전체", "모집 중", "모집 완료", "운영 중"].map((status) => (
+                                                    <button
+                                                        key={status}
+                                                        onClick={() => setSelectedStatus(status)}
+                                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                            selectedStatus === status
+                                                                ? "bg-primary text-primary-foreground"
+                                                                : "bg-secondary text-foreground hover:bg-secondary/80"
+                                                        }`}
+                                                    >
+                                                        {status}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2 pt-4">
+                                        <Button 
+                                            variant="outline" 
+                                            className="flex-1"
+                                            onClick={() => {
+                                                setSelectedRegion("전체");
+                                                setSelectedSort("수익률순");
+                                                setSelectedStatus("전체");
+                                            }}
+                                        >
+                                            초기화
+                                        </Button>
+                                        <Button 
+                                            variant="primary" 
+                                            className="flex-1"
+                                            onClick={() => setShowFilter(false)}
+                                        >
+                                            적용
+                                        </Button>
+                                    </div>
+                                </Card>
+                            </div>
+                        )}
 
                         <div className="w-full">
                             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -129,12 +224,14 @@ export default function InvestDashboard() {
                                         <div className="flex flex-1 flex-col justify-between p-5">
                                             <div className="mb-4 grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <p className="text-xs font-medium text-foreground/60">토큰 당 가격</p>
+                                                    <p className="text-xs font-medium text-foreground/60">Token Price</p>
                                                     <p className="text-lg font-bold text-foreground">{property.tokenPrice}</p>
+                                                    <p className="text-xs text-muted-foreground">/ token</p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-xs font-medium text-foreground/60">{property.status === 'coming_soon' ? '예상 수익률' : '자산 총액'}</p>
+                                                    <p className="text-xs font-medium text-foreground/60">{property.status === 'coming_soon' ? 'Est. Yield' : 'Valuation'}</p>
                                                     <p className="text-lg font-bold text-foreground">{property.status === 'coming_soon' ? property.apy : property.totalValuation}</p>
+                                                    <p className="text-xs text-muted-foreground">{property.status === 'coming_soon' ? 'annually' : ''}</p>
                                                 </div>
                                             </div>
 
@@ -142,20 +239,39 @@ export default function InvestDashboard() {
                                                 <>
                                                     <div className="space-y-2">
                                                         <div className="flex justify-between text-sm">
-                                                            <span className="font-medium text-foreground/80">모집률</span>
-                                                            <span className="font-bold text-primary">{property.fundingProgress}%</span>
+                                                            <span className="font-medium text-foreground/80">Tokens Sold</span>
+                                                            <span className="font-bold text-green-600">{property.fundingProgress}%</span>
                                                         </div>
                                                         <div className="h-2.5 w-full rounded-full bg-background overflow-hidden border border-border/50">
-                                                            <div className="h-full rounded-full bg-primary" style={{ width: `${property.fundingProgress}%` }}></div>
+                                                            <div className="h-full rounded-full bg-[#17cf54]" style={{ width: `${property.fundingProgress}%` }}></div>
                                                         </div>
                                                         <div className="flex justify-between text-xs text-foreground/50 pt-1">
-                                                            <span>{property.raised} 모집 조달</span>
-                                                            <span>{property.remaining} 남음</span>
+                                                            <span>{property.raised} raised</span>
+                                                            <span>{property.remaining} remaining</span>
                                                         </div>
                                                     </div>
-                                                    <button className="mt-5 w-full rounded-lg bg-foreground py-2.5 text-sm font-semibold text-background hover:bg-foreground/90 transition-colors shadow-sm">
-                                                        상세 보기
-                                                    </button>
+                                                    {connected ? (
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                navigate(`/invest/${property.id}`);
+                                                            }}
+                                                            className="mt-5 w-full rounded-lg bg-[#17cf54] hover:bg-[#14b847] py-2.5 text-sm font-semibold text-white transition-colors shadow-sm flex items-center justify-center gap-1"
+                                                        >
+                                                            Invest Now
+                                                            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                                                        </button>
+                                                    ) : (
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setVisible(true);
+                                                            }}
+                                                            className="mt-5 w-full rounded-lg bg-[#17cf54] hover:bg-[#14b847] py-2.5 text-sm font-semibold text-white transition-colors shadow-sm"
+                                                        >
+                                                            Connect Wallet to Invest
+                                                        </button>
+                                                    )}
                                                 </>
                                             ) : (
                                                 <button className="mt-auto w-full rounded-lg border border-border bg-transparent py-2.5 text-sm font-semibold text-foreground/80 hover:border-primary hover:text-foreground hover:bg-background transition-colors">
@@ -172,6 +288,13 @@ export default function InvestDashboard() {
 
                 <Footer />
             </div>
+    );
+}
+
+export default function InvestDashboard() {
+    return (
+        <RwaWalletProvider>
+            <InvestDashboardContent />
         </RwaWalletProvider>
     );
 }
