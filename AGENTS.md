@@ -1,1 +1,1 @@
-/Users/namhyeongseog/Documents/Antigravity_Skills/AGENTS.md
+/Users/namhyeongseog/Documents/solmate-skills/AGENTS.md
