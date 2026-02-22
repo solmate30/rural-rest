@@ -23,7 +23,7 @@
 - [x] 토큰화된 빈집 카드: 이미지, 숙소명, 위치, Token Price ₩50,000/token, Est. Yield 8.2% annually, Tokens Sold 진행률, CTA
 - [x] 필터 옵션: 지역(전체/경기/강원/충청/전라/경상/제주), 정렬(수익률순/최신순/가격순), 상태(모집 중/모집 완료/운영 중)
 - [x] CTA: 지갑 연결 → "Invest Now →", 미연결 → "Connect Wallet to Invest" (지갑 모달 트리거)
-- [ ] KYC 미완료 시 "Complete KYC to Invest" 표시 및 KYC 페이지 이동
+- [ ] KYC 흐름 연동: Web2 로그인 -> 미인증 시 KYC 안내 모달 -> 인증 후 지갑 연결 (참고: [Auth Logic](./06_AUTH_AND_SESSION_LOGIC.md))
 
 ### `/invest/:listingId` (토큰 상세 및 투자)
 - [x] 이미지 갤러리 (리모델링 전/후 구성 가능)
@@ -69,6 +69,10 @@
 - [ ] 배당금 수령 이력(`rwa_dividends`) 스키마 정의
 - [ ] 호스트 순수익 기반 배당 로직 설계 반영
 - [ ] 투자자의 Dividend Claim 버튼 동작 및 지갑 서명 플로우 연결
+
+## Phase 5: 일반 페이지와의 연결 고리 (Entry Hooks)
+- [ ] 일반 숙소 탐색 페이지(`/listing/:id` 등)에서 해당 숙소가 RWA 투자 모집 중일 경우 투자 페이지로 넘어갈 수 있는 배너/버튼(Hook) 추가
+- [ ] 내 예약 내역 등에서 숙소 이용 후 만족한 고객이 RWA 투자로 자연스럽게 전환될 수 있는 UI 흐름 구성
 
 ## Related Documents
 - **UI Review**: [08. RWA Dashboard Review](../02_UI_Screens/08_RWA_DASHBOARD_REVIEW.md) - 대시보드·상세·내 투자·토큰화 신청 스크린 명세 (구현 기준)

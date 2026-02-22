@@ -13,4 +13,7 @@ export default [
     route("search", "routes/search.tsx"),
     route("invest", "routes/invest.tsx"),
     route("invest/:listingId", "routes/invest.detail.tsx"),
+    route("my-investments", "routes/my-investments.tsx"),
+    route("kyc", "routes/kyc.tsx"),
+
 ] satisfies RouteConfig;
