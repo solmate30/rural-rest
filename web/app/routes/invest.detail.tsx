@@ -1,15 +1,26 @@
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { Header, Footer, Card, Button, Input, Badge } from "~/components/ui-mockup";
-import RwaWalletProvider from "~/components/RwaWalletProvider";
 import { PropertyMap } from "~/components/PropertyMap";
 import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useKyc } from "~/components/KycProvider";
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    Line,
+    ComposedChart,
+} from "recharts";
 
 const MOCK_PROPERTIES = {
-    "jeonju-01": {
-        id: "jeonju-01",
-        title: "경주 할머니댁 돌담집",
+    "1": {
+        id: "1",
+        title: "성주 할머니댁 돌담집",
         location: "경주시, 경상북도",
         detailLocation: "경상북도 경주시 교동 서종면",
         images: [
@@ -52,8 +63,8 @@ const MOCK_PROPERTIES = {
         raised: "3.9억 원",
         remaining: "1.1억 원",
     },
-    "andong-01": {
-        id: "andong-01",
+    "2": {
+        id: "2",
         title: "양평 숲속 오두막",
         location: "양평군, 경기도",
         detailLocation: "경기도 양평군 서종면 북한강로",
@@ -95,104 +106,226 @@ const MOCK_PROPERTIES = {
         raised: "1.89억 원",
         remaining: "2.31억 원",
     },
+    "3": {
+        id: "3",
+        title: "기장 바다 앞 민박",
+        location: "기장군, 부산광역시",
+        detailLocation: "부산광역시 기장군 기장읍 해안로",
+        images: [
+            "/house.png",
+            "/house.png",
+            "/house.png",
+        ],
+        apy: 9.1,
+        tokenName: "GIJANG-001",
+        tokenPrice: 50000,
+        usdcPrice: 33.5,
+        totalSupply: 13600,
+        totalValuation: "6.8억 원",
+        holders: 312,
+        soldTokens: 13600,
+        lastDividend: "₩4,550 / token (1월)",
+        rating: 4.95,
+        reviewCount: 45,
+        roomType: "전체 펜션",
+        bedrooms: 2,
+        bathrooms: 2,
+        maxGuests: 4,
+        occupancyRate: 88,
+        renovationHistory: [
+            { date: "2024.11", desc: "외관 도색 및 오션뷰 테라스 확장" },
+            { date: "2024.12", desc: "내부 풀옵션 가전 세팅" },
+            { date: "2025.01", desc: "Rural Rest 등록 및 운영 시작" },
+        ],
+        about: "탁 트인 기장 바다를 1열에서 감상할 수 있는 오션뷰 스테이입니다. 넓은 테라스에서 파도소리를 들으며 휴식할 수 있습니다.",
+        coordinates: { lat: 35.2443, lng: 129.2229 },
+        host: {
+            name: "수진",
+            role: "슈퍼호스트",
+            experience: "5년 호스팅",
+            bio: "바다를 사랑하는 호스트입니다.",
+        },
+        fundingProgress: 100,
+        raised: "6.8억 원",
+        remaining: "0 원",
+    },
+    "5": {
+        id: "5",
+        title: "제주 애월 돌담 민박",
+        location: "애월읍, 제주도",
+        detailLocation: "제주특별자치도 제주시 애월읍 애월해안로",
+        images: [
+            "/house.png",
+            "/house.png",
+            "/house.png",
+        ],
+        apy: 8.5,
+        tokenName: "JEJU-001",
+        tokenPrice: 100000,
+        usdcPrice: 67.0,
+        totalSupply: 10000,
+        totalValuation: "미정",
+        holders: 0,
+        soldTokens: 0,
+        lastDividend: "없음 (신규)",
+        rating: 0,
+        reviewCount: 0,
+        roomType: "전체 독채",
+        bedrooms: 3,
+        bathrooms: 2,
+        maxGuests: 6,
+        occupancyRate: 0,
+        renovationHistory: [
+            { date: "2025.12 (예정)", desc: "현대식 풀빌라 구조로 재건축 예정" },
+        ],
+        about: "제주의 아름다운 바다와 돌담길이 매력적인 신규 프로젝트입니다.",
+        coordinates: { lat: 33.4621, lng: 126.3197 },
+        host: {
+            name: "지훈",
+            role: "신규 호스트",
+            experience: "1개월 호스팅",
+            bio: "제주도 풀빌라 전문 운영팀입니다.",
+        },
+        fundingProgress: 0,
+        raised: "0 원",
+        remaining: "미정",
+    }
 };
 
 const DUMMY_DIVIDENDS = [3200, 3000, 3900, 3500, 4500, 4200, 5200, 4900, 4400, 5400, 5100, 4100];
-const MONTHS = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
-const CHART_MAX = 6000;
-const Y_TICKS = [0, 2000, 4000, 6000];
-
-// 더미: 총 수익, 운영비, 플랫폼 수수료 계산
-function getDividendBreakdown(netDividend: number) {
-    const platformFee = Math.round(netDividend * 0.05); // 5% 플랫폼 수수료
-    const operatingCost = Math.round(netDividend * 0.15); // 15% 운영비
+const MONTHS = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
+const chartData = MONTHS.map((month, index) => {
+    const netDividend = DUMMY_DIVIDENDS[index];
+    const platformFee = Math.round(netDividend * 0.05);
+    const operatingCost = Math.round(netDividend * 0.15);
     const grossRevenue = netDividend + operatingCost + platformFee;
-    return { grossRevenue, operatingCost, platformFee, netDividend };
-}
+
+    // Calculate cumulative dividend
+    const cumulativeDividend = DUMMY_DIVIDENDS.slice(0, index + 1).reduce((a, b) => a + b, 0);
+
+    return {
+        month,
+        netDividend,
+        platformFee,
+        operatingCost,
+        grossRevenue,
+        cumulativeDividend,
+    };
+});
+
+// Custom Tooltip
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        return (
+            <div className="bg-stone-900 text-white text-xs px-3 py-2 rounded-lg shadow-2xl z-10 min-w-[160px]">
+                <div className="font-bold text-sm mb-2 border-b border-white/20 pb-1">
+                    {label} 배당 상세
+                </div>
+                <div className="space-y-1">
+                    <div className="flex justify-between">
+                        <span className="text-white/70">총 수익</span>
+                        <span className="font-semibold">₩{data.grossRevenue.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-white/70">운영비</span>
+                        <span className="text-red-300">-₩{data.operatingCost.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-white/70">플랫폼 수수료</span>
+                        <span className="text-red-300">-₩{data.platformFee.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between pt-1 mt-1 border-t border-white/20">
+                        <span className="font-bold text-[#17cf54]">순 배당</span>
+                        <span className="font-bold text-[#17cf54]">₩{data.netDividend.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between pt-1">
+                        <span className="font-bold text-amber-400">누적 배당</span>
+                        <span className="font-bold text-amber-400">₩{data.cumulativeDividend.toLocaleString()}</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    return null;
+};
 
 function RevenueChart({ lastDividend, apy }: { lastDividend: string; apy: number }) {
-    const [hovered, setHovered] = useState<number | null>(null);
     const annualTotal = DUMMY_DIVIDENDS.reduce((a, b) => a + b, 0);
 
     return (
-        <div className="p-6 rounded-2xl bg-stone-50 border border-stone-100 shadow-sm">
-            <div className="flex items-center justify-between mb-5">
+        <div className="p-6 rounded-3xl bg-white border border-stone-100 shadow-sm">
+            <div className="flex items-center justify-between mb-8">
                 <div>
-                    <p className="text-xs text-stone-400">연간 합계 (token당)</p>
-                    <p className="text-xl font-bold text-stone-900">₩{annualTotal.toLocaleString()}</p>
+                    <p className="text-sm text-stone-500 font-medium mb-1">연간 합계 (token당)</p>
+                    <p className="text-3xl font-bold text-[#4a3b2c]">
+                        {annualTotal.toLocaleString()}
+                        <span className="text-lg font-normal text-stone-400 ml-1">USDC</span>
+                    </p>
                 </div>
                 <div className="text-right">
-                    <p className="text-xs text-stone-400">연 수익률 (est.)</p>
-                    <p className="text-xl font-bold text-[#17cf54]">{apy}%</p>
+                    <p className="text-sm text-stone-500 font-medium mb-1">연 수익률 (est.)</p>
+                    <p className="text-3xl font-bold text-[#17cf54]">+{apy}%</p>
                 </div>
             </div>
-            <div className="flex gap-2">
-                <div className="flex flex-col justify-between items-end pb-5 shrink-0 w-8">
-                    {[...Y_TICKS].reverse().map((t) => (
-                        <span key={t} className="text-[9px] text-stone-400">
-                            {t === 0 ? "0" : `${t / 1000}K`}
-                        </span>
-                    ))}
+
+            <div className="h-[280px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart
+                        data={chartData}
+                        margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E5EA" />
+                        <XAxis
+                            dataKey="month"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#8E8E93', fontSize: 12 }}
+                            dy={10}
+                        />
+                        <YAxis
+                            yAxisId="left"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#8E8E93', fontSize: 12 }}
+                            tickFormatter={(value) => `${value / 1000}k`}
+                        />
+                        <YAxis
+                            yAxisId="right"
+                            orientation="right"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={false}
+                        />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(23, 207, 84, 0.05)' }} />
+                        <Bar
+                            yAxisId="left"
+                            dataKey="netDividend"
+                            fill="#17cf54"
+                            radius={[4, 4, 0, 0]}
+                            barSize={32}
+                            opacity={0.8}
+                        />
+                        <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="cumulativeDividend"
+                            stroke="#ab9ff2"
+                            strokeWidth={3}
+                            dot={{ r: 4, fill: "#ab9ff2", strokeWidth: 2, stroke: "#fff" }}
+                            activeDot={{ r: 6, strokeWidth: 0 }}
+                        />
+                    </ComposedChart>
+                </ResponsiveContainer>
+            </div>
+            <div className="flex justify-center items-center gap-6 mt-6 pt-4 border-t border-stone-100">
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#17cf54] opacity-80" />
+                    <span className="text-xs text-stone-500">월별 순 배당</span>
                 </div>
-                <div className="flex-1">
-                    <div className="flex items-end justify-between gap-1.5 h-32 relative bg-white/50 rounded">
-                        {Y_TICKS.slice(1).map((t) => (
-                            <div
-                                key={t}
-                                className="absolute w-full border-t border-stone-300"
-                                style={{ bottom: `${(t / CHART_MAX) * 100}%` }}
-                            />
-                        ))}
-                        {DUMMY_DIVIDENDS.map((v, i) => {
-                            const heightPct = Math.max(2, (v / CHART_MAX) * 100);
-                            const breakdown = getDividendBreakdown(v);
-                            return (
-                                <div
-                                    key={i}
-                                    className="flex flex-col justify-end items-center flex-1 relative h-full"
-                                    onMouseEnter={() => setHovered(i)}
-                                    onMouseLeave={() => setHovered(null)}
-                                >
-                                    {hovered === i && (
-                                        <div className="absolute -top-32 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-[10px] px-3 py-2 rounded-lg shadow-2xl z-10 min-w-[140px]">
-                                            <div className="font-bold text-xs mb-1.5 border-b border-white/20 pb-1">
-                                                {MONTHS[i]} 배당 상세
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <div className="flex justify-between">
-                                                    <span className="text-white/70">총 수익</span>
-                                                    <span className="font-semibold">₩{breakdown.grossRevenue.toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-white/70">운영비</span>
-                                                    <span className="text-red-300">-₩{breakdown.operatingCost.toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-white/70">플랫폼 수수료</span>
-                                                    <span className="text-red-300">-₩{breakdown.platformFee.toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between pt-1 border-t border-white/20">
-                                                    <span className="font-bold text-[#17cf54]">순 배당</span>
-                                                    <span className="font-bold text-[#17cf54]">₩{breakdown.netDividend.toLocaleString()}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    <div
-                                        className={`w-full rounded-t cursor-pointer transition-all ${
-                                            hovered === i ? "bg-[#17cf54]" : "bg-[#17cf54]/70"
-                                        }`}
-                                        style={{ height: `${heightPct}%` }}
-                                    />
-                                </div>
-                            );
-                        })}
-                    </div>
-                    <div className="flex justify-between mt-1.5">
-                        {MONTHS.map((m) => (
-                            <span key={m} className="text-[9px] text-stone-400 flex-1 text-center">{m}</span>
-                        ))}
-                    </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#ab9ff2]" />
+                    <span className="text-xs text-stone-500">누적 배당</span>
                 </div>
             </div>
             <p className="text-xs text-stone-400 text-center mt-4">
@@ -209,9 +342,12 @@ function InvestDetailContent() {
     const [tokenCount, setTokenCount] = useState(1);
     const [showGallery, setShowGallery] = useState(false);
 
+    const navigate = useNavigate();
+    const { isKycCompleted } = useKyc();
+
     const property =
         MOCK_PROPERTIES[listingId as keyof typeof MOCK_PROPERTIES] ||
-        MOCK_PROPERTIES["jeonju-01"];
+        MOCK_PROPERTIES["1"];
 
     const platformFeeRate = 0.01;
     const subtotal = property.tokenPrice * tokenCount;
@@ -371,6 +507,62 @@ function InvestDetailContent() {
                             </div>
                         </section>
 
+                        {/* Amenities */}
+                        <section className="space-y-6 pt-8 border-t">
+                            <h2 className="text-2xl font-bold text-foreground">숙소 편의시설</h2>
+                            <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                                {[
+                                    { icon: "wifi", label: "무선 인터넷 (WiFi)" },
+                                    { icon: "kitchen", label: "주방 및 조리도구" },
+                                    { icon: "ac_unit", label: "시스템 에어컨" },
+                                    { icon: "local_parking", label: "무료 주차공간" },
+                                    { icon: "tv", label: "스마트 TV (넷플릭스)" },
+                                    { icon: "coffee_maker", label: "네스프레소 커피머신" },
+                                ].map((item) => (
+                                    <div key={item.label} className="flex items-center gap-3 text-stone-700">
+                                        <span className="material-symbols-outlined text-stone-400 text-[22px]">
+                                            {item.icon}
+                                        </span>
+                                        <span className="text-sm font-medium">{item.label}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        {/* Host Info */}
+                        <section className="space-y-6 pt-8 border-t">
+                            <h2 className="text-2xl font-bold text-foreground">호스트 정보</h2>
+                            <div className="flex gap-6 items-start">
+                                <div className="h-16 w-16 rounded-full bg-stone-200 shrink-0 overflow-hidden border-2 border-white shadow-md">
+                                    <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=e2e8f0" alt="Host Profile" className="w-full h-full object-cover" />
+                                </div>
+                                <div className="space-y-3">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-stone-900 flex items-center gap-2">
+                                            호스트: {property.host.name}님
+                                            {property.host.role === "슈퍼호스트" && (
+                                                <span className="material-symbols-outlined text-[#17cf54] text-[20px]" title="슈퍼호스트">verified</span>
+                                            )}
+                                        </h3>
+                                        <p className="text-sm text-stone-500 mt-0.5">{property.host.role} · {property.host.experience}</p>
+                                    </div>
+                                    <p className="text-stone-700 leading-relaxed text-sm">
+                                        {property.host.bio}
+                                    </p>
+                                    <div className="flex gap-4 pt-2">
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600">
+                                            <span className="material-symbols-outlined text-[16px]">star</span>
+                                            {property.rating} 후기 평점
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600">
+                                            <span className="material-symbols-outlined text-[16px]">verified_user</span>
+                                            신원 인증 완료
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
                         {/* Revenue Chart */}
                         <section className="space-y-4 pt-8 border-t">
                             <div className="flex items-baseline justify-between">
@@ -458,8 +650,9 @@ function InvestDetailContent() {
                                     </label>
                                     <div className="flex items-center gap-2">
                                         <button
-                                            className="h-10 w-10 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0"
+                                            className="h-10 w-10 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                                             onClick={() => setTokenCount((c) => Math.max(1, c - 1))}
+                                            disabled={property.fundingProgress >= 100}
                                         >
                                             −
                                         </button>
@@ -470,11 +663,13 @@ function InvestDetailContent() {
                                             onChange={(e) =>
                                                 setTokenCount(Math.max(1, parseInt(e.target.value) || 1))
                                             }
-                                            className="text-center text-lg font-semibold"
+                                            className="text-center text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled={property.fundingProgress >= 100}
                                         />
                                         <button
-                                            className="h-10 w-10 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0"
+                                            className="h-10 w-10 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                                             onClick={() => setTokenCount((c) => c + 1)}
+                                            disabled={property.fundingProgress >= 100}
                                         >
                                             +
                                         </button>
@@ -511,16 +706,35 @@ function InvestDetailContent() {
                                 </div>
 
                                 {/* CTA */}
-                                {connected ? (
+                                {property.fundingProgress >= 100 ? (
                                     <button
-                                        className="w-full h-14 rounded-2xl bg-[#17cf54] hover:bg-[#14b847] text-white text-base font-bold transition-all shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-                                        onClick={() => alert(`${tokenCount}개 토큰 투자 진행`)}
+                                        disabled
+                                        className="w-full h-14 rounded-2xl bg-stone-300 text-stone-500 text-base font-bold cursor-not-allowed flex items-center justify-center gap-2"
                                     >
                                         <span className="material-symbols-outlined text-[20px]">
-                                            account_balance_wallet
+                                            block
                                         </span>
-                                        Buy with USDC →
+                                        Sold Out
                                     </button>
+                                ) : connected ? (
+                                    isKycCompleted ? (
+                                        <button
+                                            className="w-full h-14 rounded-2xl bg-[#17cf54] hover:bg-[#14b847] text-white text-base font-bold transition-all shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                                            onClick={() => alert(`${tokenCount}개 토큰 투자 진행`)}
+                                        >
+                                            <span className="material-symbols-outlined text-[20px]">
+                                                account_balance_wallet
+                                            </span>
+                                            Buy with USDC →
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className="w-full h-14 rounded-2xl bg-[#17cf54] hover:bg-[#14b847] text-white text-base font-bold transition-all shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
+                                            onClick={() => navigate("/kyc")}
+                                        >
+                                            Complete KYC to Invest
+                                        </button>
+                                    )
                                 ) : (
                                     <button
                                         className="w-full h-14 rounded-2xl bg-[#17cf54] hover:bg-[#14b847] text-white text-base font-bold transition-all shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
@@ -602,9 +816,5 @@ function InvestDetailContent() {
 }
 
 export default function InvestDetail() {
-    return (
-        <RwaWalletProvider>
-            <InvestDetailContent />
-        </RwaWalletProvider>
-    );
+    return <InvestDetailContent />;
 }
