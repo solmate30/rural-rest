@@ -9,6 +9,7 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import "@solana/wallet-adapter-react-ui/styles.css";
 import { Toaster } from "./components/ui/toaster";
 import { Header, Button, Card } from "./components/ui-mockup";
 
@@ -22,6 +23,10 @@ export const links: Route.LinksFunction = () => [
   {
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap",
+  },
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
   },
 ];
 
@@ -44,13 +49,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 import { AiConcierge } from "./components/AiConcierge";
+import RwaWalletProvider from "./components/RwaWalletProvider";
+import { KycProvider } from "./components/KycProvider";
 export default function App() {
   return (
-    <>
-      <Outlet />
-      <Toaster />
-      <AiConcierge />
-    </>
+    <KycProvider>
+      <RwaWalletProvider>
+        <Outlet />
+        <Toaster />
+        <AiConcierge />
+      </RwaWalletProvider>
+    </KycProvider>
   );
 }
 
@@ -81,43 +90,47 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background font-sans">
-      <Header />
-      <main className="container mx-auto flex items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-12">
-        <Card className="w-full max-w-md p-8 text-center space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-6xl font-bold text-primary">{status}</h1>
-            <h2 className="text-2xl font-bold text-foreground">{message}</h2>
-            <p className="text-muted-foreground">{details}</p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              variant="primary"
-              onClick={() => (window.location.href = "/")}
-            >
-              홈으로 돌아가기
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => window.history.back()}
-            >
-              이전 페이지로
-            </Button>
-          </div>
-          {stack && import.meta.env.DEV && (
-            <div className="mt-8 text-left">
-              <details className="text-xs">
-                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                  개발자 정보 보기
-                </summary>
-                <pre className="mt-4 p-4 bg-muted rounded-md overflow-x-auto">
-                  <code>{stack}</code>
-                </pre>
-              </details>
-            </div>
-          )}
-        </Card>
-      </main>
-    </div>
+    <KycProvider>
+      <RwaWalletProvider>
+        <div className="min-h-screen bg-background font-sans">
+          <Header />
+          <main className="container mx-auto flex items-center justify-center min-h-[calc(100vh-4rem)] px-4 py-12">
+            <Card className="w-full max-w-md p-8 text-center space-y-6">
+              <div className="space-y-2">
+                <h1 className="text-6xl font-bold text-primary">{status}</h1>
+                <h2 className="text-2xl font-bold text-foreground">{message}</h2>
+                <p className="text-muted-foreground">{details}</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  variant="primary"
+                  onClick={() => (window.location.href = "/")}
+                >
+                  홈으로 돌아가기
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.history.back()}
+                >
+                  이전 페이지로
+                </Button>
+              </div>
+              {stack && import.meta.env.DEV && (
+                <div className="mt-8 text-left">
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                      개발자 정보 보기
+                    </summary>
+                    <pre className="mt-4 p-4 bg-muted rounded-md overflow-x-auto">
+                      <code>{stack}</code>
+                    </pre>
+                  </details>
+                </div>
+              )}
+            </Card>
+          </main>
+        </div>
+      </RwaWalletProvider>
+    </KycProvider>
   );
 }
