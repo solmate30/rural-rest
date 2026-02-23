@@ -23,7 +23,7 @@
 - [x] 토큰화된 빈집 카드: 이미지, 숙소명, 위치, Token Price ₩50,000/token, Est. Yield 8.2% annually, Tokens Sold 진행률, CTA
 - [x] 필터 옵션: 지역(전체/경기/강원/충청/전라/경상/제주), 정렬(수익률순/최신순/가격순), 상태(모집 중/모집 완료/운영 중)
 - [x] CTA: 지갑 연결 → "Invest Now →", 미연결 → "Connect Wallet to Invest" (지갑 모달 트리거)
-- [ ] KYC 흐름 연동: Web2 로그인 -> 미인증 시 KYC 안내 모달 -> 인증 후 지갑 연결 (참고: [Auth Logic](./06_AUTH_AND_SESSION_LOGIC.md))
+- [x] KYC 흐름 연동: Web2 로그인 -> 미인증 시 KYC 안내 모달 -> 인증 후 지갑 연결 (참고: [Auth Logic](./06_AUTH_AND_SESSION_LOGIC.md))
 
 ### `/invest/:listingId` (토큰 상세 및 투자)
 - [x] 이미지 갤러리 (리모델링 전/후 구성 가능)
@@ -39,7 +39,7 @@
 - [x] 투자 위험 고지 (원금 손실, 리스크 검토 안내)
 
 ### `/my-investments` (내 투자 포트폴리오)
-- [ ] 라우트 및 페이지 추가
+- [x] 라우트 및 페이지 추가
 - [ ] Summary: Total Invested, Current Value (+n%), Total Dividends
 - [ ] 보유 토큰 카드 목록: 숙소명+Token Name, 보유 수량|투자금, Dividend (claimed/pending), [View] [Claim Dividend]
 - [ ] 배당금 수령 이력 테이블: 날짜/숙소명/배당금/트랜잭션/상태
