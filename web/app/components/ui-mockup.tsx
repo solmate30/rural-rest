@@ -4,7 +4,8 @@ import { authClient } from "~/lib/auth.client";
 import { cn } from "~/lib/utils";
 import { useToast } from "~/hooks/use-toast";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
+import { useKyc } from "./KycProvider";
 
 export function Button({
     className,
@@ -113,6 +114,8 @@ export function Header() {
     const isPending = sessionRes?.isPending || false;
     const { toast } = useToast();
     const location = useLocation();
+    const navigate = useNavigate();
+    const { isKycCompleted } = useKyc();
     const isInvestRoute = location.pathname.startsWith('/invest') || location.pathname.startsWith('/my-investments');
 
     const handleSignOut = async () => {
@@ -141,12 +144,26 @@ export function Header() {
                     <a href="/" className="text-sm font-medium hover:text-primary transition-colors">Find a Stay</a>
                     <a href="/admin" className="text-sm font-medium hover:text-primary transition-colors">Host your Home</a>
                     <a href="/invest" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">Invest (RWA)</a>
+                    {isInvestRoute && (
+                        <a href="/my-investments" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">My Portfolio</a>
+                    )}
 
                     {/* Conditional Auth Rendering */}
                     {isInvestRoute ? (
                         mounted && (
                             <div className="ml-2 pl-6 border-l border-border h-10 flex items-center">
-                                <WalletMultiButton className="!bg-[#17cf54] !text-white !border-none hover:!bg-[#14b847] !shadow-sm !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />
+                                {isKycCompleted ? (
+                                    <WalletMultiButton className="!bg-[#17cf54] !text-white !border-none hover:!bg-[#14b847] !shadow-sm !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />
+                                ) : (
+                                    <Button
+                                        variant="outline"
+                                        className="h-10 text-xs font-bold gap-1 text-stone-500 hover:text-stone-700 hover:border-stone-400 border-dashed"
+                                        onClick={() => session ? navigate("/kyc") : navigate("/auth")}
+                                    >
+                                        <span className="material-symbols-outlined text-[16px]">lock</span>
+                                        실명 인증 필요
+                                    </Button>
+                                )}
                             </div>
                         )
                     ) : (
