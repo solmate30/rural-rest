@@ -1,6 +1,6 @@
 # Domestic Vacant Housing & Regional Regeneration References
-> Created: 2026-02-23
-> Last Updated: 2026-02-23
+> Created: 2026-02-23 00:00
+> Last Updated: 2026-02-23 00:00
 
 본 문서는 국내 실정에 맞는 빈집 문제 해결과 지역 재생(지방 소멸 대응)을 위한 지자체 및 민간 스타트업의 주요 레퍼런스를 정리한 것이다. Rural Rest의 국내 시장 진입 전략, 정책 연계 및 경쟁 로직, 벤치마킹 요소 발굴 시 참조한다.
 
