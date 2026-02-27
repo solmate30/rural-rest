@@ -1,839 +1,1087 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Rural Rest — The Global Hospitality OS | Pitch Deck 2026</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
-<style>
-  /* =========================================================
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rural Rest — The Global Hospitality OS | Pitch Deck 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap"
+    rel="stylesheet" />
+  <style>
+    /* =========================================================
      DESIGN SYSTEM
   ========================================================= */
-  :root {
-    --bg-deep:       #080C14;
-    --bg-card:       #0D1421;
-    --bg-glass:      rgba(255,255,255,0.04);
-    --border-subtle: rgba(255,255,255,0.08);
-    --accent-green:  #00E5A0;
-    --accent-blue:   #3B82F6;
-    --accent-purple: #8B5CF6;
-    --accent-amber:  #F59E0B;
-    --text-primary:  #F0F4FF;
-    --text-secondary:#8C9AB0;
-    --text-muted:    #4A5568;
-    --slide-w:       1280px;
-    --slide-h:       720px;
-    --radius-lg:     16px;
-    --radius-sm:     8px;
-    --font-en:       'Inter', sans-serif;
-    --font-kr:       'Noto Sans KR', sans-serif;
-  }
+    :root {
+      --bg-deep: #080C14;
+      --bg-card: #0D1421;
+      --bg-glass: rgba(255, 255, 255, 0.04);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --accent-green: #00E5A0;
+      --accent-blue: #3B82F6;
+      --accent-purple: #8B5CF6;
+      --accent-amber: #F59E0B;
+      --text-primary: #F0F4FF;
+      --text-secondary: #8C9AB0;
+      --text-muted: #4A5568;
+      --slide-w: 1280px;
+      --slide-h: 720px;
+      --radius-lg: 16px;
+      --radius-sm: 8px;
+      --font-en: 'Inter', sans-serif;
+      --font-kr: 'Noto Sans KR', sans-serif;
+    }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  html, body {
-    width: 100%; height: 100%;
-    background: #03060B;
-    overflow: hidden;
-    font-family: var(--font-en);
-    color: var(--text-primary);
-  }
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      background: #03060B;
+      overflow: hidden;
+      font-family: var(--font-en);
+      color: var(--text-primary);
+    }
 
-  /* =========================================================
+    /* =========================================================
      SLIDE VIEWPORT
   ========================================================= */
-  #deck {
-    position: relative;
-    width: 100vw; height: 100vh;
-    display: flex; align-items: center; justify-content: center;
-  }
+    #deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-  .slide {
-    position: absolute;
-    width: var(--slide-w); height: var(--slide-h);
-    background: var(--bg-deep);
-    border: 1px solid var(--border-subtle);
-    border-radius: 20px;
-    padding: 60px 72px;
-    opacity: 0;
-    transform: translateX(80px) scale(0.97);
-    transition: opacity 0.55s cubic-bezier(.4,0,.2,1),
-                transform 0.55s cubic-bezier(.4,0,.2,1);
-    pointer-events: none;
-    overflow: hidden;
-  }
-  .slide.active {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-    pointer-events: all;
-  }
-  .slide.exit-left {
-    opacity: 0;
-    transform: translateX(-80px) scale(0.97);
-  }
+    .slide {
+      position: absolute;
+      width: var(--slide-w);
+      height: var(--slide-h);
+      background: var(--bg-deep);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 60px 72px;
+      opacity: 0;
+      transform: translateX(80px) scale(0.97);
+      transition: opacity 0.55s cubic-bezier(.4, 0, .2, 1),
+        transform 0.55s cubic-bezier(.4, 0, .2, 1);
+      pointer-events: none;
+      overflow: hidden;
+    }
 
-  /* Ambient gradient blobs */
-  .slide::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: inherit;
-  }
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      pointer-events: all;
+    }
 
-  /* =========================================================
+    .slide.exit-left {
+      opacity: 0;
+      transform: translateX(-80px) scale(0.97);
+    }
+
+    /* Ambient gradient blobs */
+    .slide::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: inherit;
+    }
+
+    /* =========================================================
      GRID HELPERS
   ========================================================= */
-  .col-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
-  .col-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+    .col-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
 
-  /* =========================================================
+    .col-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+    }
+
+    /* =========================================================
      TYPOGRAPHY
   ========================================================= */
-  .label {
-    display: inline-block;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
-    text-transform: uppercase; padding: 4px 10px;
-    border-radius: 4px; margin-bottom: 20px;
-  }
-  .label-green  { background: rgba(0,229,160,.12); color: var(--accent-green); }
-  .label-blue   { background: rgba(59,130,246,.12); color: var(--accent-blue); }
-  .label-purple { background: rgba(139,92,246,.12); color: var(--accent-purple); }
-  .label-amber  { background: rgba(245,158,11,.12); color: var(--accent-amber); }
+    .label {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
 
-  .slide-num {
-    position: absolute; top: 28px; right: 40px;
-    font-size: 11px; font-weight: 500; letter-spacing: .12em;
-    color: var(--text-muted);
-  }
+    .label-green {
+      background: rgba(0, 229, 160, .12);
+      color: var(--accent-green);
+    }
 
-  h1 {
-    font-family: var(--font-en);
-    font-size: 56px; font-weight: 900; line-height: 1.05;
-    letter-spacing: -1.5px;
-    background: linear-gradient(135deg, #fff 30%, var(--accent-green) 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  h2 {
-    font-family: var(--font-en);
-    font-size: 36px; font-weight: 800; line-height: 1.15;
-    letter-spacing: -0.8px;
-    background: linear-gradient(135deg, #fff 40%, var(--accent-blue) 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 8px;
-  }
-  .subtitle-kr {
-    font-family: var(--font-kr);
-    font-size: 17px; font-weight: 500; color: var(--text-secondary);
-    margin-bottom: 32px; line-height: 1.6;
-  }
-  .subtitle-en {
-    font-size: 15px; font-weight: 400; color: var(--text-muted);
-    margin-bottom: 12px; letter-spacing: 0.01em; line-height: 1.6;
-  }
+    .label-blue {
+      background: rgba(59, 130, 246, .12);
+      color: var(--accent-blue);
+    }
 
-  /* =========================================================
+    .label-purple {
+      background: rgba(139, 92, 246, .12);
+      color: var(--accent-purple);
+    }
+
+    .label-amber {
+      background: rgba(245, 158, 11, .12);
+      color: var(--accent-amber);
+    }
+
+    .slide-num {
+      position: absolute;
+      top: 28px;
+      right: 40px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .12em;
+      color: var(--text-muted);
+    }
+
+    h1 {
+      font-family: var(--font-en);
+      font-size: 56px;
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -1.5px;
+      background: linear-gradient(135deg, #fff 30%, var(--accent-green) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h2 {
+      font-family: var(--font-en);
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.8px;
+      background: linear-gradient(135deg, #fff 40%, var(--accent-blue) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+
+    .subtitle-kr {
+      font-family: var(--font-kr);
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .subtitle-en {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 36px;
+      letter-spacing: 0.01em;
+      line-height: 1.6;
+    }
+
+    /* =========================================================
      CARDS
   ========================================================= */
-  .card {
-    background: var(--bg-glass);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-    padding: 24px 28px;
-  }
-  .card-accent-tl {
-    border-top: 2px solid var(--accent-green);
-  }
-  .card h3 {
-    font-family: var(--font-en);
-    font-size: 15px; font-weight: 700; color: var(--text-primary);
-    margin-bottom: 4px; letter-spacing: -0.2px;
-  }
-  .card .ko {
-    font-family: var(--font-kr);
-    font-size: 13px; color: var(--text-secondary);
-    margin-bottom: 10px;
-  }
-  .card p {
-    font-size: 13px; color: var(--text-muted); line-height: 1.65;
-  }
-  .card .ko-desc {
-    font-family: var(--font-kr);
-    font-size: 12px; color: var(--text-muted); line-height: 1.65;
-  }
+    .card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+    }
 
-  /* =========================================================
+    .card-accent-tl {
+      border-top: 2px solid var(--accent-green);
+    }
+
+    .card h3 {
+      font-family: var(--font-en);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+      letter-spacing: -0.2px;
+    }
+
+    .card .ko {
+      font-family: var(--font-kr);
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .card .ko-desc {
+      font-family: var(--font-kr);
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    /* =========================================================
      BULLET LIST
   ========================================================= */
-  .bullet-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
-  .bullet-list li {
-    display: flex; gap: 14px; align-items: flex-start;
-  }
-  .bullet-dot {
-    flex-shrink: 0;
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    margin-top: 7px;
-  }
-  .bullet-list li .entry { display: flex; flex-direction: column; gap: 2px; }
-  .bullet-list li .entry strong {
-    font-size: 14px; font-weight: 700; color: var(--text-primary);
-  }
-  .bullet-list li .entry .en { font-size: 12px; color: var(--text-muted); }
-  .bullet-list li .entry .ko {
-    font-family: var(--font-kr);
-    font-size: 12px; color: var(--text-secondary);
-  }
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
 
-  /* =========================================================
+    .bullet-list li {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .bullet-dot {
+      flex-shrink: 0;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-top: 7px;
+    }
+
+    .bullet-list li .entry {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .bullet-list li .entry strong {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+
+    .bullet-list li .entry .en {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .bullet-list li .entry .ko {
+      font-family: var(--font-kr);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* =========================================================
      STAT / METRIC PILL
   ========================================================= */
-  .stat-pill {
-    display: flex; flex-direction: column; gap: 4px;
-    padding: 20px 24px;
-    background: var(--bg-glass); border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-  }
-  .stat-pill .num {
-    font-size: 36px; font-weight: 900; letter-spacing: -1px;
-    background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  }
-  .stat-pill .desc-en { font-size: 11px; color: var(--text-muted); }
-  .stat-pill .desc-ko { font-family: var(--font-kr); font-size: 11px; color: var(--text-secondary); }
+    .stat-pill {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 20px 24px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+    }
 
-  /* =========================================================
+    .stat-pill .num {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-pill .desc-en {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .stat-pill .desc-ko {
+      font-family: var(--font-kr);
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    /* =========================================================
      PHASE BLOCK
   ========================================================= */
-  .phase-block {
-    display: flex; gap: 16px;
-    padding: 20px 24px;
-    background: var(--bg-glass); border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-    border-left: 3px solid var(--accent-green);
-  }
-  .phase-block .phase-num {
-    font-family: var(--font-en);
-    font-size: 11px; font-weight: 800; letter-spacing: .15em;
-    color: var(--accent-green); text-transform: uppercase;
-    min-width: 68px; padding-top: 2px;
-  }
-  .phase-block .phase-content strong {
-    font-size: 14px; font-weight: 700; color: var(--text-primary); display: block; margin-bottom: 3px;
-  }
-  .phase-block .phase-content .ko {
-    font-family: var(--font-kr); font-size: 12px; color: var(--text-secondary);
-  }
+    .phase-block {
+      display: flex;
+      gap: 16px;
+      padding: 20px 24px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      border-left: 3px solid var(--accent-green);
+    }
 
-  /* =========================================================
+    .phase-block .phase-num {
+      font-family: var(--font-en);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .15em;
+      color: var(--accent-green);
+      text-transform: uppercase;
+      min-width: 68px;
+      padding-top: 2px;
+    }
+
+    .phase-block .phase-content strong {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .phase-block .phase-content .ko {
+      font-family: var(--font-kr);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* =========================================================
      DECORATIVE BLOB
   ========================================================= */
-  .blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    pointer-events: none;
-    opacity: 0.18;
-  }
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      opacity: 0.18;
+    }
 
-  /* =========================================================
+    /* =========================================================
      LOGO BAR
   ========================================================= */
-  .logo-bar {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 24px;
-  }
-  .logo-icon {
-    width: 36px; height: 36px;
-    background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
-    border-radius: 10px;
-    display:flex; align-items:center; justify-content:center;
-    font-size:18px;
-  }
-  .logo-text {
-    font-family: var(--font-en);
-    font-size: 16px; font-weight: 800; letter-spacing: -0.3px;
-    color: var(--text-primary);
-  }
-  .logo-sub {
-    font-size: 10px; font-weight: 500; color: var(--text-muted);
-    letter-spacing: .1em; text-transform: uppercase;
-  }
+    .logo-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
 
-  /* =========================================================
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .logo-text {
+      font-family: var(--font-en);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: var(--text-primary);
+    }
+
+    .logo-sub {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    /* =========================================================
      DIVIDER LINE
   ========================================================= */
-  .divider {
-    width: 48px; height: 3px;
-    background: linear-gradient(90deg, var(--accent-green), transparent);
-    border-radius: 2px; margin: 16px 0;
-  }
+    .divider {
+      width: 48px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-green), transparent);
+      border-radius: 2px;
+      margin: 16px 0;
+    }
 
-  /* =========================================================
+    /* =========================================================
      QUOTE CALL-OUT
   ========================================================= */
-  .quote-block {
-    border-left: 3px solid var(--accent-green);
-    padding: 20px 28px;
-    background: rgba(0,229,160,.04);
-    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-  }
-  .quote-block .en {
-    font-size: 16px; font-weight: 600; color: var(--text-primary);
-    line-height: 1.6; margin-bottom: 10px;
-  }
-  .quote-block .ko {
-    font-family: var(--font-kr);
-    font-size: 14px; color: var(--text-secondary); line-height: 1.7;
-  }
+    .quote-block {
+      border-left: 3px solid var(--accent-green);
+      padding: 20px 28px;
+      background: rgba(0, 229, 160, .04);
+      border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    }
 
-  /* =========================================================
+    .quote-block .en {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .quote-block .ko {
+      font-family: var(--font-kr);
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* =========================================================
      TAG CHIP
   ========================================================= */
-  .chip {
-    display: inline-block;
-    padding: 4px 12px; border-radius: 100px;
-    font-size: 11px; font-weight: 600; letter-spacing: .05em;
-    border: 1px solid var(--border-subtle); color: var(--text-secondary);
-    margin: 4px;
-  }
+    .chip {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .05em;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      margin: 4px;
+    }
 
-  /* =========================================================
+    /* =========================================================
      NAVIGATION
   ========================================================= */
-  #nav {
-    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
-    display: flex; align-items: center; gap: 16px;
-    background: rgba(10,15,28,0.85);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--border-subtle);
-    border-radius: 100px; padding: 10px 24px;
-    z-index: 100;
-  }
-  .nav-btn {
-    background: none; border: none; cursor: pointer;
-    width: 34px; height: 34px; border-radius: 50%;
-    display: flex; align-items:center; justify-content:center;
-    color: var(--text-secondary); font-size: 18px;
-    transition: background .2s, color .2s;
-  }
-  .nav-btn:hover { background: var(--bg-glass); color: var(--text-primary); }
-  .nav-btn:disabled { opacity: .3; cursor: not-allowed; }
-  #progress-text { font-size: 12px; font-weight: 600; color: var(--text-muted); min-width: 40px; text-align: center; }
-  .dots { display: flex; gap: 6px; }
-  .dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--text-muted); transition: background .3s, transform .3s;
-  }
-  .dot.on { background: var(--accent-green); transform: scale(1.4); }
+    #nav {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(10, 15, 28, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 100px;
+      padding: 10px 24px;
+      z-index: 100;
+    }
 
-  /* =========================================================
+    .nav-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      font-size: 18px;
+      transition: background .2s, color .2s;
+    }
+
+    .nav-btn:hover {
+      background: var(--bg-glass);
+      color: var(--text-primary);
+    }
+
+    .nav-btn:disabled {
+      opacity: .3;
+      cursor: not-allowed;
+    }
+
+    #progress-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: background .3s, transform .3s;
+    }
+
+    .dot.on {
+      background: var(--accent-green);
+      transform: scale(1.4);
+    }
+
+    /* =========================================================
      FULLSCREEN HINT
   ========================================================= */
-  #hint {
-    position: fixed; top: 20px; right: 24px;
-    font-size: 11px; color: var(--text-muted); letter-spacing: .06em;
-    background: rgba(10,15,28,0.7); padding: 6px 14px;
-    border: 1px solid var(--border-subtle); border-radius: 100px;
-    z-index: 100;
-  }
+    #hint {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: .06em;
+      background: rgba(10, 15, 28, 0.7);
+      padding: 6px 14px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 100px;
+      z-index: 100;
+    }
 
-  /* =========================================================
+    /* =========================================================
      SCALING FOR SMALLER SCREENS
   ========================================================= */
-  @media (max-width:1400px) {
-    .slide { transform-origin: center center; }
-  }
-</style>
+    @media (max-width:1400px) {
+      .slide {
+        transform-origin: center center;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<div id="deck">
+  <div id="deck">
 
-  <!-- ===================== SLIDE 1 : HOOK ===================== -->
-  <div class="slide active" id="s1">
-    <div class="blob" style="width:500px;height:500px;background:var(--accent-green);top:-200px;right:-100px;"></div>
-    <div class="blob" style="width:300px;height:300px;background:var(--accent-blue);bottom:-100px;left:-50px;"></div>
+    <!-- ===================== SLIDE 1 : HOOK ===================== -->
+    <div class="slide active" id="s1">
+      <div class="blob" style="width:500px;height:500px;background:var(--accent-green);top:-200px;right:-100px;"></div>
+      <div class="blob" style="width:300px;height:300px;background:var(--accent-blue);bottom:-100px;left:-50px;"></div>
 
-    <div class="slide-num">01 / 09</div>
+      <div class="slide-num">01 / 10</div>
 
-    <div style="height:100%;display:flex;flex-direction:column;justify-content:center;">
-      <div class="label label-green">Rural Rest &nbsp;·&nbsp; 2026 Pitch Deck</div>
+      <div style="height:100%;display:flex;flex-direction:column;justify-content:center;">
+        <div class="label label-green">Rural Rest &nbsp;·&nbsp; 2026 Pitch Deck</div>
 
-      <h1 style="font-size:52px;margin-bottom:16px;">빈집을 글로벌 핫플레이스로<br/>Local Hosts를 Smart Nodes로.</h1>
-      <p style="font-family:var(--font-en);font-size:18px;color:var(--text-muted);margin-bottom:24px;font-weight:400;line-height:1.5;">
-        Turning Vacant Houses into Global Hotspots,<br/>Local Hosts into Smart Infrastructure Nodes.
-      </p>
+        <h1 style="font-size:52px;margin-bottom:16px;">Turning Vacant Houses into Global Hotspots,<br />Local Hosts into
+          Smart Infrastructure Nodes.</h1>
 
-      <div class="divider"></div>
+        <div class="divider"></div>
 
-      <p style="font-family:var(--font-kr);font-size:14px;color:var(--text-secondary);line-height:1.75;max-width:620px;">
-        Rural Rest는 지역주민·RWA 투자자·지방정부를 연결하는 자율 운영 인프라 <strong style="color:var(--accent-green);">'localhost'</strong>를 통해<br/>
-        방치된 빈집을 글로벌 프리미엄 호스피탈리티 자산으로 재생하는 운영 프로토콜입니다.
-      </p>
-      <p style="font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.65;max-width:620px;">
-        An autonomous operation protocol that revitalizes vacant rural properties into premium global hospitality assets,
-        connecting local communities, RWA investors, and local governments via the 'localhost' infrastructure.
-      </p>
 
-      <div style="margin-top:36px;display:flex;gap:24px;">
-        <div class="stat-pill">
-          <span class="num">10M+</span>
-          <span class="desc-en">Vacant Houses Globally</span>
-          <span class="desc-ko">전 세계 빈집</span>
-        </div>
-        <div class="stat-pill">
-          <span class="num">RWA</span>
-          <span class="desc-en">On-Chain Asset Tokenization</span>
-          <span class="desc-ko">온체인 자산화</span>
-        </div>
-        <div class="stat-pill">
-          <span class="num">DAO</span>
-          <span class="desc-en">Community Governance</span>
-          <span class="desc-ko">커뮤니티 거버넌스</span>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.65;max-width:620px;">
+          An autonomous operation protocol that revitalizes vacant rural properties into premium global hospitality
+          assets,
+          connecting local communities, RWA investors, and local governments via the 'localhost' infrastructure.
+        </p>
+
+        <div style="margin-top:36px;display:flex;gap:24px;">
+          <div class="stat-pill">
+            <span class="num">10M+</span>
+            <span class="desc-en">Vacant Houses Globally</span>
+          </div>
+          <div class="stat-pill">
+            <span class="num">RWA</span>
+            <span class="desc-en">On-Chain Asset Tokenization</span>
+          </div>
+          <div class="stat-pill">
+            <span class="num">DAO</span>
+            <span class="desc-en">Community Governance</span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ===================== SLIDE 2 : PROBLEM ===================== -->
-  <div class="slide" id="s2">
-    <div class="blob" style="width:400px;height:400px;background:#e11d48;top:-150px;right:-80px;opacity:.12;"></div>
+    <!-- ===================== SLIDE 2 : PROBLEM ===================== -->
+    <div class="slide" id="s2">
+      <div class="blob" style="width:400px;height:400px;background:#e11d48;top:-150px;right:-80px;opacity:.12;"></div>
 
-    <div class="slide-num">02 / 09</div>
-    <div class="label label-amber" style="margin-bottom:12px;">Problem &nbsp;·&nbsp; 문제</div>
+      <div class="slide-num">02 / 10</div>
+      <div class="label label-amber" style="margin-bottom:12px;">Problem </div>
 
-    <h2>The Global Rural Decay</h2>
-    <p class="subtitle-kr">전 세계적인 지방 소멸, 그리고 버려지는 1,000만 채의 기회</p>
-    <p class="subtitle-en">Global rural decline and the wasted potential of 10 million vacant homes.</p>
+      <h2>The Global Rural Decay</h2>
+      <p class="subtitle-en">Global rural decline and the wasted potential of 10 million vacant homes.</p>
 
-    <div class="col-3" style="margin-top:8px;">
-      <div class="card card-accent-tl">
-        <div style="font-size:28px;margin-bottom:12px;">🏚️</div>
-        <h3>Crisis</h3>
-        <div class="ko">글로벌 빈집 위기</div>
-        <p>Korea's rural exodus, Japan's 8.5M 'Akiya', Europe's €1 homes — vacant stock is global & growing.</p>
-        <p class="ko-desc">한국 지방 소멸, 일본 850만 채 아키야, 유럽 1유로 주택으로 이어지는 글로벌 현상.</p>
-      </div>
-      <div class="card card-accent-tl" style="border-top-color:var(--accent-amber);">
-        <div style="font-size:28px;margin-bottom:12px;">🌐</div>
-        <h3>Access Gap</h3>
-        <div class="ko">접근성 단절</div>
-        <p>Global travelers crave 'Real Local' but are blocked by lack of infrastructure, language barriers & information gaps.</p>
-        <p class="ko-desc">여행자는 로컬을 원하지만 인프라·언어·정보 부재로 접근 불가.</p>
-      </div>
-      <div class="card card-accent-tl" style="border-top-color:var(--accent-purple);">
-        <div style="font-size:28px;margin-bottom:12px;">⚙️</div>
-        <h3>Operational Inefficiency</h3>
-        <div class="ko">운영 비효율</div>
-        <p>Rural properties can't be managed efficiently without on-site staff — a bottleneck that scales poorly.</p>
-        <p class="ko-desc">관리 인력 부재로 시골 숙소의 효율적 운영이 구조적으로 불가능.</p>
+      <div class="col-3" style="margin-top:8px;">
+        <div class="card card-accent-tl">
+          <div style="font-size:28px;margin-bottom:12px;">🏚️</div>
+          <h3>Crisis</h3>
+          <p>Korea's rural exodus, Japan's 8.5M 'Akiya', Europe's €1 homes — vacant stock is global & growing.</p>
+        </div>
+        <div class="card card-accent-tl" style="border-top-color:var(--accent-amber);">
+          <div style="font-size:28px;margin-bottom:12px;">🌐</div>
+          <h3>Access Gap</h3>
+          <p>Global travelers crave 'Real Local' but are blocked by lack of infrastructure, language barriers &
+            information gaps.</p>
+        </div>
+        <div class="card card-accent-tl" style="border-top-color:var(--accent-purple);">
+          <div style="font-size:28px;margin-bottom:12px;">⚙️</div>
+          <h3>Operational Inefficiency</h3>
+          <p>Rural properties can't be managed efficiently without on-site staff — a bottleneck that scales poorly.</p>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ===================== SLIDE 3 : SOLUTION ===================== -->
-  <div class="slide" id="s3">
-    <div class="blob" style="width:450px;height:450px;background:var(--accent-green);bottom:-180px;right:-120px;"></div>
+    <!-- ===================== SLIDE 3 : SOLUTION ===================== -->
+    <div class="slide" id="s3">
+      <div class="blob" style="width:450px;height:450px;background:var(--accent-green);bottom:-180px;right:-120px;">
+      </div>
 
-    <div class="slide-num">03 / 09</div>
-    <div class="label label-green">Solution &nbsp;·&nbsp; 솔루션</div>
+      <div class="slide-num">03 / 10</div>
+      <div class="label label-green">Solution </div>
 
-    <h2>RWA Hospitality Protocol</h2>
-    <p class="subtitle-kr">빈집을 유동화하고 기술로 경영하는 RWA 프로젝트</p>
-    <p class="subtitle-en">A Web3 hospitality protocol that tokenizes vacant assets and operates them with AI & IoT technology.</p>
+      <h2>RWA Hospitality Protocol</h2>
+      <p class="subtitle-en">A Web3 hospitality protocol that tokenizes vacant assets and operates them with AI & IoT
+        technology.</p>
 
-    <div class="col-2" style="margin-top:8px;grid-template-columns:1fr 1fr;">
-      <ul class="bullet-list">
-        <li>
-          <div class="bullet-dot" style="background:var(--accent-green);"></div>
-          <div class="entry">
-            <strong>RWA (Real World Asset)</strong>
-            <span class="en">On-chain tokenization of neglected real estate. Transparent global investment & profit distribution.</span>
-            <span class="ko">방치 부동산의 온체인 자산화 — 글로벌 투자 유치 및 투명한 수익 배분.</span>
-          </div>
-        </li>
-        <li>
-          <div class="bullet-dot" style="background:var(--accent-blue);"></div>
-          <div class="entry">
-            <strong>Governance (DAO)</strong>
-            <span class="en">RWA investors form a DAO to govern village development funds and vote on key decisions.</span>
-            <span class="ko">RWA 투자자들이 DAO를 결성해 마을 기금 운용 및 주요 의사결정에 투표로 참여.</span>
-          </div>
-        </li>
-        <li>
-          <div class="bullet-dot" style="background:var(--accent-purple);"></div>
-          <div class="entry">
-            <strong>Service (Rural Rest)</strong>
-            <span class="en">Global hospitality community connecting travelers to regenerated 'Real Local' assets.</span>
-            <span class="ko">글로벌 여행자와 재생 자산을 연결하는 'Real Local' 호스피탈리티 커뮤니티.</span>
-          </div>
-        </li>
-        <li>
-          <div class="bullet-dot" style="background:var(--accent-amber);"></div>
-          <div class="entry">
-            <strong>Open Protocol</strong>
-            <span class="en">Reusable hospitality operating protocol — composable for other municipalities & builders.</span>
-            <span class="ko">지자체·빌더가 재사용 가능한 개방형 운영 프로토콜, 생태계 확장 지향.</span>
-          </div>
-        </li>
-      </ul>
-
-      <div style="display:flex;flex-direction:column;gap:16px;justify-content:center;">
-        <div class="card" style="background:rgba(0,229,160,.05);border-color:rgba(0,229,160,.2);">
-          <div style="font-size:13px;font-weight:700;color:var(--accent-green);margin-bottom:8px;">Web3 Hospitality Triangle</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
-            <div style="padding:12px 8px;background:rgba(0,229,160,.08);border-radius:8px;">
-              <div style="font-size:11px;font-weight:800;color:var(--accent-green);">FINANCE</div>
-              <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">RWA</div>
+      <div class="col-2" style="margin-top:8px;grid-template-columns:1fr 1fr;">
+        <ul class="bullet-list">
+          <li>
+            <div class="bullet-dot" style="background:var(--accent-green);"></div>
+            <div class="entry">
+              <strong>RWA (Real World Asset)</strong>
+              <span class="en">On-chain tokenization of neglected real estate. Transparent global investment & profit
+                distribution.</span>
             </div>
-            <div style="padding:12px 8px;background:rgba(59,130,246,.08);border-radius:8px;">
-              <div style="font-size:11px;font-weight:800;color:var(--accent-blue);">GOVERN</div>
-              <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">DAO</div>
+          </li>
+          <li>
+            <div class="bullet-dot" style="background:var(--accent-blue);"></div>
+            <div class="entry">
+              <strong>Governance (DAO)</strong>
+              <span class="en">RWA investors form a DAO to govern village development funds and vote on key
+                decisions.</span>
             </div>
-            <div style="padding:12px 8px;background:rgba(139,92,246,.08);border-radius:8px;">
-              <div style="font-size:11px;font-weight:800;color:var(--accent-purple);">SERVICE</div>
-              <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Rural Rest</div>
+          </li>
+          <li>
+            <div class="bullet-dot" style="background:var(--accent-purple);"></div>
+            <div class="entry">
+              <strong>Service (Rural Rest)</strong>
+              <span class="en">Global hospitality community connecting travelers to regenerated 'Real Local'
+                assets.</span>
+            </div>
+          </li>
+          <li>
+            <div class="bullet-dot" style="background:var(--accent-amber);"></div>
+            <div class="entry">
+              <strong>Open Protocol</strong>
+              <span class="en">Reusable hospitality operating protocol — composable for other municipalities &
+                builders.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div style="display:flex;flex-direction:column;gap:16px;justify-content:center;">
+          <div class="card" style="background:rgba(0,229,160,.05);border-color:rgba(0,229,160,.2);">
+            <div style="font-size:13px;font-weight:700;color:var(--accent-green);margin-bottom:8px;">Web3 Hospitality
+              Triangle</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+              <div style="padding:12px 8px;background:rgba(0,229,160,.08);border-radius:8px;">
+                <div style="font-size:11px;font-weight:800;color:var(--accent-green);">FINANCE</div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">RWA</div>
+              </div>
+              <div style="padding:12px 8px;background:rgba(59,130,246,.08);border-radius:8px;">
+                <div style="font-size:11px;font-weight:800;color:var(--accent-blue);">GOVERN</div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">DAO</div>
+              </div>
+              <div style="padding:12px 8px;background:rgba(139,92,246,.08);border-radius:8px;">
+                <div style="font-size:11px;font-weight:800;color:var(--accent-purple);">SERVICE</div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Rural Rest</div>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="card">
-          <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Solana Blockchain</div>
-          <p>Real-time profit distribution, DAO voting, and micro-payments — all settled on Solana.</p>
-          <p class="ko-desc" style="margin-top:4px;">실시간 수익 배분·DAO 투표·글로벌 소액결제를 솔라나로 처리.</p>
+          <div class="card">
+            <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Solana Blockchain
+            </div>
+            <p>Real-time profit distribution, DAO voting, and micro-payments — all settled on Solana.</p>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- ===================== SLIDE 4 : SOCIAL IMPACT ===================== -->
+    <div class="slide" id="s4">
+      <div class="blob" style="width:400px;height:400px;background:#9945FF;bottom:-150px;right:-80px;opacity:.15;">
+      </div>
+
+      <div class="slide-num">04 / 10</div>
+      <div class="label label-purple">Social Impact</div>
+
+      <h2>Solana & Reputation Synergy</h2>
+      <p class="subtitle-en">Leveraging Solana to solve global social challenges — Blockchain for Good.</p>
+
+      <div class="col-3" style="margin-top:16px;">
+        <div class="card" style="background:rgba(153,69,255,.06);border-color:rgba(153,69,255,.2);">
+          <div style="font-size:24px;margin-bottom:10px;">🏆</div>
+          <h3>Reputation Boost</h3>
+          <p>Solana positioned as the core engine for global asset regeneration — earning 'Blockchain for Good' social
+            credibility beyond pure tech.</p>
+        </div>
+        <div class="card" style="background:rgba(0,229,160,.04);border-color:rgba(0,229,160,.15);">
+          <div style="font-size:24px;margin-bottom:10px;">⚡</div>
+          <h3>Transaction Driver</h3>
+          <p>Real-time RWA profit distribution, DAO voting, and global micro-payments generate sustainable, high-volume
+            Solana transactions.</p>
+        </div>
+        <div class="card" style="background:rgba(59,130,246,.04);border-color:rgba(59,130,246,.15);">
+          <div style="font-size:24px;margin-bottom:10px;">🌱</div>
+          <h3>Sustainable Ecosystem</h3>
+          <p>Local residents are hired and empowered — proving a blockchain-native 'sustainable co-prosperity model'
+            with real communities.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== SLIDE 5 : STRATEGIC ADVANTAGE ===================== -->
+    <div class="slide" id="s5">
+      <div class="blob" style="width:380px;height:380px;background:var(--accent-blue);top:-120px;left:-80px;"></div>
+
+      <div class="slide-num">05 / 10</div>
+      <div class="label label-blue">Strategic Advantage</div>
+
+      <h2>Low Cost, High Growth</h2>
+      <p class="subtitle-en">Unrivaled cost efficiency through government partnerships and autonomous operations.</p>
+
+      <div class="col-3" style="margin-top:12px;">
+        <div class="card card-accent-tl">
+          <div
+            style="font-size:13px;font-weight:800;color:var(--accent-green);letter-spacing:.05em;margin-bottom:10px;">
+            ASSET ACQUISITION</div>
+          <div
+            style="font-size:32px;font-weight:900;background:linear-gradient(135deg,var(--accent-green),var(--accent-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;">
+            20yr</div>
+          <p style="font-size:16px;color:var(--text-primary);font-weight:700;margin-bottom:12px;">Zero-CAPEX Lease</p>
+          <p>Secure vacant houses from local governments on a 20-year free-of-charge lease — radically minimizing
+            initial investment.</p>
+        </div>
+        <div class="card card-accent-tl" style="border-top-color:var(--accent-blue);">
+          <div style="font-size:13px;font-weight:800;color:var(--accent-blue);letter-spacing:.05em;margin-bottom:10px;">
+            OPERATIONAL EFFICIENCY</div>
+          <div
+            style="font-size:32px;font-weight:900;background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;">
+            AI·IoT</div>
+          <p style="font-size:16px;color:var(--text-primary);font-weight:700;margin-bottom:12px;">Unmanned 'localhost'
+            Protocol</p>
+          <p>AI & IoT-driven autonomous operation dramatically cuts labor and management costs.</p>
+        </div>
+        <div class="card card-accent-tl" style="border-top-color:var(--accent-purple);">
+          <div
+            style="font-size:13px;font-weight:800;color:var(--accent-purple);letter-spacing:.05em;margin-bottom:10px;">
+            GLOBAL TESTBED</div>
+          <div
+            style="font-size:32px;font-weight:900;background:linear-gradient(135deg,var(--accent-purple),var(--accent-amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;">
+            KR→JP→EU</div>
+          <p style="font-size:16px;color:var(--text-primary);font-weight:700;margin-bottom:12px;">Battle-Tested
+            Expansion
+          </p>
+          <p>Model proven in Korea's extreme conditions (unmanned, aging population) — immediately replicable globally.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== SLIDE 6 : TARGET AUDIENCE ===================== -->
+    <div class="slide" id="s6">
+      <div class="blob" style="width:350px;height:350px;background:var(--accent-purple);bottom:-120px;left:-60px;">
+      </div>
+
+      <div class="slide-num">06 / 10</div>
+      <div class="label label-purple">Target Audience </div>
+
+      <h2>Who Travels to 'localhost'?</h2>
+      <p class="subtitle-en">Global new-frontier travelers seeking authentic immersion and hyper-local experiences.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+        <div class="card" style="padding:16px 20px;">
+          <h3>🌏 Global Authentic Explorers</h3>
+          <p>MZ-generation global travelers seeking 'Real Korea' stories and atmosphere.</p>
+        </div>
+        <div class="card" style="padding:16px 20px;">
+          <h3>🎯 Active Experience Seekers</h3>
+          <p>Buyers of hyper-local activities — traditional liquor, farming, and community immersion.</p>
+        </div>
+        <div class="card" style="padding:16px 20px;">
+          <h3>🏫 School & Edu-Groups</h3>
+          <p>Schools and educational institutes booking group rural activity programs.</p>
+        </div>
+        <div class="card" style="padding:16px 20px;">
+          <h3>💻 Digital Nomads</h3>
+          <p>Remote workers wanting nature immersion plus high-speed infrastructure.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:4px;">
+        <span class="chip">Global Inbound Travelers</span>
+        <span class="chip">Cross-over Node Visitors</span>
+        <span class="chip">Impact Seekers</span>
+        <span class="chip">RWA Active Governors</span>
+        <span class="chip">KR · JP · EU Local Community</span>
+      </div>
+    </div>
+
+    <!-- ===================== SLIDE 7 : ORGANIC DEMAND ===================== -->
+    <div class="slide" id="s7">
+      <div class="blob" style="width:380px;height:380px;background:#e11d48;bottom:-100px;left:-80px;opacity:.15;"></div>
+
+      <div class="slide-num">07 / 10</div>
+      <div class="label label-amber">Organic Demand</div>
+
+      <h2>Explosive Local Travel Trend</h2>
+      <p class="subtitle-en">Viral organic demand for authentic hyper-local experiences dominating social media.</p>
+
+      <div style="display:flex;gap:20px;margin-top:16px;height:320px;">
+        <div class="card"
+          style="flex:1;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-top:2px solid var(--accent-amber);">
+          <img src="pitch-deck-assets/1.png" alt="SNS Trend 1"
+            style="width:100%;height:100%;object-fit:contain;border-radius:6px;" />
+        </div>
+        <div class="card"
+          style="flex:1;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-top:2px solid #e11d48;">
+          <img src="pitch-deck-assets/2.png" alt="SNS Trend 2"
+            style="width:100%;height:100%;object-fit:contain;border-radius:6px;" />
+        </div>
+        <div class="card"
+          style="flex:1;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-top:2px solid var(--accent-purple);">
+          <img src="pitch-deck-assets/3.png" alt="SNS Trend 3"
+            style="width:100%;height:100%;object-fit:contain;border-radius:6px;" />
+        </div>
+      </div>
+
+      <div
+        style="margin-top:20px;padding:20px 24px;border-left:3px solid var(--accent-amber);background:rgba(245,158,11,.04);border-radius:0 var(--radius-lg) var(--radius-lg) 0;">
+        <p style="font-size:14px;color:var(--text-secondary);line-height:1.7;margin-bottom:6px;">
+          <strong style="color:var(--text-primary);">Massive Organic Demand:</strong> More than flashy landmarks,
+          'connection with locals, secret rural paths' are rising as killer contents.
+        </p>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.6;">
+          Rural Rest's properties provide the perfect infrastructure to absorb this exploding organic demand.
+        </p>
+      </div>
+    </div>
+
+    <!-- ===================== SLIDE 8 : DEFENSIBILITY ===================== -->
+    <div class="slide" id="s8">
+      <div class="blob" style="width:420px;height:420px;background:var(--accent-green);top:-160px;right:-100px;"></div>
+
+      <div class="slide-num">08 / 10</div>
+      <div class="label label-green">Defensibility</div>
+
+      <h2>The "Hard-core" Operation Moat</h2>
+      <p class="subtitle-en">A data and operational moat that Airbnb cannot easily replicate.</p>
+
+      <div style="display:flex;flex-direction:column;gap:16px;margin-top:16px;">
+        <div class="phase-block" style="border-left-color:var(--accent-green);">
+          <div class="phase-num">Tech Barrier</div>
+          <div class="phase-content">
+            <strong>Autonomous 'Operation OS' — Beyond Simple Mediation</strong>
+          </div>
+        </div>
+        <div class="phase-block" style="border-left-color:var(--accent-blue);">
+          <div class="phase-num">Data Moat</div>
+          <div class="phase-content">
+            <strong>Thousands of unmanned check-ins, sensing data, and local logistics optimization records.</strong>
+          </div>
+        </div>
+        <div class="phase-block" style="border-left-color:var(--accent-purple);">
+          <div class="phase-num">Exclusive Inventory</div>
+          <div class="phase-content">
+            <strong>Direct government agreements securing exclusive property inventory unavailable on open
+              platforms.</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== SLIDE 9 : ROADMAP ===================== -->
+    <div class="slide" id="s9">
+      <div class="blob"
+        style="width:450px;height:450px;background:var(--accent-amber);top:-200px;right:-100px;opacity:.1;"></div>
+
+      <div class="slide-num">09 / 10</div>
+      <div class="label label-amber">Global Roadmap </div>
+
+      <h2>To the World OS</h2>
+      <p class="subtitle-en">From a local operator to the global standard for vacant property regeneration.</p>
+
+      <div style="display:flex;flex-direction:column;gap:16px;margin-top:20px;">
+        <div class="phase-block" style="border-left-color:var(--accent-green);">
+          <div class="phase-num">Phase 1<br />Year 1–2</div>
+          <div class="phase-content">
+            <strong>Korea Standard Model — Proof of Concept</strong>
+            <div class="en" style="font-size:15px;color:var(--text-muted);line-height:1.6;margin-top:8px;">Build and
+              validate the
+              integrated unmanned operation, RWA tokenization, and DAO governance model in Korea.</div>
+          </div>
+        </div>
+        <div class="phase-block" style="border-left-color:var(--accent-blue);">
+          <div class="phase-num">Phase 2<br />Year 2–3</div>
+          <div class="phase-content">
+            <strong>Japan & Global Beachhead — JV / Partnership</strong>
+            <div class="en" style="font-size:15px;color:var(--text-muted);line-height:1.6;margin-top:8px;">Expand to
+              Japan and other
+              high-vacancy markets via joint ventures and local partnership agreements.</div>
+          </div>
+        </div>
+        <div class="phase-block" style="border-left-color:var(--accent-purple);">
+          <div class="phase-num">Phase 3<br />Year 3+</div>
+          <div class="phase-content">
+            <strong>Global OS Licensing — The Hospitality Protocol Standard</strong>
+            <div class="en" style="font-size:15px;color:var(--text-muted);line-height:1.6;margin-top:8px;">License the
+              'Sustainable
+              Local Hospitality OS' globally to municipalities, investors, and property owners worldwide.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== SLIDE 10 : CLOSING ===================== -->
+    <div class="slide" id="s10">
+      <div class="blob" style="width:500px;height:500px;background:var(--accent-green);top:-200px;left:-150px;"></div>
+      <div class="blob" style="width:400px;height:400px;background:var(--accent-blue);bottom:-150px;right:-100px;">
+      </div>
+
+      <div class="slide-num">10 / 10</div>
+
+      <div style="height:100%;display:flex;flex-direction:column;justify-content:center;">
+        <div class="label label-green" style="margin-bottom:20px;">Closing Statement </div>
+
+        <h1 style="font-size:42px;margin-bottom:20px;max-width:720px;">Proven in Korea.<br />The Solution for Global
+          Rural Decline.</h1>
+        <p
+          style="font-size:18px;font-weight:500;color:var(--text-secondary);margin-bottom:28px;font-style:italic;line-height:1.6;max-width:680px;">
+          "Proven in Korea. <br />The Solution for Global Rural Decline."
+        </p>
+
+        <div class="divider"></div>
+
+        <div class="quote-block" style="max-width:700px;margin-top:20px;">
+
+          <div class="en" style="font-size:13px;color:var(--text-muted);line-height:1.7;">
+            We are building a 'Sustainable Local Hospitality Operating Protocol' applicable to rural decline regions
+            worldwide —
+            going far beyond solving Korea's vacant house problem. Korea is the most definitive first proof-of-concept
+            stage
+            for this vast global vision.
+          </div>
+        </div>
+
+        <div style="margin-top:32px;display:flex;align-items:center;gap:20px;">
+          <div
+            style="width:40px;height:40px;background:linear-gradient(135deg,var(--accent-green),var(--accent-blue));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;">
+            🏡</div>
+          <div>
+            <div style="font-family:var(--font-en);font-weight:800;font-size:16px;color:var(--text-primary);">Rural Rest
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;">The
+              Global Hospitality OS · 2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#deck -->
+
+  <!-- Navigation -->
+  <div id="nav">
+    <button class="nav-btn" id="btn-prev" disabled>&#8592;</button>
+    <div class="dots" id="dots"></div>
+    <span id="progress-text">1 / 10</span>
+    <button class="nav-btn" id="btn-next">&#8594;</button>
   </div>
 
-  <!-- ===================== SLIDE 4 : STRATEGIC ADVANTAGE ===================== -->
-  <div class="slide" id="s4">
-    <div class="blob" style="width:380px;height:380px;background:var(--accent-blue);top:-120px;left:-80px;"></div>
+  <div id="hint">ESC: Exit Fullscreen &nbsp;|&nbsp; F: Fullscreen &nbsp;|&nbsp; ← → Navigate</div>
 
-    <div class="slide-num">04 / 09</div>
-    <div class="label label-blue">Strategic Advantage &nbsp;·&nbsp; 전략적 이점</div>
+  <script>
+    const TOTAL = 10;
+    let cur = 1;
+    let exiting = null;
 
-    <h2>Low Cost, High Growth</h2>
-    <p class="subtitle-kr">지방정부와의 협력을 통한 압도적 비용 효율성</p>
-    <p class="subtitle-en">Unrivaled cost efficiency through government partnerships and autonomous operations.</p>
+    const slides = Array.from({ length: TOTAL }, (_, i) => document.getElementById('s' + (i + 1)));
+    const dotsEl = document.getElementById('dots');
+    const progressEl = document.getElementById('progress-text');
+    const prevBtn = document.getElementById('btn-prev');
+    const nextBtn = document.getElementById('btn-next');
 
-    <div class="col-3" style="margin-top:12px;">
-      <div class="card card-accent-tl">
-        <div style="font-size:13px;font-weight:800;color:var(--accent-green);letter-spacing:.05em;margin-bottom:10px;">ASSET ACQUISITION</div>
-        <div style="font-size:32px;font-weight:900;background:linear-gradient(135deg,var(--accent-green),var(--accent-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;">20yr</div>
-        <p style="font-size:13px;color:var(--text-primary);font-weight:600;margin-bottom:6px;">Zero-CAPEX Lease</p>
-        <p>Secure vacant houses from local governments on a 20-year free-of-charge lease — radically minimizing initial investment.</p>
-        <p class="ko-desc" style="margin-top:6px;">지방정부로부터 20년 무상 임대 — 초기 투자비(CAPEX)를 파격적으로 최소화.</p>
-      </div>
-      <div class="card card-accent-tl" style="border-top-color:var(--accent-blue);">
-        <div style="font-size:13px;font-weight:800;color:var(--accent-blue);letter-spacing:.05em;margin-bottom:10px;">OPERATIONAL EFFICIENCY</div>
-        <div style="font-size:32px;font-weight:900;background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;">AI·IoT</div>
-        <p style="font-size:13px;color:var(--text-primary);font-weight:600;margin-bottom:6px;">Unmanned 'localhost' Protocol</p>
-        <p>AI & IoT-driven autonomous operation dramatically cuts labor and management costs.</p>
-        <p class="ko-desc" style="margin-top:6px;">AI·IoT 기반 무인 자율 운영 프로토콜 'localhost'로 인건비·운영비 극적 절감.</p>
-      </div>
-      <div class="card card-accent-tl" style="border-top-color:var(--accent-purple);">
-        <div style="font-size:13px;font-weight:800;color:var(--accent-purple);letter-spacing:.05em;margin-bottom:10px;">GLOBAL TESTBED</div>
-        <div style="font-size:32px;font-weight:900;background:linear-gradient(135deg,var(--accent-purple),var(--accent-amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;">KR→JP→EU</div>
-        <p style="font-size:13px;color:var(--text-primary);font-weight:600;margin-bottom:6px;">Battle-Tested Expansion</p>
-        <p>Model proven in Korea's extreme conditions (unmanned, aging population) — immediately replicable globally.</p>
-        <p class="ko-desc" style="margin-top:6px;">한국 극한 환경 검증 모델을 일본·유럽 지방 소멸 지역으로 즉시 확장.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== SLIDE 5 : TARGET AUDIENCE ===================== -->
-  <div class="slide" id="s5">
-    <div class="blob" style="width:350px;height:350px;background:var(--accent-purple);bottom:-120px;left:-60px;"></div>
-
-    <div class="slide-num">05 / 09</div>
-    <div class="label label-purple">Target Audience &nbsp;·&nbsp; 타겟</div>
-
-    <h2>Who Travels to 'localhost'?</h2>
-    <p class="subtitle-kr">진정성 있는 경험과 몰입을 찾는 글로벌 뉴 프런티어</p>
-    <p class="subtitle-en">Global new-frontier travelers seeking authentic immersion and hyper-local experiences.</p>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
-      <div class="card" style="padding:16px 20px;">
-        <h3>🌏 Global Authentic Explorers</h3>
-        <div class="ko">글로벌 진정성 탐험가</div>
-        <p>MZ-generation global travelers seeking 'Real Korea' stories and atmosphere.</p>
-        <p class="ko-desc">'Real Korea' 정취와 스토리를 찾는 MZ세대 글로벌 여행자.</p>
-      </div>
-      <div class="card" style="padding:16px 20px;">
-        <h3>🎯 Active Experience Seekers</h3>
-        <div class="ko">체험 구매층</div>
-        <p>Buyers of hyper-local activities — traditional liquor, farming, and community immersion.</p>
-        <p class="ko-desc">전통주·농사 등 주민 밀착형 '하이퍼 로컬 체험' 구매층.</p>
-      </div>
-      <div class="card" style="padding:16px 20px;">
-        <h3>🏫 School & Edu-Groups</h3>
-        <div class="ko">교육 단체</div>
-        <p>Schools and educational institutes booking group rural activity programs.</p>
-        <p class="ko-desc">학교·교육기관 단위 단체 체험학습 및 농촌 활동 수요층.</p>
-      </div>
-      <div class="card" style="padding:16px 20px;">
-        <h3>💻 Digital Nomads</h3>
-        <div class="ko">디지털 노마드</div>
-        <p>Remote workers wanting nature immersion plus high-speed infrastructure.</p>
-        <p class="ko-desc">자연 속 몰입과 초고속 인프라를 동시에 원하는 전 세계 리모트 워커.</p>
-      </div>
-    </div>
-
-    <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:4px;">
-      <span class="chip">Global Inbound Travelers</span>
-      <span class="chip">Cross-over Node Visitors</span>
-      <span class="chip">Impact Seekers</span>
-      <span class="chip">RWA Active Governors</span>
-      <span class="chip">KR · JP · EU Local Community</span>
-    </div>
-  </div>
-
-  <!-- ===================== SLIDE 6 : DEFENSIBILITY ===================== -->
-  <div class="slide" id="s6">
-    <div class="blob" style="width:420px;height:420px;background:var(--accent-green);top:-160px;right:-100px;"></div>
-
-    <div class="slide-num">06 / 09</div>
-    <div class="label label-green">Defensibility &nbsp;·&nbsp; 경쟁 우위</div>
-
-    <h2>The "Hard-core" Operation Moat</h2>
-    <p class="subtitle-kr">에어비앤비가 쉽게 넘볼 수 없는 운영 데이터의 해자</p>
-    <p class="subtitle-en">A data and operational moat that Airbnb cannot easily replicate.</p>
-
-    <div style="display:flex;flex-direction:column;gap:16px;margin-top:16px;">
-      <div class="phase-block" style="border-left-color:var(--accent-green);">
-        <div class="phase-num">Tech Barrier</div>
-        <div class="phase-content">
-          <strong>Autonomous 'Operation OS' — Beyond Simple Mediation</strong>
-          <div class="ko">단순 중개를 넘어, 관리가 불가능해 보이는 유휴 공간을 AI·IoT로 효율화한 '운영 OS' 보유.</div>
-        </div>
-      </div>
-      <div class="phase-block" style="border-left-color:var(--accent-blue);">
-        <div class="phase-num">Data Moat</div>
-        <div class="phase-content">
-          <strong>Thousands of unmanned check-ins, sensing data, and local logistics optimization records.</strong>
-          <div class="ko">수천 건의 무인 체크인·센싱 데이터·로컬 물류 최적화 데이터로 구축된 강력한 진입 장벽.</div>
-        </div>
-      </div>
-      <div class="phase-block" style="border-left-color:var(--accent-purple);">
-        <div class="phase-num">Exclusive Inventory</div>
-        <div class="phase-content">
-          <strong>Direct government agreements securing exclusive property inventory unavailable on open platforms.</strong>
-          <div class="ko">지자체·지역 마을과의 직접 협약을 통한 독점적 숙소 인벤토리 확보 — 오픈 플랫폼으로 접근 불가.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== SLIDE 7 : SOCIAL IMPACT ===================== -->
-  <div class="slide" id="s7">
-    <div class="blob" style="width:400px;height:400px;background:#9945FF;bottom:-150px;right:-80px;opacity:.15;"></div>
-
-    <div class="slide-num">07 / 09</div>
-    <div class="label label-purple">Social Impact &nbsp;·&nbsp; 사회적 임팩트</div>
-
-    <h2>Solana & Reputation Synergy</h2>
-    <p class="subtitle-kr">글로벌 사회 문제를 해결하는 솔라나의 선한 영향력</p>
-    <p class="subtitle-en">Leveraging Solana to solve global social challenges — Blockchain for Good.</p>
-
-    <div class="col-3" style="margin-top:16px;">
-      <div class="card" style="background:rgba(153,69,255,.06);border-color:rgba(153,69,255,.2);">
-        <div style="font-size:24px;margin-bottom:10px;">🏆</div>
-        <h3>Reputation Boost</h3>
-        <div class="ko" style="margin-bottom:8px;">평판 강화</div>
-        <p>Solana positioned as the core engine for global asset regeneration — earning 'Blockchain for Good' social credibility beyond pure tech.</p>
-        <p class="ko-desc" style="margin-top:6px;">유휴 자산 재생의 핵심 엔진으로 솔라나를 포지셔닝 — 기술을 넘어선 사회적 평판 확보.</p>
-      </div>
-      <div class="card" style="background:rgba(0,229,160,.04);border-color:rgba(0,229,160,.15);">
-        <div style="font-size:24px;margin-bottom:10px;">⚡</div>
-        <h3>Transaction Driver</h3>
-        <div class="ko" style="margin-bottom:8px;">트랜잭션 견인</div>
-        <p>Real-time RWA profit distribution, DAO voting, and global micro-payments generate sustainable, high-volume Solana transactions.</p>
-        <p class="ko-desc" style="margin-top:6px;">RWA 수익 실시간 배분·DAO 투표·글로벌 소액결제로 지속 가능한 트랜잭션 볼륨 증대.</p>
-      </div>
-      <div class="card" style="background:rgba(59,130,246,.04);border-color:rgba(59,130,246,.15);">
-        <div style="font-size:24px;margin-bottom:10px;">🌱</div>
-        <h3>Sustainable Ecosystem</h3>
-        <div class="ko" style="margin-bottom:8px;">지속 가능한 생태계</div>
-        <p>Local residents are hired and empowered — proving a blockchain-native 'sustainable co-prosperity model' with real communities.</p>
-        <p class="ko-desc" style="margin-top:6px;">지역 주민 채용·일자리 창출을 통해 블록체인 기반 '지속 가능한 상생 모델' 실증.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== SLIDE 8 : ROADMAP ===================== -->
-  <div class="slide" id="s8">
-    <div class="blob" style="width:450px;height:450px;background:var(--accent-amber);top:-200px;right:-100px;opacity:.1;"></div>
-
-    <div class="slide-num">08 / 09</div>
-    <div class="label label-amber">Global Roadmap &nbsp;·&nbsp; 로드맵</div>
-
-    <h2>To the World OS</h2>
-    <p class="subtitle-kr">단순 운영사를 넘어 빈집 재생의 표준이 됩니다.</p>
-    <p class="subtitle-en">From a local operator to the global standard for vacant property regeneration.</p>
-
-    <div style="display:flex;flex-direction:column;gap:16px;margin-top:20px;">
-      <div class="phase-block" style="border-left-color:var(--accent-green);">
-        <div class="phase-num">Phase 1<br/>Year 1–2</div>
-        <div class="phase-content">
-          <strong>Korea Standard Model — Proof of Concept</strong>
-          <div class="ko">한국형 표준 모델 완성 및 운영 데이터 확보. 무인 운영·RWA·DAO의 통합 실증.</div>
-          <div class="en" style="font-size:12px;color:var(--text-muted);margin-top:2px;">Build and validate the integrated unmanned operation, RWA tokenization, and DAO governance model in Korea.</div>
-        </div>
-      </div>
-      <div class="phase-block" style="border-left-color:var(--accent-blue);">
-        <div class="phase-num">Phase 2<br/>Year 2–3</div>
-        <div class="phase-content">
-          <strong>Japan & Global Beachhead — JV / Partnership</strong>
-          <div class="ko">일본 등 해외 거점 국가 진출 (JV/파트너십). 검증된 모델의 첫 번째 글로벌 복제.</div>
-          <div class="en" style="font-size:12px;color:var(--text-muted);margin-top:2px;">Expand to Japan and other high-vacancy markets via joint ventures and local partnership agreements.</div>
-        </div>
-      </div>
-      <div class="phase-block" style="border-left-color:var(--accent-purple);">
-        <div class="phase-num">Phase 3<br/>Year 3+</div>
-        <div class="phase-content">
-          <strong>Global OS Licensing — The Hospitality Protocol Standard</strong>
-          <div class="ko">전 세계 빈집 소유주를 위한 '지속 가능한 로컬 호스피탈리티 운영 OS' 글로벌 라이선싱.</div>
-          <div class="en" style="font-size:12px;color:var(--text-muted);margin-top:2px;">License the 'Sustainable Local Hospitality OS' globally to municipalities, investors, and property owners worldwide.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== SLIDE 9 : CLOSING ===================== -->
-  <div class="slide" id="s9">
-    <div class="blob" style="width:500px;height:500px;background:var(--accent-green);top:-200px;left:-150px;"></div>
-    <div class="blob" style="width:400px;height:400px;background:var(--accent-blue);bottom:-150px;right:-100px;"></div>
-
-    <div class="slide-num">09 / 09</div>
-
-    <div style="height:100%;display:flex;flex-direction:column;justify-content:center;">
-      <div class="label label-green" style="margin-bottom:20px;">Closing Statement &nbsp;·&nbsp; 마무리</div>
-
-      <h1 style="font-size:42px;margin-bottom:20px;max-width:720px;">
-        한국에서 증명하고,<br/>전 세계 지방 소멸의 해법이 되겠습니다.
-      </h1>
-      <p style="font-size:18px;font-weight:500;color:var(--text-secondary);margin-bottom:28px;font-style:italic;line-height:1.6;max-width:680px;">
-        "Proven in Korea. <br/>The Solution for Global Rural Decline."
-      </p>
-
-      <div class="divider"></div>
-
-      <div class="quote-block" style="max-width:700px;margin-top:20px;">
-        <div class="ko" style="font-family:var(--font-kr);font-size:15px;color:var(--text-primary);font-weight:500;line-height:1.75;margin-bottom:12px;">
-          우리는 한국의 시골 빈집 문제를 해결하는 것을 넘어, 전 세계 지방 소멸 지역에 적용 가능한<br/>
-          <strong style="color:var(--accent-green);">'지속 가능한 로컬 호스피탈리티 운영 프로토콜'</strong>을 만들고 있습니다.<br/>
-          한국은 이 거대한 글로벌 비전의 가장 확실한 첫 번째 증명 무대입니다.
-        </div>
-        <div class="en" style="font-size:13px;color:var(--text-muted);line-height:1.7;">
-          We are building a 'Sustainable Local Hospitality Operating Protocol' applicable to rural decline regions worldwide —
-          going far beyond solving Korea's vacant house problem. Korea is the most definitive first proof-of-concept stage
-          for this vast global vision.
-        </div>
-      </div>
-
-      <div style="margin-top:32px;display:flex;align-items:center;gap:20px;">
-        <div style="width:40px;height:40px;background:linear-gradient(135deg,var(--accent-green),var(--accent-blue));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;">🏡</div>
-        <div>
-          <div style="font-family:var(--font-en);font-weight:800;font-size:16px;color:var(--text-primary);">Rural Rest</div>
-          <div style="font-size:11px;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;">The Global Hospitality OS · 2026</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /#deck -->
-
-<!-- Navigation -->
-<div id="nav">
-  <button class="nav-btn" id="btn-prev" disabled>&#8592;</button>
-  <div class="dots" id="dots"></div>
-  <span id="progress-text">1 / 9</span>
-  <button class="nav-btn" id="btn-next">&#8594;</button>
-</div>
-
-<div id="hint">ESC: Exit Fullscreen &nbsp;|&nbsp; F: Fullscreen &nbsp;|&nbsp; ← → Navigate</div>
-
-<script>
-  const TOTAL = 9;
-  let cur = 1;
-  let exiting = null;
-
-  const slides = Array.from({length: TOTAL}, (_, i) => document.getElementById('s' + (i + 1)));
-  const dotsEl = document.getElementById('dots');
-  const progressEl = document.getElementById('progress-text');
-  const prevBtn = document.getElementById('btn-prev');
-  const nextBtn = document.getElementById('btn-next');
-
-  // Build dots
-  for (let i = 0; i < TOTAL; i++) {
-    const d = document.createElement('div');
-    d.className = 'dot' + (i === 0 ? ' on' : '');
-    dotsEl.appendChild(d);
-  }
-
-  function getDots() { return Array.from(dotsEl.querySelectorAll('.dot')); }
-
-  function scaleDeck() {
-    const deck = document.getElementById('deck');
-    const W = window.innerWidth, H = window.innerHeight;
-    const slideW = 1280, slideH = 720;
-    const scale = Math.min(W / slideW, H / slideH) * 0.92;
-    slides.forEach(s => {
-      s.style.transform = s.classList.contains('active')
-        ? `scale(${scale})`
-        : s.classList.contains('exit-left')
-          ? `translateX(${-80 * scale}px) scale(${scale * 0.97})`
-          : `translateX(${80 * scale}px) scale(${scale * 0.97})`;
-    });
-  }
-
-  function goTo(next) {
-    if (next < 1 || next > TOTAL || next === cur) return;
-    const prev = cur;
-    cur = next;
-
-    const leaving = slides[prev - 1];
-    const arriving = slides[cur - 1];
-
-    leaving.classList.remove('active');
-    leaving.classList.add('exit-left');
-
-    arriving.style.transform = '';
-    arriving.classList.add('active');
-
-    setTimeout(() => {
-      leaving.classList.remove('exit-left');
-    }, 600);
-
-    progressEl.textContent = cur + ' / ' + TOTAL;
-    prevBtn.disabled = cur === 1;
-    nextBtn.disabled = cur === TOTAL;
-
-    const dots = getDots();
-    dots.forEach((d, i) => d.classList.toggle('on', i === cur - 1));
-
-    scaleDeck();
-  }
-
-  prevBtn.addEventListener('click', () => goTo(cur - 1));
-  nextBtn.addEventListener('click', () => goTo(cur + 1));
-
-  document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); goTo(cur + 1); }
-    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp') { e.preventDefault(); goTo(cur - 1); }
-    if (e.key === 'f' || e.key === 'F') {
-      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
-      else document.exitFullscreen().catch(() => {});
+    // Build dots
+    for (let i = 0; i < TOTAL; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot' + (i === 0 ? ' on' : '');
+      dotsEl.appendChild(d);
     }
-  });
 
-  window.addEventListener('resize', scaleDeck);
-  scaleDeck();
-</script>
+    function getDots() { return Array.from(dotsEl.querySelectorAll('.dot')); }
+
+    function scaleDeck() {
+      const deck = document.getElementById('deck');
+      const W = window.innerWidth, H = window.innerHeight;
+      const slideW = 1280, slideH = 720;
+      const scale = Math.min(W / slideW, H / slideH) * 0.92;
+      slides.forEach(s => {
+        s.style.transform = s.classList.contains('active')
+          ? `scale(${scale})`
+          : s.classList.contains('exit-left')
+            ? `translateX(${-80 * scale}px) scale(${scale * 0.97})`
+            : `translateX(${80 * scale}px) scale(${scale * 0.97})`;
+      });
+    }
+
+    function goTo(next) {
+      if (next < 1 || next > TOTAL || next === cur) return;
+      const prev = cur;
+      cur = next;
+
+      const leaving = slides[prev - 1];
+      const arriving = slides[cur - 1];
+
+      leaving.classList.remove('active');
+      leaving.classList.add('exit-left');
+
+      arriving.style.transform = '';
+      arriving.classList.add('active');
+
+      setTimeout(() => {
+        leaving.classList.remove('exit-left');
+      }, 600);
+
+      progressEl.textContent = cur + ' / ' + TOTAL;
+      prevBtn.disabled = cur === 1;
+      nextBtn.disabled = cur === TOTAL;
+
+      const dots = getDots();
+      dots.forEach((d, i) => d.classList.toggle('on', i === cur - 1));
+
+      scaleDeck();
+    }
+
+    prevBtn.addEventListener('click', () => goTo(cur - 1));
+    nextBtn.addEventListener('click', () => goTo(cur + 1));
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); goTo(cur + 1); }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); goTo(cur - 1); }
+      if (e.key === 'f' || e.key === 'F') {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => { });
+        else document.exitFullscreen().catch(() => { });
+      }
+    });
+
+    window.addEventListener('resize', scaleDeck);
+    scaleDeck();
+  </script>
 </body>
+
 </html>
