@@ -2,8 +2,10 @@ import { useParams, useNavigate } from "react-router";
 import { Header, Footer, Card, Button, Input, Badge } from "~/components/ui-mockup";
 import { PropertyMap } from "~/components/PropertyMap";
 import { useState } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { Transaction, SystemProgram, LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from "@solana/web3.js";
+import { useToast } from "~/hooks/use-toast";
 import { useKyc } from "~/components/KycProvider";
 import {
     BarChart,
@@ -35,7 +37,7 @@ const MOCK_PROPERTIES = {
         tokenPrice: 50000,
         usdcPrice: 33.5,
         totalSupply: 10000,
-        totalValuation: "5억 원",
+        totalValuation: "5000 만원",
         holders: 127,
         soldTokens: 7800,
         lastDividend: "₩4,100 / token (1월)",
@@ -60,7 +62,7 @@ const MOCK_PROPERTIES = {
             bio: "한국의 전통을 보존하는 일에 열정을 쏟고 있습니다. 현지 장인들과 협력하여 이 한옥의 진정성을 유지하면서도 현대적 편안함을 제공합니다.",
         },
         fundingProgress: 78,
-        raised: "3.9억 원",
+        raised: "3000 만원",
         remaining: "1.1억 원",
     },
     "2": {
@@ -78,7 +80,7 @@ const MOCK_PROPERTIES = {
         tokenPrice: 50000,
         usdcPrice: 33.5,
         totalSupply: 10000,
-        totalValuation: "4.2억 원",
+        totalValuation: "4000 만원",
         holders: 84,
         soldTokens: 4500,
         lastDividend: "₩3,750 / token (1월)",
@@ -103,8 +105,8 @@ const MOCK_PROPERTIES = {
             bio: "자연과 함께하는 삶을 추구합니다.",
         },
         fundingProgress: 45,
-        raised: "1.89억 원",
-        remaining: "2.31억 원",
+        raised: "1890 만원",
+        remaining: "2310 만원",
     },
     "3": {
         id: "3",
@@ -121,7 +123,7 @@ const MOCK_PROPERTIES = {
         tokenPrice: 50000,
         usdcPrice: 33.5,
         totalSupply: 13600,
-        totalValuation: "6.8억 원",
+        totalValuation: "6800 만원",
         holders: 312,
         soldTokens: 13600,
         lastDividend: "₩4,550 / token (1월)",
@@ -146,7 +148,7 @@ const MOCK_PROPERTIES = {
             bio: "바다를 사랑하는 호스트입니다.",
         },
         fundingProgress: 100,
-        raised: "6.8억 원",
+        raised: "6800 만원",
         remaining: "0 원",
     },
     "5": {
@@ -337,10 +339,58 @@ function RevenueChart({ lastDividend, apy }: { lastDividend: string; apy: number
 
 function InvestDetailContent() {
     const { listingId } = useParams();
-    const { connected } = useWallet();
+    const { connected, publicKey, sendTransaction } = useWallet();
+    const { connection } = useConnection();
     const { setVisible } = useWalletModal();
     const [tokenCount, setTokenCount] = useState(1);
     const [showGallery, setShowGallery] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const { toast } = useToast();
+
+    const handleInvest = async () => {
+        if (!publicKey) return;
+
+        try {
+            setIsProcessing(true);
+
+            // Real on-chain transaction adding a Memo for the investment
+            const propertyToInvest = MOCK_PROPERTIES[listingId as keyof typeof MOCK_PROPERTIES] || MOCK_PROPERTIES["1"];
+            const memoText = `Rural Rest Investment: ${tokenCount} tokens of ${propertyToInvest.tokenName}`;
+
+            const memoInstruction = new TransactionInstruction({
+                keys: [{ pubkey: publicKey, isSigner: true, isWritable: true }],
+                data: Buffer.from(memoText, 'utf-8') as any,
+                programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
+            });
+
+            // Add a small SOL transfer to simulate payment (0.01 SOL)
+            const transferInstruction = SystemProgram.transfer({
+                fromPubkey: publicKey,
+                toPubkey: publicKey, // Self transfer for safe simulation without external treasury
+                lamports: Math.round(LAMPORTS_PER_SOL * 0.01),
+            });
+
+            const transaction = new Transaction().add(memoInstruction, transferInstruction);
+
+            const signature = await sendTransaction(transaction, connection);
+            await connection.confirmTransaction(signature, 'processed');
+
+            toast({
+                title: "투자가 완료되었습니다!",
+                description: `성공적으로 온체인에 기록되었습니다. (서명: ${signature.slice(0, 8)}...)`,
+                variant: "success",
+            });
+        } catch (error) {
+            console.error("Investment failed:", error);
+            toast({
+                title: "결제 실패",
+                description: "트랜잭션이 취소되었거나 실패했습니다.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     const navigate = useNavigate();
     const { isKycCompleted } = useKyc();
@@ -719,13 +769,14 @@ function InvestDetailContent() {
                                 ) : connected ? (
                                     isKycCompleted ? (
                                         <button
-                                            className="w-full h-14 rounded-2xl bg-[#17cf54] hover:bg-[#14b847] text-white text-base font-bold transition-all shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-                                            onClick={() => alert(`${tokenCount}개 토큰 투자 진행`)}
+                                            className="w-full h-14 rounded-2xl bg-[#17cf54] hover:bg-[#14b847] text-white text-base font-bold transition-all shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                            onClick={handleInvest}
+                                            disabled={isProcessing}
                                         >
                                             <span className="material-symbols-outlined text-[20px]">
-                                                account_balance_wallet
+                                                {isProcessing ? 'hourglass_empty' : 'account_balance_wallet'}
                                             </span>
-                                            Buy with USDC →
+                                            {isProcessing ? 'Processing Transaction...' : 'Buy with USDC →'}
                                         </button>
                                     ) : (
                                         <button
