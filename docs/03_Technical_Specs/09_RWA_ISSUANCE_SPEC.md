@@ -72,7 +72,7 @@
 | SPL Token Mint (빈집별) 생성 | 미구현 | Authority 호출로 생성 |
 | 토큰화 신청 UI (`/admin/tokenize`) | 미구현 | 신청·서류 업로드 |
 | 투자 매수 플로우 (USDC → 토큰) | 미구현 | `/invest/:id` Purchase 트랜잭션 |
-| 배당 분배·Claim | 미구현 | 별도 문서 14_RWA_REAL_TIME_DIVIDEND_LOGIC 연동 |
+| 배당 분배·Claim | 미구현 | 별도 문서 11_RWA_DIVIDEND_LOGIC 연동 |
 
 ---
 
@@ -124,7 +124,7 @@
 
 *   **rwa_tokens**: listing_id, token_mint, symbol, total_supply, tokens_sold, price_per_token_usdc, valuation_krw, status 등. 구현 명세는 아카이브 10_RWA_TOKEN_SPEC Section 6 참조.
 *   **rwa_investments**: user_id, token_mint_address, amount, total_invested_usdc, purchase_tx_signature 등.
-*   **배당**: 이력은 **rwa_dividends** 및 Anchor DividendPool과 연동. **배당 주기 = 1달(월 단위)**. 배당 기준 = **순이익**(총 매출 − 모든 운영 비용). **적자 시** 해당 월 배당 = 0(음수 배당 없음). 손실 이월 정책은 별도 검토. **운영 준비금**: 적자 월 급여·필수 비용 지급을 위해 **회사 보유 RWA의 일부를 매각한 대금**을 운영준비금으로 적립·보유(B안). 부족 시 준비금에서 충당. 보유 비율·매각 시점·목표 규모는 기획서 19 §2.5 및 별도 정책 참조. 상세는 14_RWA_REAL_TIME_DIVIDEND_LOGIC 참조.
+*   **배당**: 이력은 **rwa_dividends** 및 Anchor DividendPool과 연동. **배당 주기 = 1달(월 단위)**. 배당 기준 = **순이익**(총 매출 − 모든 운영 비용). **적자 시** 해당 월 배당 = 0(음수 배당 없음). 손실 이월 정책은 별도 검토. **운영 준비금**: 적자 월 급여·필수 비용 지급을 위해 **회사 보유 RWA의 일부를 매각한 대금**을 운영준비금으로 적립·보유(B안). 부족 시 준비금에서 충당. 보유 비율·매각 시점·목표 규모는 기획서 19 §2.5 및 별도 정책 참조. 상세는 11_RWA_DIVIDEND_LOGIC 참조.
 
 ---
 
@@ -166,9 +166,9 @@
 
 - **Concept_Design**: [19_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/19_RWA_ISSUANCE_PLAN.md) - RWA 발행 기획서
 - **Concept_Design**: [18_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/18_DAO_GOVERNANCE_PLAN.md) - DAO (RWA = Community Token)
-- **Technical_Specs**: [13_DAO_IMPLEMENTATION_SPEC.md](./13_DAO_IMPLEMENTATION_SPEC.md) - DAO 구현 (RWA Mint 선행 필요)
-- **Logic_Progress**: [14_RWA_REAL_TIME_DIVIDEND_LOGIC.md](../04_Logic_Progress/14_RWA_REAL_TIME_DIVIDEND_LOGIC.md) - 배당 로직 (발행·매수와 분리)
-- **Logic_Progress**: [13_RWA_IMPLEMENTATION_LOG.md](../04_Logic_Progress/13_RWA_IMPLEMENTATION_LOG.md) - RWA 연동 진행 로그
+- **Technical_Specs**: [08_DAO_IMPLEMENTATION_SPEC.md](./08_DAO_IMPLEMENTATION_SPEC.md) - DAO 구현 (RWA Mint 선행 필요)
+- **Logic_Progress**: [11_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/11_RWA_DIVIDEND_LOGIC.md) - 배당 로직 (발행·매수와 분리)
+- **Logic_Progress**: [10_RWA_IMPLEMENTATION_LOG.md](../04_Logic_Progress/10_RWA_IMPLEMENTATION_LOG.md) - RWA 연동 진행 로그
 - **Archive**: [10_RWA_TOKEN_SPEC.md](../00_ARCHIVE/future_blockchain/10_RWA_TOKEN_SPEC.md) - RWA 토큰·Anchor 상세 명세 (참고용)
 - **Archive**: [12_RWA_TOKENIZATION_LOGIC.md](../00_ARCHIVE/future_blockchain/12_RWA_TOKENIZATION_LOGIC.md) - 토큰화 파이프라인·배당 알고리즘 (참고용)
 - **QA_Validation**: [RWA_ISSUANCE_TEST_SCENARIOS.md](../05_QA_Validation/RWA_ISSUANCE_TEST_SCENARIOS.md) - RWA 발행·매수 테스트 시나리오

@@ -232,6 +232,6 @@ cd web && npm audit
 
 ## 관련 문서
 
-- 팀원용 협업 가이드 → `11_COLLABORATION_GUIDE.md`
+- 팀원용 협업 가이드 → `06_COLLABORATION_GUIDE.md`
 - 개발 원칙 → `00_DEVELOPMENT_PRINCIPLES.md`
 - DB 스키마 → `01_DB_SCHEMA.md`
