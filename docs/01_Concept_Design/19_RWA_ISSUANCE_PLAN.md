@@ -111,8 +111,8 @@
 - [02_LEAN_CANVAS.md](./02_LEAN_CANVAS.md) - 비즈니스 모델
 - [18_DAO_GOVERNANCE_PLAN.md](./18_DAO_GOVERNANCE_PLAN.md) - DAO 기획 (RWA = Community Token)
 - [12_PITCH_DECK_v2.md](./12_PITCH_DECK_v2.md) - 피치 덱 (RWA·DAO 전략)
-- **Technical_Specs**: [14_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/14_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세서
-- **Logic_Progress**: [14_RWA_REAL_TIME_DIVIDEND_LOGIC.md](../04_Logic_Progress/14_RWA_REAL_TIME_DIVIDEND_LOGIC.md) - RWA 배당 로직
+- **Technical_Specs**: [09_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세서
+- **Logic_Progress**: [11_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/11_RWA_DIVIDEND_LOGIC.md) - RWA 배당 로직
 - **Archive**: [12_RWA_TOKENIZATION_LOGIC.md](../00_ARCHIVE/future_blockchain/12_RWA_TOKENIZATION_LOGIC.md) - 토큰화 파이프라인·배당 알고리즘 (참고용)
 - **Archive**: [10_RWA_TOKEN_SPEC.md](../00_ARCHIVE/future_blockchain/10_RWA_TOKEN_SPEC.md) - 레거시 RWA 토큰 상세 명세 (참고용)
 - **QA_Validation**: [RWA_ISSUANCE_TEST_SCENARIOS.md](../05_QA_Validation/RWA_ISSUANCE_TEST_SCENARIOS.md) - RWA 발행·매수 테스트 시나리오
