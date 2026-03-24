@@ -1,11 +1,50 @@
 import { Header, Button, Card, Badge, Slider, Footer } from "../components/ui-mockup";
 import { useState, useMemo } from "react";
 import { useLoaderData, useNavigate } from "react-router";
-import { getFeaturedListings } from "../data/listings";
+import { db } from "~/db/index.server";
+import { listings } from "~/db/schema";
+
+function toCityLabel(location: string): string {
+    const m = location.match(/([가-힣]+)시/);
+    return m ? `${m[1]} 근처` : location;
+}
+
+const FAKE_RATINGS: Record<string, number> = {
+    "seed-listing-gyeongju-3000": 4.9,
+    "seed-listing-gyeongju-3001": 4.8,
+    "seed-listing-gyeongju-3002": 4.7,
+    "seed-listing-gyeongju-3003": 5.0,
+    "seed-listing-gyeongju-3004": 4.8,
+};
 
 export async function loader() {
-  const featuredListings = await getFeaturedListings();
-  return { featuredListings };
+    const rows = await db
+        .select({
+            id: listings.id,
+            title: listings.title,
+            description: listings.description,
+            location: listings.location,
+            region: listings.region,
+            pricePerNight: listings.pricePerNight,
+            maxGuests: listings.maxGuests,
+            images: listings.images,
+        })
+        .from(listings);
+
+    return {
+        featuredListings: rows.map((row) => ({
+            id: row.id,
+            title: row.title,
+            description: row.description,
+            location: row.location,
+            region: row.region,
+            cityLabel: toCityLabel(row.location),
+            pricePerNight: row.pricePerNight,
+            maxGuests: row.maxGuests,
+            image: (row.images as string[])[0] ?? "/house.png",
+            rating: FAKE_RATINGS[row.id] ?? 4.7,
+        })),
+    };
 }
 
 export default function Home() {
@@ -24,16 +63,17 @@ export default function Home() {
   }
 
   const locations = [
-    { name: "서울 근처", value: "seoul-suburbs" },
-    { name: "부산 근처", value: "busan-suburbs" },
-    { name: "경주 근처", value: "gyeongju" },
-    { name: "인천 근처", value: "incheon" },
-    { name: "제주도", value: "jeju" },
+    { name: "경상도", value: "경상" },
+    { name: "경기도", value: "경기" },
+    { name: "강원도", value: "강원" },
+    { name: "충청도", value: "충청" },
+    { name: "전라도", value: "전라" },
+    { name: "제주도", value: "제주" },
   ];
 
   const filteredListings = useMemo(() => {
     return featuredListings.filter((listing) => {
-      const matchesLocation = !selectedLocation || listing.location === selectedLocation;
+      const matchesLocation = !selectedLocation || listing.region === selectedLocation;
       const matchesPrice = listing.pricePerNight <= maxPrice;
       return matchesLocation && matchesPrice;
     });
@@ -133,7 +173,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {filteredListings.map((listing) => (
                 <Card key={listing.id} className="overflow-hidden group cursor-pointer border-none shadow-lg">
-                  <div className="aspect-[4/3] overflow-hidden">
+                  <div className="aspect-[4/3] overflow-hidden relative">
                     <img
                       src={listing.image}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -142,8 +182,10 @@ export default function Home() {
                   </div>
                   <div className="p-6 bg-white">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-primary tracking-widest uppercase">{listing.locationLabel}</span>
-                      <span className="text-sm font-medium">★ {listing.rating}</span>
+                      <span className="text-xs font-bold text-primary tracking-widest uppercase">{listing.cityLabel}</span>
+                      <span className="text-xs text-stone-500 font-medium flex items-center gap-0.5">
+                        ★ {listing.rating}
+                      </span>
                     </div>
                     <h3 className="text-xl font-bold mb-2">{listing.title}</h3>
                     <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{listing.description}</p>

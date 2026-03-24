@@ -26,6 +26,14 @@ import {
 // TODO: Pyth oracle로 교체
 const KRW_PER_USDC = 1350;
 
+const TEMP_HOST_BIOS: Record<string, string> = {
+    "seed-spv-3000-hwango":    "황오동 골목을 직접 관리·운영하고 있습니다. 비어있던 이 공간에 다시 온기를 불어넣어, 방문하는 분들께 경주 구도심의 진짜 일상을 전하고 싶어요.",
+    "seed-spv-3001-seonggon":  "성건동 마을 주민들이 함께 관리하는 공간입니다. 첨성대 가까운 골목에서 한옥의 따뜻함을 나눠요.",
+    "seed-spv-3002-dongcheon": "동천동 주민들이 직접 운영하는 쉼터입니다. 느린 여행을 원하는 분들께 경주의 또 다른 얼굴을 보여드려요.",
+    "seed-spv-3003-geoncheon": "건천읍 마을 주민들이 함께 꾸리고 있는 농가주택입니다. 들녘 가까운 조용한 시골 일상을 나눠요.",
+    "seed-spv-3004-angang":    "안강읍 마을에서 직접 관리·운영하고 있습니다. 제철 농산물로 차린 시골 밥상과 함께 느린 하루를 선물해드려요.",
+};
+
 function formatKrw(won: number): string {
     if (won >= 1_0000_0000) {
         const eok = won / 1_0000_0000;
@@ -132,9 +140,8 @@ export async function loader({ params }: Route.LoaderArgs) {
         lastDividend: null as string | null,
         occupancyRate: null as number | null,
         host: {
-            name: hostUser?.name ?? "SPV 운영사",
-            role: "호스트",
-            bio: null as string | null,
+            name: hostUser?.name ?? "마을지기",
+            bio: TEMP_HOST_BIOS[row.hostId] ?? null,
         },
     };
 }
@@ -526,13 +533,9 @@ function InvestDetailContent() {
                                 </div>
                                 <div className="space-y-3">
                                     <div>
-                                        <h3 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-                                            호스트: {property.host.name}님
-                                            {property.host.role === "슈퍼호스트" && (
-                                                <span className="material-symbols-outlined text-[#17cf54] text-[20px]" title="슈퍼호스트">verified</span>
-                                            )}
+                                        <h3 className="text-xl font-bold text-stone-900">
+                                            {property.host.name}
                                         </h3>
-                                        <p className="text-sm text-stone-500 mt-0.5">{property.host.role}</p>
                                     </div>
                                     <p className="text-stone-700 leading-relaxed text-sm">
                                         {property.host.bio}

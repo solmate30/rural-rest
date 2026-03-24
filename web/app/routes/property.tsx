@@ -2,12 +2,21 @@ import { Header, Button, Card, Footer } from "~/components/ui-mockup";
 import { useState } from "react";
 import { useLoaderData, useNavigate } from "react-router";
 import type { Route } from "./+types/property";
-import { getListingById } from "~/data/listings";
-import type { TransportOption, PickupPoint } from "~/data/listings";
 import { cn } from "~/lib/utils";
 import { PropertyMap } from "~/components/PropertyMap";
+import { db } from "~/db/index.server";
+import { listings, user } from "~/db/schema";
+import { eq } from "drizzle-orm";
+import { InvestmentUpsellCard } from "~/components/InvestmentUpsellCard";
 
-function TransportIcon({ mode }: { mode: TransportOption["mode"] }) {
+function toCityLabel(location: string): string {
+    const m = location.match(/([가-힣]+)시/);
+    return m ? `${m[1]} 근처` : location;
+}
+
+type TransportMode = "train" | "bus" | "taxi" | "shuttle";
+
+function TransportIcon({ mode }: { mode: TransportMode }) {
     switch (mode) {
         case "train":
             return (
@@ -36,12 +45,76 @@ function TransportIcon({ mode }: { mode: TransportOption["mode"] }) {
     }
 }
 
-export async function loader({ params }: Route.LoaderArgs) {
-    const listing = await getListingById(params.id);
+// TODO: reviews 테이블 집계로 교체
+const TEMP_RATINGS: Record<string, number> = {
+    "seed-listing-gyeongju-3000": 4.8,
+    "seed-listing-gyeongju-3001": 4.9,
+    "seed-listing-gyeongju-3002": 4.7,
+    "seed-listing-gyeongju-3003": 4.6,
+    "seed-listing-gyeongju-3004": 4.8,
+};
 
-    if (!listing) {
-        throw new Response("Not Found", { status: 404 });
-    }
+// TODO: user 테이블에 bio 컬럼 추가 후 제거
+const TEMP_HOST_BIOS: Record<string, string> = {
+    "seed-spv-3000-hwango": "황오동 골목을 직접 관리·운영하고 있습니다. 비어있던 이 공간에 다시 온기를 불어넣어, 방문하는 분들께 경주 구도심의 진짜 일상을 전하고 싶어요.",
+    "seed-spv-3001-seonggon": "성건동 마을 주민들이 함께 관리하는 공간입니다. 첨성대 가까운 골목에서 한옥의 따뜻함을 나눠요.",
+    "seed-spv-3002-dongcheon": "동천동 주민들이 직접 운영하는 쉼터입니다. 느린 여행을 원하는 분들께 경주의 또 다른 얼굴을 보여드려요.",
+    "seed-spv-3003-geoncheon": "건천읍 마을 주민들이 함께 꾸리고 있는 농가주택입니다. 들녘 가까운 조용한 시골 일상을 나눠요.",
+    "seed-spv-3004-angang": "안강읍 마을에서 직접 관리·운영하고 있습니다. 제철 농산물로 차린 시골 밥상과 함께 느린 하루를 선물해드려요.",
+};
+
+export async function loader({ params }: Route.LoaderArgs) {
+    const row = await db
+        .select({
+            id: listings.id,
+            title: listings.title,
+            description: listings.description,
+            location: listings.location,
+            region: listings.region,
+            pricePerNight: listings.pricePerNight,
+            maxGuests: listings.maxGuests,
+            amenities: listings.amenities,
+            images: listings.images,
+            lat: listings.lat,
+            lng: listings.lng,
+            hostId: listings.hostId,
+        })
+        .from(listings)
+        .where(eq(listings.id, params.id!))
+        .then((rows) => rows[0] ?? null);
+
+    if (!row) throw new Response("Not Found", { status: 404 });
+
+    const hostUser = await db
+        .select({ name: user.name })
+        .from(user)
+        .where(eq(user.id, row.hostId))
+        .then((rows) => rows[0]);
+
+    const images = row.images as string[];
+
+    const listing = {
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        about: row.description,
+        location: row.location,
+        locationLabel: toCityLabel(row.location),
+        pricePerNight: row.pricePerNight,
+        maxGuests: row.maxGuests,
+        amenities: row.amenities as string[],
+        images,
+        image: images[0] ?? "/house.png",
+        rating: TEMP_RATINGS[row.id] ?? null,
+        reviews: [] as { id: string; authorName: string; authorImage: string; rating: number; comment: string; date: string }[],
+        hostName: hostUser?.name ?? "SPV 운영사",
+        hostImage: `https://api.dicebear.com/7.x/notionists/svg?seed=${row.hostId}&backgroundColor=e2e8f0`,
+        hostBio: TEMP_HOST_BIOS[row.hostId] ?? null,
+        coordinates: { lat: row.lat ?? 35.8394, lng: row.lng ?? 129.2917 },
+        nearbyLandmarks: [] as string[],
+        transportOptions: [] as { mode: TransportMode; label: string; routeName: string; estimatedTime: string; estimatedCost: string; description: string }[],
+        pickupPoints: [] as { id: string; name: string; description: string; estimatedTimeToProperty: string }[],
+    };
 
     return { listing };
 }
@@ -67,8 +140,8 @@ export default function PropertyDetail() {
                     </div>
                     <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">{listing.title}</h1>
                     <div className="flex items-center gap-4 text-sm font-medium">
-                        <span className="flex items-center gap-1">★ {listing.rating}</span>
-                        <span className="text-muted-foreground underline cursor-pointer">{listing.reviews.length} reviews</span>
+                        {listing.rating != null && <span className="flex items-center gap-1">★ {listing.rating}</span>}
+                        <span className="text-muted-foreground">{listing.reviews.length > 0 ? `${listing.reviews.length} reviews` : "아직 리뷰 없음"}</span>
                     </div>
                 </div>
 
@@ -100,7 +173,10 @@ export default function PropertyDetail() {
                                 <svg className="w-6 h-6 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
                                 </svg>
-                                <span>+{listing.images.length - 2} Photos</span>
+                                {listing.images.length > 2
+                                    ? <span>+{listing.images.length - 2} Photos</span>
+                                    : <span>All Photos</span>
+                                }
                             </button>
                         </div>
                         {/* Mobile View all button */}
@@ -156,7 +232,7 @@ export default function PropertyDetail() {
                                             Superhost
                                         </span>
                                     </div>
-                                    <p className="text-stone-600 leading-relaxed italic">" {listing.hostBio} "</p>
+                                    {listing.hostBio && <p className="text-stone-600 leading-relaxed italic">" {listing.hostBio} "</p>}
                                 </div>
                             </div>
                         </section>
@@ -325,64 +401,70 @@ export default function PropertyDetail() {
 
                     {/* Right Column: Booking Card */}
                     <div className="lg:col-span-1">
-                        <Card className="p-8 sticky top-24 shadow-2xl border-none bg-white rounded-3xl">
-                            <div className="flex items-baseline justify-between mb-8">
-                                <div className="flex flex-col">
-                                    <span className="text-3xl font-bold text-stone-900">
-                                        ₩{listing.pricePerNight.toLocaleString()}
-                                    </span>
-                                    <span className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-1">Per Night</span>
-                                </div>
-                                <div className="text-sm font-bold text-primary">★ {listing.rating}</div>
-                            </div>
-
-                            <div className="space-y-4 mb-8">
-                                <div className="grid grid-cols-2 gap-0 border border-stone-200 rounded-2xl overflow-hidden shadow-inner">
-                                    <div className="p-4 border-r border-b bg-stone-50/50">
-                                        <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Check-in</label>
-                                        <div className="text-sm font-bold text-stone-700">Select date</div>
+                        <div className="sticky top-24 space-y-6">
+                            <Card className="p-8 shadow-2xl border-none bg-white rounded-3xl">
+                                <div className="flex items-baseline justify-between mb-8">
+                                    <div className="flex flex-col">
+                                        <span className="text-3xl font-bold text-stone-900">
+                                            ₩{listing.pricePerNight.toLocaleString()}
+                                        </span>
+                                        <span className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-1">Per Night</span>
                                     </div>
-                                    <div className="p-4 border-b bg-stone-50/50">
-                                        <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Check-out</label>
-                                        <div className="text-sm font-bold text-stone-700">Select date</div>
-                                    </div>
-                                    <div className="p-4 col-span-2 bg-stone-50/50 hover:bg-stone-100 transition-colors cursor-pointer">
-                                        <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Guests</label>
-                                        <div className="text-sm font-bold text-stone-700">Max {listing.maxGuests} guests</div>
-                                    </div>
+                                    {listing.rating != null && (
+                                        <div className="text-sm font-bold text-primary">★ {listing.rating}</div>
+                                    )}
                                 </div>
 
-                                <Button
-                                    className="w-full h-14 text-xl font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                    onClick={() => navigate(`/book/${listing.id}`)}
-                                >
-                                    Reserve Now
-                                </Button>
-                                <p className="text-center text-[10px] text-stone-400 font-bold uppercase tracking-widest">
-                                    No charge until host approval
-                                </p>
-                            </div>
-
-                            <div className="space-y-4 pt-6 border-t border-stone-100 font-medium text-sm">
-                                <div className="flex justify-between text-stone-600">
-                                    <span>₩{listing.pricePerNight.toLocaleString()} x {nights} nights</span>
-                                    <span className="font-bold">₩{(listing.pricePerNight * nights).toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-stone-600">
-                                    <div className="flex items-center gap-1">
-                                        <span>Transport Concierge</span>
-                                        <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
+                                <div className="space-y-4 mb-8">
+                                    <div className="grid grid-cols-2 gap-0 border border-stone-200 rounded-2xl overflow-hidden shadow-inner">
+                                        <div className="p-4 border-r border-b bg-stone-50/50">
+                                            <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Check-in</label>
+                                            <div className="text-sm font-bold text-stone-700">Select date</div>
+                                        </div>
+                                        <div className="p-4 border-b bg-stone-50/50">
+                                            <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Check-out</label>
+                                            <div className="text-sm font-bold text-stone-700">Select date</div>
+                                        </div>
+                                        <div className="p-4 col-span-2 bg-stone-50/50 hover:bg-stone-100 transition-colors cursor-pointer">
+                                            <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Guests</label>
+                                            <div className="text-sm font-bold text-stone-700">Max {listing.maxGuests} guests</div>
+                                        </div>
                                     </div>
-                                    <span className="text-primary font-bold">Free</span>
+
+                                    <Button
+                                        className="w-full h-14 text-xl font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                        onClick={() => navigate(`/book/${listing.id}`)}
+                                    >
+                                        Reserve Now
+                                    </Button>
+                                    <p className="text-center text-[10px] text-stone-400 font-bold uppercase tracking-widest">
+                                        No charge until host approval
+                                    </p>
                                 </div>
-                                <div className="flex justify-between border-t border-stone-200 pt-5 text-xl font-bold text-stone-900">
-                                    <span>Total</span>
-                                    <span>₩{(listing.pricePerNight * nights).toLocaleString()}</span>
+
+                                <div className="space-y-4 pt-6 border-t border-stone-100 font-medium text-sm">
+                                    <div className="flex justify-between text-stone-600">
+                                        <span>₩{listing.pricePerNight.toLocaleString()} x {nights} nights</span>
+                                        <span className="font-bold">₩{(listing.pricePerNight * nights).toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-stone-600">
+                                        <div className="flex items-center gap-1">
+                                            <span>Transport Concierge</span>
+                                            <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <span className="text-primary font-bold">Free</span>
+                                    </div>
+                                    <div className="flex justify-between border-t border-stone-200 pt-5 text-xl font-bold text-stone-900">
+                                        <span>Total</span>
+                                        <span>₩{(listing.pricePerNight * nights).toLocaleString()}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </Card>
+
+                            </Card>
+                            <InvestmentUpsellCard listingId={listing.id} />
+                        </div>
                     </div>
                 </div>
             </main>

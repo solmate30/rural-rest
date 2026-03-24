@@ -1,8 +1,53 @@
 import { useState } from "react";
 import { Form, useNavigation, Link } from "react-router";
 import type { Route } from "./+types/book";
-import { getListingById } from "~/data/listings";
 import { requireUser } from "~/lib/auth.server";
+import { db } from "~/db/index.server";
+import { listings } from "~/db/schema";
+import { eq } from "drizzle-orm";
+
+const TEMP_RATINGS: Record<string, number> = {
+    "seed-listing-gyeongju-3000": 4.8,
+    "seed-listing-gyeongju-3001": 4.9,
+    "seed-listing-gyeongju-3002": 4.7,
+    "seed-listing-gyeongju-3003": 4.6,
+    "seed-listing-gyeongju-3004": 4.8,
+};
+
+function toCityLabel(location: string): string {
+    const m = location.match(/([가-힣]+)시/);
+    return m ? `${m[1]} 근처` : location;
+}
+
+async function getListingById(id: string | undefined) {
+    if (!id) return null;
+    const row = await db
+        .select({
+            id: listings.id,
+            title: listings.title,
+            location: listings.location,
+            pricePerNight: listings.pricePerNight,
+            maxGuests: listings.maxGuests,
+            images: listings.images,
+        })
+        .from(listings)
+        .where(eq(listings.id, id))
+        .then((rows) => rows[0] ?? null);
+
+    if (!row) return null;
+    const images = row.images as string[];
+    return {
+        id: row.id,
+        title: row.title,
+        pricePerNight: row.pricePerNight,
+        maxGuests: row.maxGuests,
+        image: images[0] ?? "/house.png",
+        locationLabel: toCityLabel(row.location),
+        rating: TEMP_RATINGS[row.id] ?? null,
+        reviews: [] as { id: string }[],
+        pickupPoints: [] as { id: string; name: string; description: string; estimatedTimeToProperty: string }[],
+    };
+}
 import { Header, Footer, Button, Card } from "~/components/ui-mockup";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -275,7 +320,8 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
 
           {/* Right Column: Booking Summary */}
           <div className="lg:col-span-2">
-            <Card className="p-6 md:p-8 sticky top-24 shadow-2xl border-none bg-white rounded-3xl">
+            <div className="sticky top-24 space-y-6">
+                <Card className="p-6 md:p-8 shadow-2xl border-none bg-white rounded-3xl">
               {/* Listing info */}
               <div className="flex gap-4 mb-6">
                 <div className="h-20 w-20 rounded-xl overflow-hidden shadow-sm flex-shrink-0">
@@ -315,6 +361,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                 </div>
               </div>
             </Card>
+            </div>
           </div>
         </div>
       </main>
