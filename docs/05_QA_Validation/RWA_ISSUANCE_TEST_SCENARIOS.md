@@ -3,7 +3,7 @@
 > Created: 2026-03-10 12:00
 > Last Updated: 2026-03-10 12:00
 
-본 문서는 [19_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/19_RWA_ISSUANCE_PLAN.md) 및 [09_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md)에 정의된 RWA 발행·매수·토큰 설계를 검증하기 위한 통합 및 E2E 테스트 시나리오를 정의한다.
+본 문서는 [15_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md) 및 [09_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md)에 정의된 RWA 발행·매수·토큰 설계를 검증하기 위한 통합 및 E2E 테스트 시나리오를 정의한다.
 
 ---
 
@@ -105,7 +105,7 @@
 
 ## 6. Related Documents
 
-- **Concept_Design**: [19_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/19_RWA_ISSUANCE_PLAN.md) - RWA 발행 기획서
+- **Concept_Design**: [15_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md) - RWA 발행 기획서
 - **Technical_Specs**: [09_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세서
 - **Logic_Progress**: [11_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/11_RWA_DIVIDEND_LOGIC.md) - 배당 로직 (발행과 분리)
 - **Archive**: [10_RWA_TOKEN_SPEC.md](../00_ARCHIVE/future_blockchain/10_RWA_TOKEN_SPEC.md) - 레거시 RWA 토큰·Anchor 상세 (참고용)

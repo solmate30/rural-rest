@@ -64,6 +64,6 @@
 ---
 
 ## 5. Related Documents
-- [14_GLOBAL_VACANT_HOUSING_REFERENCES.md](./14_GLOBAL_VACANT_HOUSING_REFERENCES.md) - 해외(일본, 이탈리아) 빈집 해결 레퍼런스
+- [10_GLOBAL_VACANT_HOUSING_REFERENCES.md](./10_GLOBAL_VACANT_HOUSING_REFERENCES.md) - 해외(일본, 이탈리아) 빈집 해결 레퍼런스
 - [01_VISION_CORE.md](./01_VISION_CORE.md) - Rural Rest 핵심 비전 및 타겟 정의
 - [02_LEAN_CANVAS.md](./02_LEAN_CANVAS.md) - 비즈니스 모델 캔버스

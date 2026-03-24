@@ -67,5 +67,5 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 - **Specs**: [Admin Management Spec](../03_Technical_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 호스트 관리 명세 및 구현 상태 (Section 1.1)
 - **Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - `listings`, `bookings` 테이블 참조
 - **Test**: [Test Scenarios](../05_QA_Validation/01_TEST_SCENARIOS.md) - 핵심 시나리오 검증
-- **RWA**: [RWA Implementation Log](./10_RWA_IMPLEMENTATION_LOG.md), [RWA Issuance Spec](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md), [RWA Issuance Plan](../01_Concept_Design/19_RWA_ISSUANCE_PLAN.md)
-- **DAO**: [DAO Implementation Spec](../03_Technical_Specs/08_DAO_IMPLEMENTATION_SPEC.md), [DAO Governance Plan](../01_Concept_Design/18_DAO_GOVERNANCE_PLAN.md)
+- **RWA**: [RWA Implementation Log](./10_RWA_IMPLEMENTATION_LOG.md), [RWA Issuance Spec](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md), [RWA Issuance Plan](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md)
+- **DAO**: [DAO Implementation Spec](../03_Technical_Specs/08_DAO_IMPLEMENTATION_SPEC.md), [DAO Governance Plan](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md)

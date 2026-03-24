@@ -3,7 +3,7 @@
 > Created: 2026-03-10 12:00
 > Last Updated: 2026-03-18 13:00
 
-본 문서는 [19_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/19_RWA_ISSUANCE_PLAN.md) 기획서를 바탕으로 Rural Rest RWA(빈집 자산)의 Solana 발행·매수·배당 연동을 정의한다. 착수 전 체크리스트, 기술 스택, 토큰·프로그램 설계, 발행 흐름, 클라이언트 연동, 마일스톤을 기술한다.
+본 문서는 [15_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md) 기획서를 바탕으로 Rural Rest RWA(빈집 자산)의 Solana 발행·매수·배당 연동을 정의한다. 착수 전 체크리스트, 기술 스택, 토큰·프로그램 설계, 발행 흐름, 클라이언트 연동, 마일스톤을 기술한다.
 
 ---
 
@@ -11,7 +11,7 @@
 
 ### 1.1. 기반 문서
 
-*   **기획서**: [19_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/19_RWA_ISSUANCE_PLAN.md)
+*   **기획서**: [15_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md)
 *   **핵심 가정**: 1 빈집 = 1 SPL Token Mint. Solana(Devnet → Mainnet), Anchor Program, USDC 결제.
 
 ### 1.2. 착수 전 준비 체크리스트 (Pre-Implementation Checklist)
@@ -164,8 +164,8 @@
 
 ## 7. Related Documents
 
-- **Concept_Design**: [19_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/19_RWA_ISSUANCE_PLAN.md) - RWA 발행 기획서
-- **Concept_Design**: [18_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/18_DAO_GOVERNANCE_PLAN.md) - DAO (RWA = Community Token)
+- **Concept_Design**: [15_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md) - RWA 발행 기획서
+- **Concept_Design**: [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md) - DAO (RWA = Community Token)
 - **Technical_Specs**: [08_DAO_IMPLEMENTATION_SPEC.md](./08_DAO_IMPLEMENTATION_SPEC.md) - DAO 구현 (RWA Mint 선행 필요)
 - **Logic_Progress**: [11_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/11_RWA_DIVIDEND_LOGIC.md) - 배당 로직 (발행·매수와 분리)
 - **Logic_Progress**: [10_RWA_IMPLEMENTATION_LOG.md](../04_Logic_Progress/10_RWA_IMPLEMENTATION_LOG.md) - RWA 연동 진행 로그

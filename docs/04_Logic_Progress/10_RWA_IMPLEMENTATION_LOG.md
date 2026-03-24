@@ -76,9 +76,9 @@
 
 ## Related Documents
 - **UI Review**: [08. RWA Dashboard Review](../02_UI_Screens/08_RWA_DASHBOARD_REVIEW.md) - 대시보드·상세·내 투자·토큰화 신청 스크린 명세 (구현 기준)
-- **UI Structure**: [09. RWA Pages Structure](../02_UI_Screens/09_RWA_PAGES_STRUCTURE.md) - RWA 화면·필터·CTA 명세
+- **UI Structure**: [09. RWA Pages Structure](../02_UI_Screens/06_RWA_PAGES_STRUCTURE.md) - RWA 화면·필터·CTA 명세
 - **Specs**: [14. RWA Issuance Spec](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세 (착수 전 체크리스트, Anchor, 매수 플로우)
-- **Concept**: [19. RWA Issuance Plan](../01_Concept_Design/19_RWA_ISSUANCE_PLAN.md) - RWA 발행 기획서
+- **Concept**: [19. RWA Issuance Plan](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md) - RWA 발행 기획서
 - **Archive**: [10. RWA Token Spec](../00_ARCHIVE/future_blockchain/10_RWA_TOKEN_SPEC.md) - 레거시 온체인 토큰 상세 (참고용)
 - **Logic**: [14. RWA Real-Time Dividend Logic](./11_RWA_DIVIDEND_LOGIC.md) - 배당 로직
 - **Archive**: [12. RWA Tokenization Logic](../00_ARCHIVE/future_blockchain/12_RWA_TOKENIZATION_LOGIC.md) - 토큰화 파이프라인 (참고용)
