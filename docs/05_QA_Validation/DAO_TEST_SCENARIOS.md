@@ -3,7 +3,7 @@
 > Created: 2026-03-10 03:00
 > Last Updated: 2026-03-10 04:00
 
-본 문서는 `13_DAO_IMPLEMENTATION_SPEC.md` 및 `18_DAO_GOVERNANCE_PLAN.md`에 정의된 Rural Rest 단일 DAO의 1단계를 검증하기 위한 통합 및 E2E(End-to-End) 테스트 시나리오를 정의한다.
+본 문서는 `08_DAO_IMPLEMENTATION_SPEC.md` 및 `14_DAO_GOVERNANCE_PLAN.md`에 정의된 Rural Rest 단일 DAO의 1단계를 검증하기 위한 통합 및 E2E(End-to-End) 테스트 시나리오를 정의한다.
 
 ---
 
@@ -179,7 +179,7 @@
 ## 9. 거버넌스·수익 배분 분리 검증 (Separation Verification)
 
 ### 시나리오 9.1: DAO 투표 결과가 배당 시스템에 영향을 미치지 않음을 확인
-- **목적**: 거버넌스와 수익 배분이 완전히 분리되어 있음을 검증 (`13_DAO_IMPLEMENTATION_SPEC.md` Section 5 기준)
+- **목적**: 거버넌스와 수익 배분이 완전히 분리되어 있음을 검증 (`08_DAO_IMPLEMENTATION_SPEC.md` Section 5 기준)
 - **사전 조건**: DAO 제안 가결 처리 완료 (시나리오 5.2 이후 상태), 배당 풀 프로그램 별도 배포
 - **Action**: 가결된 DAO 제안 실행 트랜잭션 전송 후, 배당 풀 프로그램의 상태(State) 조회
 - **Expected Result**:
@@ -190,5 +190,5 @@
 
 ## 10. Related Documents
 
-- **Concept_Design**: [18_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/18_DAO_GOVERNANCE_PLAN.md) - DAO 기획서
-- **Technical_Specs**: [13_DAO_IMPLEMENTATION_SPEC.md](../03_Technical_Specs/13_DAO_IMPLEMENTATION_SPEC.md) - DAO 구현 명세서
+- **Concept_Design**: [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md) - DAO 기획서
+- **Technical_Specs**: [08_DAO_IMPLEMENTATION_SPEC.md](../03_Technical_Specs/08_DAO_IMPLEMENTATION_SPEC.md) - DAO 구현 명세서

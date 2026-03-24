@@ -14,7 +14,7 @@ export function PortfolioSummary({
     totalDividends,
 }: PortfolioSummaryProps) {
     const gainLoss = currentValue - totalInvested;
-    const gainLossPercent = ((gainLoss / totalInvested) * 100).toFixed(1);
+    const gainLossPercent = totalInvested > 0 ? ((gainLoss / totalInvested) * 100).toFixed(1) : "0.0";
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
