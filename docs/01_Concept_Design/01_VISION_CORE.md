@@ -47,5 +47,5 @@
 - **Foundation**: [Roadmap](./04_ROADMAP.md) - 단계별 실행 전략
 - **Foundation**: [UI Design](./05_UI_DESIGN.md) - 디자인 시스템 가이드라인
 - **Foundation**: [Admin Strategy](./06_ADMIN_STRATEGY.md) - 호스트 운영 전략
-- **Foundation**: [Pitch Deck](./12_PITCH_DECK.md) - 3분 스토리텔링·6대 루브릭 기반 투자 피치 요약
-- **Foundation**: [Guest Acquisition Channels](./13_GUEST_ACQUISITION_CHANNELS.md) - 글로벌 투숙객 유치 채널(한국어학과·문화원·자매도시)
+- **Foundation**: [Pitch Deck](./08_PITCH_DECK_v2.md) - 3분 스토리텔링·6대 루브릭 기반 투자 피치 요약
+- **Foundation**: [Guest Acquisition Channels](./09_GUEST_ACQUISITION_CHANNELS.md) - 글로벌 투숙객 유치 채널(한국어학과·문화원·자매도시)

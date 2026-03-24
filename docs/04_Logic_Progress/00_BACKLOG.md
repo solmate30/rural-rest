@@ -1,6 +1,6 @@
 # 00. Product Backlog & Implementation Status
 > Created: 2026-02-07 17:34
-> Last Updated: 2026-02-18 12:00
+> Last Updated: 2026-03-24 00:00
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
@@ -42,13 +42,29 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 ### Admin / Editor 보강
 *   [ ] **Admin Edit: 실시간 검증 및 미저장 경고**: 가격·최대 인원 등 Zod 실시간 검증, 이탈 시 미저장 경고 모달. → [05_ADMIN_EDITOR_REVIEW](../02_UI_Screens/05_ADMIN_EDITOR_REVIEW.md) §3.2
 
-### RWA (13_RWA_IMPLEMENTATION_LOG)
-*   [ ] **RWA Phase 2 UI 마무리**: `/invest/:id` 리모델링 이력·월 평균 예약률·Token 상세·수익 분배 차트·Est. Annual Return; `/my-investments` Summary·보유 카드·배당 이력·Explorer·CSV; Host `/admin/tokenize` 신청 폼·심사 상태; 수익률 음수/위험 안내 스타일·차트 라이브러리
-*   [ ] **RWA Phase 3 Mock**: `rwa_tokens`·`rwa_investments` 스키마 및 마이그레이션, Mock 시딩, Purchase 트랜잭션 Mock UI
-*   [ ] **RWA Phase 4 배당**: `rwa_dividends` 스키마, 호스트 순이익 기반 배당 로직 반영, Claim 버튼·지갑 플로우
-*   [ ] **RWA Phase 5 Entry Hooks**: 일반 숙소 상세에서 RWA 투자 배너/버튼, 예약 후 투자 전환 흐름
+### RWA (10_RWA_IMPLEMENTATION_LOG)
 
-### DAO (13_DAO_IMPLEMENTATION_SPEC)
+#### 완료 (2026-03-24)
+*   [x] **DB 스키마 확장**: `rwa_tokens` (estimated_apy_bps 포함), `rwa_investments`, `rwa_dividends`, `operator_settlements` 테이블 추가
+*   [x] **listings 확장**: `operator_id` (마을 운영자 FK), `region` 컬럼 추가
+*   [x] **user.role 확장**: `operator` 역할 추가 (guest/host/operator/admin)
+*   [x] **SPV 구조 확정**: 1 빈집 = 1 SPV(host) = 1 Token Mint / 마을 운영자(operator) 분리 / 영업이익 40-30-30 온체인 배분
+*   [x] **경주 파일럿 seed**: `web/scripts/seed.ts` — SPV 5개, 운영자 5명, listings 5채, rwa_tokens 5개 (실데이터 기반)
+*   [x] **drizzle-kit push** (local.db 반영)
+
+#### 진행 중
+*   [ ] **`/invest` loader DB 전환**: `ALL_PROPERTIES` 하드코딩 제거 → listings JOIN rwa_tokens 쿼리 ← **지금**
+
+#### 다음 단계
+*   [ ] **`/invest/:id` loader DB 전환**: 개별 토큰 상세 + 투자 현황 쿼리
+*   [ ] **`/my-investments` loader DB 전환**: 유저별 rwa_investments + rwa_dividends 쿼리
+*   [ ] **Anchor `purchase_tokens` instruction**: USDC 결제 → RWA 토큰 전송
+*   [ ] **Anchor `claim_dividend` instruction**: 투자자 배당 수령 (Reward Debt 모델)
+*   [ ] **Anchor Devnet 배포**: E2E 테스트 (발행→구매→수익→배당)
+*   [ ] **`/admin/tokenize`**: 호스트 토큰화 신청 폼 + 심사 상태 관리
+*   [ ] **RWA Entry Hooks**: 숙소 상세에서 RWA 투자 배너/버튼
+
+### DAO (08_DAO_IMPLEMENTATION_SPEC)
 *   [ ] **DAO 착수 전 체크리스트**: RWA/Council Token Mint(Devnet), Squads Multisig, 환경변수 5종 확정
 *   [ ] **DAO 1단계 구현**: Realms Realm 생성, `/invest/:id/governance` 투표 UI·플로우
 
@@ -67,5 +83,5 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 - **Specs**: [Admin Management Spec](../03_Technical_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 호스트 관리 명세 및 구현 상태 (Section 1.1)
 - **Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - `listings`, `bookings` 테이블 참조
 - **Test**: [Test Scenarios](../05_QA_Validation/01_TEST_SCENARIOS.md) - 핵심 시나리오 검증
-- **RWA**: [RWA Implementation Log](./13_RWA_IMPLEMENTATION_LOG.md), [RWA Issuance Spec](../03_Technical_Specs/14_RWA_ISSUANCE_SPEC.md), [RWA Issuance Plan](../01_Concept_Design/19_RWA_ISSUANCE_PLAN.md)
-- **DAO**: [DAO Implementation Spec](../03_Technical_Specs/13_DAO_IMPLEMENTATION_SPEC.md), [DAO Governance Plan](../01_Concept_Design/18_DAO_GOVERNANCE_PLAN.md)
+- **RWA**: [RWA Implementation Log](./10_RWA_IMPLEMENTATION_LOG.md), [RWA Issuance Spec](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md), [RWA Issuance Plan](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md)
+- **DAO**: [DAO Implementation Spec](../03_Technical_Specs/08_DAO_IMPLEMENTATION_SPEC.md), [DAO Governance Plan](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md)

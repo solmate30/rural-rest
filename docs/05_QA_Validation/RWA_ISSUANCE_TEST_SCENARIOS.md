@@ -3,7 +3,7 @@
 > Created: 2026-03-10 12:00
 > Last Updated: 2026-03-10 12:00
 
-본 문서는 [19_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/19_RWA_ISSUANCE_PLAN.md) 및 [14_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/14_RWA_ISSUANCE_SPEC.md)에 정의된 RWA 발행·매수·토큰 설계를 검증하기 위한 통합 및 E2E 테스트 시나리오를 정의한다.
+본 문서는 [15_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md) 및 [09_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md)에 정의된 RWA 발행·매수·토큰 설계를 검증하기 위한 통합 및 E2E 테스트 시나리오를 정의한다.
 
 ---
 
@@ -94,7 +94,7 @@
 ## 5. 발행·배당 분리 검증 (선택)
 
 ### 시나리오 5.1: RWA 발행/매수와 배당 프로그램 상태 독립성
-- **목적**: 발행·매수 프로그램과 배당(Dividend) 프로그램이 상태를 공유하지 않음을 검증 (14_RWA_ISSUANCE_SPEC 및 13_DAO Section 5 분리 원칙과 일치)
+- **목적**: 발행·매수 프로그램과 배당(Dividend) 프로그램이 상태를 공유하지 않음을 검증 (09_RWA_ISSUANCE_SPEC 및 08_DAO Section 5 분리 원칙과 일치)
 - **사전 조건**: RWA Mint 생성·매수 완료, 배당 풀 프로그램 별도 배포(있는 경우)
 - **Action**: 배당 풀 상태 조회 (또는 distribute_dividends 미호출 상태 확인)
 - **Expected Result**:
@@ -105,7 +105,7 @@
 
 ## 6. Related Documents
 
-- **Concept_Design**: [19_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/19_RWA_ISSUANCE_PLAN.md) - RWA 발행 기획서
-- **Technical_Specs**: [14_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/14_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세서
-- **Logic_Progress**: [14_RWA_REAL_TIME_DIVIDEND_LOGIC.md](../04_Logic_Progress/14_RWA_REAL_TIME_DIVIDEND_LOGIC.md) - 배당 로직 (발행과 분리)
+- **Concept_Design**: [15_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md) - RWA 발행 기획서
+- **Technical_Specs**: [09_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세서
+- **Logic_Progress**: [11_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/11_RWA_DIVIDEND_LOGIC.md) - 배당 로직 (발행과 분리)
 - **Archive**: [10_RWA_TOKEN_SPEC.md](../00_ARCHIVE/future_blockchain/10_RWA_TOKEN_SPEC.md) - 레거시 RWA 토큰·Anchor 상세 (참고용)
