@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 export const user = sqliteTable("user", {
@@ -60,8 +60,12 @@ export const listings = sqliteTable("listings", {
     pricePerNight: integer("price_per_night").notNull(), // Stored in KRW/USD base unit (e.g., Won)
     maxGuests: integer("max_guests").notNull(),
     location: text("location").notNull(),
+    region: text("region").notNull().default("기타"), // "경상" | "경기" | "강원" | "충청" | "전라" | "제주" | "기타"
     amenities: text("amenities", { mode: "json" }).notNull().default("[]"), // Array of strings
     images: text("images", { mode: "json" }).notNull().default("[]"), // Array of URLs
+    lat: real("lat"),  // GPS 위도 (nullable)
+    lng: real("lng"),  // GPS 경도 (nullable)
+    renovationHistory: text("renovation_history", { mode: "json" }).default("[]"), // [{ date: "2025.06", desc: "..." }]
     transportSupport: integer("transport_support", { mode: "boolean" }).notNull().default(false),
     smartLockEnabled: integer("smart_lock_enabled", { mode: "boolean" }).notNull().default(false),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
@@ -154,6 +158,7 @@ export const rwaTokens = sqliteTable("rwa_tokens", {
         enum: ["funding", "funded", "active", "failed"],
     }).notNull().default("funding"),
     fundingDeadline: integer("funding_deadline", { mode: "timestamp" }).notNull(),
+    estimatedApyBps: integer("estimated_apy_bps").notNull().default(0), // 예상 연수익률 (basis points, 820 = 8.2%)
     minFundingBps: integer("min_funding_bps").notNull().default(6000), // 60%
     programId: text("program_id").notNull(), // Anchor 프로그램 ID
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
