@@ -23,6 +23,16 @@ pub enum RwaError {
     Unauthorized,
     #[msg("Invalid property status for this operation.")]
     InvalidStatus,
+    #[msg("Funding deadline has passed.")]
+    FundingExpired,
+    #[msg("Refund conditions not met: goal was reached or deadline has not passed.")]
+    RefundNotAvailable,
+    #[msg("This position has already been refunded.")]
+    AlreadyRefunded,
+    #[msg("Deadline must be in the future.")]
+    InvalidDeadline,
+    #[msg("Release conditions not met: not sold out and deadline not passed or goal not reached.")]
+    ReleaseNotAvailable,
 }
 
 // =====================
@@ -33,6 +43,7 @@ pub enum PropertyStatus {
     Funding, // 토큰 판매 중
     Funded,  // 완판 (구매 불가)
     Active,  // 숙박 운영 중 (배당 발생)
+    Failed,  // 기간 종료 + 최소 판매율 미달 (환불 가능)
 }
 
 // =====================
@@ -51,6 +62,9 @@ pub struct PropertyToken {
     pub price_per_token_usdc: u64,
     pub acc_dividend_per_share: u128,
     pub status: PropertyStatus,
+    pub funding_deadline: i64, // Unix timestamp (세일 기간 종료 시각)
+    pub min_funding_bps: u16,  // 최소 판매율 basis points (6000 = 60%)
+    pub funding_vault_bump: u8,
     pub bump: u8,
 }
 
@@ -90,7 +104,19 @@ pub struct InitializeProperty<'info> {
     )]
     pub token_mint: InterfaceAccount<'info, Mint>,
 
-    // 배당금 보관 USDC 볼트 (property_token PDA 소유)
+    // 구매대금 에스크로 볼트 (펀딩 기간 동안 USDC 보관)
+    #[account(
+        init,
+        payer = authority,
+        seeds = [b"funding_vault", listing_id.as_bytes()],
+        bump,
+        token::mint = usdc_mint,
+        token::authority = property_token,
+        token::token_program = token_program,
+    )]
+    pub funding_vault: InterfaceAccount<'info, TokenAccount>,
+
+    // 배당금 보관 USDC 볼트 (Active 상태에서 사용)
     #[account(
         init,
         payer = authority,
@@ -101,7 +127,6 @@ pub struct InitializeProperty<'info> {
     pub usdc_vault: InterfaceAccount<'info, TokenAccount>,
 
     pub usdc_mint: InterfaceAccount<'info, Mint>,
-
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
@@ -123,13 +148,9 @@ pub struct PurchaseTokens<'info> {
     )]
     pub property_token: Account<'info, PropertyToken>,
 
-    #[account(
-        mut,
-        address = property_token.token_mint,
-    )]
+    #[account(mut, address = property_token.token_mint)]
     pub token_mint: InterfaceAccount<'info, Mint>,
 
-    // 투자자 포지션 (첫 구매면 새로 생성)
     #[account(
         init_if_needed,
         payer = investor,
@@ -148,16 +169,17 @@ pub struct PurchaseTokens<'info> {
     )]
     pub investor_usdc_account: InterfaceAccount<'info, TokenAccount>,
 
-    // 운영자 USDC 계좌 (결제 수령)
+    // 에스크로 볼트 (USDC 수령, 펀딩 성공 전까지 보관)
     #[account(
         mut,
+        seeds = [b"funding_vault", listing_id.as_bytes()],
+        bump = property_token.funding_vault_bump,
         token::mint = usdc_mint,
-        token::authority = property_token.authority,
+        token::authority = property_token,
         token::token_program = token_program,
     )]
-    pub authority_usdc_account: InterfaceAccount<'info, TokenAccount>,
+    pub funding_vault: InterfaceAccount<'info, TokenAccount>,
 
-    // 투자자 RWA 토큰 계좌 (민팅 대상, 없으면 생성)
     #[account(
         init_if_needed,
         payer = investor,
@@ -168,7 +190,95 @@ pub struct PurchaseTokens<'info> {
     pub investor_rwa_account: InterfaceAccount<'info, TokenAccount>,
 
     pub usdc_mint: InterfaceAccount<'info, Mint>,
+    pub token_program: Interface<'info, TokenInterface>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+}
 
+// =====================
+// release_funds
+// =====================
+#[derive(Accounts)]
+#[instruction(listing_id: String)]
+pub struct ReleaseFunds<'info> {
+    #[account(
+        mut,
+        seeds = [b"property", listing_id.as_bytes()],
+        bump = property_token.bump,
+        has_one = authority,
+    )]
+    pub property_token: Account<'info, PropertyToken>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"funding_vault", listing_id.as_bytes()],
+        bump = property_token.funding_vault_bump,
+        token::mint = usdc_mint,
+        token::authority = property_token,
+        token::token_program = token_program,
+    )]
+    pub funding_vault: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        token::mint = usdc_mint,
+        token::authority = authority,
+        token::token_program = token_program,
+    )]
+    pub authority_usdc_account: InterfaceAccount<'info, TokenAccount>,
+
+    pub usdc_mint: InterfaceAccount<'info, Mint>,
+    pub token_program: Interface<'info, TokenInterface>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+}
+
+// =====================
+// refund
+// =====================
+#[derive(Accounts)]
+#[instruction(listing_id: String)]
+pub struct Refund<'info> {
+    #[account(mut)]
+    pub investor: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"property", listing_id.as_bytes()],
+        bump = property_token.bump,
+    )]
+    pub property_token: Account<'info, PropertyToken>,
+
+    #[account(
+        mut,
+        seeds = [b"investor", property_token.key().as_ref(), investor.key().as_ref()],
+        bump = investor_position.bump,
+        constraint = investor_position.owner == investor.key() @ RwaError::Unauthorized,
+    )]
+    pub investor_position: Account<'info, InvestorPosition>,
+
+    #[account(
+        mut,
+        seeds = [b"funding_vault", listing_id.as_bytes()],
+        bump = property_token.funding_vault_bump,
+        token::mint = usdc_mint,
+        token::authority = property_token,
+        token::token_program = token_program,
+    )]
+    pub funding_vault: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        token::mint = usdc_mint,
+        token::authority = investor,
+        token::token_program = token_program,
+    )]
+    pub investor_usdc_account: InterfaceAccount<'info, TokenAccount>,
+
+    pub usdc_mint: InterfaceAccount<'info, Mint>,
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
@@ -208,7 +318,6 @@ pub struct DistributeMonthlyRevenue<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    // 운영자 USDC 계좌 (순이익 출처)
     #[account(
         mut,
         token::mint = usdc_mint,
@@ -217,7 +326,6 @@ pub struct DistributeMonthlyRevenue<'info> {
     )]
     pub authority_usdc_account: InterfaceAccount<'info, TokenAccount>,
 
-    // 배당금 볼트 (입금 대상)
     #[account(
         mut,
         associated_token::mint = usdc_mint,
@@ -227,7 +335,6 @@ pub struct DistributeMonthlyRevenue<'info> {
     pub usdc_vault: InterfaceAccount<'info, TokenAccount>,
 
     pub usdc_mint: InterfaceAccount<'info, Mint>,
-
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
@@ -257,7 +364,6 @@ pub struct ClaimDividend<'info> {
     )]
     pub investor_position: Account<'info, InvestorPosition>,
 
-    // 배당금 볼트 (USDC 출처, property_token PDA 소유)
     #[account(
         mut,
         associated_token::mint = usdc_mint,
@@ -266,7 +372,6 @@ pub struct ClaimDividend<'info> {
     )]
     pub usdc_vault: InterfaceAccount<'info, TokenAccount>,
 
-    // 투자자 USDC 계좌 (배당 수령)
     #[account(
         mut,
         token::mint = usdc_mint,
@@ -276,7 +381,6 @@ pub struct ClaimDividend<'info> {
     pub investor_usdc_account: InterfaceAccount<'info, TokenAccount>,
 
     pub usdc_mint: InterfaceAccount<'info, Mint>,
-
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
@@ -295,7 +399,12 @@ pub mod rural_rest_rwa {
         total_supply: u64,
         valudation_krw: u64,
         price_per_token_usdc: u64,
+        funding_deadline: i64,
+        min_funding_bps: u16,
     ) -> Result<()> {
+        let clock = Clock::get()?;
+        require!(funding_deadline > clock.unix_timestamp, RwaError::InvalidDeadline);
+
         let property = &mut ctx.accounts.property_token;
         property.authority = ctx.accounts.authority.key();
         property.listing_id = listing_id;
@@ -306,6 +415,9 @@ pub mod rural_rest_rwa {
         property.price_per_token_usdc = price_per_token_usdc;
         property.acc_dividend_per_share = 0;
         property.status = PropertyStatus::Funding;
+        property.funding_deadline = funding_deadline;
+        property.min_funding_bps = min_funding_bps;
+        property.funding_vault_bump = ctx.bumps.funding_vault;
         property.bump = ctx.bumps.property_token;
         Ok(())
     }
@@ -316,21 +428,17 @@ pub mod rural_rest_rwa {
         amount: u64,
     ) -> Result<()> {
         let property = &ctx.accounts.property_token;
+        let clock = Clock::get()?;
 
-        // 0. Funding 상태일 때만 구매 가능
-        require!(
-            property.status == PropertyStatus::Funding,
-            RwaError::InvalidStatus
-        );
+        require!(property.status == PropertyStatus::Funding, RwaError::InvalidStatus);
+        require!(clock.unix_timestamp <= property.funding_deadline, RwaError::FundingExpired);
 
-        // 1. 잔여 토큰 확인
         require!(
             property.tokens_sold.checked_add(amount).ok_or(RwaError::MathOverflow)?
                 <= property.total_supply,
             RwaError::InsufficientTokenSupply
         );
 
-        // 2. 10% 개인 투자 상한 확인
         let max_per_investor = property.total_supply / 10;
         let current_amount = ctx.accounts.investor_position.amount;
         require!(
@@ -339,24 +447,22 @@ pub mod rural_rest_rwa {
             RwaError::ExceedsInvestorCap
         );
 
-        // 3. USDC 비용 계산
         let usdc_cost = (amount as u128)
             .checked_mul(property.price_per_token_usdc as u128)
             .ok_or(RwaError::MathOverflow)? as u64;
 
-        // 4. USDC 전송: investor → authority
+        // USDC: investor → funding_vault (에스크로)
         let transfer_ctx = CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
             TransferChecked {
                 from: ctx.accounts.investor_usdc_account.to_account_info(),
                 mint: ctx.accounts.usdc_mint.to_account_info(),
-                to: ctx.accounts.authority_usdc_account.to_account_info(),
+                to: ctx.accounts.funding_vault.to_account_info(),
                 authority: ctx.accounts.investor.to_account_info(),
             },
         );
         transfer_checked(transfer_ctx, usdc_cost, 6)?;
 
-        // 5. RWA 토큰 민팅: property_token PDA가 서명
         let listing_id_bytes = listing_id.as_bytes();
         let bump = ctx.accounts.property_token.bump;
         let seeds: &[&[u8]] = &[b"property", listing_id_bytes, &[bump]];
@@ -373,18 +479,15 @@ pub mod rural_rest_rwa {
         );
         mint_to(mint_ctx, amount)?;
 
-        // 6. InvestorPosition 업데이트
         let acc_dividend_per_share = ctx.accounts.property_token.acc_dividend_per_share;
         let position = &mut ctx.accounts.investor_position;
 
-        // 첫 구매: 계정 초기화
         if position.owner == Pubkey::default() {
             position.owner = ctx.accounts.investor.key();
             position.token_mint = ctx.accounts.property_token.token_mint;
             position.bump = ctx.bumps.investor_position;
         }
 
-        // reward_debt: 구매 시점 이전 배당은 받지 않음
         position.reward_debt = position
             .reward_debt
             .checked_add(
@@ -398,14 +501,12 @@ pub mod rural_rest_rwa {
             .checked_add(amount)
             .ok_or(RwaError::MathOverflow)?;
 
-        // 7. PropertyToken 업데이트
         let property = &mut ctx.accounts.property_token;
         property.tokens_sold = property
             .tokens_sold
             .checked_add(amount)
             .ok_or(RwaError::MathOverflow)?;
 
-        // 완판 시 자동으로 Funded 전환
         if property.tokens_sold == property.total_supply {
             property.status = PropertyStatus::Funded;
         }
@@ -413,23 +514,120 @@ pub mod rural_rest_rwa {
         Ok(())
     }
 
-    // Funded → Active 전환 (운영자 전용, 숙박 운영 시작 시 1회 호출)
+    // 펀딩 성공 시 에스크로 해제 → 운영자 계좌로 송금 (운영자 전용)
+    // 조건: 완판(Funded) OR (deadline 경과 + 최소 판매율 달성)
+    pub fn release_funds(
+        ctx: Context<ReleaseFunds>,
+        listing_id: String,
+    ) -> Result<()> {
+        let property = &ctx.accounts.property_token;
+        let clock = Clock::get()?;
+
+        let is_sold_out = property.status == PropertyStatus::Funded;
+        let deadline_passed = clock.unix_timestamp > property.funding_deadline;
+        let min_threshold = (property.total_supply as u128)
+            .checked_mul(property.min_funding_bps as u128)
+            .ok_or(RwaError::MathOverflow)?
+            / 10_000;
+        let goal_met = (property.tokens_sold as u128) >= min_threshold;
+
+        require!(is_sold_out || (deadline_passed && goal_met), RwaError::ReleaseNotAvailable);
+
+        let amount = ctx.accounts.funding_vault.amount;
+        let listing_id_bytes = listing_id.as_bytes();
+        let bump = property.bump;
+        let seeds: &[&[u8]] = &[b"property", listing_id_bytes, &[bump]];
+        let signer_seeds = &[seeds];
+
+        let transfer_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            TransferChecked {
+                from: ctx.accounts.funding_vault.to_account_info(),
+                mint: ctx.accounts.usdc_mint.to_account_info(),
+                to: ctx.accounts.authority_usdc_account.to_account_info(),
+                authority: ctx.accounts.property_token.to_account_info(),
+            },
+            signer_seeds,
+        );
+        transfer_checked(transfer_ctx, amount, 6)?;
+
+        // deadline 달성 케이스(아직 Funding 상태)면 Funded로 전환
+        let property = &mut ctx.accounts.property_token;
+        if property.status == PropertyStatus::Funding {
+            property.status = PropertyStatus::Funded;
+        }
+
+        Ok(())
+    }
+
+    // 펀딩 실패 시 환불 (투자자 전용)
+    // 조건: deadline 경과 + 최소 판매율 미달
+    pub fn refund(
+        ctx: Context<Refund>,
+        listing_id: String,
+    ) -> Result<()> {
+        let property = &ctx.accounts.property_token;
+        let clock = Clock::get()?;
+
+        let deadline_passed = clock.unix_timestamp > property.funding_deadline;
+        let min_threshold = (property.total_supply as u128)
+            .checked_mul(property.min_funding_bps as u128)
+            .ok_or(RwaError::MathOverflow)?
+            / 10_000;
+        let goal_failed = (property.tokens_sold as u128) < min_threshold;
+
+        require!(deadline_passed && goal_failed, RwaError::RefundNotAvailable);
+
+        let position = &ctx.accounts.investor_position;
+        require!(position.amount > 0, RwaError::AlreadyRefunded);
+
+        let refund_amount = (position.amount as u128)
+            .checked_mul(property.price_per_token_usdc as u128)
+            .ok_or(RwaError::MathOverflow)? as u64;
+
+        let listing_id_bytes = listing_id.as_bytes();
+        let bump = property.bump;
+        let seeds: &[&[u8]] = &[b"property", listing_id_bytes, &[bump]];
+        let signer_seeds = &[seeds];
+
+        // funding_vault → investor (property_token PDA 서명)
+        let transfer_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            TransferChecked {
+                from: ctx.accounts.funding_vault.to_account_info(),
+                mint: ctx.accounts.usdc_mint.to_account_info(),
+                to: ctx.accounts.investor_usdc_account.to_account_info(),
+                authority: ctx.accounts.property_token.to_account_info(),
+            },
+            signer_seeds,
+        );
+        transfer_checked(transfer_ctx, refund_amount, 6)?;
+
+        let property = &mut ctx.accounts.property_token;
+        if property.status != PropertyStatus::Failed {
+            property.status = PropertyStatus::Failed;
+        }
+
+        let position = &mut ctx.accounts.investor_position;
+        position.amount = 0;
+        position.reward_debt = 0;
+
+        Ok(())
+    }
+
+    // Funded → Active 전환 (운영자 전용)
     pub fn activate_property(
         ctx: Context<ActivateProperty>,
         _listing_id: String,
     ) -> Result<()> {
         let property = &mut ctx.accounts.property_token;
-        require!(
-            property.status == PropertyStatus::Funded,
-            RwaError::InvalidStatus
-        );
+        require!(property.status == PropertyStatus::Funded, RwaError::InvalidStatus);
         property.status = PropertyStatus::Active;
         Ok(())
     }
 
     // 월별 순이익 배당 분배 (운영자 전용)
-    // net_revenue_usdc: 해당 월 순이익 (총매출 - 인건비 - 운영비), micro-USDC 단위
-    // 적자 달에는 호출하지 않음
+    // net_revenue_usdc: 해당 월 순이익 (총매출 - 운영비), micro-USDC 단위
     pub fn distribute_monthly_revenue(
         ctx: Context<DistributeMonthlyRevenue>,
         _listing_id: String,
@@ -440,7 +638,6 @@ pub mod rural_rest_rwa {
             RwaError::InvalidStatus
         );
 
-        // 1. 순이익 USDC: 운영자 계좌 → 볼트
         let transfer_ctx = CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
             TransferChecked {
@@ -452,7 +649,6 @@ pub mod rural_rest_rwa {
         );
         transfer_checked(transfer_ctx, net_revenue_usdc, 6)?;
 
-        // 2. acc_dividend_per_share 업데이트
         const PRECISION: u128 = 1_000_000_000_000;
         let property = &mut ctx.accounts.property_token;
         let added = (net_revenue_usdc as u128)
@@ -479,7 +675,6 @@ pub mod rural_rest_rwa {
         let property = &ctx.accounts.property_token;
         let position = &ctx.accounts.investor_position;
 
-        // 1. 미수령 배당 계산
         let pending = (position.amount as u128)
             .checked_mul(property.acc_dividend_per_share)
             .ok_or(RwaError::MathOverflow)?
@@ -490,7 +685,6 @@ pub mod rural_rest_rwa {
 
         require!(pending > 0, RwaError::NoPendingDividend);
 
-        // 2. 볼트 → 투자자 USDC 전송 (property_token PDA 서명)
         let listing_id_bytes = listing_id.as_bytes();
         let bump = ctx.accounts.property_token.bump;
         let seeds: &[&[u8]] = &[b"property", listing_id_bytes, &[bump]];
@@ -508,7 +702,6 @@ pub mod rural_rest_rwa {
         );
         transfer_checked(transfer_ctx, pending as u64, 6)?;
 
-        // 3. reward_debt 갱신 (다음 claim 때 중복 수령 방지)
         let property = &ctx.accounts.property_token;
         let position = &mut ctx.accounts.investor_position;
         position.reward_debt = (position.amount as u128)
@@ -528,7 +721,6 @@ pub mod rural_rest_rwa {
 mod tests {
     const PRECISION: u128 = 1_000_000_000_000;
 
-    // 배당 계산 헬퍼: 실제 claim_dividend 로직과 동일
     fn calc_pending(amount: u64, acc_dividend_per_share: u128, reward_debt: u128) -> u128 {
         (amount as u128)
             .checked_mul(acc_dividend_per_share)
@@ -539,7 +731,6 @@ mod tests {
             .unwrap()
     }
 
-    // reward_debt 계산 헬퍼: 구매 시점에 설정되는 값
     fn calc_reward_debt(amount: u64, acc_dividend_per_share: u128) -> u128 {
         (amount as u128)
             .checked_mul(acc_dividend_per_share)
@@ -548,41 +739,38 @@ mod tests {
             .unwrap()
     }
 
+    fn calc_refund(amount: u64, price_per_token: u64) -> u64 {
+        (amount as u128)
+            .checked_mul(price_per_token as u128)
+            .unwrap() as u64
+    }
+
+    fn min_threshold(total_supply: u64, min_funding_bps: u16) -> u128 {
+        (total_supply as u128) * (min_funding_bps as u128) / 10_000
+    }
+
     // -------------------------------------------------------
     // 배당 계산 정확성
     // -------------------------------------------------------
 
     #[test]
     fn test_pending_first_distribution() {
-        // 상황: 100개 중 10개 보유, 100 USDC 배당 발생
-        // acc_dps = (100 USDC * 1e12) / 100 = 1e12 (= 1 USDC/토큰)
-        let acc_dps = 100_000_000 * PRECISION / 100; // 100 USDC / 100 tokens
-        let reward_debt = 0u128;
-
-        let pending = calc_pending(10, acc_dps, reward_debt);
-        // 10토큰 × 1 USDC = 10 USDC (= 10_000_000 micro-USDC)
+        let acc_dps = 100_000_000 * PRECISION / 100;
+        let pending = calc_pending(10, acc_dps, 0);
         assert_eq!(pending, 10_000_000);
     }
 
     #[test]
     fn test_pending_after_second_distribution() {
-        // 상황: 10토큰 보유, 1차(100 USDC) + 2차(50 USDC) 배당
-        // 총 tokens_sold = 100
         let acc_dps_after_1st = 100_000_000 * PRECISION / 100;
         let acc_dps_after_2nd = acc_dps_after_1st + 50_000_000 * PRECISION / 100;
-
-        // 1차 수령 후 reward_debt 설정
         let reward_debt_after_claim = calc_reward_debt(10, acc_dps_after_1st);
-
-        // 2차 배당 후 pending 계산
         let pending = calc_pending(10, acc_dps_after_2nd, reward_debt_after_claim);
-        // 10토큰 × 0.5 USDC (2차분만) = 5 USDC = 5_000_000
         assert_eq!(pending, 5_000_000);
     }
 
     #[test]
     fn test_no_double_claim() {
-        // 수령 후 즉시 재수령하면 pending = 0
         let acc_dps = 100_000_000 * PRECISION / 100;
         let reward_debt = calc_reward_debt(10, acc_dps);
         let pending = calc_pending(10, acc_dps, reward_debt);
@@ -595,26 +783,18 @@ mod tests {
 
     #[test]
     fn test_late_investor_gets_no_past_dividend() {
-        // 1차 배당 발생 후 B가 진입
-        let acc_dps = 100_000_000 * PRECISION / 100; // 1 USDC/토큰
-
-        // B 구매 시 reward_debt 설정 (이전 배당 차단)
+        let acc_dps = 100_000_000 * PRECISION / 100;
         let reward_debt = calc_reward_debt(50, acc_dps);
-
-        // B가 즉시 claim 시도 → 0이어야 함
         let pending = calc_pending(50, acc_dps, reward_debt);
-        assert_eq!(pending, 0, "나중에 들어온 투자자는 이전 배당을 못 받아야 함");
+        assert_eq!(pending, 0);
     }
 
     #[test]
     fn test_late_investor_gets_future_dividend() {
-        // B가 1차 배당 후 진입, 2차 배당 발생 후 수령
-        let acc_dps_1st = 100_000_000 * PRECISION / 100; // 1차 후
-        let acc_dps_2nd = acc_dps_1st + 50_000_000 * PRECISION / 100; // 2차 후
-
-        let reward_debt = calc_reward_debt(50, acc_dps_1st); // 진입 시점 설정
+        let acc_dps_1st = 100_000_000 * PRECISION / 100;
+        let acc_dps_2nd = acc_dps_1st + 50_000_000 * PRECISION / 100;
+        let reward_debt = calc_reward_debt(50, acc_dps_1st);
         let pending = calc_pending(50, acc_dps_2nd, reward_debt);
-        // 50토큰 × 0.5 USDC (2차분만) = 25 USDC = 25_000_000
         assert_eq!(pending, 25_000_000);
     }
 
@@ -624,24 +804,12 @@ mod tests {
 
     #[test]
     fn test_additional_purchase_reward_debt() {
-        // A가 1차 배당 전 10개 구매, 1차 배당 발생, 추가 10개 구매
-        let acc_dps_before = 0u128;
         let acc_dps_after_1st = 100_000_000 * PRECISION / 100;
-
-        // 첫 구매: reward_debt = 0
-        let reward_debt = calc_reward_debt(10, acc_dps_before);
-        assert_eq!(reward_debt, 0);
-
-        // 1차 배당 수령 후 reward_debt 갱신
         let reward_debt_after_claim = calc_reward_debt(10, acc_dps_after_1st);
-
-        // 추가 10개 구매: reward_debt += 10 × acc_dps_after_1st
         let additional_debt = calc_reward_debt(10, acc_dps_after_1st);
         let total_reward_debt = reward_debt_after_claim + additional_debt;
-
-        // 즉시 claim 시 pending = 0
         let pending = calc_pending(20, acc_dps_after_1st, total_reward_debt);
-        assert_eq!(pending, 0, "추가 구매한 토큰으로 과거 배당 소급 불가");
+        assert_eq!(pending, 0);
     }
 
     // -------------------------------------------------------
@@ -651,19 +819,47 @@ mod tests {
     #[test]
     fn test_investor_cap_within_limit() {
         let total_supply: u64 = 1_000_000;
-        let max_per_investor = total_supply / 10; // 100_000
-        let current = 50_000u64;
-        let buy = 50_000u64;
-        assert!(current + buy <= max_per_investor);
+        let max_per_investor = total_supply / 10;
+        assert!(50_000u64 + 50_000u64 <= max_per_investor);
     }
 
     #[test]
     fn test_investor_cap_exceeded() {
         let total_supply: u64 = 1_000_000;
-        let max_per_investor = total_supply / 10; // 100_000
-        let current = 90_000u64;
-        let buy = 20_000u64;
-        assert!(current + buy > max_per_investor);
+        let max_per_investor = total_supply / 10;
+        assert!(90_000u64 + 20_000u64 > max_per_investor);
+    }
+
+    // -------------------------------------------------------
+    // 환불 로직
+    // -------------------------------------------------------
+
+    #[test]
+    fn test_refund_amount_correct() {
+        // 10개 보유, 개당 1 USDC (1_000_000 micro-USDC)
+        let refund = calc_refund(10, 1_000_000);
+        assert_eq!(refund, 10_000_000); // 10 USDC
+    }
+
+    #[test]
+    fn test_min_threshold_60pct() {
+        // 총 100개, 최소 60% = 60개
+        let threshold = min_threshold(100, 6000);
+        assert_eq!(threshold, 60);
+    }
+
+    #[test]
+    fn test_funding_failed_condition() {
+        // 59개 판매, 최소 60개 필요 → 실패
+        let threshold = min_threshold(100, 6000);
+        assert!(59u128 < threshold);
+    }
+
+    #[test]
+    fn test_funding_success_condition() {
+        // 60개 판매, 최소 60개 필요 → 성공
+        let threshold = min_threshold(100, 6000);
+        assert!(60u128 >= threshold);
     }
 
     // -------------------------------------------------------
@@ -672,7 +868,6 @@ mod tests {
 
     #[test]
     fn test_usdc_cost_overflow_guard() {
-        // u128로 계산하면 u64 max × u64 max도 안전
         let amount: u64 = u64::MAX / 2;
         let price: u64 = 2;
         let cost = (amount as u128).checked_mul(price as u128);
@@ -681,13 +876,9 @@ mod tests {
 
     #[test]
     fn test_acc_dps_overflow_guard() {
-        // acc_dividend_per_share 누적 시 오버플로우 체크
         let current: u128 = u128::MAX - 1;
-        let added: u128 = 1;
-        let result = current.checked_add(added);
+        let result = current.checked_add(1);
         assert!(result.is_some());
-
-        // 실제 오버플로우 케이스
         let overflow = current.checked_add(2);
         assert!(overflow.is_none());
     }
