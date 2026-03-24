@@ -101,6 +101,7 @@ pub struct InitializeProperty<'info> {
         payer = authority,
         mint::decimals = 0,
         mint::authority = property_token,
+        mint::token_program = token_program,
     )]
     pub token_mint: InterfaceAccount<'info, Mint>,
 
@@ -112,7 +113,7 @@ pub struct InitializeProperty<'info> {
         bump,
         token::mint = usdc_mint,
         token::authority = property_token,
-        token::token_program = token_program,
+        token::token_program = usdc_token_program,
     )]
     pub funding_vault: InterfaceAccount<'info, TokenAccount>,
 
@@ -122,12 +123,13 @@ pub struct InitializeProperty<'info> {
         payer = authority,
         associated_token::mint = usdc_mint,
         associated_token::authority = property_token,
-        associated_token::token_program = token_program,
+        associated_token::token_program = usdc_token_program,
     )]
     pub usdc_vault: InterfaceAccount<'info, TokenAccount>,
 
     pub usdc_mint: InterfaceAccount<'info, Mint>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Interface<'info, TokenInterface>,        // Token-2022 (RWA 민트용)
+    pub usdc_token_program: Interface<'info, TokenInterface>,   // 표준 SPL Token (USDC용)
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
@@ -165,7 +167,7 @@ pub struct PurchaseTokens<'info> {
         mut,
         token::mint = usdc_mint,
         token::authority = investor,
-        token::token_program = token_program,
+        token::token_program = usdc_token_program,
     )]
     pub investor_usdc_account: InterfaceAccount<'info, TokenAccount>,
 
@@ -176,7 +178,7 @@ pub struct PurchaseTokens<'info> {
         bump = property_token.funding_vault_bump,
         token::mint = usdc_mint,
         token::authority = property_token,
-        token::token_program = token_program,
+        token::token_program = usdc_token_program,
     )]
     pub funding_vault: InterfaceAccount<'info, TokenAccount>,
 
@@ -190,7 +192,8 @@ pub struct PurchaseTokens<'info> {
     pub investor_rwa_account: InterfaceAccount<'info, TokenAccount>,
 
     pub usdc_mint: InterfaceAccount<'info, Mint>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Interface<'info, TokenInterface>,        // Token-2022 (RWA 민트용)
+    pub usdc_token_program: Interface<'info, TokenInterface>,   // 표준 SPL Token (USDC용)
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
@@ -218,7 +221,7 @@ pub struct ReleaseFunds<'info> {
         bump = property_token.funding_vault_bump,
         token::mint = usdc_mint,
         token::authority = property_token,
-        token::token_program = token_program,
+        token::token_program = usdc_token_program,
     )]
     pub funding_vault: InterfaceAccount<'info, TokenAccount>,
 
@@ -226,12 +229,12 @@ pub struct ReleaseFunds<'info> {
         mut,
         token::mint = usdc_mint,
         token::authority = authority,
-        token::token_program = token_program,
+        token::token_program = usdc_token_program,
     )]
     pub authority_usdc_account: InterfaceAccount<'info, TokenAccount>,
 
     pub usdc_mint: InterfaceAccount<'info, Mint>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub usdc_token_program: Interface<'info, TokenInterface>,   // 표준 SPL Token (USDC용)
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
@@ -266,7 +269,7 @@ pub struct Refund<'info> {
         bump = property_token.funding_vault_bump,
         token::mint = usdc_mint,
         token::authority = property_token,
-        token::token_program = token_program,
+        token::token_program = usdc_token_program,
     )]
     pub funding_vault: InterfaceAccount<'info, TokenAccount>,
 
@@ -274,12 +277,12 @@ pub struct Refund<'info> {
         mut,
         token::mint = usdc_mint,
         token::authority = investor,
-        token::token_program = token_program,
+        token::token_program = usdc_token_program,
     )]
     pub investor_usdc_account: InterfaceAccount<'info, TokenAccount>,
 
     pub usdc_mint: InterfaceAccount<'info, Mint>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub usdc_token_program: Interface<'info, TokenInterface>,   // 표준 SPL Token (USDC용)
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
@@ -322,7 +325,7 @@ pub struct DistributeMonthlyRevenue<'info> {
         mut,
         token::mint = usdc_mint,
         token::authority = authority,
-        token::token_program = token_program,
+        token::token_program = usdc_token_program,
     )]
     pub authority_usdc_account: InterfaceAccount<'info, TokenAccount>,
 
@@ -330,12 +333,12 @@ pub struct DistributeMonthlyRevenue<'info> {
         mut,
         associated_token::mint = usdc_mint,
         associated_token::authority = property_token,
-        associated_token::token_program = token_program,
+        associated_token::token_program = usdc_token_program,
     )]
     pub usdc_vault: InterfaceAccount<'info, TokenAccount>,
 
     pub usdc_mint: InterfaceAccount<'info, Mint>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub usdc_token_program: Interface<'info, TokenInterface>,   // 표준 SPL Token (USDC용)
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
@@ -368,7 +371,7 @@ pub struct ClaimDividend<'info> {
         mut,
         associated_token::mint = usdc_mint,
         associated_token::authority = property_token,
-        associated_token::token_program = token_program,
+        associated_token::token_program = usdc_token_program,
     )]
     pub usdc_vault: InterfaceAccount<'info, TokenAccount>,
 
@@ -376,12 +379,12 @@ pub struct ClaimDividend<'info> {
         mut,
         token::mint = usdc_mint,
         token::authority = investor,
-        token::token_program = token_program,
+        token::token_program = usdc_token_program,
     )]
     pub investor_usdc_account: InterfaceAccount<'info, TokenAccount>,
 
     pub usdc_mint: InterfaceAccount<'info, Mint>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub usdc_token_program: Interface<'info, TokenInterface>,   // 표준 SPL Token (USDC용)
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
@@ -453,7 +456,7 @@ pub mod rural_rest_rwa {
 
         // USDC: investor → funding_vault (에스크로)
         let transfer_ctx = CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.usdc_token_program.to_account_info(),
             TransferChecked {
                 from: ctx.accounts.investor_usdc_account.to_account_info(),
                 mint: ctx.accounts.usdc_mint.to_account_info(),
@@ -540,7 +543,7 @@ pub mod rural_rest_rwa {
         let signer_seeds = &[seeds];
 
         let transfer_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.usdc_token_program.to_account_info(),
             TransferChecked {
                 from: ctx.accounts.funding_vault.to_account_info(),
                 mint: ctx.accounts.usdc_mint.to_account_info(),
@@ -592,7 +595,7 @@ pub mod rural_rest_rwa {
 
         // funding_vault → investor (property_token PDA 서명)
         let transfer_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.usdc_token_program.to_account_info(),
             TransferChecked {
                 from: ctx.accounts.funding_vault.to_account_info(),
                 mint: ctx.accounts.usdc_mint.to_account_info(),
@@ -639,7 +642,7 @@ pub mod rural_rest_rwa {
         );
 
         let transfer_ctx = CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.usdc_token_program.to_account_info(),
             TransferChecked {
                 from: ctx.accounts.authority_usdc_account.to_account_info(),
                 mint: ctx.accounts.usdc_mint.to_account_info(),
@@ -691,7 +694,7 @@ pub mod rural_rest_rwa {
         let signer_seeds = &[seeds];
 
         let transfer_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.usdc_token_program.to_account_info(),
             TransferChecked {
                 from: ctx.accounts.usdc_vault.to_account_info(),
                 mint: ctx.accounts.usdc_mint.to_account_info(),

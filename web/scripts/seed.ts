@@ -57,12 +57,13 @@ const RWA_IDS = {
 };
 
 // 개발용 더미 Solana Token Mint 주소
+// initialize_property 호출 전 — 온체인 미초기화 상태 (null = 미발행)
 const DUMMY_MINTS = {
-    hwangO:    "GYEJchsReH1aW3oWqrPhUVotajCQNdUHaijWRbB3000A",
-    seongGeon: "GYEJchsReH1aW3oWqrPhUVotajCQNdUHaijWRbB3001A",
-    dongCheon: "GYEJchsReH1aW3oWqrPhUVotajCQNdUHaijWRbB3002A",
-    geonCheon: "GYEJchsReH1aW3oWqrPhUVotajCQNdUHaijWRbB3003A",
-    anGang:    "GYEJchsReH1aW3oWqrPhUVotajCQNdUHaijWRbB3004A",
+    hwangO:    null,
+    seongGeon: null,
+    dongCheon: null,
+    geonCheon: null,
+    anGang:    null,
 };
 
 const PROGRAM_ID_PLACEHOLDER = "RuRaLrEsTpRoGrAmXXXXXXXXXXXXXXXXXXXXXXXXX";
@@ -210,6 +211,7 @@ async function seed() {
                     "1970년대 단층 한옥을 되살려 낮에는 마당 평상에서 황남빵 티타임을, 밤에는 옥상 테라스에서 별을 볼 수 있습니다. " +
                     "혼자 또는 둘이 오기 딱 좋은 아늑한 두 평 마당이 있어요.",
                 pricePerNight: 70000,
+                valuationKrw: 50_000_000,
                 maxGuests: 2,
                 location: "경상북도 경주시 황오동 일대",
                 region: "경상",
@@ -234,6 +236,7 @@ async function seed() {
                     "성건동 오래된 단독주택을 리모델링한 전통 감성 숙소. 첨성대 도보 5분, 대릉원 도보 8분. " +
                     "전통 다도 체험 및 한복 무료 대여 포함, 아침 죽 조식 제공.",
                 pricePerNight: 90000,
+                valuationKrw: 80_000_000,
                 maxGuests: 2,
                 location: "경상북도 경주시 성건동 일대",
                 region: "경상",
@@ -259,6 +262,7 @@ async function seed() {
                     "배낭 여행자·청년 여행객을 위한 저가 베이스캠프로, 자전거 무료 대여·불멍존·공용 주방이 갖춰져 있습니다. " +
                     "하루 2만 원대로 경주를 온몸으로 즐기세요.",
                 pricePerNight: 25000,
+                valuationKrw: 45_000_000,
                 maxGuests: 4,
                 location: "경상북도 경주시 동천동 일대",
                 region: "경상",
@@ -284,6 +288,7 @@ async function seed() {
                     "작업 전용 책상과 고속 인터넷, 텃밭 체험, 전통 장 담그기 프로그램이 포함되어 있습니다. " +
                     "도심 소음과 완전히 단절된 곳에서 집중하고 싶다면 여기로 오세요.",
                 pricePerNight: 55000,
+                valuationKrw: 35_000_000,
                 maxGuests: 2,
                 location: "경상북도 경주시 건천읍 일대",
                 region: "경상",
@@ -309,6 +314,7 @@ async function seed() {
                     "봄엔 딸기·봄나물, 가을엔 사과·고구마 직접 수확하고, 저녁엔 마당 바베큐·불멍. " +
                     "아침은 직접 지은 경주 쌀밥 시골 밥상으로 시작됩니다.",
                 pricePerNight: 65000,
+                valuationKrw: 40_000_000,
                 maxGuests: 4,
                 location: "경상북도 경주시 안강읍 일대",
                 region: "경상",
@@ -335,6 +341,7 @@ async function seed() {
                 region: sql`excluded.region`,
                 amenities: sql`excluded.amenities`,
                 description: sql`excluded.description`,
+                valuationKrw: sql`excluded.valuation_krw`,
             },
         });
 
@@ -416,7 +423,10 @@ async function seed() {
                 programId: PROGRAM_ID_PLACEHOLDER,
             },
         ])
-        .onConflictDoNothing();
+        .onConflictDoUpdate({
+            target: schema.rwaTokens.id,
+            set: { tokenMint: sql`excluded.token_mint` },
+        });
 
     console.log("✓ RWA 토큰 5개 삽입");
     console.log("\n시드 완료.");

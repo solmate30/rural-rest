@@ -58,6 +58,7 @@ export const listings = sqliteTable("listings", {
     title: text("title").notNull(),
     description: text("description").notNull(),
     pricePerNight: integer("price_per_night").notNull(), // Stored in KRW/USD base unit (e.g., Won)
+    valuationKrw: integer("valuation_krw"),             // 매물 감정가 (KRW), 토큰 발행 전 admin 설정
     maxGuests: integer("max_guests").notNull(),
     location: text("location").notNull(),
     region: text("region").notNull().default("기타"), // "경상" | "경기" | "강원" | "충청" | "전라" | "제주" | "기타"
@@ -149,7 +150,7 @@ export const aiChatMessages = sqliteTable("ai_chat_messages", {
 export const rwaTokens = sqliteTable("rwa_tokens", {
     id: text("id").primaryKey(), // UUID v4
     listingId: text("listing_id").notNull().references(() => listings.id),
-    tokenMint: text("token_mint").notNull().unique(), // SPL Token Mint 주소
+    tokenMint: text("token_mint").unique(), // SPL Token Mint 주소 (null = 온체인 미초기화)
     totalSupply: integer("total_supply").notNull(),
     tokensSold: integer("tokens_sold").notNull().default(0),
     valuationKrw: integer("valuation_krw").notNull(),
