@@ -88,13 +88,16 @@ export async function loader({ params }: Route.LoaderArgs) {
 
     const images = row.images as string[];
     const amenities = row.amenities as string[];
-    const tokenPriceKrw = Math.round((row.pricePerTokenUsdc / 1_000_000) * KRW_PER_USDC);
     const usdcPrice = row.pricePerTokenUsdc / 1_000_000;
+    const tokenPriceKrw = usdcPrice * KRW_PER_USDC;
     const fundingProgress = row.totalSupply > 0
         ? Math.round((row.tokensSold / row.totalSupply) * 100) : 0;
+    const raisedUsdc = row.tokensSold * usdcPrice;
+    const remainingUsdc = (row.totalSupply - row.tokensSold) * usdcPrice;
 
     return {
         id: row.id,
+        tokenId: row.tokenId,
         title: row.title,
         location: row.location,
         images,
@@ -103,12 +106,16 @@ export async function loader({ params }: Route.LoaderArgs) {
         tokenPrice: tokenPriceKrw,
         usdcPrice,
         totalSupply: row.totalSupply,
-        totalValuation: formatKrw(row.valuationKrw),
+        availableTokens: row.totalSupply - row.tokensSold,
+        valuationKrw: row.valuationKrw,
+        valuationUsdc: row.valuationKrw / KRW_PER_USDC,
         holders: holdersRow?.count ?? 0,
         soldTokens: row.tokensSold,
         fundingProgress,
-        raised: formatKrw(row.tokensSold * tokenPriceKrw),
-        remaining: formatKrw((row.totalSupply - row.tokensSold) * tokenPriceKrw),
+        raised: formatKrw(raisedUsdc * KRW_PER_USDC),
+        remaining: formatKrw(remainingUsdc * KRW_PER_USDC),
+        raisedUsdc,
+        remainingUsdc,
         status: statusToKorean(row.status),
         about: row.description,
         amenities,
@@ -289,7 +296,8 @@ export default function InvestDetail() {
                                 totalSupply={property.totalSupply}
                                 tokenPrice={property.tokenPrice}
                                 usdcPrice={property.usdcPrice}
-                                totalValuation={property.totalValuation}
+                                valuationKrw={property.valuationKrw}
+                                valuationUsdc={property.valuationUsdc}
                                 holders={property.holders}
                                 soldTokens={property.soldTokens}
                                 fundingProgress={property.fundingProgress}
@@ -297,11 +305,15 @@ export default function InvestDetail() {
                                 lastDividend={property.lastDividend}
                             />
                             <PurchaseCard
+                                listingId={property.id}
+                                tokenMint={property.tokenMint}
+                                tokenId={property.tokenId}
                                 tokenName={property.tokenName}
                                 tokenPrice={property.tokenPrice}
                                 usdcPrice={property.usdcPrice}
                                 apy={property.apy}
                                 fundingProgress={property.fundingProgress}
+                                availableTokens={property.availableTokens}
                             />
                         </div>
                     </div>

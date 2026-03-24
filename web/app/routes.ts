@@ -11,6 +11,7 @@ export default [
     route("auth/*", "routes/auth.$.tsx"),
     route("api/sign-cloudinary", "routes/api.sign-cloudinary.ts"),
     route("api/rwa/save-mint", "routes/api.rwa.save-mint.ts"),
+    route("api/rwa/record-purchase", "routes/api.rwa.record-purchase.ts"),
     route("api/chat/concierge", "routes/api.chat.concierge.ts"),
     route("search", "routes/search.tsx"),
     route("invest", "routes/invest.tsx"),
