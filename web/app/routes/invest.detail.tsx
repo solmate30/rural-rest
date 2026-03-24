@@ -1,5 +1,9 @@
-import { useParams, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
+import type { Route } from "./+types/invest.detail";
 import { Header, Footer, Card, Button, Input, Badge } from "~/components/ui-mockup";
+import { db } from "~/db/index.server";
+import { listings, rwaTokens, rwaInvestments, user } from "~/db/schema";
+import { eq, sql } from "drizzle-orm";
 import { PropertyMap } from "~/components/PropertyMap";
 import { useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
@@ -19,180 +23,122 @@ import {
     ComposedChart,
 } from "recharts";
 
-const MOCK_PROPERTIES = {
-    "1": {
-        id: "1",
-        title: "성주 할머니댁 돌담집",
-        location: "경주시, 경상북도",
-        detailLocation: "경상북도 경주시 교동 서종면",
-        images: [
-            "/house.png",
-            "/house.png",
-            "/house.png",
-            "/house.png",
-            "/house.png",
-        ],
-        apy: 8.2,
-        tokenName: "GYEONG-001",
-        tokenPrice: 50000,
-        usdcPrice: 33.5,
-        totalSupply: 10000,
-        totalValuation: "5000 만원",
-        holders: 127,
-        soldTokens: 7800,
-        lastDividend: "₩4,100 / token (1월)",
-        rating: 4.92,
-        reviewCount: 12,
-        roomType: "전체 한옥",
-        bedrooms: 3,
-        bathrooms: 2,
-        maxGuests: 6,
-        occupancyRate: 72,
-        renovationHistory: [
-            { date: "2025.06", desc: "구조 보강 및 지붕 교체" },
-            { date: "2025.08", desc: "인테리어 리모델링 완료" },
-            { date: "2025.10", desc: "Rural Rest 등록 및 운영 시작" },
-        ],
-        about: "한국 전통의 고요한 아름다움과 현대적 럭셔리가 조화를 이룬 공간입니다. 경주 할머니댁 돌담집은 19세기 한옥을 세심하게 복원한 숙소로, 서울에서 45분 거리에 위치합니다. 푸른 산과 고요한 남한강으로 둘러싸여 있어, 도심 속 휴식을 찾는 이들에게 인기 높은 공간입니다.",
-        coordinates: { lat: 35.8394, lng: 129.2917 },
-        host: {
-            name: "민지",
-            role: "슈퍼호스트",
-            experience: "4년 호스팅",
-            bio: "한국의 전통을 보존하는 일에 열정을 쏟고 있습니다. 현지 장인들과 협력하여 이 한옥의 진정성을 유지하면서도 현대적 편안함을 제공합니다.",
-        },
-        fundingProgress: 78,
-        raised: "3000 만원",
-        remaining: "1.1억 원",
-    },
-    "2": {
-        id: "2",
-        title: "양평 숲속 오두막",
-        location: "양평군, 경기도",
-        detailLocation: "경기도 양평군 서종면 북한강로",
-        images: [
-            "/house.png",
-            "/house.png",
-            "/house.png",
-        ],
-        apy: 7.5,
-        tokenName: "YANG-001",
-        tokenPrice: 50000,
-        usdcPrice: 33.5,
-        totalSupply: 10000,
-        totalValuation: "4000 만원",
-        holders: 84,
-        soldTokens: 4500,
-        lastDividend: "₩3,750 / token (1월)",
-        rating: 4.85,
-        reviewCount: 8,
-        roomType: "전체 빌라",
-        bedrooms: 2,
-        bathrooms: 1,
-        maxGuests: 4,
-        occupancyRate: 65,
-        renovationHistory: [
-            { date: "2025.04", desc: "외벽 방수 및 지붕 보강" },
-            { date: "2025.07", desc: "내부 인테리어 및 온돌 시스템 교체" },
-            { date: "2025.09", desc: "Rural Rest 등록 및 운영 시작" },
-        ],
-        about: "서울 근교의 평화로운 숲속 오두막입니다. 전통 목조 건축과 자연이 어우러진 공간에서 힐링 타임을 즐겨보세요.",
-        coordinates: { lat: 37.5034, lng: 127.4917 },
-        host: {
-            name: "준서",
-            role: "호스트",
-            experience: "2년 호스팅",
-            bio: "자연과 함께하는 삶을 추구합니다.",
-        },
-        fundingProgress: 45,
-        raised: "1890 만원",
-        remaining: "2310 만원",
-    },
-    "3": {
-        id: "3",
-        title: "기장 바다 앞 민박",
-        location: "기장군, 부산광역시",
-        detailLocation: "부산광역시 기장군 기장읍 해안로",
-        images: [
-            "/house.png",
-            "/house.png",
-            "/house.png",
-        ],
-        apy: 9.1,
-        tokenName: "GIJANG-001",
-        tokenPrice: 50000,
-        usdcPrice: 33.5,
-        totalSupply: 13600,
-        totalValuation: "6800 만원",
-        holders: 312,
-        soldTokens: 13600,
-        lastDividend: "₩4,550 / token (1월)",
-        rating: 4.95,
-        reviewCount: 45,
-        roomType: "전체 펜션",
-        bedrooms: 2,
-        bathrooms: 2,
-        maxGuests: 4,
-        occupancyRate: 88,
-        renovationHistory: [
-            { date: "2024.11", desc: "외관 도색 및 오션뷰 테라스 확장" },
-            { date: "2024.12", desc: "내부 풀옵션 가전 세팅" },
-            { date: "2025.01", desc: "Rural Rest 등록 및 운영 시작" },
-        ],
-        about: "탁 트인 기장 바다를 1열에서 감상할 수 있는 오션뷰 스테이입니다. 넓은 테라스에서 파도소리를 들으며 휴식할 수 있습니다.",
-        coordinates: { lat: 35.2443, lng: 129.2229 },
-        host: {
-            name: "수진",
-            role: "슈퍼호스트",
-            experience: "5년 호스팅",
-            bio: "바다를 사랑하는 호스트입니다.",
-        },
-        fundingProgress: 100,
-        raised: "6800 만원",
-        remaining: "0 원",
-    },
-    "5": {
-        id: "5",
-        title: "제주 애월 돌담 민박",
-        location: "애월읍, 제주도",
-        detailLocation: "제주특별자치도 제주시 애월읍 애월해안로",
-        images: [
-            "/house.png",
-            "/house.png",
-            "/house.png",
-        ],
-        apy: 8.5,
-        tokenName: "JEJU-001",
-        tokenPrice: 100000,
-        usdcPrice: 67.0,
-        totalSupply: 10000,
-        totalValuation: "미정",
-        holders: 0,
-        soldTokens: 0,
-        lastDividend: "없음 (신규)",
-        rating: 0,
-        reviewCount: 0,
-        roomType: "전체 독채",
-        bedrooms: 3,
-        bathrooms: 2,
-        maxGuests: 6,
-        occupancyRate: 0,
-        renovationHistory: [
-            { date: "2025.12 (예정)", desc: "현대식 풀빌라 구조로 재건축 예정" },
-        ],
-        about: "제주의 아름다운 바다와 돌담길이 매력적인 신규 프로젝트입니다.",
-        coordinates: { lat: 33.4621, lng: 126.3197 },
-        host: {
-            name: "지훈",
-            role: "신규 호스트",
-            experience: "1개월 호스팅",
-            bio: "제주도 풀빌라 전문 운영팀입니다.",
-        },
-        fundingProgress: 0,
-        raised: "0 원",
-        remaining: "미정",
+// TODO: Pyth oracle로 교체
+const KRW_PER_USDC = 1350;
+
+function formatKrw(won: number): string {
+    if (won >= 1_0000_0000) {
+        const eok = won / 1_0000_0000;
+        return `${eok % 1 === 0 ? eok : eok.toFixed(1)}억 원`;
     }
-};
+    if (won >= 1_0000) {
+        const man = Math.round(won / 1_0000);
+        return `${man}만 원`;
+    }
+    return `${won.toLocaleString()}원`;
+}
+
+function statusToKorean(status: string): string {
+    switch (status) {
+        case "funding": return "모집 중";
+        case "funded":  return "모집 완료";
+        case "active":  return "운영 중";
+        case "failed":  return "모집 실패";
+        default:        return status;
+    }
+}
+
+export async function loader({ params }: Route.LoaderArgs) {
+    const listingId = params.listingId;
+
+    const row = await db
+        .select({
+            id: listings.id,
+            title: listings.title,
+            description: listings.description,
+            location: listings.location,
+            images: listings.images,
+            maxGuests: listings.maxGuests,
+            amenities: listings.amenities,
+            hostId: listings.hostId,
+            lat: listings.lat,
+            lng: listings.lng,
+            renovationHistory: listings.renovationHistory,
+            tokenId: rwaTokens.id,
+            tokenMint: rwaTokens.tokenMint,
+            totalSupply: rwaTokens.totalSupply,
+            tokensSold: rwaTokens.tokensSold,
+            valuationKrw: rwaTokens.valuationKrw,
+            pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc,
+            estimatedApyBps: rwaTokens.estimatedApyBps,
+            status: rwaTokens.status,
+            fundingDeadline: rwaTokens.fundingDeadline,
+            minFundingBps: rwaTokens.minFundingBps,
+        })
+        .from(listings)
+        .innerJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
+        .where(eq(listings.id, listingId!))
+        .then(rows => rows[0] ?? null);
+
+    if (!row) throw new Response("Not Found", { status: 404 });
+
+    const hostUser = await db
+        .select({ name: user.name })
+        .from(user)
+        .where(eq(user.id, row.hostId))
+        .then(rows => rows[0]);
+
+    const holdersRow = await db
+        .select({ count: sql<number>`COUNT(DISTINCT ${rwaInvestments.userId})` })
+        .from(rwaInvestments)
+        .where(eq(rwaInvestments.rwaTokenId, row.tokenId))
+        .then(rows => rows[0]);
+
+    const images = row.images as string[];
+    const amenities = row.amenities as string[];
+    const tokenPriceKrw = Math.round((row.pricePerTokenUsdc / 1_000_000) * KRW_PER_USDC);
+    const usdcPrice = row.pricePerTokenUsdc / 1_000_000;
+    const fundingProgress = row.totalSupply > 0
+        ? Math.round((row.tokensSold / row.totalSupply) * 100) : 0;
+
+    return {
+        id: row.id,
+        title: row.title,
+        location: row.location,
+        detailLocation: row.location,
+        images,
+        apy: row.estimatedApyBps / 100,
+        tokenName: `RWA-${row.id.slice(-4).toUpperCase()}`,
+        tokenPrice: tokenPriceKrw,
+        usdcPrice,
+        totalSupply: row.totalSupply,
+        totalValuation: formatKrw(row.valuationKrw),
+        holders: holdersRow?.count ?? 0,
+        soldTokens: row.tokensSold,
+        fundingProgress,
+        raised: formatKrw(row.tokensSold * tokenPriceKrw),
+        remaining: formatKrw((row.totalSupply - row.tokensSold) * tokenPriceKrw),
+        status: statusToKorean(row.status),
+        about: row.description,
+        amenities,
+        maxGuests: row.maxGuests,
+        tokenMint: row.tokenMint,
+        coordinates: (row.lat && row.lng)
+            ? { lat: row.lat, lng: row.lng }
+            : { lat: 35.8394, lng: 129.2917 },
+        renovationHistory: (row.renovationHistory as { date: string; desc: string }[]) ?? [],
+        rating: null as number | null,
+        reviewCount: 0,
+        lastDividend: null as string | null,
+        occupancyRate: null as number | null,
+        host: {
+            name: hostUser?.name ?? "SPV 운영사",
+            role: "호스트",
+            bio: null as string | null,
+        },
+    };
+}
+
 
 const DUMMY_DIVIDENDS = [3200, 3000, 3900, 3500, 4500, 4200, 5200, 4900, 4400, 5400, 5100, 4100];
 const MONTHS = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
@@ -338,7 +284,7 @@ function RevenueChart({ lastDividend, apy }: { lastDividend: string; apy: number
 }
 
 function InvestDetailContent() {
-    const { listingId } = useParams();
+    const property = useLoaderData<typeof loader>();
     const { connected, publicKey, sendTransaction } = useWallet();
     const { connection } = useConnection();
     const { setVisible } = useWalletModal();
@@ -354,8 +300,7 @@ function InvestDetailContent() {
             setIsProcessing(true);
 
             // Real on-chain transaction adding a Memo for the investment
-            const propertyToInvest = MOCK_PROPERTIES[listingId as keyof typeof MOCK_PROPERTIES] || MOCK_PROPERTIES["1"];
-            const memoText = `Rural Rest Investment: ${tokenCount} tokens of ${propertyToInvest.tokenName}`;
+            const memoText = `Rural Rest Investment: ${tokenCount} tokens of ${property.tokenName}`;
 
             const memoInstruction = new TransactionInstruction({
                 keys: [{ pubkey: publicKey, isSigner: true, isWritable: true }],
@@ -394,10 +339,6 @@ function InvestDetailContent() {
 
     const navigate = useNavigate();
     const { isKycCompleted } = useKyc();
-
-    const property =
-        MOCK_PROPERTIES[listingId as keyof typeof MOCK_PROPERTIES] ||
-        MOCK_PROPERTIES["1"];
 
     const platformFeeRate = 0.01;
     const subtotal = property.tokenPrice * tokenCount;
@@ -525,9 +466,6 @@ function InvestDetailContent() {
                             {/* Room Spec */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                 {[
-                                    { icon: "home", label: "숙소 유형", value: property.roomType },
-                                    { icon: "bed", label: "침실", value: `${property.bedrooms}개` },
-                                    { icon: "bathtub", label: "욕실", value: `${property.bathrooms}개` },
                                     { icon: "group", label: "최대 인원", value: `${property.maxGuests}명` },
                                 ].map((item) => (
                                     <div
@@ -594,7 +532,7 @@ function InvestDetailContent() {
                                                 <span className="material-symbols-outlined text-[#17cf54] text-[20px]" title="슈퍼호스트">verified</span>
                                             )}
                                         </h3>
-                                        <p className="text-sm text-stone-500 mt-0.5">{property.host.role} · {property.host.experience}</p>
+                                        <p className="text-sm text-stone-500 mt-0.5">{property.host.role}</p>
                                     </div>
                                     <p className="text-stone-700 leading-relaxed text-sm">
                                         {property.host.bio}
@@ -619,7 +557,7 @@ function InvestDetailContent() {
                                 <h2 className="text-2xl font-bold text-foreground">수익 분배 이력</h2>
                                 <span className="text-xs text-muted-foreground">최근 12개월 · token당</span>
                             </div>
-                            <RevenueChart lastDividend={property.lastDividend} apy={property.apy} />
+                            <RevenueChart lastDividend={property.lastDividend ?? "없음"} apy={property.apy} />
                         </section>
 
                         {/* Location */}
