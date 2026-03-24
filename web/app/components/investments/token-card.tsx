@@ -1,5 +1,4 @@
-import { Link } from "react-router";
-import { ChevronRight, Clock, CheckCircle2, Wallet, Sparkles } from "lucide-react";
+import { CheckCircle2, Wallet, Sparkles } from "lucide-react";
 
 interface TokenCardProps {
     id: string;
@@ -20,8 +19,7 @@ export function TokenCard({
     dividendStatus,
     dividendAmount,
 }: TokenCardProps) {
-    // 1 USDC = 1,490 KRW 로 가정 (UI 목업용)
-    const exchangeRate = 1490;
+    const exchangeRate = 1350;
     const totalValueKrw = totalValue * exchangeRate;
     const dividendAmountKrw = dividendAmount * exchangeRate;
 
@@ -98,13 +96,6 @@ export function TokenCard({
 
                 {/* Action Buttons */}
                 <div className="flex gap-2.5 mt-auto pt-2">
-                    <Link
-                        to={`/invest/${id}`}
-                        className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl border border-stone-200/80 bg-white text-stone-600 text-sm font-bold hover:bg-stone-50 hover:border-stone-300 transition-all shadow-sm"
-                    >
-                        View
-                        <ChevronRight className="w-4 h-4 text-stone-400" />
-                    </Link>
                     {dividendStatus === "pending" && (
                         <button
                             onClick={() => {

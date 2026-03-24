@@ -1,7 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token_interface::{
-    mint_to, transfer_checked, Mint, MintTo, TokenAccount, TokenInterface, TransferChecked,
+    mint_to, set_authority, transfer_checked,
+    spl_token_2022::instruction::AuthorityType,
+    Mint, MintTo, SetAuthority, TokenAccount, TokenInterface, TransferChecked,
 };
 
 declare_id!("EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR");
@@ -33,6 +35,8 @@ pub enum RwaError {
     InvalidDeadline,
     #[msg("Release conditions not met: not sold out and deadline not passed or goal not reached.")]
     ReleaseNotAvailable,
+    #[msg("The property authority cannot invest in their own property.")]
+    AuthorityCannotInvest,
 }
 
 // =====================
@@ -140,7 +144,10 @@ pub struct InitializeProperty<'info> {
 #[derive(Accounts)]
 #[instruction(listing_id: String)]
 pub struct PurchaseTokens<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = investor.key() != property_token.authority @ RwaError::AuthorityCannotInvest,
+    )]
     pub investor: Signer<'info>,
 
     #[account(
@@ -302,6 +309,11 @@ pub struct ActivateProperty<'info> {
     pub property_token: Account<'info, PropertyToken>,
 
     pub authority: Signer<'info>,
+
+    #[account(mut, address = property_token.token_mint)]
+    pub token_mint: InterfaceAccount<'info, Mint>,
+
+    pub token_program: Interface<'info, TokenInterface>, // Token-2022
 }
 
 // =====================
@@ -534,7 +546,13 @@ pub mod rural_rest_rwa {
             / 10_000;
         let goal_met = (property.tokens_sold as u128) >= min_threshold;
 
-        require!(is_sold_out || (deadline_passed && goal_met), RwaError::ReleaseNotAvailable);
+        // Funded: 완판, Funding+deadline+goal: 목표 달성 마감
+        // Active/Failed 상태에서는 이미 자금이 처리됐으므로 재실행 불가
+        require!(
+            (is_sold_out && property.status == PropertyStatus::Funded)
+                || (property.status == PropertyStatus::Funding && deadline_passed && goal_met),
+            RwaError::ReleaseNotAvailable
+        );
 
         let amount = ctx.accounts.funding_vault.amount;
         let listing_id_bytes = listing_id.as_bytes();
@@ -554,11 +572,9 @@ pub mod rural_rest_rwa {
         );
         transfer_checked(transfer_ctx, amount, 6)?;
 
-        // deadline 달성 케이스(아직 Funding 상태)면 Funded로 전환
+        // 항상 Funded로 전환 (이후 release_funds 재호출 불가)
         let property = &mut ctx.accounts.property_token;
-        if property.status == PropertyStatus::Funding {
-            property.status = PropertyStatus::Funded;
-        }
+        property.status = PropertyStatus::Funded;
 
         Ok(())
     }
@@ -621,11 +637,28 @@ pub mod rural_rest_rwa {
     // Funded → Active 전환 (운영자 전용)
     pub fn activate_property(
         ctx: Context<ActivateProperty>,
-        _listing_id: String,
+        listing_id: String,
     ) -> Result<()> {
         let property = &mut ctx.accounts.property_token;
         require!(property.status == PropertyStatus::Funded, RwaError::InvalidStatus);
         property.status = PropertyStatus::Active;
+
+        // mint authority 소각 — Active 이후 추가 토큰 발행 영구 불가
+        let listing_id_bytes = listing_id.as_bytes();
+        let bump = property.bump;
+        let seeds: &[&[u8]] = &[b"property", listing_id_bytes, &[bump]];
+        let signer_seeds = &[seeds];
+
+        let set_auth_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            SetAuthority {
+                account_or_mint: ctx.accounts.token_mint.to_account_info(),
+                current_authority: ctx.accounts.property_token.to_account_info(),
+            },
+            signer_seeds,
+        );
+        set_authority(set_auth_ctx, AuthorityType::MintTokens, None)?;
+
         Ok(())
     }
 
@@ -678,13 +711,16 @@ pub mod rural_rest_rwa {
         let property = &ctx.accounts.property_token;
         let position = &ctx.accounts.investor_position;
 
-        let pending = (position.amount as u128)
+        let gross = (position.amount as u128)
             .checked_mul(property.acc_dividend_per_share)
             .ok_or(RwaError::MathOverflow)?
             .checked_div(PRECISION)
-            .ok_or(RwaError::MathOverflow)?
-            .checked_sub(position.reward_debt)
             .ok_or(RwaError::MathOverflow)?;
+
+        // reward_debt > gross 는 정상적으로 발생 불가하지만,
+        // 만약 발생하면 MathOverflow 대신 NoPendingDividend로 처리
+        let pending = gross.checked_sub(position.reward_debt)
+            .ok_or(RwaError::NoPendingDividend)?;
 
         require!(pending > 0, RwaError::NoPendingDividend);
 

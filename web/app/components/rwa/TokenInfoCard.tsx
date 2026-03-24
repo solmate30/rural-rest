@@ -5,7 +5,8 @@ interface Props {
     totalSupply: number;
     tokenPrice: number;
     usdcPrice: number;
-    totalValuation: string;
+    valuationKrw: number;
+    valuationUsdc: number;
     holders: number;
     soldTokens: number;
     fundingProgress: number;
@@ -13,15 +14,31 @@ interface Props {
     lastDividend: string | null;
 }
 
+function fmtKrw(won: number): string {
+    if (won >= 1_0000_0000) {
+        const eok = won / 1_0000_0000;
+        return `${eok % 1 === 0 ? eok : eok.toFixed(1)}억 원`;
+    }
+    if (won >= 1_0000) return `${Math.round(won / 1_0000)}만 원`;
+    if (won >= 1) return `${Math.round(won).toLocaleString()}원`;
+    return `₩${won.toFixed(2)}`;
+}
+
 export function TokenInfoCard({
-    tokenName, totalSupply, tokenPrice, usdcPrice, totalValuation,
+    tokenName, totalSupply, tokenPrice, usdcPrice,
+    valuationKrw, valuationUsdc,
     holders, soldTokens, fundingProgress, apy, lastDividend,
 }: Props) {
+    const priceKrw = tokenPrice >= 1 ? `₩${Math.round(tokenPrice).toLocaleString()}` : `₩${tokenPrice.toFixed(2)}`;
+    const priceUsdc = usdcPrice >= 0.01 ? `${usdcPrice.toFixed(2)} USDC`
+        : usdcPrice >= 0.0001 ? `${usdcPrice.toFixed(4)} USDC`
+        : `${usdcPrice.toFixed(6)} USDC`;
+
     const rows = [
         { label: "Token Name",    value: tokenName },
         { label: "Total Supply",  value: `${totalSupply.toLocaleString()} tokens` },
-        { label: "Price / Token", value: `₩${tokenPrice.toLocaleString()} (≈${usdcPrice} USDC)` },
-        { label: "Valuation",     value: totalValuation },
+        { label: "Price / Token", value: priceKrw, sub: priceUsdc },
+        { label: "Valuation",     value: fmtKrw(valuationKrw), sub: `$${Math.round(valuationUsdc).toLocaleString()}` },
         { label: "Holders",       value: `${holders} investors` },
     ];
 
@@ -32,9 +49,14 @@ export function TokenInfoCard({
             </h3>
             <div className="space-y-2.5">
                 {rows.map((item) => (
-                    <div key={item.label} className="flex justify-between items-center text-sm">
-                        <span className="text-stone-500">{item.label}</span>
-                        <span className="font-semibold text-stone-800">{item.value}</span>
+                    <div key={item.label} className="flex justify-between items-start text-sm">
+                        <span className="text-stone-500 shrink-0">{item.label}</span>
+                        <span className="font-semibold text-stone-800 text-right">
+                            {item.value}
+                            {"sub" in item && item.sub && (
+                                <span className="block text-xs font-normal text-stone-400">{item.sub}</span>
+                            )}
+                        </span>
                     </div>
                 ))}
 

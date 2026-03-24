@@ -2,21 +2,38 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { Transaction, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { Card, Input } from "~/components/ui-mockup";
 import { useToast } from "~/hooks/use-toast";
 import { useKyc } from "~/components/KycProvider";
 
+const PROGRAM_ID_STR = import.meta.env.VITE_RWA_PROGRAM_ID ?? "EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR";
+const USDC_MINT_STR = import.meta.env.VITE_USDC_MINT ?? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+
+function fmtUsdc(usdc: number): string {
+    if (usdc === 0) return "0 USDC";
+    if (usdc >= 0.01) return `${usdc.toFixed(2)} USDC`;
+    if (usdc >= 0.0001) return `${usdc.toFixed(4)} USDC`;
+    return `${usdc.toFixed(6)} USDC`;
+}
+
 interface Props {
+    listingId: string;
+    tokenMint: string | null;
+    tokenId: string;
     tokenName: string;
     tokenPrice: number;
     usdcPrice: number;
     apy: number;
     fundingProgress: number;
+    availableTokens: number;
 }
 
-export function PurchaseCard({ tokenName, tokenPrice, usdcPrice, apy, fundingProgress }: Props) {
-    const { connected, publicKey, sendTransaction } = useWallet();
+export function PurchaseCard({
+    listingId, tokenMint, tokenId,
+    tokenName, tokenPrice, usdcPrice, apy, fundingProgress, availableTokens,
+}: Props) {
+    const walletCtx = useWallet();
+    const { connected, publicKey } = walletCtx;
     const { connection } = useConnection();
     const { setVisible } = useWalletModal();
     const navigate = useNavigate();
@@ -27,31 +44,100 @@ export function PurchaseCard({ tokenName, tokenPrice, usdcPrice, apy, fundingPro
     const [isProcessing, setIsProcessing] = useState(false);
 
     const subtotalUsdc = usdcPrice * tokenCount;
-    const subtotal = tokenPrice * tokenCount;
-    const estAnnualReturn = Math.floor(subtotal * (apy / 100));
+    const subtotalKrw = tokenPrice * tokenCount;
+    const estAnnualReturn = subtotalKrw * (apy / 100);
     const isSoldOut = fundingProgress >= 100;
+    const isNotMinted = !tokenMint;
 
     const handleInvest = async () => {
-        if (!publicKey) return;
+        if (!publicKey || !tokenMint) return;
         setIsProcessing(true);
         try {
-            // TODO: replace with actual purchase_tokens Anchor instruction
-            const memoText = `Rural Rest Investment: ${tokenCount} tokens of ${tokenName}`;
-            const memoInstruction = new TransactionInstruction({
-                keys: [{ pubkey: publicKey, isSigner: true, isWritable: true }],
-                data: Buffer.from(memoText, "utf-8") as any,
-                programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
+            const { Program, AnchorProvider, BN } = await import("@coral-xyz/anchor");
+            const { PublicKey } = await import("@solana/web3.js");
+            const {
+                getAssociatedTokenAddressSync,
+                createAssociatedTokenAccountIdempotentInstruction,
+                TOKEN_2022_PROGRAM_ID,
+                TOKEN_PROGRAM_ID,
+            } = await import("@solana/spl-token");
+            const { default: IDL } = await import("~/anchor-idl/rural_rest_rwa.json");
+
+            const programId = new PublicKey(PROGRAM_ID_STR);
+            const usdcMint = new PublicKey(USDC_MINT_STR);
+            const tokenMintPubkey = new PublicKey(tokenMint);
+
+            // PDAs
+            const [propertyToken] = PublicKey.findProgramAddressSync(
+                [Buffer.from("property"), Buffer.from(listingId)],
+                programId
+            );
+            const [fundingVault] = PublicKey.findProgramAddressSync(
+                [Buffer.from("funding_vault"), Buffer.from(listingId)],
+                programId
+            );
+
+            // ATAs
+            const investorUsdcAccount = getAssociatedTokenAddressSync(
+                usdcMint, publicKey, false, TOKEN_PROGRAM_ID
+            );
+            const investorRwaAccount = getAssociatedTokenAddressSync(
+                tokenMintPubkey, publicKey, false, TOKEN_2022_PROGRAM_ID
+            );
+
+            // investor_usdc_account — 없으면 생성 (idempotent: 이미 있어도 no-op)
+            const createUsdcAtaIx = createAssociatedTokenAccountIdempotentInstruction(
+                publicKey, investorUsdcAccount, publicKey, usdcMint, TOKEN_PROGRAM_ID
+            );
+
+            const provider = new AnchorProvider(connection, walletCtx as any, { commitment: "confirmed" });
+            const program = new Program(IDL as any, provider);
+
+            const signature = await program.methods
+                .purchaseTokens(listingId, new BN(tokenCount))
+                .accounts({
+                    investor: publicKey,
+                    propertyToken,
+                    tokenMint: tokenMintPubkey,
+                    investorUsdcAccount,
+                    fundingVault,
+                    investorRwaAccount,
+                    usdcMint,
+                    tokenProgram: TOKEN_2022_PROGRAM_ID,
+                    usdcTokenProgram: TOKEN_PROGRAM_ID,
+                })
+                .preInstructions([createUsdcAtaIx])
+                .rpc();
+
+            await connection.confirmTransaction(signature, "confirmed");
+
+            // DB 기록
+            const dbRes = await fetch("/api/rwa/record-purchase", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    rwaTokenId: tokenId,
+                    tokenAmount: tokenCount,
+                    investedUsdc: Math.round(subtotalUsdc * 1_000_000),
+                    purchaseTx: signature,
+                }),
             });
-            const transaction = new Transaction().add(memoInstruction);
-            const signature = await sendTransaction(transaction, connection);
-            await connection.confirmTransaction(signature, "processed");
+            if (!dbRes.ok) {
+                console.error("[PurchaseCard] record-purchase failed:", dbRes.status, await dbRes.text());
+            }
+
             toast({
-                title: "투자가 완료되었습니다!",
-                description: `성공적으로 온체인에 기록되었습니다. (서명: ${signature.slice(0, 8)}...)`,
+                title: "Investment Complete!",
+                description: `${tokenCount} tokens purchased. (tx: ${signature.slice(0, 8)}...)`,
                 variant: "success",
             });
-        } catch {
-            toast({ title: "결제 실패", description: "트랜잭션이 취소되었거나 실패했습니다.", variant: "destructive" });
+        } catch (err: any) {
+            console.error("[PurchaseCard] tx error:", err);
+            const errStr = err?.message ?? String(err);
+            const msg = errStr.includes("0x1") ? "Insufficient USDC balance."
+                : errStr.includes("User rejected") ? "Transaction rejected by wallet."
+                : `Failed: ${errStr.slice(0, 80)}`;
+            toast({ title: "결제 실패", description: msg, variant: "destructive" });
         } finally {
             setIsProcessing(false);
         }
@@ -63,25 +149,28 @@ export function PurchaseCard({ tokenName, tokenPrice, usdcPrice, apy, fundingPro
 
             {/* Token Input */}
             <div>
-                <label className="text-xs font-medium text-stone-600 block mb-1.5">Amount</label>
+                <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-medium text-stone-600">Amount</label>
+                    <span className="text-xs text-stone-400">Available: {availableTokens.toLocaleString()} tokens</span>
+                </div>
                 <div className="flex items-center gap-2">
                     <button
                         className="h-10 w-10 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50"
                         onClick={() => setTokenCount((c) => Math.max(1, c - 1))}
-                        disabled={isSoldOut}
+                        disabled={isSoldOut || isNotMinted}
                     >−</button>
                     <Input
                         type="number"
                         min="1"
                         value={tokenCount}
-                        onChange={(e) => setTokenCount(Math.max(1, parseInt(e.target.value) || 1))}
+                        onChange={(e) => setTokenCount(Math.max(1, Math.min(parseInt(e.target.value) || 1, availableTokens)))}
                         className="text-center text-lg font-semibold disabled:opacity-50"
-                        disabled={isSoldOut}
+                        disabled={isSoldOut || isNotMinted}
                     />
                     <button
                         className="h-10 w-10 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50"
-                        onClick={() => setTokenCount((c) => c + 1)}
-                        disabled={isSoldOut}
+                        onClick={() => setTokenCount((c) => Math.min(c + 1, availableTokens))}
+                        disabled={isSoldOut || isNotMinted || tokenCount >= availableTokens}
                     >+</button>
                 </div>
             </div>
@@ -89,30 +178,37 @@ export function PurchaseCard({ tokenName, tokenPrice, usdcPrice, apy, fundingPro
             {/* Price Breakdown */}
             <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-stone-600">
-                    <span>{tokenCount} tokens × ₩{tokenPrice.toLocaleString()}</span>
-                    <span className="font-semibold text-stone-800">{subtotalUsdc.toFixed(1)} USDC</span>
+                    <span>{tokenCount} tokens × {tokenPrice >= 1 ? `₩${Math.round(tokenPrice).toLocaleString()}` : `₩${tokenPrice.toFixed(4)}`}</span>
+                    <span className="font-semibold text-stone-800">{fmtUsdc(subtotalUsdc)}</span>
                 </div>
                 <div className="flex justify-between text-stone-600">
-                    <span>플랫폼 수수료 (1%)</span>
-                    <span className="font-semibold text-stone-800">{(subtotalUsdc * 0.01).toFixed(2)} USDC</span>
+                    <span>Platform Fee (1%)</span>
+                    <span className="font-semibold text-stone-800">{fmtUsdc(subtotalUsdc * 0.01)}</span>
                 </div>
                 <div className="flex justify-between text-[#17cf54] text-xs">
                     <span>Est. Annual Return</span>
-                    <span className="font-bold">₩{estAnnualReturn.toLocaleString()}</span>
+                    <span className="font-bold">
+                        {estAnnualReturn >= 1 ? `₩${Math.round(estAnnualReturn).toLocaleString()}` : `₩${estAnnualReturn.toFixed(4)}`}
+                    </span>
                 </div>
                 <div className="flex justify-between border-t border-stone-200 pt-3 font-bold text-stone-900">
                     <span>Total</span>
                     <span>
-                        {(subtotalUsdc * 1.01).toFixed(1)} USDC
+                        {fmtUsdc(subtotalUsdc * 1.01)}
                         <span className="text-xs text-stone-400 font-normal ml-1">
-                            (≈₩{Math.floor(subtotal * 1.01).toLocaleString()})
+                            (≈{subtotalKrw >= 1 ? `₩${Math.round(subtotalKrw * 1.01).toLocaleString()}` : `₩${(subtotalKrw * 1.01).toFixed(4)}`})
                         </span>
                     </span>
                 </div>
             </div>
 
             {/* CTA */}
-            {isSoldOut ? (
+            {isNotMinted ? (
+                <button disabled className="w-full h-14 rounded-2xl bg-stone-200 text-stone-400 text-base font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                    <span className="material-symbols-outlined text-[20px]">schedule</span>
+                    Not Minted
+                </button>
+            ) : isSoldOut ? (
                 <button disabled className="w-full h-14 rounded-2xl bg-stone-300 text-stone-500 text-base font-bold cursor-not-allowed flex items-center justify-center gap-2">
                     <span className="material-symbols-outlined text-[20px]">block</span>
                     Sold Out
@@ -154,8 +250,8 @@ export function PurchaseCard({ tokenName, tokenPrice, usdcPrice, apy, fundingPro
                 <div className="flex items-start gap-2">
                     <span className="material-symbols-outlined text-[16px] text-amber-600 shrink-0 mt-0.5">warning</span>
                     <p className="text-xs text-amber-800 leading-relaxed">
-                        <span className="font-bold">투자 위험 고지</span><br />
-                        본 투자는 원금 손실 가능성이 있으며, 숙박 수익률은 계절·시장 상황에 따라 변동될 수 있습니다.
+                        <span className="font-bold">Investment Risk Disclosure</span><br />
+                        This investment carries the risk of principal loss. Rental yields may vary depending on seasonal and market conditions.
                     </p>
                 </div>
             </div>

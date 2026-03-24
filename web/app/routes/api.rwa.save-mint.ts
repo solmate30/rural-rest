@@ -36,7 +36,17 @@ export async function action({ request }: { request: Request }) {
     if (existing.length > 0) {
         await db
             .update(rwaTokens)
-            .set({ tokenMint, valuationKrw, pricePerTokenUsdc, minFundingBps, fundingDeadline, updatedAt: new Date() })
+            .set({
+                tokenMint,
+                totalSupply: TOTAL_SUPPLY,
+                tokensSold: 0,
+                valuationKrw,
+                pricePerTokenUsdc,
+                minFundingBps,
+                fundingDeadline,
+                status: "funding",
+                updatedAt: new Date(),
+            })
             .where(eq(rwaTokens.listingId, listingId));
     } else {
         await db.insert(rwaTokens).values({

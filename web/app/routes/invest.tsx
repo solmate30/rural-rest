@@ -23,12 +23,23 @@ function formatKrw(won: number): string {
     return `${won.toLocaleString()}원`;
 }
 
-function statusToKorean(status: string): string {
+function fmtKrwDisplay(krw: number): string {
+    if (krw >= 1) return `₩${Math.round(krw).toLocaleString()}`;
+    return `₩${krw.toFixed(2)}`;
+}
+
+function fmtUsdcDisplay(usdc: number): string {
+    if (usdc >= 0.01) return `${usdc.toFixed(2)} USDC`;
+    if (usdc >= 0.0001) return `${usdc.toFixed(4)} USDC`;
+    return `${usdc.toFixed(6)} USDC`;
+}
+
+function statusToEnglish(status: string): string {
     switch (status) {
-        case "funding": return "모집 중";
-        case "funded":  return "모집 완료";
-        case "active":  return "운영 중";
-        case "failed":  return "모집 실패";
+        case "funding": return "Funding";
+        case "funded":  return "Funded";
+        case "active":  return "Active";
+        case "failed":  return "Failed";
         default:        return status;
     }
 }
@@ -41,6 +52,7 @@ export async function loader() {
             location: listings.location,
             region: listings.region,
             images: listings.images,
+            tokenMint: rwaTokens.tokenMint,
             totalSupply: rwaTokens.totalSupply,
             tokensSold: rwaTokens.tokensSold,
             valuationKrw: rwaTokens.valuationKrw,
@@ -49,27 +61,60 @@ export async function loader() {
             status: rwaTokens.status,
         })
         .from(listings)
-        .innerJoin(rwaTokens, eq(rwaTokens.listingId, listings.id));
+        .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id));
 
     return rows.map((row) => {
         const images = row.images as string[];
-        const tokenPriceKrw = Math.round((row.pricePerTokenUsdc / 1_000_000) * KRW_PER_USDC);
-        const fundingProgress = row.totalSupply > 0
-            ? Math.round((row.tokensSold / row.totalSupply) * 100)
+
+        // RWA 미발행 매물 (온체인 미초기화) — Coming Soon
+        if (!row.tokenMint) {
+            return {
+                id: row.id,
+                title: row.title,
+                location: row.location,
+                region: row.region,
+                image: images[0] ?? "/house.png",
+                apy: 0,
+                tokenPrice: 0,
+                usdcPrice: 0,
+                valuationKrw: 0,
+                valuationUsdc: 0,
+                fundingProgress: 0,
+                raised: "—",
+                remaining: "—",
+                raisedUsdc: 0,
+                remainingUsdc: 0,
+                status: "coming_soon" as const,
+                themes: [] as string[],
+            };
+        }
+
+        const usdcPrice = row.pricePerTokenUsdc! / 1_000_000;
+        const tokenPriceKrw = usdcPrice * KRW_PER_USDC;
+        const totalSupply = row.totalSupply!;
+        const tokensSold = row.tokensSold!;
+        const fundingProgress = totalSupply > 0
+            ? Math.round((tokensSold / totalSupply) * 100)
             : 0;
+        const raisedUsdc = tokensSold * usdcPrice;
+        const remainingUsdc = (totalSupply - tokensSold) * usdcPrice;
         return {
             id: row.id,
             title: row.title,
             location: row.location,
             region: row.region,
             image: images[0] ?? "/house.png",
-            apy: row.estimatedApyBps / 100,
+            apy: row.estimatedApyBps! / 100,
             tokenPrice: tokenPriceKrw,
-            totalValuation: formatKrw(row.valuationKrw),
+            usdcPrice,
+            valuationKrw: row.valuationKrw!,
+            valuationUsdc: row.valuationKrw! / KRW_PER_USDC,
             fundingProgress,
-            raised: formatKrw(row.tokensSold * tokenPriceKrw),
-            remaining: formatKrw((row.totalSupply - row.tokensSold) * tokenPriceKrw),
-            status: statusToKorean(row.status),
+            raised: formatKrw(raisedUsdc * KRW_PER_USDC),
+            remaining: formatKrw(remainingUsdc * KRW_PER_USDC),
+            raisedUsdc,
+            remainingUsdc,
+            status: statusToEnglish(row.status!),
             themes: [] as string[],
         };
     });
@@ -83,9 +128,9 @@ export default function InvestDashboard() {
     const [showFilter, setShowFilter] = useState(false);
 
     // Filter States
-    const [selectedRegion, setSelectedRegion] = useState("전체");
-    const [selectedSort, setSelectedSort] = useState("수익률순");
-    const [selectedStatus, setSelectedStatus] = useState("전체");
+    const [selectedRegion, setSelectedRegion] = useState("All");
+    const [selectedSort, setSelectedSort] = useState("Yield");
+    const [selectedStatus, setSelectedStatus] = useState("All");
     const [minApy, setMinApy] = useState(0);
     const [maxPrice, setMaxPrice] = useState(100000);
     const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
@@ -94,8 +139,8 @@ export default function InvestDashboard() {
 
     // Filter Logic
     let filteredProperties = allProperties.filter(p => {
-        if (selectedRegion !== "전체" && p.region !== selectedRegion) return false;
-        if (selectedStatus !== "전체" && p.status !== selectedStatus) return false;
+        if (selectedRegion !== "All" && p.region !== selectedRegion) return false;
+        if (selectedStatus !== "All" && p.status !== selectedStatus) return false;
         if (p.apy < minApy) return false;
         if (p.tokenPrice > maxPrice) return false;
         if (selectedThemes.length > 0 && !selectedThemes.some(t => p.themes.includes(t))) return false;
@@ -103,11 +148,11 @@ export default function InvestDashboard() {
     });
 
     // Sort Logic
-    if (selectedSort === "수익률순") {
+    if (selectedSort === "Yield") {
         filteredProperties.sort((a, b) => b.apy - a.apy);
-    } else if (selectedSort === "가격순") {
+    } else if (selectedSort === "Price") {
         filteredProperties.sort((a, b) => a.tokenPrice - b.tokenPrice);
-    } else if (selectedSort === "최신순") {
+    } else if (selectedSort === "Latest") {
         filteredProperties.sort((a, b) => a.fundingProgress - b.fundingProgress);
     }
 
@@ -290,13 +335,15 @@ export default function InvestDashboard() {
                                 <div key={property.id} className={`group relative flex flex-col overflow-hidden rounded-[calc(var(--radius)*2)] bg-card border-none shadow-lg transition-all duration-300 hover:-translate-y-1 transform-gpu`}>
 
                                     <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary/20">
-                                        <div className="absolute top-3 right-3 z-10 rounded-full bg-card/90 px-2.5 py-1 text-xs font-bold text-foreground backdrop-blur-sm shadow-sm flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-[14px] text-green-600">trending_up</span>
-                                            연 {property.apy}%
-                                        </div>
+                                        {property.status !== "coming_soon" && (
+                                            <div className="absolute top-3 right-3 z-10 rounded-full bg-card/90 px-2.5 py-1 text-xs font-bold text-foreground backdrop-blur-sm shadow-sm flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-[14px] text-green-600">trending_up</span>
+                                                연 {property.apy}%
+                                            </div>
+                                        )}
                                         <img
                                             alt={property.title}
-                                            className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${property.status === '모집 예정' ? 'grayscale blur-[2px] group-hover:scale-100' : ''}`}
+                                            className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${property.status === "coming_soon" ? "grayscale" : ""}`}
                                             src={property.image}
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent opacity-60"></div>
@@ -307,32 +354,43 @@ export default function InvestDashboard() {
                                             </div>
                                             <h3 className="text-xl font-bold">{property.title}</h3>
                                         </div>
-                                        {property.status === '모집 예정' && (
-                                            <div className="absolute inset-0 bg-background/40 z-20 flex items-center justify-center backdrop-blur-sm transition-all">
+                                        {property.status === "coming_soon" && (
+                                            <div className="absolute inset-0 bg-background/50 z-20 flex items-center justify-center backdrop-blur-[2px]">
                                                 <div className="bg-card px-4 py-2 rounded-full shadow-lg border border-border text-sm font-bold text-foreground flex items-center gap-2">
                                                     <span className="material-symbols-outlined text-primary text-[18px]">schedule</span>
-                                                    오픈 예정
+                                                    RWA Coming Soon
                                                 </div>
                                             </div>
                                         )}
                                     </div>
 
                                     <div className="flex flex-1 flex-col justify-between p-5">
-                                        <div className="mb-4 grid grid-cols-2 gap-4">
-                                            <div>
-                                                <p className="text-xs font-medium text-foreground/60">Token Price</p>
-                                                <p className="text-lg font-bold text-foreground">₩{property.tokenPrice.toLocaleString()}</p>
-                                                <p className="text-xs text-muted-foreground">/ token</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-xs font-medium text-foreground/60">{property.status === '모집 예정' ? 'Est. Yield' : 'Valuation'}</p>
-                                                <p className="text-lg font-bold text-foreground">{property.status === '모집 예정' ? `${property.apy}%` : property.totalValuation}</p>
-                                                <p className="text-xs text-muted-foreground">{property.status === '모집 예정' ? 'annually' : ''}</p>
-                                            </div>
-                                        </div>
-
-                                        {property.status === '운영 중' || property.status === '모집 중' || property.status === '모집 완료' ? (
+                                        {property.status === "coming_soon" ? (
                                             <>
+                                                <div className="mb-4 space-y-2">
+                                                    <p className="text-xs font-medium text-foreground/50">Token Price</p>
+                                                    <p className="text-lg font-bold text-foreground/30">— / token</p>
+                                                    <p className="text-xs text-foreground/40 mt-1">RWA 토큰 발행 준비 중입니다.</p>
+                                                </div>
+                                                <button disabled className="mt-auto w-full rounded-lg border border-border bg-transparent py-2.5 text-sm font-semibold text-foreground/40 cursor-not-allowed">
+                                                    준비 중
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="mb-4 grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <p className="text-xs font-medium text-foreground/60">Token Price</p>
+                                                        <p className="text-base font-bold text-foreground">{fmtKrwDisplay(property.tokenPrice)}</p>
+                                                        <p className="text-xs text-muted-foreground">{fmtUsdcDisplay(property.usdcPrice)} · /token</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-xs font-medium text-foreground/60">Valuation</p>
+                                                        <p className="text-base font-bold text-foreground">{formatKrw(property.valuationKrw)}</p>
+                                                        <p className="text-xs text-muted-foreground">${Math.round(property.valuationUsdc).toLocaleString()}</p>
+                                                    </div>
+                                                </div>
+
                                                 <div className="space-y-2">
                                                     <div className="flex justify-between text-sm">
                                                         <span className="font-medium text-foreground/80">Tokens Sold</span>
@@ -381,10 +439,6 @@ export default function InvestDashboard() {
                                                     </button>
                                                 )}
                                             </>
-                                        ) : (
-                                            <button className="mt-auto w-full rounded-lg border border-border bg-transparent py-2.5 text-sm font-semibold text-foreground/80 hover:border-primary hover:text-foreground hover:bg-background transition-colors">
-                                                오픈 알림 받기
-                                            </button>
                                         )}
                                     </div>
                                 </div>

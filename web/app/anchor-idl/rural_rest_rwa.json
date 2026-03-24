@@ -51,11 +51,18 @@
           "relations": [
             "property_token"
           ]
+        },
+        {
+          "name": "token_mint",
+          "writable": true
+        },
+        {
+          "name": "token_program"
         }
       ],
       "args": [
         {
-          "name": "_listing_id",
+          "name": "listing_id",
           "type": "string"
         }
       ]
@@ -1038,6 +1045,11 @@
       "code": 6010,
       "name": "ReleaseNotAvailable",
       "msg": "Release conditions not met: not sold out and deadline not passed or goal not reached."
+    },
+    {
+      "code": 6011,
+      "name": "AuthorityCannotInvest",
+      "msg": "The property authority cannot invest in their own property."
     }
   ],
   "types": [
