@@ -12,40 +12,65 @@ import {
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { assert } from "chai";
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 describe("rural-rest-rwa", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
   const program = anchor.workspace.RuralRestRwa as Program<RuralRestRwa>;
   const connection = provider.connection;
 
-  // 테스트 참여자
+  // provider 지갑에서 SOL 이체 (localnet airdrop 대체)
+  const fundAccount = async (publicKey: PublicKey, lamports: number) => {
+    const tx = new anchor.web3.Transaction().add(
+      anchor.web3.SystemProgram.transfer({
+        fromPubkey: provider.wallet.publicKey,
+        toPubkey: publicKey,
+        lamports,
+      })
+    );
+    await provider.sendAndConfirm(tx);
+  };
+
   const authority = Keypair.generate();
   const investor = Keypair.generate();
 
-  // 테스트용 USDC 민트
   let usdcMint: PublicKey;
-  let tokenMintKeypair: Keypair;
 
+  // -------------------------------------------------------
+  // 시나리오 A: gyeongju-001 (완판 → 배당)
+  // -------------------------------------------------------
   const listingId = "gyeongju-001";
-  const TOTAL_SUPPLY = new anchor.BN(10);           // 총 10토큰 (10% cap = 1토큰/투자자)
+  const TOTAL_SUPPLY = new anchor.BN(10);
   const PRICE_PER_TOKEN = new anchor.BN(1_000_000); // 1 USDC
   const VALUATION_KRW = new anchor.BN(500_000_000);
+  const MIN_FUNDING_BPS = 6000; // 60%
 
+  let tokenMintKeypair: Keypair;
   let propertyToken: PublicKey;
   let investorPosition: PublicKey;
+  let fundingVault: PublicKey;
   let usdcVault: PublicKey;
   let authorityUsdcAccount: PublicKey;
   let investorUsdcAccount: PublicKey;
   let investorRwaAccount: PublicKey;
 
   // -------------------------------------------------------
-  // 셋업: 에어드랍, USDC 민트, 계좌, PDA 계산
+  // 시나리오 B: gyeongju-002 (deadline 3초, 환불)
   // -------------------------------------------------------
+  const listingId2 = "gyeongju-002";
+  const TOTAL_SUPPLY2 = new anchor.BN(100);
+
+  let tokenMintKeypair2: Keypair;
+  let propertyToken2: PublicKey;
+  let investorPosition2: PublicKey;
+  let fundingVault2: PublicKey;
+  let usdcVault2: PublicKey;
+  let investorRwaAccount2: PublicKey;
+
   before(async () => {
-    const airdropA = await connection.requestAirdrop(authority.publicKey, 10 * LAMPORTS_PER_SOL);
-    const airdropI = await connection.requestAirdrop(investor.publicKey, 10 * LAMPORTS_PER_SOL);
-    await connection.confirmTransaction(airdropA);
-    await connection.confirmTransaction(airdropI);
+    await fundAccount(authority.publicKey, 0.5 * LAMPORTS_PER_SOL);
+    await fundAccount(investor.publicKey, 0.5 * LAMPORTS_PER_SOL);
 
     usdcMint = await createMint(connection, authority, authority.publicKey, null, 6);
 
@@ -59,6 +84,7 @@ describe("rural-rest-rwa", () => {
     );
     await mintTo(connection, authority, usdcMint, investorUsdcAccount, authority, 1_000_000_000);
 
+    // 시나리오 A PDAs
     [propertyToken] = PublicKey.findProgramAddressSync(
       [Buffer.from("property"), Buffer.from(listingId)],
       program.programId
@@ -67,26 +93,43 @@ describe("rural-rest-rwa", () => {
       [Buffer.from("investor"), propertyToken.toBuffer(), investor.publicKey.toBuffer()],
       program.programId
     );
-    usdcVault = getAssociatedTokenAddressSync(usdcMint, propertyToken, true, TOKEN_PROGRAM_ID);
-    investorRwaAccount = getAssociatedTokenAddressSync(
-      tokenMintKeypair ? tokenMintKeypair.publicKey : PublicKey.default,
-      investor.publicKey,
-      false,
-      TOKEN_PROGRAM_ID
+    [fundingVault] = PublicKey.findProgramAddressSync(
+      [Buffer.from("funding_vault"), Buffer.from(listingId)],
+      program.programId
     );
+    usdcVault = getAssociatedTokenAddressSync(usdcMint, propertyToken, true, TOKEN_PROGRAM_ID);
     tokenMintKeypair = Keypair.generate();
+
+    // 시나리오 B PDAs
+    [propertyToken2] = PublicKey.findProgramAddressSync(
+      [Buffer.from("property"), Buffer.from(listingId2)],
+      program.programId
+    );
+    [investorPosition2] = PublicKey.findProgramAddressSync(
+      [Buffer.from("investor"), propertyToken2.toBuffer(), investor.publicKey.toBuffer()],
+      program.programId
+    );
+    [fundingVault2] = PublicKey.findProgramAddressSync(
+      [Buffer.from("funding_vault"), Buffer.from(listingId2)],
+      program.programId
+    );
+    usdcVault2 = getAssociatedTokenAddressSync(usdcMint, propertyToken2, true, TOKEN_PROGRAM_ID);
+    tokenMintKeypair2 = Keypair.generate();
   });
 
   // -------------------------------------------------------
-  // 1. 매물 등록
+  // 1. 매물 등록 (60일 deadline)
   // -------------------------------------------------------
   it("1. initialize_property", async () => {
+    const deadline = new anchor.BN(Math.floor(Date.now() / 1000) + 60 * 24 * 3600);
+
     await program.methods
-      .initializeProperty(listingId, TOTAL_SUPPLY, VALUATION_KRW, PRICE_PER_TOKEN)
+      .initializeProperty(listingId, TOTAL_SUPPLY, VALUATION_KRW, PRICE_PER_TOKEN, deadline, MIN_FUNDING_BPS)
       .accounts({
         authority: authority.publicKey,
         propertyToken,
         tokenMint: tokenMintKeypair.publicKey,
+        fundingVault,
         usdcVault,
         usdcMint,
         tokenProgram: TOKEN_PROGRAM_ID,
@@ -96,7 +139,6 @@ describe("rural-rest-rwa", () => {
       .signers([authority, tokenMintKeypair])
       .rpc();
 
-    // investorRwaAccount는 tokenMint 확정 후 계산
     investorRwaAccount = getAssociatedTokenAddressSync(
       tokenMintKeypair.publicKey, investor.publicKey, false, TOKEN_PROGRAM_ID
     );
@@ -109,9 +151,9 @@ describe("rural-rest-rwa", () => {
   });
 
   // -------------------------------------------------------
-  // 2. 토큰 구매 (정상 — 1개, 10% 상한 정확히)
+  // 2. 토큰 구매 (1개, 10% 상한)
   // -------------------------------------------------------
-  it("2. purchase_tokens — 1토큰 구매 성공 (10% 상한)", async () => {
+  it("2. purchase_tokens — 1토큰 구매 성공", async () => {
     await program.methods
       .purchaseTokens(listingId, new anchor.BN(1))
       .accounts({
@@ -120,7 +162,7 @@ describe("rural-rest-rwa", () => {
         tokenMint: tokenMintKeypair.publicKey,
         investorPosition,
         investorUsdcAccount,
-        authorityUsdcAccount,
+        fundingVault,
         investorRwaAccount,
         usdcMint,
         tokenProgram: TOKEN_PROGRAM_ID,
@@ -140,7 +182,6 @@ describe("rural-rest-rwa", () => {
   // -------------------------------------------------------
   it("3. purchase_tokens — 10% 상한 초과 시 실패", async () => {
     try {
-      // 이미 1개 보유. 1개 추가 → 합계 2 > 상한(1) 초과
       await program.methods
         .purchaseTokens(listingId, new anchor.BN(1))
         .accounts({
@@ -149,7 +190,7 @@ describe("rural-rest-rwa", () => {
           tokenMint: tokenMintKeypair.publicKey,
           investorPosition,
           investorUsdcAccount,
-          authorityUsdcAccount,
+          fundingVault,
           investorRwaAccount,
           usdcMint,
           tokenProgram: TOKEN_PROGRAM_ID,
@@ -183,14 +224,12 @@ describe("rural-rest-rwa", () => {
   });
 
   // -------------------------------------------------------
-  // 5. 완판 (투자자 9명 추가) → Funded 자동 전환
+  // 5. 완판 → Funded 자동 전환
   // -------------------------------------------------------
   it("5. purchase_tokens — 완판 시 Funded 자동 전환", async () => {
-    // investor가 이미 1개 보유. 나머지 9개를 새 투자자 9명이 각 1개씩 구매
     for (let i = 0; i < 9; i++) {
       const kp = Keypair.generate();
-      const airdrop = await connection.requestAirdrop(kp.publicKey, 3 * LAMPORTS_PER_SOL);
-      await connection.confirmTransaction(airdrop);
+      await fundAccount(kp.publicKey, 0.1 * LAMPORTS_PER_SOL);
 
       const kpUsdc = await createAssociatedTokenAccount(connection, authority, usdcMint, kp.publicKey);
       await mintTo(connection, authority, usdcMint, kpUsdc, authority, 10_000_000);
@@ -211,7 +250,7 @@ describe("rural-rest-rwa", () => {
           tokenMint: tokenMintKeypair.publicKey,
           investorPosition: kpPos,
           investorUsdcAccount: kpUsdc,
-          authorityUsdcAccount,
+          fundingVault,
           investorRwaAccount: kpRwa,
           usdcMint,
           tokenProgram: TOKEN_PROGRAM_ID,
@@ -229,9 +268,36 @@ describe("rural-rest-rwa", () => {
   });
 
   // -------------------------------------------------------
-  // 6. Funded → Active
+  // 6. release_funds — 완판 후 에스크로 해제
   // -------------------------------------------------------
-  it("6. activate_property — Funded → Active", async () => {
+  it("6. release_funds — 완판 후 운영자 계좌로 송금", async () => {
+    const before = await connection.getTokenAccountBalance(authorityUsdcAccount);
+
+    await program.methods
+      .releaseFunds(listingId)
+      .accounts({
+        propertyToken,
+        authority: authority.publicKey,
+        fundingVault,
+        authorityUsdcAccount,
+        usdcMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([authority])
+      .rpc();
+
+    const after = await connection.getTokenAccountBalance(authorityUsdcAccount);
+    const received = Number(after.value.amount) - Number(before.value.amount);
+    assert.equal(received, 10_000_000, "10토큰 × 1 USDC = 10 USDC 수령");
+    console.log("    운영자 수령:", received / 1_000_000, "USDC");
+  });
+
+  // -------------------------------------------------------
+  // 7. Funded → Active
+  // -------------------------------------------------------
+  it("7. activate_property — Funded → Active", async () => {
     await program.methods
       .activateProperty(listingId)
       .accounts({ propertyToken, authority: authority.publicKey })
@@ -244,13 +310,11 @@ describe("rural-rest-rwa", () => {
   });
 
   // -------------------------------------------------------
-  // 7. 월 배당 분배
+  // 8. 월 배당 분배
   // -------------------------------------------------------
-  it("7. distribute_monthly_revenue — 10 USDC 분배", async () => {
-    const NET_REVENUE = new anchor.BN(10_000_000); // 10 USDC
-
+  it("8. distribute_monthly_revenue — 10 USDC 분배", async () => {
     await program.methods
-      .distributeMonthlyRevenue(listingId, NET_REVENUE)
+      .distributeMonthlyRevenue(listingId, new anchor.BN(10_000_000))
       .accounts({
         propertyToken,
         authority: authority.publicKey,
@@ -266,14 +330,13 @@ describe("rural-rest-rwa", () => {
 
     const property = await program.account.propertyToken.fetch(propertyToken);
     assert.isTrue(property.accDividendPerShare.gtn(0));
-    // 10 USDC / 10토큰 = 1 USDC/토큰
     console.log("    acc_dividend_per_share =", property.accDividendPerShare.toString());
   });
 
   // -------------------------------------------------------
-  // 8. 배당 수령 (investor: 1토큰 보유 → 1 USDC 수령)
+  // 9. 배당 수령 (1토큰 → 1 USDC)
   // -------------------------------------------------------
-  it("8. claim_dividend — 1 USDC 수령 확인", async () => {
+  it("9. claim_dividend — 1 USDC 수령 확인", async () => {
     const before = await connection.getTokenAccountBalance(investorUsdcAccount);
 
     await program.methods
@@ -294,14 +357,14 @@ describe("rural-rest-rwa", () => {
 
     const after = await connection.getTokenAccountBalance(investorUsdcAccount);
     const received = Number(after.value.amount) - Number(before.value.amount);
-    assert.equal(received, 1_000_000, "1토큰 보유 → 1 USDC 수령");
+    assert.equal(received, 1_000_000);
     console.log("    수령 배당:", received / 1_000_000, "USDC");
   });
 
   // -------------------------------------------------------
-  // 9. 중복 수령 차단
+  // 10. 중복 수령 차단
   // -------------------------------------------------------
-  it("9. claim_dividend — 중복 수령 시 NoPendingDividend 에러", async () => {
+  it("10. claim_dividend — 중복 수령 시 NoPendingDividend 에러", async () => {
     try {
       await program.methods
         .claimDividend(listingId)
@@ -322,6 +385,142 @@ describe("rural-rest-rwa", () => {
     } catch (e: any) {
       assert.include(e.message, "NoPendingDividend");
       console.log("    NoPendingDividend 에러 정상 발생");
+    }
+  });
+
+  // ================================================================
+  // 시나리오 B: 환불 (gyeongju-002, deadline 3초, 60% 미달)
+  // ================================================================
+
+  it("11. initialize_property (gyeongju-002, deadline = 3초 후)", async () => {
+    const deadline = new anchor.BN(Math.floor(Date.now() / 1000) + 3);
+
+    await program.methods
+      .initializeProperty(listingId2, TOTAL_SUPPLY2, VALUATION_KRW, PRICE_PER_TOKEN, deadline, MIN_FUNDING_BPS)
+      .accounts({
+        authority: authority.publicKey,
+        propertyToken: propertyToken2,
+        tokenMint: tokenMintKeypair2.publicKey,
+        fundingVault: fundingVault2,
+        usdcVault: usdcVault2,
+        usdcMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([authority, tokenMintKeypair2])
+      .rpc();
+
+    investorRwaAccount2 = getAssociatedTokenAddressSync(
+      tokenMintKeypair2.publicKey, investor.publicKey, false, TOKEN_PROGRAM_ID
+    );
+
+    const account = await program.account.propertyToken.fetch(propertyToken2);
+    assert.deepEqual(account.status, { funding: {} });
+    console.log("    status = Funding, deadline = 3초 후");
+  });
+
+  it("12. purchase_tokens (gyeongju-002, 1토큰 — 60% 미달)", async () => {
+    await program.methods
+      .purchaseTokens(listingId2, new anchor.BN(1))
+      .accounts({
+        investor: investor.publicKey,
+        propertyToken: propertyToken2,
+        tokenMint: tokenMintKeypair2.publicKey,
+        investorPosition: investorPosition2,
+        investorUsdcAccount,
+        fundingVault: fundingVault2,
+        investorRwaAccount: investorRwaAccount2,
+        usdcMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([investor])
+      .rpc();
+
+    const property = await program.account.propertyToken.fetch(propertyToken2);
+    assert.equal(property.tokensSold.toNumber(), 1); // 1% < 60%
+    console.log("    tokens_sold = 1/100 (1%, 60% 미달)");
+  });
+
+  it("13. purchase_tokens — deadline 경과 후 FundingExpired 에러", async () => {
+    await sleep(4000); // deadline 대기
+
+    try {
+      await program.methods
+        .purchaseTokens(listingId2, new anchor.BN(1))
+        .accounts({
+          investor: investor.publicKey,
+          propertyToken: propertyToken2,
+          tokenMint: tokenMintKeypair2.publicKey,
+          investorPosition: investorPosition2,
+          investorUsdcAccount,
+          fundingVault: fundingVault2,
+          investorRwaAccount: investorRwaAccount2,
+          usdcMint,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([investor])
+        .rpc();
+      assert.fail("FundingExpired 에러가 발생해야 함");
+    } catch (e: any) {
+      assert.include(e.message, "FundingExpired");
+      console.log("    FundingExpired 에러 정상 발생");
+    }
+  });
+
+  it("14. refund — 펀딩 실패 시 투자자 환불", async () => {
+    const before = await connection.getTokenAccountBalance(investorUsdcAccount);
+
+    await program.methods
+      .refund(listingId2)
+      .accounts({
+        investor: investor.publicKey,
+        propertyToken: propertyToken2,
+        investorPosition: investorPosition2,
+        fundingVault: fundingVault2,
+        investorUsdcAccount,
+        usdcMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([investor])
+      .rpc();
+
+    const after = await connection.getTokenAccountBalance(investorUsdcAccount);
+    const refunded = Number(after.value.amount) - Number(before.value.amount);
+    assert.equal(refunded, 1_000_000, "1토큰 × 1 USDC = 1 USDC 환불");
+
+    const property = await program.account.propertyToken.fetch(propertyToken2);
+    assert.deepEqual(property.status, { failed: {} });
+    console.log("    환불액:", refunded / 1_000_000, "USDC, status = Failed");
+  });
+
+  it("15. refund — 이미 환불 후 재시도 시 AlreadyRefunded 에러", async () => {
+    try {
+      await program.methods
+        .refund(listingId2)
+        .accounts({
+          investor: investor.publicKey,
+          propertyToken: propertyToken2,
+          investorPosition: investorPosition2,
+          fundingVault: fundingVault2,
+          investorUsdcAccount,
+          usdcMint,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([investor])
+        .rpc();
+      assert.fail("AlreadyRefunded 에러가 발생해야 함");
+    } catch (e: any) {
+      assert.include(e.message, "AlreadyRefunded");
+      console.log("    AlreadyRefunded 에러 정상 발생");
     }
   });
 });
