@@ -96,7 +96,7 @@ export default function AdminTokenize() {
             <div className="min-h-screen bg-stone-50/50">
                 <Header />
                 <main className="container mx-auto py-12 px-4 max-w-3xl">
-                    <Link to="/admin" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-8">
+                    <Link to="/host" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-8">
                         ← 대시보드로
                     </Link>
                     <div className="flex items-center gap-5 mb-10">
@@ -137,7 +137,7 @@ export default function AdminTokenize() {
         <div className="min-h-screen bg-stone-50/50">
             <Header />
             <main className="container mx-auto py-12 px-4 max-w-3xl">
-                <Link to="/admin" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-8">
+                <Link to="/host" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-8">
                     ← 대시보드로
                 </Link>
 
