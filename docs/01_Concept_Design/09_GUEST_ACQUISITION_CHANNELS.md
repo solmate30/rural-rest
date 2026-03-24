@@ -135,5 +135,5 @@
 - **Concept_Design**: [Vision & Core Values](./01_VISION_CORE.md) - 타겟 오디언스(글로벌 여행자, 디지털 노마드, 국내 촌캉스)
 - **Concept_Design**: [Lean Canvas](./02_LEAN_CANVAS.md) - 고객 세그먼트 및 초기 채널
 - **Concept_Design**: [Happy Path Scenarios](./07_HAPPY_PATH_SCENARIOS.md) - 핵심 사용자 여정
-- **Concept_Design**: [Pitch Deck](./12_PITCH_DECK.md) - 타겟·검증 및 유치 전략 맥락
+- **Concept_Design**: [Pitch Deck](./08_PITCH_DECK_v2.md) - 타겟·검증 및 유치 전략 맥락
 - **Concept_Design**: [Product Specs](./03_PRODUCT_SPECS.md) - 게스트 측 기능 및 사이트맵

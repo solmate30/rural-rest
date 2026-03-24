@@ -129,6 +129,6 @@
 
 - [01_VISION_CORE.md](./01_VISION_CORE.md) - Rural Rest 핵심 비전
 - [02_LEAN_CANVAS.md](./02_LEAN_CANVAS.md) - 비즈니스 모델
-- [12_PITCH_DECK_v2.md](./12_PITCH_DECK_v2.md) - 피치 덱 (RWA·DAO 연계 전략)
+- [08_PITCH_DECK_v2.md](./08_PITCH_DECK_v2.md) - 피치 덱 (RWA·DAO 연계 전략)
 - [00_ARCHIVE/future_blockchain/11_RWA_DAO_GOVERNANCE_VISION.md](../00_ARCHIVE/future_blockchain/11_RWA_DAO_GOVERNANCE_VISION.md) - 레거시 DAO 비전 문서 (참고용)
 - **QA_Validation**: [DAO_TEST_SCENARIOS.md](../05_QA_Validation/DAO_TEST_SCENARIOS.md) - DAO 투표·제안·멀티시그 테스트 시나리오

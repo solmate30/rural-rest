@@ -86,7 +86,7 @@
 
 ## 5. Related Documents
 
-- **Concept_Design**: [Pitch Deck (3-Minute Storytelling)](./12_PITCH_DECK.md) - 블록체인·RWA 연동 및 수익 다변화 전략
+- **Concept_Design**: [Pitch Deck (3-Minute Storytelling)](./08_PITCH_DECK_v2.md) - 블록체인·RWA 연동 및 수익 다변화 전략
 - **Concept_Design**: [RWA & DAO Governance Vision](./11_RWA_DAO_GOVERNANCE_VISION.md) - RWA·보상 체계 및 온체인 거버넌스
 - **Concept_Design**: [Roadmap](./04_ROADMAP.md) - Phase별 실행 순서 및 온체인 도입 시점
 - **Concept_Design**: [Lean Canvas](./02_LEAN_CANVAS.md) - 수익 구조 및 단위 경제 전제

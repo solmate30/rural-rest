@@ -2,7 +2,7 @@
 > Created: 2026-02-12 00:00
 > Last Updated: 2026-02-12 00:00
 
-본 문서는 **12_PITCH_DECK.md** Section 8(글로벌 확장 타당성)에서 인용하는 일본 아키야(Akiya) 문제 및 이탈리아/스페인 1유로 주택 프로젝트에 대한 참고 자료를 정리한 것이다. Rural Rest의 글로벌 Pain Point 근거 및 확장 타당성 검토 시 참조한다.
+본 문서는 **08_PITCH_DECK_v2.md** Section 8(글로벌 확장 타당성)에서 인용하는 일본 아키야(Akiya) 문제 및 이탈리아/스페인 1유로 주택 프로젝트에 대한 참고 자료를 정리한 것이다. Rural Rest의 글로벌 Pain Point 근거 및 확장 타당성 검토 시 참조한다.
 
 ---
 
@@ -90,6 +90,6 @@
 
 ## 4. Related Documents
 
-- **Concept_Design**: [Pitch Deck (3-Minute Storytelling)](./12_PITCH_DECK.md) - Section 8 글로벌 확장 타당성 인용 근거
+- **Concept_Design**: [Pitch Deck (3-Minute Storytelling)](./08_PITCH_DECK_v2.md) - Section 8 글로벌 확장 타당성 인용 근거
 - **Concept_Design**: [Roadmap](./04_ROADMAP.md) - Phase 2 거점 국가(일본 등) 진출 전략
 - **Concept_Design**: [Lean Canvas](./02_LEAN_CANVAS.md) - TAM·글로벌 시장 가정

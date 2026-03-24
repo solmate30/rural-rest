@@ -90,7 +90,7 @@
 
 ## 6. RWA와 DAO의 관계
 
-*   **RWA 토큰 = DAO Community Token**: 발행된 RWA SPL Token은 [18_DAO_GOVERNANCE_PLAN.md](./18_DAO_GOVERNANCE_PLAN.md)에서 정의한 단일 DAO의 **Community Token**(투표권 1:1)으로 사용된다.
+*   **RWA 토큰 = DAO Community Token**: 발행된 RWA SPL Token은 [14_DAO_GOVERNANCE_PLAN.md](./14_DAO_GOVERNANCE_PLAN.md)에서 정의한 단일 DAO의 **Community Token**(투표권 1:1)으로 사용된다.
 *   **발행 순서**: RWA 1차 발행(1개 이상 빈집 토큰화) 완료 후 DAO(Realms)를 셋업한다. DAO 구현 명세서의 착수 전 체크리스트에서 RWA Token Mint 준비가 첫 번째 블로커로 명시됨.
 *   **수익 배분과 분리**: 거버넌스(DAO 투표)와 수익 배분(배당 Claim)은 로직·시스템 수준에서 완전히 분리된다. 동일 체인 내 별도 프로그램·데이터로 운영.
 
@@ -109,8 +109,8 @@
 
 - [01_VISION_CORE.md](./01_VISION_CORE.md) - Rural Rest 핵심 비전
 - [02_LEAN_CANVAS.md](./02_LEAN_CANVAS.md) - 비즈니스 모델
-- [18_DAO_GOVERNANCE_PLAN.md](./18_DAO_GOVERNANCE_PLAN.md) - DAO 기획 (RWA = Community Token)
-- [12_PITCH_DECK_v2.md](./12_PITCH_DECK_v2.md) - 피치 덱 (RWA·DAO 전략)
+- [14_DAO_GOVERNANCE_PLAN.md](./14_DAO_GOVERNANCE_PLAN.md) - DAO 기획 (RWA = Community Token)
+- [08_PITCH_DECK_v2.md](./08_PITCH_DECK_v2.md) - 피치 덱 (RWA·DAO 전략)
 - **Technical_Specs**: [09_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세서
 - **Logic_Progress**: [11_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/11_RWA_DIVIDEND_LOGIC.md) - RWA 배당 로직
 - **Archive**: [12_RWA_TOKENIZATION_LOGIC.md](../00_ARCHIVE/future_blockchain/12_RWA_TOKENIZATION_LOGIC.md) - 토큰화 파이프라인·배당 알고리즘 (참고용)
