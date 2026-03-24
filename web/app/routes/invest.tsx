@@ -110,6 +110,8 @@ export async function loader() {
             valuationKrw: row.valuationKrw!,
             valuationUsdc: row.valuationKrw! / KRW_PER_USDC,
             fundingProgress,
+            tokensSold,
+            totalSupply,
             raised: formatKrw(raisedUsdc * KRW_PER_USDC),
             remaining: formatKrw(remainingUsdc * KRW_PER_USDC),
             raisedUsdc,
@@ -156,6 +158,11 @@ export default function InvestDashboard() {
         filteredProperties.sort((a, b) => a.fundingProgress - b.fundingProgress);
     }
 
+    // Coming soon always last
+    filteredProperties.sort((a, b) =>
+        (a.status === "coming_soon" ? 1 : 0) - (b.status === "coming_soon" ? 1 : 0)
+    );
+
     const toggleTheme = (theme: string) => {
         setSelectedThemes(prev =>
             prev.includes(theme)
@@ -187,19 +194,27 @@ export default function InvestDashboard() {
                                     className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground/80 shadow-sm hover:bg-background shrink-0"
                                 >
                                     <span className="material-symbols-outlined text-[18px]">tune</span>
-                                    필터
+                                    Filter
                                 </button>
                                 <div className="h-9 w-[1px] bg-border mx-1 shrink-0 hidden sm:block"></div>
-                                {["전체", "경기", "강원", "충청", "전라", "경상", "제주"].map((region) => (
+                                {[
+                                    { value: "All", label: "All Regions" },
+                                    { value: "경기", label: "경기" },
+                                    { value: "강원", label: "강원" },
+                                    { value: "충청", label: "충청" },
+                                    { value: "전라", label: "전라" },
+                                    { value: "경상", label: "경상" },
+                                    { value: "제주", label: "제주" },
+                                ].map(({ value, label }) => (
                                     <button
-                                        key={region}
-                                        onClick={() => setSelectedRegion(region)}
-                                        className={`rounded-full px-4 py-2 text-sm font-medium shadow-sm shrink-0 transition-colors ${selectedRegion === region
+                                        key={value}
+                                        onClick={() => setSelectedRegion(value)}
+                                        className={`rounded-full px-4 py-2 text-sm font-medium shadow-sm shrink-0 transition-colors ${selectedRegion === value
                                             ? "bg-foreground text-background"
                                             : "bg-card text-foreground/70 hover:text-foreground hover:bg-background"
                                             }`}
                                     >
-                                        {region} {region === "전체" ? "지역" : ""}
+                                        {label}
                                     </button>
                                 ))}
                             </div>
@@ -211,7 +226,7 @@ export default function InvestDashboard() {
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
                             <Card className="w-full max-w-md p-6 space-y-6 max-h-[90vh] overflow-y-auto">
                                 <div className="flex items-center justify-between sticky top-0 bg-card py-2 z-10">
-                                    <h2 className="text-xl font-bold">필터 옵션</h2>
+                                    <h2 className="text-xl font-bold">Filter</h2>
                                     <button onClick={() => setShowFilter(false)} className="p-2 hover:bg-secondary rounded-lg transition-colors">
                                         <span className="material-symbols-outlined">close</span>
                                     </button>
@@ -219,36 +234,45 @@ export default function InvestDashboard() {
 
                                 <div className="space-y-6">
                                     <div>
-                                        <label className="text-sm font-bold mb-3 block text-foreground">정렬 방식</label>
+                                        <label className="text-sm font-bold mb-3 block text-foreground">Sort By</label>
                                         <div className="flex flex-wrap gap-2">
-                                            {["수익률순", "최신순", "가격순"].map((sort) => (
+                                            {[
+                                                { value: "Yield", label: "Yield" },
+                                                { value: "Latest", label: "Latest" },
+                                                { value: "Price", label: "Price" },
+                                            ].map(({ value, label }) => (
                                                 <button
-                                                    key={sort}
-                                                    onClick={() => setSelectedSort(sort)}
-                                                    className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${selectedSort === sort
+                                                    key={value}
+                                                    onClick={() => setSelectedSort(value)}
+                                                    className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${selectedSort === value
                                                         ? "bg-[#17cf54] text-white shadow-md shadow-[#17cf54]/20"
                                                         : "bg-secondary text-foreground/70 hover:bg-secondary/80 hover:text-foreground border border-border/50"
                                                         }`}
                                                 >
-                                                    {sort}
+                                                    {label}
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className="text-sm font-bold mb-3 block text-foreground">펀딩 상태</label>
+                                        <label className="text-sm font-bold mb-3 block text-foreground">Status</label>
                                         <div className="flex flex-wrap gap-2">
-                                            {["전체", "모집 중", "모집 완료", "운영 중"].map((status) => (
+                                            {[
+                                                { value: "All", label: "All" },
+                                                { value: "Funding", label: "Funding" },
+                                                { value: "Funded", label: "Funded" },
+                                                { value: "Active", label: "Active" },
+                                            ].map(({ value, label }) => (
                                                 <button
-                                                    key={status}
-                                                    onClick={() => setSelectedStatus(status)}
-                                                    className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${selectedStatus === status
+                                                    key={value}
+                                                    onClick={() => setSelectedStatus(value)}
+                                                    className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${selectedStatus === value
                                                         ? "bg-[#17cf54] text-white shadow-md shadow-[#17cf54]/20"
                                                         : "bg-secondary text-foreground/70 hover:bg-secondary/80 hover:text-foreground border border-border/50"
                                                         }`}
                                                 >
-                                                    {status}
+                                                    {label}
                                                 </button>
                                             ))}
                                         </div>
@@ -256,8 +280,8 @@ export default function InvestDashboard() {
 
                                     <div className="border-t border-border pt-4">
                                         <label className="text-sm font-bold mb-3 flex justify-between text-foreground">
-                                            <span>예상 수익률 (APY)</span>
-                                            <span className="text-[#17cf54]">{minApy}% 이상</span>
+                                            <span>Min APY</span>
+                                            <span className="text-[#17cf54]">{minApy}%+</span>
                                         </label>
                                         <input
                                             type="range"
@@ -270,8 +294,8 @@ export default function InvestDashboard() {
 
                                     <div className="border-t border-border pt-4">
                                         <label className="text-sm font-bold mb-3 flex justify-between text-foreground">
-                                            <span>토큰 가격대</span>
-                                            <span className="text-[#17cf54]">{(maxPrice).toLocaleString()}원 이하</span>
+                                            <span>Max Token Price</span>
+                                            <span className="text-[#17cf54]">₩{maxPrice.toLocaleString()}</span>
                                         </label>
                                         <input
                                             type="range"
@@ -283,7 +307,7 @@ export default function InvestDashboard() {
                                     </div>
 
                                     <div className="border-t border-border pt-4">
-                                        <label className="text-sm font-bold mb-3 block text-foreground">숙소 테마</label>
+                                        <label className="text-sm font-bold mb-3 block text-foreground">Theme</label>
                                         <div className="flex flex-wrap gap-2">
                                             {["한옥", "오션뷰", "숲속 오두막", "돌담"].map((theme) => (
                                                 <button
@@ -308,21 +332,21 @@ export default function InvestDashboard() {
                                     <button
                                         className="px-4 py-3 rounded-xl border border-border text-foreground/70 font-semibold hover:bg-secondary hover:text-foreground transition-colors shrink-0"
                                         onClick={() => {
-                                            setSelectedRegion("전체");
-                                            setSelectedSort("수익률순");
-                                            setSelectedStatus("전체");
+                                            setSelectedRegion("All");
+                                            setSelectedSort("Yield");
+                                            setSelectedStatus("All");
                                             setMinApy(0);
                                             setMaxPrice(100000);
                                             setSelectedThemes([]);
                                         }}
                                     >
-                                        초기화
+                                        Reset
                                     </button>
                                     <button
                                         className="flex-1 px-4 py-3 rounded-xl bg-[#17cf54] hover:bg-[#14b847] text-white font-bold transition-transform active:scale-[0.98] shadow-lg shadow-[#17cf54]/20"
                                         onClick={() => setShowFilter(false)}
                                     >
-                                        {filteredProperties.length}개의 숙소 보기
+                                        View {filteredProperties.length} listings
                                     </button>
                                 </div>
                             </Card>
@@ -338,7 +362,7 @@ export default function InvestDashboard() {
                                         {property.status !== "coming_soon" && (
                                             <div className="absolute top-3 right-3 z-10 rounded-full bg-card/90 px-2.5 py-1 text-xs font-bold text-foreground backdrop-blur-sm shadow-sm flex items-center gap-1">
                                                 <span className="material-symbols-outlined text-[14px] text-green-600">trending_up</span>
-                                                연 {property.apy}%
+                                                APY {property.apy}%
                                             </div>
                                         )}
                                         <img
@@ -370,10 +394,10 @@ export default function InvestDashboard() {
                                                 <div className="mb-4 space-y-2">
                                                     <p className="text-xs font-medium text-foreground/50">Token Price</p>
                                                     <p className="text-lg font-bold text-foreground/30">— / token</p>
-                                                    <p className="text-xs text-foreground/40 mt-1">RWA 토큰 발행 준비 중입니다.</p>
+                                                    <p className="text-xs text-foreground/40 mt-1">Token issuance in preparation.</p>
                                                 </div>
                                                 <button disabled className="mt-auto w-full rounded-lg border border-border bg-transparent py-2.5 text-sm font-semibold text-foreground/40 cursor-not-allowed">
-                                                    준비 중
+                                                    Coming Soon
                                                 </button>
                                             </>
                                         ) : (
@@ -394,10 +418,17 @@ export default function InvestDashboard() {
                                                 <div className="space-y-2">
                                                     <div className="flex justify-between text-sm">
                                                         <span className="font-medium text-foreground/80">Tokens Sold</span>
-                                                        <span className="font-bold text-green-600">{property.fundingProgress}%</span>
+                                                        <span className="font-bold text-green-600">
+                                                            {property.fundingProgress < 1 && property.tokensSold > 0
+                                                                ? `${property.tokensSold.toLocaleString()} sold`
+                                                                : `${property.fundingProgress}%`}
+                                                        </span>
                                                     </div>
                                                     <div className="h-2.5 w-full rounded-full bg-background overflow-hidden border border-border/50">
-                                                        <div className="h-full rounded-full bg-[#17cf54]" style={{ width: `${property.fundingProgress}%` }}></div>
+                                                        <div
+                                                            className="h-full rounded-full bg-[#17cf54]"
+                                                            style={{ width: property.tokensSold > 0 && property.fundingProgress === 0 ? "2px" : `${property.fundingProgress}%` }}
+                                                        />
                                                     </div>
                                                     <div className="flex justify-between text-xs text-foreground/50 pt-1">
                                                         <span>{property.raised} raised</span>

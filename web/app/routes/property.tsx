@@ -47,11 +47,11 @@ function TransportIcon({ mode }: { mode: TransportMode }) {
 
 // TODO: reviews 테이블 집계로 교체
 const TEMP_RATINGS: Record<string, number> = {
-    "seed-listing-gyeongju-3000": 4.8,
-    "seed-listing-gyeongju-3001": 4.9,
-    "seed-listing-gyeongju-3002": 4.7,
-    "seed-listing-gyeongju-3003": 4.6,
-    "seed-listing-gyeongju-3004": 4.8,
+    "gyeongju-3000": 4.8,
+    "gyeongju-3001": 4.9,
+    "gyeongju-3002": 4.7,
+    "gyeongju-3003": 4.6,
+    "gyeongju-3004": 4.8,
 };
 
 // TODO: user 테이블에 bio 컬럼 추가 후 제거
@@ -123,7 +123,6 @@ export default function PropertyDetail() {
     const { listing } = useLoaderData<typeof loader>();
     const navigate = useNavigate();
     const [showGallery, setShowGallery] = useState(false);
-    const nights = 3; // MVP 고정값
 
     return (
         <div className="min-h-screen bg-background font-sans">
@@ -147,8 +146,8 @@ export default function PropertyDetail() {
 
                 {/* Gallery Grid */}
                 <section className="mb-12">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-auto md:h-[450px]">
-                        <div className="md:col-span-3 rounded-2xl overflow-hidden shadow-lg relative group">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:h-[450px]">
+                        <div className="md:col-span-3 rounded-2xl overflow-hidden shadow-lg relative group h-[280px] md:h-full">
                             <img
                                 src={listing.images[0] || listing.image}
                                 className="w-full h-full object-cover cursor-pointer transition-transform duration-500 group-hover:scale-105"
@@ -444,8 +443,8 @@ export default function PropertyDetail() {
 
                                 <div className="space-y-4 pt-6 border-t border-stone-100 font-medium text-sm">
                                     <div className="flex justify-between text-stone-600">
-                                        <span>₩{listing.pricePerNight.toLocaleString()} x {nights} nights</span>
-                                        <span className="font-bold">₩{(listing.pricePerNight * nights).toLocaleString()}</span>
+                                        <span>₩{listing.pricePerNight.toLocaleString()} × 1 night</span>
+                                        <span className="font-bold">₩{listing.pricePerNight.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-stone-600">
                                         <div className="flex items-center gap-1">
@@ -456,10 +455,11 @@ export default function PropertyDetail() {
                                         </div>
                                         <span className="text-primary font-bold">Free</span>
                                     </div>
-                                    <div className="flex justify-between border-t border-stone-200 pt-5 text-xl font-bold text-stone-900">
+                                    <div className="flex justify-between border-t border-stone-200 pt-4 text-base font-bold text-stone-900">
                                         <span>Total</span>
-                                        <span>₩{(listing.pricePerNight * nights).toLocaleString()}</span>
+                                        <span>₩{listing.pricePerNight.toLocaleString()}</span>
                                     </div>
+                                    <p className="text-xs text-stone-400 text-center">Select dates to see final price.</p>
                                 </div>
 
                             </Card>

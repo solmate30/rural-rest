@@ -2,14 +2,14 @@ import { PortfolioSummary } from "../components/investments/portfolio-summary";
 import { HoldingsTable } from "../components/investments/holdings-table";
 import { DividendHistory } from "../components/investments/dividend-history";
 import { Header, Footer } from "../components/ui-mockup";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useSearchParams } from "react-router";
+import { useEffect } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import type { Route } from "./+types/my-investments";
 import { db } from "~/db/index.server";
 import { listings, rwaTokens, rwaInvestments, rwaDividends } from "~/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { requireUser } from "~/lib/auth.server";
-
-const KRW_PER_USDC = 1350;
 
 export const meta = () => {
     return [
@@ -18,8 +18,59 @@ export const meta = () => {
     ];
 };
 
+const EMPTY = {
+    portfolioSummary: { totalInvested: 0, currentValue: 0, yieldPercent: 0, totalDividends: 0 },
+    ownedTokens: [] as ReturnType<typeof buildOwnedTokens>,
+    dividendRecords: [] as ReturnType<typeof buildDividendRecords>,
+};
+
+function buildOwnedTokens(
+    investmentRows: { rwaTokenId: string; tokenAmount: number; investedUsdc: number; pricePerTokenUsdc: number; estimatedApyBps: number; listingId: string; listingTitle: string }[],
+    pendingByToken: Map<string, number>
+) {
+    const tokenMap = new Map<string, typeof investmentRows[0] & { totalTokenAmount: number; totalInvestedMicro: number }>();
+    for (const row of investmentRows) {
+        const existing = tokenMap.get(row.rwaTokenId);
+        if (existing) {
+            existing.totalTokenAmount += row.tokenAmount;
+            existing.totalInvestedMicro += row.investedUsdc;
+        } else {
+            tokenMap.set(row.rwaTokenId, { ...row, totalTokenAmount: row.tokenAmount, totalInvestedMicro: row.investedUsdc });
+        }
+    }
+    return Array.from(tokenMap.values()).map((row) => {
+        const pendingMicro = pendingByToken.get(row.rwaTokenId) ?? 0;
+        const dividendAmountUsdc = pendingMicro / 1_000_000;
+        return {
+            id: row.listingId,
+            propertyName: row.listingTitle,
+            tokenName: `RWA-${row.listingId.slice(-4).toUpperCase()}`,
+            tokensOwned: row.totalTokenAmount,
+            totalValue: row.totalTokenAmount * row.pricePerTokenUsdc / 1_000_000,
+            dividendStatus: dividendAmountUsdc > 0 ? "pending" as const : "claimed" as const,
+            dividendAmount: dividendAmountUsdc,
+        };
+    });
+}
+
+function buildDividendRecords(
+    dividendRows: { id: string; rwaTokenId: string; month: string; dividendUsdc: number; claimTx: string | null; listingTitle: string }[]
+) {
+    return dividendRows.map((row) => ({
+        id: row.id,
+        date: row.month,
+        propertyName: row.listingTitle,
+        amount: Math.round((row.dividendUsdc / 1_000_000) * 100) / 100,
+        txHash: row.claimTx ?? "",
+        status: row.claimTx ? ("Completed" as const) : ("Pending" as const),
+    }));
+}
+
 export async function loader({ request }: Route.LoaderArgs) {
-    const currentUser = await requireUser(request);
+    const url = new URL(request.url);
+    const walletAddress = url.searchParams.get("wallet");
+
+    if (!walletAddress) return EMPTY;
 
     const investmentRows = await db
         .select({
@@ -35,7 +86,7 @@ export async function loader({ request }: Route.LoaderArgs) {
         .from(rwaInvestments)
         .innerJoin(rwaTokens, eq(rwaInvestments.rwaTokenId, rwaTokens.id))
         .innerJoin(listings, eq(rwaTokens.listingId, listings.id))
-        .where(eq(rwaInvestments.userId, currentUser.id));
+        .where(eq(rwaInvestments.walletAddress, walletAddress));
 
     const dividendRows = await db
         .select({
@@ -49,45 +100,17 @@ export async function loader({ request }: Route.LoaderArgs) {
         .from(rwaDividends)
         .innerJoin(rwaTokens, eq(rwaDividends.rwaTokenId, rwaTokens.id))
         .innerJoin(listings, eq(rwaTokens.listingId, listings.id))
-        .where(eq(rwaDividends.userId, currentUser.id))
+        .where(eq(rwaDividends.walletAddress, walletAddress))
         .orderBy(desc(rwaDividends.createdAt));
 
-    // pending 배당 집계 (토큰별)
     const pendingByToken = new Map<string, number>();
     for (const row of dividendRows) {
         if (!row.claimTx) {
-            pendingByToken.set(
-                row.rwaTokenId,
-                (pendingByToken.get(row.rwaTokenId) ?? 0) + row.dividendUsdc
-            );
+            pendingByToken.set(row.rwaTokenId, (pendingByToken.get(row.rwaTokenId) ?? 0) + row.dividendUsdc);
         }
     }
 
-    // 같은 토큰 여러 번 구매 시 합산
-    const tokenMap = new Map<string, typeof investmentRows[0] & { totalTokenAmount: number; totalInvestedMicro: number }>();
-    for (const row of investmentRows) {
-        const existing = tokenMap.get(row.rwaTokenId);
-        if (existing) {
-            existing.totalTokenAmount += row.tokenAmount;
-            existing.totalInvestedMicro += row.investedUsdc;
-        } else {
-            tokenMap.set(row.rwaTokenId, { ...row, totalTokenAmount: row.tokenAmount, totalInvestedMicro: row.investedUsdc });
-        }
-    }
-
-    const ownedTokens = Array.from(tokenMap.values()).map((row) => {
-        const pendingMicro = pendingByToken.get(row.rwaTokenId) ?? 0;
-        const dividendAmountUsdc = pendingMicro / 1_000_000;
-        return {
-            id: row.listingId,
-            propertyName: row.listingTitle,
-            tokenName: `RWA-${row.listingId.slice(-4).toUpperCase()}`,
-            tokensOwned: row.totalTokenAmount,
-            totalValue: row.totalTokenAmount * row.pricePerTokenUsdc / 1_000_000, // USDC
-            dividendStatus: dividendAmountUsdc > 0 ? "pending" as const : "claimed" as const,
-            dividendAmount: dividendAmountUsdc, // USDC
-        };
-    });
+    const ownedTokens = buildOwnedTokens(investmentRows, pendingByToken);
 
     const totalInvestedUsdc = investmentRows.reduce((sum, r) => sum + r.investedUsdc, 0) / 1_000_000;
     const totalDividendsUsdc = dividendRows.reduce((sum, r) => sum + r.dividendUsdc, 0) / 1_000_000;
@@ -95,27 +118,35 @@ export async function loader({ request }: Route.LoaderArgs) {
         ? investmentRows.reduce((sum, r) => sum + r.estimatedApyBps, 0) / investmentRows.length / 100
         : 0;
 
-    const portfolioSummary = {
-        totalInvested: Math.round(totalInvestedUsdc * 100) / 100,   // USDC
-        currentValue: Math.round(totalInvestedUsdc * 100) / 100,    // USDC (가격 변동 미반영)
-        yieldPercent: Math.round(avgApy * 10) / 10,
-        totalDividends: Math.round(totalDividendsUsdc * 100) / 100, // USDC
+    return {
+        portfolioSummary: {
+            totalInvested: Math.round(totalInvestedUsdc * 100) / 100,
+            currentValue: Math.round(totalInvestedUsdc * 100) / 100,
+            yieldPercent: Math.round(avgApy * 10) / 10,
+            totalDividends: Math.round(totalDividendsUsdc * 100) / 100,
+        },
+        ownedTokens,
+        dividendRecords: buildDividendRecords(dividendRows),
     };
-
-    const dividendRecords = dividendRows.map((row) => ({
-        id: row.id,
-        date: row.month,
-        propertyName: row.listingTitle,
-        amount: Math.round((row.dividendUsdc / 1_000_000) * 100) / 100, // USDC
-        txHash: row.claimTx ?? "",
-        status: row.claimTx ? ("Completed" as const) : ("Pending" as const),
-    }));
-
-    return { portfolioSummary, ownedTokens, dividendRecords };
 }
 
 export default function MyInvestmentsRoute() {
     const { portfolioSummary, ownedTokens, dividendRecords } = useLoaderData<typeof loader>();
+    const { publicKey } = useWallet();
+    const { setVisible } = useWalletModal();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // 지갑 연결되면 URL에 wallet 파라미터 자동 추가 → 로더 재실행
+    useEffect(() => {
+        if (publicKey) {
+            const current = searchParams.get("wallet");
+            if (current !== publicKey.toBase58()) {
+                setSearchParams({ wallet: publicKey.toBase58() }, { replace: true });
+            }
+        }
+    }, [publicKey]);
+
+    const walletParam = searchParams.get("wallet");
 
     return (
         <div className="min-h-screen bg-[#fcfaf7] font-sans">
@@ -126,22 +157,37 @@ export default function MyInvestmentsRoute() {
                     <p className="text-stone-500">Track your portfolio and manage your returns.</p>
                 </header>
 
-                <PortfolioSummary {...portfolioSummary} />
-
-                <section className="mb-12">
-                    <div className="flex items-baseline justify-between mb-6">
-                        <div>
-                            <h2 className="text-2xl font-bold text-[#4a3b2c] mb-1">Your Holdings</h2>
-                            <p className="text-sm text-stone-500">Manage your real estate tokens</p>
-                        </div>
-                        <span className="text-sm text-stone-400">{ownedTokens.length} assets</span>
+                {!walletParam ? (
+                    <div className="py-24 text-center">
+                        <span className="material-symbols-outlined text-[56px] text-stone-300">account_balance_wallet</span>
+                        <p className="text-stone-500 mt-4 mb-6 font-medium">Connect your wallet to view your portfolio.</p>
+                        <button
+                            onClick={() => setVisible(true)}
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#17cf54] text-white font-bold hover:bg-[#14b847] transition-all shadow-lg shadow-[#17cf54]/20"
+                        >
+                            Connect Wallet
+                        </button>
                     </div>
-                    <HoldingsTable holdings={ownedTokens} />
-                </section>
+                ) : (
+                    <>
+                        <PortfolioSummary {...portfolioSummary} />
 
-                <section>
-                    <DividendHistory records={dividendRecords} />
-                </section>
+                        <section className="mb-12">
+                            <div className="flex items-baseline justify-between mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-[#4a3b2c] mb-1">Your Holdings</h2>
+                                    <p className="text-sm text-stone-500">Manage your real estate tokens</p>
+                                </div>
+                                <span className="text-sm text-stone-400">{ownedTokens.length} assets</span>
+                            </div>
+                            <HoldingsTable holdings={ownedTokens} />
+                        </section>
+
+                        <section>
+                            <DividendHistory records={dividendRecords} />
+                        </section>
+                    </>
+                )}
             </main>
             <Footer />
         </div>

@@ -1,10 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Card, Input } from "~/components/ui-mockup";
 import { useToast } from "~/hooks/use-toast";
 import { useKyc } from "~/components/KycProvider";
+
+function useCountdown(deadlineMs: number) {
+    const calc = () => {
+        const diff = deadlineMs - Date.now();
+        if (diff <= 0) return null;
+        return {
+            days: Math.floor(diff / 86400000),
+            hours: Math.floor((diff % 86400000) / 3600000),
+            minutes: Math.floor((diff % 3600000) / 60000),
+            seconds: Math.floor((diff % 60000) / 1000),
+        };
+    };
+    const [t, setT] = useState(calc);
+    useEffect(() => {
+        const id = setInterval(() => setT(calc()), 1000);
+        return () => clearInterval(id);
+    }, [deadlineMs]);
+    return t;
+}
 
 const PROGRAM_ID_STR = import.meta.env.VITE_RWA_PROGRAM_ID ?? "EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR";
 const USDC_MINT_STR = import.meta.env.VITE_USDC_MINT ?? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
@@ -26,11 +45,15 @@ interface Props {
     apy: number;
     fundingProgress: number;
     availableTokens: number;
+    holders: number;
+    soldTokens: number;
+    fundingDeadlineMs: number;
 }
 
 export function PurchaseCard({
     listingId, tokenMint, tokenId,
     tokenName, tokenPrice, usdcPrice, apy, fundingProgress, availableTokens,
+    holders, soldTokens, fundingDeadlineMs,
 }: Props) {
     const walletCtx = useWallet();
     const { connected, publicKey } = walletCtx;
@@ -120,6 +143,7 @@ export function PurchaseCard({
                     tokenAmount: tokenCount,
                     investedUsdc: Math.round(subtotalUsdc * 1_000_000),
                     purchaseTx: signature,
+                    investorWallet: publicKey.toBase58(),
                 }),
             });
             if (!dbRes.ok) {
@@ -142,6 +166,8 @@ export function PurchaseCard({
             setIsProcessing(false);
         }
     };
+
+    const countdown = useCountdown(fundingDeadlineMs);
 
     return (
         <Card className="p-6 shadow-2xl border-none bg-white rounded-3xl space-y-4">
@@ -181,10 +207,6 @@ export function PurchaseCard({
                     <span>{tokenCount} tokens × {tokenPrice >= 1 ? `₩${Math.round(tokenPrice).toLocaleString()}` : `₩${tokenPrice.toFixed(4)}`}</span>
                     <span className="font-semibold text-stone-800">{fmtUsdc(subtotalUsdc)}</span>
                 </div>
-                <div className="flex justify-between text-stone-600">
-                    <span>Platform Fee (1%)</span>
-                    <span className="font-semibold text-stone-800">{fmtUsdc(subtotalUsdc * 0.01)}</span>
-                </div>
                 <div className="flex justify-between text-[#17cf54] text-xs">
                     <span>Est. Annual Return</span>
                     <span className="font-bold">
@@ -194,13 +216,36 @@ export function PurchaseCard({
                 <div className="flex justify-between border-t border-stone-200 pt-3 font-bold text-stone-900">
                     <span>Total</span>
                     <span>
-                        {fmtUsdc(subtotalUsdc * 1.01)}
+                        {fmtUsdc(subtotalUsdc)}
                         <span className="text-xs text-stone-400 font-normal ml-1">
-                            (≈{subtotalKrw >= 1 ? `₩${Math.round(subtotalKrw * 1.01).toLocaleString()}` : `₩${(subtotalKrw * 1.01).toFixed(4)}`})
+                            (≈{subtotalKrw >= 1 ? `₩${Math.round(subtotalKrw).toLocaleString()}` : `₩${subtotalKrw.toFixed(4)}`})
                         </span>
                     </span>
                 </div>
             </div>
+
+            {/* Countdown */}
+            {countdown && (
+                <div className="bg-stone-50 border border-stone-100 rounded-2xl px-4 pt-3.5 pb-4">
+                    <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-2">Funding Ends In</p>
+                    <div className="grid grid-cols-4 gap-2">
+                        {[
+                            { label: "Days", value: countdown.days },
+                            { label: "Hrs",  value: countdown.hours },
+                            { label: "Min",  value: countdown.minutes },
+                            { label: "Sec",  value: countdown.seconds },
+                        ].map(({ label, value }, i) => (
+                            <div key={label} className="text-center relative">
+                                {i < 3 && <span className="absolute -right-1.5 top-2 text-base font-bold text-stone-300 select-none">:</span>}
+                                <div className="bg-stone-100 rounded-xl py-2.5">
+                                    <span className="text-2xl font-bold text-[#4a3b2c] tabular-nums">{String(value).padStart(2, "0")}</span>
+                                </div>
+                                <p className="text-[10px] text-stone-400 font-medium mt-1">{label}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* CTA */}
             {isNotMinted ? (

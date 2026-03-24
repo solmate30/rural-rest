@@ -169,7 +169,8 @@ export const rwaTokens = sqliteTable("rwa_tokens", {
 // 투자자별 투자 내역 (온체인 InvestorPosition과 동기화)
 export const rwaInvestments = sqliteTable("rwa_investments", {
     id: text("id").primaryKey(), // UUID v4
-    userId: text("user_id").notNull().references(() => user.id),
+    walletAddress: text("wallet_address").notNull(), // Solana pubkey (primary identity)
+    userId: text("user_id").references(() => user.id), // nullable — Better Auth 연동 시에만
     rwaTokenId: text("rwa_token_id").notNull().references(() => rwaTokens.id),
     tokenAmount: integer("token_amount").notNull(),
     investedUsdc: integer("invested_usdc").notNull(), // micro-USDC
@@ -181,7 +182,8 @@ export const rwaInvestments = sqliteTable("rwa_investments", {
 // 월별 배당 내역
 export const rwaDividends = sqliteTable("rwa_dividends", {
     id: text("id").primaryKey(), // UUID v4
-    userId: text("user_id").notNull().references(() => user.id),
+    walletAddress: text("wallet_address").notNull(), // Solana pubkey
+    userId: text("user_id").references(() => user.id), // nullable
     rwaTokenId: text("rwa_token_id").notNull().references(() => rwaTokens.id),
     month: text("month").notNull(), // "2026-03" 형식
     dividendUsdc: integer("dividend_usdc").notNull(), // micro-USDC
