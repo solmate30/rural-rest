@@ -142,7 +142,7 @@ export function Header() {
                 </div>
                 <nav className="hidden md:flex items-center gap-6">
                     <a href="/" className="text-sm font-medium hover:text-primary transition-colors">Find a Stay</a>
-                    <a href="/admin" className="text-sm font-medium hover:text-primary transition-colors">Host your Home</a>
+                    <a href="/host" className="text-sm font-medium hover:text-primary transition-colors">Host your Home</a>
                     <a href="/invest" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">Invest (RWA)</a>
                     {isInvestRoute && (
                         <a href="/my-investments" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">My Portfolio</a>
@@ -236,7 +236,7 @@ export function Footer() {
                     <div>
                         <h4 className="font-bold text-stone-900 mb-4 tracking-tight">Hosting</h4>
                         <ul className="space-y-3 text-sm text-stone-500">
-                            <li><a href="/admin" className="hover:text-primary transition-colors">Host your Home</a></li>
+                            <li><a href="/host" className="hover:text-primary transition-colors">Host your Home</a></li>
                             <li><a href="#" className="hover:text-primary transition-colors">Why Host?</a></li>
                             <li><a href="#" className="hover:text-primary transition-colors">Hosting Policy</a></li>
                             <li><a href="#" className="hover:text-primary transition-colors">Community Stories</a></li>

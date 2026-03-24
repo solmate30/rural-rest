@@ -146,7 +146,10 @@ export async function getHostListings(hostId: string, role: string): Promise<Hos
         .from(listings)
         .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
         .where(role === "admin" ? undefined : eq(listings.hostId, hostId))
-        .orderBy(desc(listings.createdAt));
+        .orderBy(
+            sql`CASE WHEN ${rwaTokens.tokenMint} IS NOT NULL THEN 0 ELSE 1 END`,
+            desc(listings.createdAt)
+        );
 
     return rows.map((r) => {
         const imgs = r.images as string[] | null;
