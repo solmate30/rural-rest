@@ -2,6 +2,14 @@ import { PortfolioSummary } from "../components/investments/portfolio-summary";
 import { TokenCard } from "../components/investments/token-card";
 import { DividendHistory } from "../components/investments/dividend-history";
 import { Header, Footer } from "../components/ui-mockup";
+import { useLoaderData } from "react-router";
+import type { Route } from "./+types/my-investments";
+import { db } from "~/db/index.server";
+import { listings, rwaTokens, rwaInvestments, rwaDividends } from "~/db/schema";
+import { eq, desc } from "drizzle-orm";
+import { requireUser } from "~/lib/auth.server";
+
+const KRW_PER_USDC = 1350;
 
 export const meta = () => {
     return [
@@ -10,55 +18,80 @@ export const meta = () => {
     ];
 };
 
-// Mock data for demonstration purposes
-const mockPortfolioSummary = {
-    totalInvested: 3700,
-    currentValue: 3959,
-    yieldPercent: 7.2,
-    totalDividends: 250,
-};
+export async function loader({ request }: Route.LoaderArgs) {
+    const currentUser = await requireUser(request);
 
-const mockOwnedTokens = [
-    {
-        id: "1",
-        propertyName: "양평 돌담 고택",
-        tokenName: "YANG-001",
-        tokensOwned: 50,
-        totalValue: 2500,
-        dividendStatus: "claimed" as const,
-        dividendAmount: 205,
-    },
-    {
-        id: "2",
-        propertyName: "고성 바다 한옥",
-        tokenName: "GOS-002",
-        tokensOwned: 30,
-        totalValue: 1200,
+    const investmentRows = await db
+        .select({
+            id: rwaInvestments.id,
+            tokenAmount: rwaInvestments.tokenAmount,
+            investedUsdc: rwaInvestments.investedUsdc,
+            pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc,
+            estimatedApyBps: rwaTokens.estimatedApyBps,
+            listingId: listings.id,
+            listingTitle: listings.title,
+        })
+        .from(rwaInvestments)
+        .innerJoin(rwaTokens, eq(rwaInvestments.rwaTokenId, rwaTokens.id))
+        .innerJoin(listings, eq(rwaTokens.listingId, listings.id))
+        .where(eq(rwaInvestments.userId, currentUser.id));
+
+    const dividendRows = await db
+        .select({
+            id: rwaDividends.id,
+            month: rwaDividends.month,
+            dividendUsdc: rwaDividends.dividendUsdc,
+            claimTx: rwaDividends.claimTx,
+            listingTitle: listings.title,
+        })
+        .from(rwaDividends)
+        .innerJoin(rwaTokens, eq(rwaDividends.rwaTokenId, rwaTokens.id))
+        .innerJoin(listings, eq(rwaTokens.listingId, listings.id))
+        .where(eq(rwaDividends.userId, currentUser.id))
+        .orderBy(desc(rwaDividends.createdAt));
+
+    const ownedTokens = investmentRows.map((row) => ({
+        id: row.id,
+        propertyName: row.listingTitle,
+        tokenName: `RWA-${row.listingId.slice(-4).toUpperCase()}`,
+        tokensOwned: row.tokenAmount,
+        totalValue: Math.round((row.tokenAmount * row.pricePerTokenUsdc / 1_000_000) * KRW_PER_USDC),
         dividendStatus: "pending" as const,
-        dividendAmount: 45,
-    },
-];
+        dividendAmount: 0,
+    }));
 
-const mockDividendRecords = [
-    {
-        id: "div-1",
-        date: "2026-01-15",
-        propertyName: "양평 돌담 고택",
-        amount: 205,
-        txHash: "4Tyz8kXWJ3oRzZp9QvKmN8LpYdF2sH6rT3xW9cBnVhMg",
-        status: "Completed" as const,
-    },
-    {
-        id: "div-2",
-        date: "2026-02-01",
-        propertyName: "고성 바다 한옥",
-        amount: 45,
-        txHash: "7bK9mP2vLpR5tX8oWqC4fJ6hN3dY1zAaS9gVnMkTrBpL",
-        status: "Pending" as const,
-    },
-];
+    const totalInvestedKrw = Math.round(
+        investmentRows.reduce((sum, r) => sum + r.investedUsdc, 0) / 1_000_000 * KRW_PER_USDC
+    );
+    const totalDividendsKrw = Math.round(
+        dividendRows.reduce((sum, r) => sum + r.dividendUsdc, 0) / 1_000_000 * KRW_PER_USDC
+    );
+    const avgApy = investmentRows.length > 0
+        ? investmentRows.reduce((sum, r) => sum + r.estimatedApyBps, 0) / investmentRows.length / 100
+        : 0;
+
+    const portfolioSummary = {
+        totalInvested: totalInvestedKrw,
+        currentValue: totalInvestedKrw,
+        yieldPercent: Math.round(avgApy * 10) / 10,
+        totalDividends: totalDividendsKrw,
+    };
+
+    const dividendRecords = dividendRows.map((row) => ({
+        id: row.id,
+        date: row.month,
+        propertyName: row.listingTitle,
+        amount: Math.round((row.dividendUsdc / 1_000_000) * KRW_PER_USDC),
+        txHash: row.claimTx ?? "",
+        status: row.claimTx ? ("Completed" as const) : ("Pending" as const),
+    }));
+
+    return { portfolioSummary, ownedTokens, dividendRecords };
+}
 
 export default function MyInvestmentsRoute() {
+    const { portfolioSummary, ownedTokens, dividendRecords } = useLoaderData<typeof loader>();
+
     return (
         <div className="min-h-screen bg-[#fcfaf7] font-sans">
             <Header />
@@ -68,30 +101,34 @@ export default function MyInvestmentsRoute() {
                     <p className="text-stone-500">투자 포트폴리오를 추적하고 수익률을 관리하세요.</p>
                 </header>
 
-                {/* Portfolio Summary Section */}
-                <PortfolioSummary {...mockPortfolioSummary} />
+                <PortfolioSummary {...portfolioSummary} />
 
-                {/* Owned Tokens Section */}
                 <section className="mb-12">
                     <div className="flex items-baseline justify-between mb-6">
                         <div>
                             <h2 className="text-2xl font-bold text-[#4a3b2c] mb-1">Your Holdings</h2>
                             <p className="text-sm text-stone-500">보유 중인 부동산 토큰을 관리하세요</p>
                         </div>
-                        <span className="text-sm text-stone-400">
-                            {mockOwnedTokens.length}개 자산
-                        </span>
+                        <span className="text-sm text-stone-400">{ownedTokens.length}개 자산</span>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {mockOwnedTokens.map((token) => (
-                            <TokenCard key={token.id} {...token} />
-                        ))}
-                    </div>
+                    {ownedTokens.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            {ownedTokens.map((token) => (
+                                <TokenCard key={token.id} {...token} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="py-16 text-center bg-stone-50 rounded-2xl border border-dashed border-stone-200">
+                            <p className="text-stone-400 font-medium">아직 보유 중인 토큰이 없습니다.</p>
+                            <a href="/invest" className="mt-4 inline-block text-sm font-bold text-primary underline underline-offset-2">
+                                투자 가능한 매물 보기
+                            </a>
+                        </div>
+                    )}
                 </section>
 
-                {/* Dividend History Section */}
                 <section>
-                    <DividendHistory records={mockDividendRecords} />
+                    <DividendHistory records={dividendRecords} />
                 </section>
             </main>
             <Footer />

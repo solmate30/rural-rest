@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { eq, and, inArray, sql, desc } from "drizzle-orm";
 import { db } from "../db/index.server";
-import { listings, bookings } from "../db/schema";
+import { listings, bookings, rwaTokens } from "../db/schema";
 
 export interface DashboardStats {
     totalRevenueThisMonth: number;
@@ -17,6 +17,8 @@ export interface HostListingRow {
     location: string;
     pricePerNight: number;
     image: string;
+    tokenStatus: string | null; // null = 미발행
+    tokenMint: string | null;
 }
 
 /**
@@ -127,9 +129,10 @@ export async function getDashboardStats(hostId: string): Promise<DashboardStats>
 }
 
 /**
- * Listings owned by the host for dashboard property list.
+ * Listings for dashboard.
+ * admin → 전체 매물, host → 본인 매물만
  */
-export async function getHostListings(hostId: string): Promise<HostListingRow[]> {
+export async function getHostListings(hostId: string, role: string): Promise<HostListingRow[]> {
     const rows = await db
         .select({
             id: listings.id,
@@ -137,9 +140,12 @@ export async function getHostListings(hostId: string): Promise<HostListingRow[]>
             location: listings.location,
             pricePerNight: listings.pricePerNight,
             images: listings.images,
+            tokenStatus: rwaTokens.status,
+            tokenMint: rwaTokens.tokenMint,
         })
         .from(listings)
-        .where(eq(listings.hostId, hostId))
+        .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
+        .where(role === "admin" ? undefined : eq(listings.hostId, hostId))
         .orderBy(desc(listings.createdAt));
 
     return rows.map((r) => {
@@ -151,6 +157,8 @@ export async function getHostListings(hostId: string): Promise<HostListingRow[]>
             location: r.location,
             pricePerNight: r.pricePerNight,
             image,
+            tokenStatus: r.tokenStatus ?? null,
+            tokenMint: r.tokenMint ?? null,
         };
     });
 }

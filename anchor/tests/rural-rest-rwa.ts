@@ -7,6 +7,7 @@ import {
   mintTo,
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
@@ -132,7 +133,8 @@ describe("rural-rest-rwa", () => {
         fundingVault,
         usdcVault,
         usdcMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -140,7 +142,7 @@ describe("rural-rest-rwa", () => {
       .rpc();
 
     investorRwaAccount = getAssociatedTokenAddressSync(
-      tokenMintKeypair.publicKey, investor.publicKey, false, TOKEN_PROGRAM_ID
+      tokenMintKeypair.publicKey, investor.publicKey, false, TOKEN_2022_PROGRAM_ID
     );
 
     const account = await program.account.propertyToken.fetch(propertyToken);
@@ -165,7 +167,8 @@ describe("rural-rest-rwa", () => {
         fundingVault,
         investorRwaAccount,
         usdcMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -193,7 +196,8 @@ describe("rural-rest-rwa", () => {
           fundingVault,
           investorRwaAccount,
           usdcMint,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
@@ -239,7 +243,7 @@ describe("rural-rest-rwa", () => {
         program.programId
       );
       const kpRwa = getAssociatedTokenAddressSync(
-        tokenMintKeypair.publicKey, kp.publicKey, false, TOKEN_PROGRAM_ID
+        tokenMintKeypair.publicKey, kp.publicKey, false, TOKEN_2022_PROGRAM_ID
       );
 
       await program.methods
@@ -253,7 +257,8 @@ describe("rural-rest-rwa", () => {
           fundingVault,
           investorRwaAccount: kpRwa,
           usdcMint,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
@@ -281,7 +286,7 @@ describe("rural-rest-rwa", () => {
         fundingVault,
         authorityUsdcAccount,
         usdcMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -321,7 +326,7 @@ describe("rural-rest-rwa", () => {
         authorityUsdcAccount,
         usdcVault,
         usdcMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -348,7 +353,7 @@ describe("rural-rest-rwa", () => {
         usdcVault,
         investorUsdcAccount,
         usdcMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -375,7 +380,7 @@ describe("rural-rest-rwa", () => {
           usdcVault,
           investorUsdcAccount,
           usdcMint,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
@@ -404,7 +409,8 @@ describe("rural-rest-rwa", () => {
         fundingVault: fundingVault2,
         usdcVault: usdcVault2,
         usdcMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -412,7 +418,7 @@ describe("rural-rest-rwa", () => {
       .rpc();
 
     investorRwaAccount2 = getAssociatedTokenAddressSync(
-      tokenMintKeypair2.publicKey, investor.publicKey, false, TOKEN_PROGRAM_ID
+      tokenMintKeypair2.publicKey, investor.publicKey, false, TOKEN_2022_PROGRAM_ID
     );
 
     const account = await program.account.propertyToken.fetch(propertyToken2);
@@ -432,7 +438,8 @@ describe("rural-rest-rwa", () => {
         fundingVault: fundingVault2,
         investorRwaAccount: investorRwaAccount2,
         usdcMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -459,7 +466,8 @@ describe("rural-rest-rwa", () => {
           fundingVault: fundingVault2,
           investorRwaAccount: investorRwaAccount2,
           usdcMint,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
@@ -484,7 +492,7 @@ describe("rural-rest-rwa", () => {
         fundingVault: fundingVault2,
         investorUsdcAccount,
         usdcMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -511,7 +519,7 @@ describe("rural-rest-rwa", () => {
           fundingVault: fundingVault2,
           investorUsdcAccount,
           usdcMint,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
         })

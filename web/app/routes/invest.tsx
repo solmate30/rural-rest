@@ -1,11 +1,82 @@
-import { Header, Footer, Card, Button } from "~/components/ui-mockup";
-import { useNavigate } from "react-router";
+import { Header, Footer, Card } from "~/components/ui-mockup";
+import { useNavigate, useLoaderData } from "react-router";
 import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useKyc } from "~/components/KycProvider";
+import { db } from "~/db/index.server";
+import { listings, rwaTokens } from "~/db/schema";
+import { eq } from "drizzle-orm";
 
-function InvestDashboardContent() {
+// TODO: 추후 Pyth oracle로 교체
+const KRW_PER_USDC = 1350;
+
+function formatKrw(won: number): string {
+    if (won >= 1_0000_0000) {
+        const eok = won / 1_0000_0000;
+        return `${eok % 1 === 0 ? eok : eok.toFixed(1)}억 원`;
+    }
+    if (won >= 1_0000) {
+        const man = won / 1_0000;
+        return `${man % 1 === 0 ? man : man.toFixed(0)}만 원`;
+    }
+    return `${won.toLocaleString()}원`;
+}
+
+function statusToKorean(status: string): string {
+    switch (status) {
+        case "funding": return "모집 중";
+        case "funded":  return "모집 완료";
+        case "active":  return "운영 중";
+        case "failed":  return "모집 실패";
+        default:        return status;
+    }
+}
+
+export async function loader() {
+    const rows = await db
+        .select({
+            id: listings.id,
+            title: listings.title,
+            location: listings.location,
+            region: listings.region,
+            images: listings.images,
+            totalSupply: rwaTokens.totalSupply,
+            tokensSold: rwaTokens.tokensSold,
+            valuationKrw: rwaTokens.valuationKrw,
+            pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc,
+            estimatedApyBps: rwaTokens.estimatedApyBps,
+            status: rwaTokens.status,
+        })
+        .from(listings)
+        .innerJoin(rwaTokens, eq(rwaTokens.listingId, listings.id));
+
+    return rows.map((row) => {
+        const images = row.images as string[];
+        const tokenPriceKrw = Math.round((row.pricePerTokenUsdc / 1_000_000) * KRW_PER_USDC);
+        const fundingProgress = row.totalSupply > 0
+            ? Math.round((row.tokensSold / row.totalSupply) * 100)
+            : 0;
+        return {
+            id: row.id,
+            title: row.title,
+            location: row.location,
+            region: row.region,
+            image: images[0] ?? "/house.png",
+            apy: row.estimatedApyBps / 100,
+            tokenPrice: tokenPriceKrw,
+            totalValuation: formatKrw(row.valuationKrw),
+            fundingProgress,
+            raised: formatKrw(row.tokensSold * tokenPriceKrw),
+            remaining: formatKrw((row.totalSupply - row.tokensSold) * tokenPriceKrw),
+            status: statusToKorean(row.status),
+            themes: [] as string[],
+        };
+    });
+}
+
+export default function InvestDashboard() {
+    const allProperties = useLoaderData<typeof loader>();
     const navigate = useNavigate();
     const { connected } = useWallet();
     const { setVisible } = useWalletModal();
@@ -21,71 +92,8 @@ function InvestDashboardContent() {
 
     const { isKycCompleted } = useKyc();
 
-    const ALL_PROPERTIES = [
-        {
-            id: "1",
-            title: "성주 할머니댁 돌담집",
-            location: "경주시, 경상북도",
-            region: "경상",
-            image: "/house.png",
-            apy: 8.2,
-            tokenPrice: 50000,
-            totalValuation: "5억 원",
-            fundingProgress: 78,
-            raised: "3.9억 원",
-            remaining: "1.1억 원",
-            status: "운영 중",
-            themes: ["한옥"]
-        },
-        {
-            id: "2",
-            title: "양평 숲속 오두막",
-            location: "양평군, 경기도",
-            region: "경기",
-            image: "/house.png",
-            apy: 7.5,
-            tokenPrice: 50000,
-            totalValuation: "4.2억 원",
-            fundingProgress: 45,
-            raised: "1.89억 원",
-            remaining: "2.31억 원",
-            status: "모집 중",
-            themes: ["숲속 오두막"]
-        },
-        {
-            id: "3",
-            title: "기장 바다 앞 민박",
-            location: "기장군, 부산광역시",
-            region: "경상",
-            image: "/house.png",
-            apy: 9.1,
-            tokenPrice: 50000,
-            totalValuation: "6.8억 원",
-            fundingProgress: 100,
-            raised: "6.8억 원",
-            remaining: "0",
-            status: "모집 완료",
-            themes: ["오션뷰"]
-        },
-        {
-            id: "5",
-            title: "제주 애월 돌담 민박",
-            location: "애월읍, 제주도",
-            region: "제주",
-            image: "/house.png",
-            apy: 8.5,
-            tokenPrice: 100000,
-            totalValuation: "미정",
-            fundingProgress: 0,
-            raised: "0",
-            remaining: "0",
-            status: "모집 예정",
-            themes: ["오션뷰", "돌담"]
-        }
-    ];
-
     // Filter Logic
-    let filteredProperties = ALL_PROPERTIES.filter(p => {
+    let filteredProperties = allProperties.filter(p => {
         if (selectedRegion !== "전체" && p.region !== selectedRegion) return false;
         if (selectedStatus !== "전체" && p.status !== selectedStatus) return false;
         if (p.apy < minApy) return false;
@@ -100,7 +108,6 @@ function InvestDashboardContent() {
     } else if (selectedSort === "가격순") {
         filteredProperties.sort((a, b) => a.tokenPrice - b.tokenPrice);
     } else if (selectedSort === "최신순") {
-        // Assume id based sorting or progress for now
         filteredProperties.sort((a, b) => a.fundingProgress - b.fundingProgress);
     }
 
@@ -390,8 +397,4 @@ function InvestDashboardContent() {
             <Footer />
         </div>
     );
-}
-
-export default function InvestDashboard() {
-    return <InvestDashboardContent />;
 }

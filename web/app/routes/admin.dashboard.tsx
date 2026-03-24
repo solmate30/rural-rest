@@ -14,7 +14,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     const user = await requireUser(request, ["host", "admin"]);
     const [stats, hostListings] = await Promise.all([
         getDashboardStats(user.id),
-        getHostListings(user.id),
+        getHostListings(user.id, user.role ?? "host"),
     ]);
     return { user, stats, hostListings };
 }
@@ -77,8 +77,20 @@ export default function AdminDashboard() {
                                         <p className="text-sm text-muted-foreground">{listing.location} • {formatRevenue(listing.pricePerNight)} / night</p>
                                     </div>
                                 </div>
-                                <div className="flex gap-3">
-                                    <Link to={`/admin/edit/${listing.id}`} className={linkButtonClass}>Edit Content</Link>
+                                <div className="flex gap-3 items-center">
+                                    {listing.tokenMint ? (
+                                        <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-[#17cf54]/10 text-[#17cf54] border border-[#17cf54]/20">
+                                            {listing.tokenStatus === "funding" ? "모집 중" : listing.tokenStatus === "active" ? "운영 중" : listing.tokenStatus}
+                                        </span>
+                                    ) : (
+                                        <Link
+                                            to={`/admin/tokenize/${listing.id}`}
+                                            className="inline-flex items-center text-sm font-bold px-4 py-2 rounded-xl bg-[#17cf54] text-white hover:bg-[#14b847] transition-all shadow-lg shadow-[#17cf54]/30 hover:scale-[1.02] active:scale-[0.98]"
+                                        >
+                                            토큰 발행
+                                        </Link>
+                                    )}
+                                    <Link to={`/admin/edit/${listing.id}`} className={linkButtonClass}>Edit</Link>
                                     <Link to={`/property/${listing.id}`} className={linkButtonClass}>View</Link>
                                 </div>
                             </Card>
