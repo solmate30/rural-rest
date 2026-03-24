@@ -6,12 +6,13 @@ import { db } from "~/db/index.server";
 import { listings } from "~/db/schema";
 import { eq } from "drizzle-orm";
 
+// TODO: reviews 테이블 집계로 교체
 const TEMP_RATINGS: Record<string, number> = {
-    "seed-listing-gyeongju-3000": 4.8,
-    "seed-listing-gyeongju-3001": 4.9,
-    "seed-listing-gyeongju-3002": 4.7,
-    "seed-listing-gyeongju-3003": 4.6,
-    "seed-listing-gyeongju-3004": 4.8,
+    "gyeongju-3000": 4.8,
+    "gyeongju-3001": 4.9,
+    "gyeongju-3002": 4.7,
+    "gyeongju-3003": 4.6,
+    "gyeongju-3004": 4.8,
 };
 
 function toCityLabel(location: string): string {

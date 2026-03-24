@@ -2,7 +2,8 @@ import { useLoaderData } from "react-router";
 import type { Route } from "./+types/invest.detail";
 import { Header, Footer } from "~/components/ui-mockup";
 import { db } from "~/db/index.server";
-import { listings, rwaTokens, rwaInvestments, user } from "~/db/schema";
+import { listings, rwaTokens, rwaInvestments, user, bookings } from "~/db/schema";
+import { and, gte } from "drizzle-orm";
 import { eq, sql } from "drizzle-orm";
 import { PropertyMap } from "~/components/PropertyMap";
 import { RevenueChart } from "~/components/rwa/RevenueChart";
@@ -81,10 +82,27 @@ export async function loader({ params }: Route.LoaderArgs) {
         .then(rows => rows[0]);
 
     const holdersRow = await db
-        .select({ count: sql<number>`COUNT(DISTINCT ${rwaInvestments.userId})` })
+        .select({ count: sql<number>`COUNT(DISTINCT ${rwaInvestments.walletAddress})` })
         .from(rwaInvestments)
         .where(eq(rwaInvestments.rwaTokenId, row.tokenId))
         .then(rows => rows[0]);
+
+    // 최근 90일 예약률 계산
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000);
+    const bookingRows = await db
+        .select({ checkIn: bookings.checkIn, checkOut: bookings.checkOut })
+        .from(bookings)
+        .where(and(
+            eq(bookings.listingId, row.id),
+            gte(bookings.checkIn, ninetyDaysAgo),
+            sql`${bookings.status} IN ('confirmed', 'completed')`
+        ));
+
+    const bookedNights = bookingRows.reduce((sum, b) => {
+        const nights = Math.round((b.checkOut.getTime() - b.checkIn.getTime()) / 86400000);
+        return sum + nights;
+    }, 0);
+    const occupancyRate = Math.round((bookedNights / 90) * 100);
 
     const images = row.images as string[];
     const amenities = row.amenities as string[];
@@ -117,6 +135,7 @@ export async function loader({ params }: Route.LoaderArgs) {
         raisedUsdc,
         remainingUsdc,
         status: statusToKorean(row.status),
+        rawStatus: row.status,
         about: row.description,
         amenities,
         maxGuests: row.maxGuests,
@@ -127,8 +146,11 @@ export async function loader({ params }: Route.LoaderArgs) {
         renovationHistory: (row.renovationHistory as { date: string; desc: string }[]) ?? [],
         rating: null as number | null,
         reviewCount: 0,
+        fundingDeadline: row.fundingDeadline instanceof Date
+            ? row.fundingDeadline.getTime()
+            : Number(row.fundingDeadline) * 1000,
         lastDividend: null as string | null,
-        occupancyRate: null as number | null,
+        occupancyRate,
         host: {
             name: hostUser?.name ?? "마을지기",
             bio: TEMP_HOST_BIOS[row.hostId] ?? null,
@@ -154,7 +176,6 @@ export default function InvestDetail() {
                         <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">
                             {property.tokenName}
                         </span>
-                        <span className="text-sm text-muted-foreground">{property.location}</span>
                     </div>
                     <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
                         {property.title}
@@ -173,6 +194,23 @@ export default function InvestDetail() {
 
                     {/* ── Left Column ── */}
                     <div className="lg:col-span-2 space-y-12">
+
+                        {/* Token Info */}
+                        <section className="pt-8 border-t">
+                            <h2 className="text-2xl font-bold text-foreground mb-6">Token Information</h2>
+                            <TokenInfoCard
+                                tokenName={property.tokenName}
+                                totalSupply={property.totalSupply}
+                                tokenPrice={property.tokenPrice}
+                                usdcPrice={property.usdcPrice}
+                                valuationKrw={property.valuationKrw}
+                                valuationUsdc={property.valuationUsdc}
+                                holders={property.holders}
+                                soldTokens={property.soldTokens}
+                                fundingProgress={property.fundingProgress}
+                                apy={property.apy}
+                            />
+                        </section>
 
                         {/* About */}
                         <section className="space-y-4 pt-8 border-t">
@@ -200,42 +238,32 @@ export default function InvestDetail() {
                                 ))}
                             </div>
 
-                            {/* Room Spec */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div className="flex flex-col gap-2 p-4 rounded-xl bg-stone-50 border border-stone-100 shadow-sm">
-                                    <span className="material-symbols-outlined text-primary text-[24px]">group</span>
-                                    <p className="text-xs text-muted-foreground">최대 인원</p>
-                                    <p className="font-semibold text-sm">{property.maxGuests}명</p>
+                            {/* Property Stats */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1.5 p-4 rounded-xl bg-stone-50 border border-stone-100 shadow-sm">
+                                    <span className="material-symbols-outlined text-stone-400 text-[20px]">group</span>
+                                    <p className="text-[10px] uppercase font-bold tracking-wider text-stone-400">Max Guests</p>
+                                    <p className="text-xl font-bold text-[#4a3b2c]">{property.maxGuests}<span className="text-sm font-normal text-stone-400 ml-1">명</span></p>
                                 </div>
-                            </div>
-
-                            {/* Occupancy */}
-                            <div className="flex items-center gap-5 p-5 rounded-2xl bg-stone-50 border border-stone-100 shadow-sm">
-                                <div className="p-3 rounded-xl bg-[#17cf54]/10">
-                                    <span className="material-symbols-outlined text-[28px] text-[#17cf54]">bar_chart</span>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-muted-foreground">월 평균 예약률</p>
-                                    <p className="text-3xl font-bold text-foreground">{property.occupancyRate}%</p>
+                                <div className="flex flex-col gap-1.5 p-4 rounded-xl bg-stone-50 border border-stone-100 shadow-sm">
+                                    <span className="material-symbols-outlined text-stone-400 text-[20px]">bar_chart</span>
+                                    <p className="text-[10px] uppercase font-bold tracking-wider text-stone-400">Occupancy (90d)</p>
+                                    <p className="text-xl font-bold text-[#4a3b2c]">{property.occupancyRate}<span className="text-sm font-normal text-stone-400 ml-0.5">%</span></p>
                                 </div>
                             </div>
                         </section>
 
                         {/* Amenities */}
                         <section className="space-y-6 pt-8 border-t">
-                            <h2 className="text-2xl font-bold text-foreground">숙소 편의시설</h2>
-                            <div className="grid grid-cols-2 gap-y-4 gap-x-8">
-                                {[
-                                    { icon: "wifi",          label: "무선 인터넷 (WiFi)" },
-                                    { icon: "kitchen",       label: "주방 및 조리도구" },
-                                    { icon: "ac_unit",       label: "시스템 에어컨" },
-                                    { icon: "local_parking", label: "무료 주차공간" },
-                                    { icon: "tv",            label: "스마트 TV (넷플릭스)" },
-                                    { icon: "coffee_maker",  label: "네스프레소 커피머신" },
-                                ].map((item) => (
-                                    <div key={item.label} className="flex items-center gap-3 text-stone-700">
-                                        <span className="material-symbols-outlined text-stone-400 text-[22px]">{item.icon}</span>
-                                        <span className="text-sm font-medium">{item.label}</span>
+                            <h2 className="text-2xl font-bold text-foreground">Amenities</h2>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {property.amenities.map((amenity) => (
+                                    <div
+                                        key={amenity}
+                                        className="flex items-center gap-3 p-4 rounded-xl bg-stone-50 border border-stone-100 shadow-sm text-sm font-semibold text-stone-700"
+                                    >
+                                        <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                                        {amenity}
                                     </div>
                                 ))}
                             </div>
@@ -268,10 +296,16 @@ export default function InvestDetail() {
                         {/* Revenue Chart */}
                         <section className="space-y-4 pt-8 border-t">
                             <div className="flex items-baseline justify-between">
-                                <h2 className="text-2xl font-bold text-foreground">수익 분배 이력</h2>
-                                <span className="text-xs text-muted-foreground">최근 12개월 · token당</span>
+                                <h2 className="text-2xl font-bold text-foreground">
+                                    {property.rawStatus === "active" ? "Revenue Distribution" : "Est. Revenue"}
+                                </h2>
+                                <span className="text-xs text-muted-foreground">
+                                    {property.rawStatus === "active"
+                                        ? "Last 12 months · per 1,000 tokens"
+                                        : "Projected · per 1,000 tokens"}
+                                </span>
                             </div>
-                            <RevenueChart lastDividend={property.lastDividend ?? "없음"} apy={property.apy} />
+                            <RevenueChart apy={property.apy} />
                         </section>
 
                         {/* Map */}
@@ -290,20 +324,7 @@ export default function InvestDetail() {
 
                     {/* ── Right Column ── */}
                     <div className="lg:col-span-1 space-y-4">
-                        <div className="lg:sticky lg:top-24 space-y-4">
-                            <TokenInfoCard
-                                tokenName={property.tokenName}
-                                totalSupply={property.totalSupply}
-                                tokenPrice={property.tokenPrice}
-                                usdcPrice={property.usdcPrice}
-                                valuationKrw={property.valuationKrw}
-                                valuationUsdc={property.valuationUsdc}
-                                holders={property.holders}
-                                soldTokens={property.soldTokens}
-                                fundingProgress={property.fundingProgress}
-                                apy={property.apy}
-                                lastDividend={property.lastDividend}
-                            />
+                        <div className="lg:sticky lg:top-24">
                             <PurchaseCard
                                 listingId={property.id}
                                 tokenMint={property.tokenMint}
@@ -314,6 +335,9 @@ export default function InvestDetail() {
                                 apy={property.apy}
                                 fundingProgress={property.fundingProgress}
                                 availableTokens={property.availableTokens}
+                                holders={property.holders}
+                                soldTokens={property.soldTokens}
+                                fundingDeadlineMs={property.fundingDeadline}
                             />
                         </div>
                     </div>

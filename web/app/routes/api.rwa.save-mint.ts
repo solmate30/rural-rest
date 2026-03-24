@@ -1,8 +1,13 @@
 import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db/index.server";
-import { rwaTokens } from "../db/schema";
+import { listings, rwaTokens } from "../db/schema";
 import { requireUser } from "../lib/auth.server";
+
+// 예상 APY = pricePerNight × 365 × 55% 점유율 × 30% 순수익률 / 감정가
+function calcApyBps(pricePerNight: number, valuationKrw: number): number {
+    return Math.round((pricePerNight * 365 * 0.55 * 0.30) / valuationKrw * 10000);
+}
 
 const PROGRAM_ID = process.env.RWA_PROGRAM_ID ?? "EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR";
 const TOTAL_SUPPLY = 100_000_000;
@@ -28,6 +33,16 @@ export async function action({ request }: { request: Request }) {
 
     const fundingDeadline = new Date(fundingDeadlineTs * 1000);
 
+    const listing = await db
+        .select({ pricePerNight: listings.pricePerNight })
+        .from(listings)
+        .where(eq(listings.id, listingId))
+        .then((r) => r[0]);
+
+    const estimatedApyBps = listing
+        ? calcApyBps(listing.pricePerNight, valuationKrw)
+        : 0;
+
     const existing = await db
         .select({ id: rwaTokens.id })
         .from(rwaTokens)
@@ -43,6 +58,7 @@ export async function action({ request }: { request: Request }) {
                 valuationKrw,
                 pricePerTokenUsdc,
                 minFundingBps,
+                estimatedApyBps,
                 fundingDeadline,
                 status: "funding",
                 updatedAt: new Date(),
@@ -58,7 +74,7 @@ export async function action({ request }: { request: Request }) {
             valuationKrw,
             pricePerTokenUsdc,
             minFundingBps,
-            estimatedApyBps: 0,
+            estimatedApyBps,
             fundingDeadline,
             status: "funding",
             programId: PROGRAM_ID,

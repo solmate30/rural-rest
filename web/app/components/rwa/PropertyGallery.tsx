@@ -12,9 +12,9 @@ export function PropertyGallery({ images, title }: Props) {
     return (
         <>
             <section className="mb-12">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-auto md:h-[450px]">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:h-[450px]">
                     {/* Main Image */}
-                    <div className="md:col-span-3 rounded-2xl overflow-hidden shadow-lg relative group">
+                    <div className="md:col-span-3 rounded-2xl overflow-hidden shadow-lg relative group h-[280px] md:h-full">
                         <img
                             src={images[0]}
                             className="w-full h-full object-cover cursor-pointer transition-transform duration-500 group-hover:scale-105"

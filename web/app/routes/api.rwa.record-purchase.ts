@@ -2,28 +2,32 @@ import { eq, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db/index.server";
 import { rwaInvestments, rwaTokens } from "../db/schema";
-import { requireUser } from "../lib/auth.server";
+import { getSession } from "../lib/auth.server";
 
 interface RecordPurchaseBody {
     rwaTokenId: string;
     tokenAmount: number;
     investedUsdc: number; // micro-USDC
     purchaseTx: string;
+    investorWallet: string; // Solana pubkey
 }
 
 export async function action({ request }: { request: Request }) {
-    const currentUser = await requireUser(request);
-
     const body = await request.json() as RecordPurchaseBody;
-    const { rwaTokenId, tokenAmount, investedUsdc, purchaseTx } = body;
+    const { rwaTokenId, tokenAmount, investedUsdc, purchaseTx, investorWallet } = body;
 
-    if (!rwaTokenId || !tokenAmount || !purchaseTx) {
-        return Response.json({ error: "rwaTokenId, tokenAmount, purchaseTx are required" }, { status: 400 });
+    if (!rwaTokenId || !tokenAmount || !purchaseTx || !investorWallet) {
+        return Response.json({ error: "rwaTokenId, tokenAmount, purchaseTx, investorWallet are required" }, { status: 400 });
     }
+
+    // Better Auth 세션 있으면 userId도 함께 저장, 없으면 wallet 주소를 fallback으로 사용
+    const session = await getSession(request);
+    const userId = session?.user?.id ?? `wallet:${investorWallet}`;
 
     await db.insert(rwaInvestments).values({
         id: uuidv4(),
-        userId: currentUser.id,
+        walletAddress: investorWallet,
+        userId,
         rwaTokenId,
         tokenAmount,
         investedUsdc,
