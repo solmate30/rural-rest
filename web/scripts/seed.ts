@@ -79,7 +79,7 @@ async function seed() {
         .values([
             {
                 id: SPV_IDS.hwangO,
-                name: "SPV-3000 주식회사 (황오동 청송재)",
+                name: "황오동 마을지기",
                 email: "spv-3000@rural-rest.dev",
                 emailVerified: true,
                 role: "host",
@@ -89,7 +89,7 @@ async function seed() {
             },
             {
                 id: SPV_IDS.seongGeon,
-                name: "SPV-3001 주식회사 (성건동 충재댁)",
+                name: "성건동 마을지기",
                 email: "spv-3001@rural-rest.dev",
                 emailVerified: true,
                 role: "host",
@@ -99,7 +99,7 @@ async function seed() {
             },
             {
                 id: SPV_IDS.dongCheon,
-                name: "SPV-3002 주식회사 (동천동 신라숲)",
+                name: "동천동 마을지기",
                 email: "spv-3002@rural-rest.dev",
                 emailVerified: true,
                 role: "host",
@@ -109,7 +109,7 @@ async function seed() {
             },
             {
                 id: SPV_IDS.geonCheon,
-                name: "SPV-3003 주식회사 (건천읍 월성)",
+                name: "건천읍 마을지기",
                 email: "spv-3003@rural-rest.dev",
                 emailVerified: true,
                 role: "host",
@@ -119,7 +119,7 @@ async function seed() {
             },
             {
                 id: SPV_IDS.anGang,
-                name: "SPV-3004 주식회사 (안강읍 석굴재)",
+                name: "안강읍 마을지기",
                 email: "spv-3004@rural-rest.dev",
                 emailVerified: true,
                 role: "host",
@@ -128,7 +128,10 @@ async function seed() {
                 updatedAt: now,
             },
         ])
-        .onConflictDoNothing();
+        .onConflictDoUpdate({
+            target: schema.user.id,
+            set: { name: sql`excluded.name`, updatedAt: sql`excluded.updated_at` },
+        });
 
     console.log("✓ SPV host 계정 5개 삽입");
 
