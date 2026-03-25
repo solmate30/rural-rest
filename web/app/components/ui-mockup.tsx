@@ -142,7 +142,7 @@ export function Header() {
                 </div>
                 <nav className="hidden md:flex items-center gap-6">
                     <a href="/" className="text-sm font-medium hover:text-primary transition-colors">Find a Stay</a>
-                    <a href="/host" className="text-sm font-medium hover:text-primary transition-colors">Host your Home</a>
+                    <a href="/operator" className="text-sm font-medium hover:text-primary transition-colors">Host your Home</a>
                     <a href="/invest" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">Invest (RWA)</a>
                     {isInvestRoute && (
                         <a href="/my-investments" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">My Portfolio</a>

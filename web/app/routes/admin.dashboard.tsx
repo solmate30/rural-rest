@@ -6,6 +6,7 @@ import { db } from "../db/index.server";
 import { listings, rwaTokens, rwaInvestments, user as userTable } from "../db/schema";
 import { sql, eq } from "drizzle-orm";
 import type { Route } from "./+types/admin.dashboard";
+import { AdminNav } from "~/components/admin/AdminNav";
 
 export async function loader({ request }: Route.LoaderArgs) {
     await requireUser(request, ["admin"]);
@@ -43,46 +44,46 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 const statusLabel: Record<string, string> = {
-    funding: "Funding",
-    funded: "Funded",
-    active: "Active",
-    failed: "Failed",
+    funding: "펀딩중",
+    funded: "펀딩 완료",
+    active: "운영중",
+    failed: "펀딩 실패",
 };
 
 const statusColor: Record<string, string> = {
     funding: "bg-[#17cf54]/10 text-[#17cf54] border-[#17cf54]/20",
-    funded: "bg-blue-50 text-blue-600 border-blue-200",
-    active: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    failed: "bg-red-50 text-red-500 border-red-200",
+    funded: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+    active: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+    failed: "bg-red-500/10 text-red-500 border-red-500/20",
 };
 
 export default function AdminDashboard() {
     const { allListings, stats } = useLoaderData<typeof loader>();
 
     const statItems = [
-        { label: "Total Listings", value: stats.totalListings },
-        { label: "Tokenized", value: stats.tokenizedCount },
-        { label: "Total Users", value: stats.totalUsers },
-        { label: "Total Investors", value: stats.totalInvestors },
-        { label: "Total Invested", value: `$${stats.totalInvestedUsdc.toFixed(2)}` },
-        { label: "Funding Now", value: stats.fundingCount },
+        { label: "전체 숙소", value: stats.totalListings },
+        { label: "토큰화 완료", value: stats.tokenizedCount },
+        { label: "전체 가입자", value: stats.totalUsers },
+        { label: "전체 투자자", value: stats.totalInvestors },
+        { label: "총 투자액", value: `$${stats.totalInvestedUsdc.toFixed(2)}` },
+        { label: "펀딩 진행중", value: stats.fundingCount },
     ];
 
     return (
         <div className="min-h-screen bg-[#fcfaf7] font-sans">
             <Header />
-            <main className="container mx-auto pt-24 pb-16 px-4 max-w-6xl">
+            <main className="container mx-auto pt-24 pb-16 px-6 max-w-6xl">
+                <AdminNav />
 
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-[#4a3b2c]">Platform Overview</h1>
-                    <p className="text-sm text-stone-500 mt-1">Rural Rest — Admin</p>
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-[#4a3b2c]">대시보드</h1>
                 </div>
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
                     {statItems.map((s) => (
                         <div key={s.label} className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm">
-                            <p className="text-[10px] uppercase tracking-wider text-stone-400 font-bold mb-1">{s.label}</p>
+                            <p className="text-xs uppercase tracking-wider text-stone-400 font-medium mb-1">{s.label}</p>
                             <p className="text-2xl font-bold text-[#4a3b2c]">{s.value}</p>
                         </div>
                     ))}
@@ -91,17 +92,17 @@ export default function AdminDashboard() {
                 {/* All Listings Table */}
                 <div className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
-                        <h2 className="font-bold text-[#4a3b2c]">All Listings</h2>
-                        <span className="text-sm text-stone-400">{allListings.length} total</span>
+                        <h2 className="font-bold text-[#4a3b2c]">전체 숙소</h2>
+                        <span className="text-sm text-stone-400">총 {allListings.length}개</span>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="text-[11px] uppercase tracking-wider text-stone-400 border-b border-stone-100">
-                                    <th className="py-3 px-6">Property</th>
-                                    <th className="py-3 px-6">Location</th>
-                                    <th className="py-3 px-6">Price/Night</th>
-                                    <th className="py-3 px-6">RWA Status</th>
+                                <tr className="text-xs tracking-wider text-stone-400 border-b border-stone-100">
+                                    <th className="py-3 px-6">숙소명</th>
+                                    <th className="py-3 px-6">위치</th>
+                                    <th className="py-3 px-6">1박 요금</th>
+                                    <th className="py-3 px-6">상태</th>
                                     <th className="py-3 px-6" />
                                 </tr>
                             </thead>
@@ -110,7 +111,7 @@ export default function AdminDashboard() {
                                     <tr key={listing.id} className="hover:bg-stone-50/50 transition-colors">
                                         <td className="py-3.5 px-6">
                                             <div className="flex items-center gap-3">
-                                                <div className="h-10 w-14 rounded-lg overflow-hidden bg-stone-100 shrink-0">
+                                                <div className="w-20 h-14 rounded-xl overflow-hidden bg-stone-100 border border-stone-200/60 shrink-0">
                                                     {listing.image ? (
                                                         <img src={listing.image} alt="" className="w-full h-full object-cover" />
                                                     ) : (
@@ -132,7 +133,7 @@ export default function AdminDashboard() {
                                                     {statusLabel[listing.tokenStatus ?? ""] ?? listing.tokenStatus}
                                                 </span>
                                             ) : (
-                                                <span className="text-xs text-stone-300 font-medium">Not tokenized</span>
+                                                <span className="text-xs text-stone-300 font-medium">토큰화 미진행</span>
                                             )}
                                         </td>
                                         <td className="py-3.5 px-6 text-right">
@@ -140,7 +141,7 @@ export default function AdminDashboard() {
                                                 to={`/invest/${listing.id}`}
                                                 className="text-xs text-stone-500 hover:text-stone-800 font-medium px-3 py-1.5 rounded-lg hover:bg-stone-100 transition-colors"
                                             >
-                                                View →
+                                                상세보기 →
                                             </Link>
                                         </td>
                                     </tr>

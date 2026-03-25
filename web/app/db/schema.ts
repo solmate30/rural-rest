@@ -193,10 +193,11 @@ export const rwaDividends = sqliteTable("rwa_dividends", {
 });
 
 // =====================
-// 마을 운영자 정산
+// 정산 (운영자 / 지자체)
 // =====================
 
-// 월별 운영자 정산 내역 (영업이익의 30% → 마을 운영자, 온체인 지급)
+// 월별 운영자 정산 내역 (영업이익의 30% → 마을 운영자)
+// 어드민이 직접 전송(push)하고 tx 서명을 기록 — 클레임 불필요
 export const operatorSettlements = sqliteTable("operator_settlements", {
     id: text("id").primaryKey(), // UUID v4
     operatorId: text("operator_id").notNull().references(() => user.id),
@@ -206,7 +207,22 @@ export const operatorSettlements = sqliteTable("operator_settlements", {
     operatingCostKrw: integer("operating_cost_krw").notNull().default(0), // 운영비 (청소, 공과금, 소모품 등)
     operatingProfitKrw: integer("operating_profit_krw").notNull(), // 영업이익 = 매출 - 운영비
     settlementUsdc: integer("settlement_usdc").notNull(),    // 운영자 몫 micro-USDC (영업이익 × 30%)
-    claimTx: text("claim_tx"),                               // Solana 트랜잭션 서명 (null = 미수령)
-    claimedAt: integer("claimed_at", { mode: "timestamp" }),
+    payoutTx: text("payout_tx"),                             // Solana 전송 tx 서명 (null = 미전송)
+    paidAt: integer("paid_at", { mode: "timestamp" }),       // 자동 지급 시각
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+});
+
+// 월별 지자체 분배 내역 (영업이익의 40% → 지자체 고정 지갑)
+// 어드민이 고정 지갑으로 직접 전송(push) — 클레임 불필요
+export const localGovSettlements = sqliteTable("local_gov_settlements", {
+    id: text("id").primaryKey(), // UUID v4
+    listingId: text("listing_id").notNull().references(() => listings.id),
+    month: text("month").notNull(),                           // "2026-03" 형식
+    grossRevenueKrw: integer("gross_revenue_krw").notNull(),
+    operatingProfitKrw: integer("operating_profit_krw").notNull(),
+    settlementUsdc: integer("settlement_usdc").notNull(),     // 지자체 몫 micro-USDC (영업이익 × 40%)
+    govWalletAddress: text("gov_wallet_address"),             // 지자체 수령 지갑 (환경변수로 관리)
+    payoutTx: text("payout_tx"),                             // Solana 전송 tx 서명
+    paidAt: integer("paid_at", { mode: "timestamp" }),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });
