@@ -11,6 +11,9 @@ export const user = sqliteTable("user", {
     preferredLang: text("preferred_lang").notNull().default("en"),
     walletAddress: text("wallet_address"), // Solana 지갑 주소
     walletConnectedAt: text("wallet_connected_at"), // 지갑 연결 시간
+    kycVerified: integer("kyc_verified", { mode: "boolean" }).notNull().default(false),
+    kycVerifiedAt: text("kyc_verified_at"),
+    walletNonce: text("wallet_nonce"), // SIWS 서명 챌린지용 일회성 nonce
     createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });

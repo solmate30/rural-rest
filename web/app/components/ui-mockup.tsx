@@ -152,17 +152,26 @@ export function Header() {
                     {isInvestRoute ? (
                         mounted && (
                             <div className="ml-2 pl-6 border-l border-border h-10 flex items-center">
-                                {isKycCompleted ? (
-                                    <WalletMultiButton className="!bg-[#17cf54] !text-white !border-none hover:!bg-[#14b847] !shadow-sm !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />
-                                ) : (
+                                {!session ? (
                                     <Button
                                         variant="outline"
-                                        className="h-10 text-xs font-bold gap-1 text-stone-500 hover:text-stone-700 hover:border-stone-400 border-dashed"
-                                        onClick={() => session ? navigate("/kyc") : navigate("/auth")}
+                                        className="h-10 text-xs font-bold gap-1 text-stone-500 hover:text-stone-700 hover:border-stone-400"
+                                        onClick={() => navigate(`/auth?return=${location.pathname}`)}
                                     >
-                                        <span className="material-symbols-outlined text-[16px]">lock</span>
-                                        실명 인증 필요
+                                        <span className="material-symbols-outlined text-[16px]">login</span>
+                                        로그인
                                     </Button>
+                                ) : !isKycCompleted ? (
+                                    <Button
+                                        variant="outline"
+                                        className="h-10 text-xs font-bold gap-1 text-amber-600 hover:text-amber-700 border-amber-300 hover:border-amber-400 hover:bg-amber-50"
+                                        onClick={() => navigate(`/kyc?return=${location.pathname}`)}
+                                    >
+                                        <span className="material-symbols-outlined text-[16px]">badge</span>
+                                        실명인증 하기
+                                    </Button>
+                                ) : (
+                                    <WalletMultiButton className="!bg-[#17cf54] !text-white !border-none hover:!bg-[#14b847] !shadow-sm !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />
                                 )}
                             </div>
                         )
