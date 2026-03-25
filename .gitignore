@@ -46,4 +46,5 @@ yarn-error.log*
 .drizzle/
 
 stitch.json
-web/stitch_*.html
+web/stitch_*.htmlweb/test-ledger/
+web/scripts/investor-keypair.json
