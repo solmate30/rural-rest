@@ -34,14 +34,18 @@ export default function RwaWalletProvider({ children }: { children: React.ReactN
     const network = (import.meta.env.VITE_SOLANA_NETWORK as WalletAdapterNetwork)
         ?? WalletAdapterNetwork.Devnet;
 
-    const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+    const endpoint = useMemo(
+        () => import.meta.env.VITE_SOLANA_RPC ?? clusterApiUrl(network),
+        [network]
+    );
 
-    const wallets = useMemo(() => [new SolflareWalletAdapter()], []);
+    // SSR/first-render: pass empty wallets to avoid adapter DOM init before hydration
+    const wallets = useMemo(
+        () => isClient ? [new SolflareWalletAdapter()] : [],
+        [isClient]
+    );
 
-    if (!isClient) {
-        return <>{children}</>;
-    }
-
+    // Always render providers so useWallet()/useConnection() have context on every render
     return (
         <ConnectionProvider endpoint={endpoint}>
             <WalletProvider wallets={wallets} autoConnect>

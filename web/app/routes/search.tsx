@@ -2,32 +2,66 @@ import { Header, Button, Card, Badge, Slider, Footer } from "~/components/ui-moc
 import { useState, useMemo } from "react";
 import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import type { Route } from "./+types/search";
-import { mockListings } from "~/data/listings";
+import { db } from "~/db/index.server";
+import { listings } from "~/db/schema";
+import { and, lte, like, sql } from "drizzle-orm";
 
 const ITEMS_PER_PAGE = 12;
 
 const locations = [
-    { name: "서울 근처", value: "seoul-suburbs" },
-    { name: "부산 근처", value: "busan-suburbs" },
-    { name: "경주 근처", value: "gyeongju" },
-    { name: "인천 근처", value: "incheon" },
-    { name: "제주도", value: "jeju" },
+    { name: "서울 근처", value: "seoul-suburbs", keyword: "서울" },
+    { name: "부산 근처", value: "busan-suburbs", keyword: "부산" },
+    { name: "경주 근처", value: "gyeongju", keyword: "경주" },
+    { name: "인천 근처", value: "incheon", keyword: "인천" },
+    { name: "제주도", value: "jeju", keyword: "제주" },
 ];
+
+function toCityLabel(location: string): string {
+    const m = location.match(/([가-힣]+)시/);
+    return m ? `${m[1]} 근처` : location;
+}
 
 export async function loader({ request }: Route.LoaderArgs) {
     const url = new URL(request.url);
     const location = url.searchParams.get("location");
     const maxPrice = Number(url.searchParams.get("maxPrice")) || 500000;
 
-    const filtered = mockListings.filter((listing) => {
-        const matchesLocation = !location || listing.location === location;
-        const matchesPrice = listing.pricePerNight <= maxPrice;
-        return matchesLocation && matchesPrice;
-    });
+    const keyword = location
+        ? (locations.find((l) => l.value === location)?.keyword ?? location)
+        : null;
+
+    const conditions = [lte(listings.pricePerNight, maxPrice)];
+    if (keyword) {
+        conditions.push(like(listings.location, `%${keyword}%`));
+    }
+
+    const rows = await db
+        .select({
+            id: listings.id,
+            title: listings.title,
+            description: listings.description,
+            location: listings.location,
+            pricePerNight: listings.pricePerNight,
+            maxGuests: listings.maxGuests,
+            images: listings.images,
+        })
+        .from(listings)
+        .where(and(...conditions));
+
+    const result = rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        locationLabel: toCityLabel(row.location),
+        pricePerNight: row.pricePerNight,
+        maxGuests: row.maxGuests,
+        image: (row.images as string[])[0] ?? "/house.png",
+        rating: null as number | null,
+    }));
 
     return {
-        listings: filtered,
-        totalCount: filtered.length,
+        listings: result,
+        totalCount: result.length,
         filters: { location, maxPrice },
     };
 }
@@ -156,7 +190,9 @@ export default function SearchResults() {
                                             <span className="text-xs font-bold text-primary tracking-widest uppercase">
                                                 {listing.locationLabel}
                                             </span>
-                                            <span className="text-sm font-medium">★ {listing.rating}</span>
+                                            {listing.rating != null && (
+                                                <span className="text-sm font-medium">★ {listing.rating}</span>
+                                            )}
                                         </div>
                                         <h3 className="text-xl font-bold mb-2">{listing.title}</h3>
                                         <p className="text-muted-foreground text-sm line-clamp-2 mb-4">

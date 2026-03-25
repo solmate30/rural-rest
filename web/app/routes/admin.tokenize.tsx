@@ -6,6 +6,8 @@ import { db } from "../db/index.server";
 import { listings, rwaTokens } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { InitializePropertyButton } from "~/components/rwa/InitializePropertyButton";
+import { ActivateButton } from "~/components/rwa/ActivateButton";
+import { StatusBadge } from "~/components/rwa/StatusBadge";
 import type { Route } from "./+types/admin.tokenize";
 
 const TOTAL_SUPPLY = 100_000_000;
@@ -31,7 +33,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     if (!listingRow) throw new Response("Not Found", { status: 404 });
 
     const [tokenRow] = await db
-        .select({ tokenMint: rwaTokens.tokenMint })
+        .select({
+            tokenMint: rwaTokens.tokenMint,
+            status: rwaTokens.status,
+            id: rwaTokens.id,
+        })
         .from(rwaTokens)
         .where(eq(rwaTokens.listingId, listingId));
 
@@ -45,6 +51,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
             valuationKrw: listingRow.valuationKrw ?? 0,
         },
         tokenMint: tokenRow?.tokenMint ?? null,
+        tokenStatus: tokenRow?.status ?? null,
+        rwaTokenId: tokenRow?.id ?? null,
     };
 }
 
@@ -62,7 +70,7 @@ function formatKrw(won: number): string {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminTokenize() {
-    const { listing, tokenMint } = useLoaderData() as Awaited<ReturnType<typeof loader>>;
+    const { listing, tokenMint, tokenStatus, rwaTokenId } = useLoaderData() as Awaited<ReturnType<typeof loader>>;
     const valuationKrw = listing.valuationKrw;
 
     const { minDate, maxDate } = useMemo(() => {
@@ -96,7 +104,7 @@ export default function AdminTokenize() {
             <div className="min-h-screen bg-stone-50/50">
                 <Header />
                 <main className="container mx-auto py-12 px-4 max-w-3xl">
-                    <Link to="/host" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-8">
+                    <Link to="/admin" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-8">
                         ← 대시보드로
                     </Link>
                     <div className="flex items-center gap-5 mb-10">
@@ -112,9 +120,7 @@ export default function AdminTokenize() {
                         </div>
                     </div>
                     <Card className="p-8 bg-white border-none shadow-sm text-center space-y-4">
-                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#17cf54]/10 text-[#17cf54] font-bold text-sm border border-[#17cf54]/20">
-                            토큰 발행 완료
-                        </span>
+                        <StatusBadge status={tokenStatus ?? "funding"} />
                         <p className="text-sm font-medium">Token Mint 주소</p>
                         <p className="text-xs font-mono text-muted-foreground break-all bg-stone-50 p-3 rounded-xl">
                             {tokenMint}
@@ -127,6 +133,14 @@ export default function AdminTokenize() {
                         >
                             Solana Explorer에서 보기 →
                         </a>
+                        {tokenStatus === "funded" && rwaTokenId && (
+                            <div className="pt-2 border-t border-stone-100">
+                                <p className="text-xs text-muted-foreground mb-3">
+                                    펀딩 목표 달성. 운영을 시작하면 투자자 배당이 활성화됩니다.
+                                </p>
+                                <ActivateButton rwaTokenId={rwaTokenId} />
+                            </div>
+                        )}
                     </Card>
                 </main>
             </div>

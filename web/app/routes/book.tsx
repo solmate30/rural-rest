@@ -6,14 +6,6 @@ import { db } from "~/db/index.server";
 import { listings } from "~/db/schema";
 import { eq } from "drizzle-orm";
 
-// TODO: reviews 테이블 집계로 교체
-const TEMP_RATINGS: Record<string, number> = {
-    "gyeongju-3000": 4.8,
-    "gyeongju-3001": 4.9,
-    "gyeongju-3002": 4.7,
-    "gyeongju-3003": 4.6,
-    "gyeongju-3004": 4.8,
-};
 
 function toCityLabel(location: string): string {
     const m = location.match(/([가-힣]+)시/);
@@ -44,7 +36,7 @@ async function getListingById(id: string | undefined) {
         maxGuests: row.maxGuests,
         image: images[0] ?? "/house.png",
         locationLabel: toCityLabel(row.location),
-        rating: TEMP_RATINGS[row.id] ?? null,
+        rating: null as number | null,
         reviews: [] as { id: string }[],
         pickupPoints: [] as { id: string; name: string; description: string; estimatedTimeToProperty: string }[],
     };

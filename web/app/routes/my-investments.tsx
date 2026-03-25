@@ -25,7 +25,7 @@ const EMPTY = {
 };
 
 function buildOwnedTokens(
-    investmentRows: { rwaTokenId: string; tokenAmount: number; investedUsdc: number; pricePerTokenUsdc: number; estimatedApyBps: number; listingId: string; listingTitle: string }[],
+    investmentRows: { rwaTokenId: string; tokenAmount: number; investedUsdc: number; pricePerTokenUsdc: number; estimatedApyBps: number; listingId: string; listingTitle: string; tokenMint: string }[],
     pendingByToken: Map<string, number>
 ) {
     const tokenMap = new Map<string, typeof investmentRows[0] & { totalTokenAmount: number; totalInvestedMicro: number }>();
@@ -43,6 +43,8 @@ function buildOwnedTokens(
         const dividendAmountUsdc = pendingMicro / 1_000_000;
         return {
             id: row.listingId,
+            rwaTokenId: row.rwaTokenId,
+            tokenMint: row.tokenMint,
             propertyName: row.listingTitle,
             tokenName: `RWA-${row.listingId.slice(-4).toUpperCase()}`,
             tokensOwned: row.totalTokenAmount,
@@ -80,6 +82,7 @@ export async function loader({ request }: Route.LoaderArgs) {
             investedUsdc: rwaInvestments.investedUsdc,
             pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc,
             estimatedApyBps: rwaTokens.estimatedApyBps,
+            tokenMint: rwaTokens.tokenMint,
             listingId: listings.id,
             listingTitle: listings.title,
         })
@@ -110,18 +113,22 @@ export async function loader({ request }: Route.LoaderArgs) {
         }
     }
 
-    const ownedTokens = buildOwnedTokens(investmentRows, pendingByToken);
-
     const totalInvestedUsdc = investmentRows.reduce((sum, r) => sum + r.investedUsdc, 0) / 1_000_000;
     const totalDividendsUsdc = dividendRows.reduce((sum, r) => sum + r.dividendUsdc, 0) / 1_000_000;
     const avgApy = investmentRows.length > 0
         ? investmentRows.reduce((sum, r) => sum + r.estimatedApyBps, 0) / investmentRows.length / 100
         : 0;
 
+    const ownedTokens = buildOwnedTokens(
+        investmentRows.map(r => ({ ...r, tokenMint: r.tokenMint ?? "" })),
+        pendingByToken
+    );
+    const currentValueUsdc = ownedTokens.reduce((sum, t) => sum + t.totalValue, 0);
+
     return {
         portfolioSummary: {
             totalInvested: Math.round(totalInvestedUsdc * 100) / 100,
-            currentValue: Math.round(totalInvestedUsdc * 100) / 100,
+            currentValue: Math.round(currentValueUsdc * 100) / 100,
             yieldPercent: Math.round(avgApy * 10) / 10,
             totalDividends: Math.round(totalDividendsUsdc * 100) / 100,
         },
@@ -180,7 +187,7 @@ export default function MyInvestmentsRoute() {
                                 </div>
                                 <span className="text-sm text-stone-400">{ownedTokens.length} assets</span>
                             </div>
-                            <HoldingsTable holdings={ownedTokens} />
+                            <HoldingsTable holdings={ownedTokens} walletAddress={walletParam ?? ""} />
                         </section>
 
                         <section>

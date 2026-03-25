@@ -1,4 +1,4 @@
-import { Wallet, Sparkles } from "lucide-react";
+import { ClaimButton } from "./ClaimButton";
 
 const KRW_PER_USDC = 1350;
 
@@ -15,20 +15,23 @@ function fmtKrw(v: number) {
 }
 
 interface Holding {
-    id: string;
+    id: string;          // listingId
+    rwaTokenId: string;
+    tokenMint: string;
     propertyName: string;
     tokenName: string;
     tokensOwned: number;
-    totalValue: number; // USDC
+    totalValue: number;  // USDC
     dividendStatus: "claimed" | "pending";
     dividendAmount: number; // USDC
 }
 
 interface Props {
     holdings: Holding[];
+    walletAddress: string;
 }
 
-export function HoldingsTable({ holdings }: Props) {
+export function HoldingsTable({ holdings, walletAddress }: Props) {
     if (holdings.length === 0) {
         return (
             <div className="py-16 text-center bg-stone-50 rounded-2xl border border-dashed border-stone-200">
@@ -49,8 +52,8 @@ export function HoldingsTable({ holdings }: Props) {
                             <th className="py-3.5 px-5">Property</th>
                             <th className="py-3.5 px-5">Token</th>
                             <th className="py-3.5 px-5 text-right">Holdings</th>
-                            <th className="py-3.5 px-5 text-right">Invested</th>
                             <th className="py-3.5 px-5 text-right">Value</th>
+                            <th className="py-3.5 px-5 text-right">Pending Dividend</th>
                             <th className="py-3.5 px-5" />
                         </tr>
                     </thead>
@@ -71,18 +74,21 @@ export function HoldingsTable({ holdings }: Props) {
                                     <p className="text-xs text-stone-400">{fmtKrw(h.totalValue * KRW_PER_USDC)}</p>
                                 </td>
                                 <td className="py-4 px-5 text-right text-sm">
-                                    <p className="font-semibold text-stone-800">{fmtUsdc(h.totalValue)}</p>
-                                    <p className="text-xs text-stone-400">{fmtKrw(h.totalValue * KRW_PER_USDC)}</p>
+                                    {h.dividendStatus === "pending" ? (
+                                        <p className="font-semibold text-amber-600">{fmtUsdc(h.dividendAmount)}</p>
+                                    ) : (
+                                        <span className="text-xs text-stone-300">—</span>
+                                    )}
                                 </td>
                                 <td className="py-4 px-5 text-right">
                                     {h.dividendStatus === "pending" ? (
-                                        <button
-                                            onClick={() => alert("배당금(USDC) 수령 트랜잭션이 시작됩니다.")}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#17cf54] text-white text-xs font-bold hover:bg-[#14b847] transition-colors"
-                                        >
-                                            <Sparkles className="w-3 h-3" />
-                                            Claim
-                                        </button>
+                                        <ClaimButton
+                                            listingId={h.id}
+                                            rwaTokenId={h.rwaTokenId}
+                                            tokenMint={h.tokenMint}
+                                            walletAddress={walletAddress}
+                                            onClaimed={() => window.location.reload()}
+                                        />
                                     ) : (
                                         <span className="text-xs text-stone-300">—</span>
                                     )}

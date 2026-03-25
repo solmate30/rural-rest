@@ -7,6 +7,7 @@ import { useKyc } from "~/components/KycProvider";
 import { db } from "~/db/index.server";
 import { listings, rwaTokens } from "~/db/schema";
 import { eq } from "drizzle-orm";
+import { syncFundingStatuses } from "~/lib/rwa.server";
 
 // TODO: 추후 Pyth oracle로 교체
 const KRW_PER_USDC = 1350;
@@ -39,12 +40,14 @@ function statusToEnglish(status: string): string {
         case "funding": return "Funding";
         case "funded":  return "Funded";
         case "active":  return "Active";
-        case "failed":  return "Failed";
+        case "failed":  return "모집 종료";
         default:        return status;
     }
 }
 
 export async function loader() {
+    await syncFundingStatuses();
+
     const rows = await db
         .select({
             id: listings.id,
@@ -80,6 +83,8 @@ export async function loader() {
                 valuationKrw: 0,
                 valuationUsdc: 0,
                 fundingProgress: 0,
+                tokensSold: 0,
+                totalSupply: 0,
                 raised: "—",
                 remaining: "—",
                 raisedUsdc: 0,

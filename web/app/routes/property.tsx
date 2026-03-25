@@ -45,23 +45,6 @@ function TransportIcon({ mode }: { mode: TransportMode }) {
     }
 }
 
-// TODO: reviews 테이블 집계로 교체
-const TEMP_RATINGS: Record<string, number> = {
-    "gyeongju-3000": 4.8,
-    "gyeongju-3001": 4.9,
-    "gyeongju-3002": 4.7,
-    "gyeongju-3003": 4.6,
-    "gyeongju-3004": 4.8,
-};
-
-// TODO: user 테이블에 bio 컬럼 추가 후 제거
-const TEMP_HOST_BIOS: Record<string, string> = {
-    "seed-spv-3000-hwango": "황오동 골목을 직접 관리·운영하고 있습니다. 비어있던 이 공간에 다시 온기를 불어넣어, 방문하는 분들께 경주 구도심의 진짜 일상을 전하고 싶어요.",
-    "seed-spv-3001-seonggon": "성건동 마을 주민들이 함께 관리하는 공간입니다. 첨성대 가까운 골목에서 한옥의 따뜻함을 나눠요.",
-    "seed-spv-3002-dongcheon": "동천동 주민들이 직접 운영하는 쉼터입니다. 느린 여행을 원하는 분들께 경주의 또 다른 얼굴을 보여드려요.",
-    "seed-spv-3003-geoncheon": "건천읍 마을 주민들이 함께 꾸리고 있는 농가주택입니다. 들녘 가까운 조용한 시골 일상을 나눠요.",
-    "seed-spv-3004-angang": "안강읍 마을에서 직접 관리·운영하고 있습니다. 제철 농산물로 차린 시골 밥상과 함께 느린 하루를 선물해드려요.",
-};
 
 export async function loader({ params }: Route.LoaderArgs) {
     const row = await db
@@ -105,11 +88,11 @@ export async function loader({ params }: Route.LoaderArgs) {
         amenities: row.amenities as string[],
         images,
         image: images[0] ?? "/house.png",
-        rating: TEMP_RATINGS[row.id] ?? null,
+        rating: null as number | null,
         reviews: [] as { id: string; authorName: string; authorImage: string; rating: number; comment: string; date: string }[],
         hostName: hostUser?.name ?? "SPV 운영사",
         hostImage: `https://api.dicebear.com/7.x/notionists/svg?seed=${row.hostId}&backgroundColor=e2e8f0`,
-        hostBio: TEMP_HOST_BIOS[row.hostId] ?? null,
+        hostBio: null as string | null,
         coordinates: { lat: row.lat ?? 35.8394, lng: row.lng ?? 129.2917 },
         nearbyLandmarks: [] as string[],
         transportOptions: [] as { mode: TransportMode; label: string; routeName: string; estimatedTime: string; estimatedCost: string; description: string }[],
