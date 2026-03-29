@@ -1,7 +1,8 @@
 import { DateTime } from "luxon";
 import { eq, and, inArray, sql, desc } from "drizzle-orm";
 import { db } from "../db/index.server";
-import { listings, bookings, rwaTokens } from "../db/schema";
+import { listings, bookings, rwaTokens, user as userTable, operatorSettlements } from "../db/schema";
+import { fetchPropertiesOnchain } from "./rwa.onchain.server";
 
 export interface DashboardStats {
     totalRevenueThisMonth: number;
@@ -17,8 +18,16 @@ export interface HostListingRow {
     location: string;
     pricePerNight: number;
     image: string;
-    tokenStatus: string | null; // null = 미발행
+    tokenStatus: string | null;
     tokenMint: string | null;
+    rwaTokenId: string | null;
+    operatorId: string | null;
+    valuationKrw: number;
+    tokensSold: number;
+    totalSupply: number;
+    fundingDeadline: string | null;
+    minFundingBps: number;
+    pricePerTokenUsdc: number;
 }
 
 /**
@@ -140,8 +149,16 @@ export async function getHostListings(hostId: string, role: string): Promise<Hos
             location: listings.location,
             pricePerNight: listings.pricePerNight,
             images: listings.images,
+            operatorId: listings.operatorId,
+            valuationKrw: listings.valuationKrw,
             tokenStatus: rwaTokens.status,
             tokenMint: rwaTokens.tokenMint,
+            rwaTokenId: rwaTokens.id,
+            tokensSold: rwaTokens.tokensSold,
+            totalSupply: rwaTokens.totalSupply,
+            fundingDeadline: rwaTokens.fundingDeadline,
+            minFundingBps: rwaTokens.minFundingBps,
+            pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc,
         })
         .from(listings)
         .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
@@ -151,17 +168,181 @@ export async function getHostListings(hostId: string, role: string): Promise<Hos
             desc(listings.createdAt)
         );
 
+    const initializedIds = rows.filter(r => r.tokenMint).map(r => r.id);
+    const onchainMap = await fetchPropertiesOnchain(initializedIds);
+
     return rows.map((r) => {
         const imgs = r.images as string[] | null;
         const image = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : "";
+        const onchain = onchainMap.get(r.id);
         return {
             id: r.id,
             title: r.title,
             location: r.location,
             pricePerNight: r.pricePerNight,
             image,
-            tokenStatus: r.tokenStatus ?? null,
+            operatorId: r.operatorId ?? null,
+            valuationKrw: r.valuationKrw ?? 0,
+            tokenStatus: onchain?.status ?? r.tokenStatus ?? null,
             tokenMint: r.tokenMint ?? null,
+            rwaTokenId: r.rwaTokenId ?? null,
+            tokensSold: onchain?.tokensSold ?? r.tokensSold ?? 0,
+            totalSupply: r.totalSupply ?? 0,
+            fundingDeadline: r.fundingDeadline ? new Date(r.fundingDeadline).toISOString() : null,
+            minFundingBps: r.minFundingBps ?? 6000,
+            pricePerTokenUsdc: r.pricePerTokenUsdc ?? 0,
         };
     });
+}
+
+export interface OperatorBookingRow {
+    id: string;
+    listingId: string;
+    listingTitle: string;
+    guestName: string;
+    checkIn: Date;
+    checkOut: Date;
+    totalPrice: number;
+    status: string;
+}
+
+/** operator가 담당하는 매물 목록 (operatorId 기준) */
+export async function getOperatorListings(operatorId: string): Promise<HostListingRow[]> {
+    const rows = await db
+        .select({
+            id: listings.id,
+            title: listings.title,
+            location: listings.location,
+            pricePerNight: listings.pricePerNight,
+            images: listings.images,
+            operatorId: listings.operatorId,
+            valuationKrw: listings.valuationKrw,
+            tokenStatus: rwaTokens.status,
+            tokenMint: rwaTokens.tokenMint,
+            rwaTokenId: rwaTokens.id,
+            tokensSold: rwaTokens.tokensSold,
+            totalSupply: rwaTokens.totalSupply,
+            fundingDeadline: rwaTokens.fundingDeadline,
+            minFundingBps: rwaTokens.minFundingBps,
+            pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc,
+        })
+        .from(listings)
+        .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
+        .where(eq(listings.operatorId, operatorId))
+        .orderBy(desc(listings.createdAt));
+
+    const initializedIds = rows.filter(r => r.tokenMint).map(r => r.id);
+    const onchainMap = await fetchPropertiesOnchain(initializedIds);
+
+    return rows.map((r) => {
+        const imgs = r.images as string[] | null;
+        const image = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : "";
+        const onchain = onchainMap.get(r.id);
+        return {
+            id: r.id,
+            title: r.title,
+            location: r.location,
+            pricePerNight: r.pricePerNight,
+            image,
+            operatorId: r.operatorId ?? null,
+            valuationKrw: r.valuationKrw ?? 0,
+            tokenStatus: onchain?.status ?? r.tokenStatus ?? null,
+            tokenMint: r.tokenMint ?? null,
+            rwaTokenId: r.rwaTokenId ?? null,
+            tokensSold: onchain?.tokensSold ?? r.tokensSold ?? 0,
+            totalSupply: r.totalSupply ?? 0,
+            fundingDeadline: r.fundingDeadline ? new Date(r.fundingDeadline).toISOString() : null,
+            minFundingBps: r.minFundingBps ?? 6000,
+            pricePerTokenUsdc: r.pricePerTokenUsdc ?? 0,
+        };
+    });
+}
+
+/** operator 담당 매물의 예약 목록 (pending + 오늘 이후 confirmed) */
+export async function getOperatorBookings(operatorId: string): Promise<OperatorBookingRow[]> {
+    const operatorListings = await db
+        .select({ id: listings.id, title: listings.title })
+        .from(listings)
+        .where(eq(listings.operatorId, operatorId));
+
+    if (operatorListings.length === 0) return [];
+
+    const listingIds = operatorListings.map((l) => l.id);
+    const titleMap = Object.fromEntries(operatorListings.map((l) => [l.id, l.title]));
+
+    const now = DateTime.now().startOf("day").toUnixInteger();
+
+    const rows = await db
+        .select({
+            id: bookings.id,
+            listingId: bookings.listingId,
+            guestName: userTable.name,
+            checkIn: bookings.checkIn,
+            checkOut: bookings.checkOut,
+            totalPrice: bookings.totalPrice,
+            status: bookings.status,
+        })
+        .from(bookings)
+        .innerJoin(userTable, eq(bookings.guestId, userTable.id))
+        .where(
+            and(
+                inArray(bookings.listingId, listingIds),
+                sql`(${bookings.status} = 'pending' OR (${bookings.status} = 'confirmed' AND ${bookings.checkIn} >= ${now}))`,
+            )
+        )
+        .orderBy(bookings.checkIn);
+
+    return rows.map((r) => ({
+        id: r.id,
+        listingId: r.listingId,
+        listingTitle: titleMap[r.listingId] ?? "",
+        guestName: r.guestName,
+        checkIn: r.checkIn,
+        checkOut: r.checkOut,
+        totalPrice: r.totalPrice,
+        status: r.status,
+    }));
+}
+
+export interface OperatorSettlementRow {
+    id: string;
+    listingId: string;
+    listingTitle: string;
+    month: string;
+    grossRevenueKrw: number;
+    operatingProfitKrw: number;
+    settlementUsdc: number;
+    payoutTx: string | null; // 어드민 push tx 서명 (null = 미전송)
+}
+
+/** operator 정산 내역 */
+export async function getOperatorSettlements(operatorId: string): Promise<OperatorSettlementRow[]> {
+    const opListings = await db
+        .select({ id: listings.id, title: listings.title })
+        .from(listings)
+        .where(eq(listings.operatorId, operatorId));
+
+    if (opListings.length === 0) return [];
+
+    const titleMap = Object.fromEntries(opListings.map((l) => [l.id, l.title]));
+    const listingIds = opListings.map((l) => l.id);
+
+    const rows = await db
+        .select({
+            id: operatorSettlements.id,
+            listingId: operatorSettlements.listingId,
+            month: operatorSettlements.month,
+            grossRevenueKrw: operatorSettlements.grossRevenueKrw,
+            operatingProfitKrw: operatorSettlements.operatingProfitKrw,
+            settlementUsdc: operatorSettlements.settlementUsdc,
+            payoutTx: operatorSettlements.payoutTx,
+        })
+        .from(operatorSettlements)
+        .where(inArray(operatorSettlements.listingId, listingIds))
+        .orderBy(desc(operatorSettlements.month));
+
+    return rows.map((r) => ({
+        ...r,
+        listingTitle: titleMap[r.listingId] ?? "",
+    }));
 }

@@ -4,6 +4,7 @@ import { authClient } from "~/lib/auth.client";
 import { cn } from "~/lib/utils";
 import { useToast } from "~/hooks/use-toast";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useLocation, useNavigate } from "react-router";
 import { useKyc } from "./KycProvider";
 
@@ -116,9 +117,11 @@ export function Header() {
     const location = useLocation();
     const navigate = useNavigate();
     const { isKycCompleted } = useKyc();
+    const { disconnect } = useWallet();
     const isInvestRoute = location.pathname.startsWith('/invest') || location.pathname.startsWith('/my-investments');
 
     const handleSignOut = async () => {
+        await disconnect().catch(() => {});
         await authClient.signOut();
         toast({
             title: "로그아웃되었습니다",
@@ -142,7 +145,7 @@ export function Header() {
                 </div>
                 <nav className="hidden md:flex items-center gap-6">
                     <a href="/" className="text-sm font-medium hover:text-primary transition-colors">Find a Stay</a>
-                    <a href="/host" className="text-sm font-medium hover:text-primary transition-colors">Host your Home</a>
+                    <a href="/operator" className="text-sm font-medium hover:text-primary transition-colors">Host your Home</a>
                     <a href="/invest" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">Invest (RWA)</a>
                     {isInvestRoute && (
                         <a href="/my-investments" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">My Portfolio</a>
@@ -152,17 +155,24 @@ export function Header() {
                     {isInvestRoute ? (
                         mounted && (
                             <div className="ml-2 pl-6 border-l border-border h-10 flex items-center">
-                                {isKycCompleted ? (
-                                    <WalletMultiButton className="!bg-[#17cf54] !text-white !border-none hover:!bg-[#14b847] !shadow-sm !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />
-                                ) : (
+                                {!session ? (
                                     <Button
                                         variant="outline"
-                                        className="h-10 text-xs font-bold gap-1 text-stone-500 hover:text-stone-700 hover:border-stone-400 border-dashed"
-                                        onClick={() => session ? navigate("/kyc") : navigate("/auth")}
+                                        className="ml-4"
+                                        onClick={() => navigate(`/auth?return=${location.pathname}`)}
                                     >
-                                        <span className="material-symbols-outlined text-[16px]">lock</span>
-                                        실명 인증 필요
+                                        Login
                                     </Button>
+                                ) : !isKycCompleted ? (
+                                    <Button
+                                        variant="outline"
+                                        className="h-10 text-xs font-bold gap-1 text-amber-600 hover:text-amber-700 border-amber-300 hover:border-amber-400 hover:bg-amber-50"
+                                        onClick={() => navigate(`/kyc?return=${location.pathname}`)}
+                                    >
+                                        Verify KYC
+                                    </Button>
+                                ) : (
+                                    <WalletMultiButton className="!bg-[#17cf54] !text-white !border-none hover:!bg-[#14b847] !shadow-sm !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />
                                 )}
                             </div>
                         )
@@ -188,7 +198,7 @@ export function Header() {
                                         )}
                                         <span className="text-sm font-semibold text-foreground/80">{session.user.name}님</span>
                                     </div>
-                                    <Button variant="outline" onClick={handleSignOut} className="h-9 px-4 text-xs font-bold">로그아웃</Button>
+                                    <Button variant="outline" onClick={handleSignOut} className="h-9 px-4 text-xs font-bold">Logout</Button>
                                 </div>
                             ) : (
                                 <Button variant="outline" className="ml-4" onClick={() => window.location.href = '/auth'}>Login</Button>

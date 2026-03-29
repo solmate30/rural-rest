@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Card, Input } from "~/components/ui-mockup";
+import { Button } from "~/components/ui/button";
 import { useToast } from "~/hooks/use-toast";
 import { useKyc } from "~/components/KycProvider";
 
@@ -25,15 +26,9 @@ function useCountdown(deadlineMs: number) {
     return t;
 }
 
-const PROGRAM_ID_STR = import.meta.env.VITE_RWA_PROGRAM_ID ?? "EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR";
-const USDC_MINT_STR = import.meta.env.VITE_USDC_MINT ?? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
-
-function fmtUsdc(usdc: number): string {
-    if (usdc === 0) return "0 USDC";
-    if (usdc >= 0.01) return `${usdc.toFixed(2)} USDC`;
-    if (usdc >= 0.0001) return `${usdc.toFixed(4)} USDC`;
-    return `${usdc.toFixed(6)} USDC`;
-}
+import { PROGRAM_ID, USDC_MINT } from "~/lib/constants";
+import { getProgram, derivePdas, parseAnchorError } from "~/lib/anchor-client";
+import { fmtUsdc } from "~/lib/formatters";
 
 interface Props {
     listingId: string;
@@ -45,6 +40,7 @@ interface Props {
     apy: number;
     fundingProgress: number;
     availableTokens: number;
+    totalSupply: number;
     holders: number;
     soldTokens: number;
     fundingDeadlineMs: number;
@@ -53,7 +49,7 @@ interface Props {
 export function PurchaseCard({
     listingId, tokenMint, tokenId,
     tokenName, tokenPrice, usdcPrice, apy, fundingProgress, availableTokens,
-    holders, soldTokens, fundingDeadlineMs,
+    totalSupply, holders, soldTokens, fundingDeadlineMs,
 }: Props) {
     const walletCtx = useWallet();
     const { connected, publicKey } = walletCtx;
@@ -61,7 +57,10 @@ export function PurchaseCard({
     const { setVisible } = useWalletModal();
     const navigate = useNavigate();
     const { toast } = useToast();
-    const { isKycCompleted } = useKyc();
+    const { isKycCompleted, registeredWallet } = useKyc();
+    const isWalletMismatch = connected && publicKey && registeredWallet
+        ? publicKey.toBase58() !== registeredWallet
+        : false;
 
     const [tokenCount, setTokenCount] = useState(1);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -71,12 +70,17 @@ export function PurchaseCard({
     const estAnnualReturn = subtotalKrw * (apy / 100);
     const isSoldOut = fundingProgress >= 100;
     const isNotMinted = !tokenMint;
+    const isDeadlineExpired = fundingDeadlineMs > 0 && Date.now() > fundingDeadlineMs;
+    // 인당 구매 상한 = min(잔여수량, 총공급의 30%) — Anchor 온체인 로직과 동일하게 맞춤
+    // 의결권 캡(10%)은 DAO 구현 시 별도 처리
+    const maxPerInvestor = Math.floor(totalSupply * 3 / 10);
+    const maxBuyable = Math.min(availableTokens, maxPerInvestor);
 
     const handleInvest = async () => {
         if (!publicKey || !tokenMint) return;
         setIsProcessing(true);
         try {
-            const { Program, AnchorProvider, BN } = await import("@coral-xyz/anchor");
+            const { BN } = await import("@coral-xyz/anchor");
             const { PublicKey } = await import("@solana/web3.js");
             const {
                 getAssociatedTokenAddressSync,
@@ -84,21 +88,12 @@ export function PurchaseCard({
                 TOKEN_2022_PROGRAM_ID,
                 TOKEN_PROGRAM_ID,
             } = await import("@solana/spl-token");
-            const { default: IDL } = await import("~/anchor-idl/rural_rest_rwa.json");
 
-            const programId = new PublicKey(PROGRAM_ID_STR);
-            const usdcMint = new PublicKey(USDC_MINT_STR);
+            const program = await getProgram(connection, walletCtx);
+            const { propertyToken, fundingVault, investorPosition, programId } = await derivePdas(listingId, publicKey);
+
+            const usdcMint = new PublicKey(USDC_MINT);
             const tokenMintPubkey = new PublicKey(tokenMint);
-
-            // PDAs
-            const [propertyToken] = PublicKey.findProgramAddressSync(
-                [Buffer.from("property"), Buffer.from(listingId)],
-                programId
-            );
-            const [fundingVault] = PublicKey.findProgramAddressSync(
-                [Buffer.from("funding_vault"), Buffer.from(listingId)],
-                programId
-            );
 
             // ATAs
             const investorUsdcAccount = getAssociatedTokenAddressSync(
@@ -108,13 +103,29 @@ export function PurchaseCard({
                 tokenMintPubkey, publicKey, false, TOKEN_2022_PROGRAM_ID
             );
 
-            // investor_usdc_account — 없으면 생성 (idempotent: 이미 있어도 no-op)
-            const createUsdcAtaIx = createAssociatedTokenAccountIdempotentInstruction(
-                publicKey, investorUsdcAccount, publicKey, usdcMint, TOKEN_PROGRAM_ID
+            // investor_position이 없으면 open_position을 preInstruction으로 추가
+            const positionAccount = await connection.getAccountInfo(investorPosition);
+            const preIxs = [];
+
+            // investor_usdc_account — 없으면 생성 (idempotent)
+            preIxs.push(
+                createAssociatedTokenAccountIdempotentInstruction(
+                    publicKey, investorUsdcAccount, publicKey, usdcMint, TOKEN_PROGRAM_ID
+                )
             );
 
-            const provider = new AnchorProvider(connection, walletCtx as any, { commitment: "confirmed" });
-            const program = new Program(IDL as any, provider);
+            if (!positionAccount) {
+                preIxs.push(
+                    await program.methods
+                        .openPosition(listingId)
+                        .accounts({
+                            investor: publicKey,
+                            propertyToken,
+                            investorPosition,
+                        })
+                        .instruction()
+                );
+            }
 
             const signature = await program.methods
                 .purchaseTokens(listingId, new BN(tokenCount))
@@ -122,6 +133,7 @@ export function PurchaseCard({
                     investor: publicKey,
                     propertyToken,
                     tokenMint: tokenMintPubkey,
+                    investorPosition,
                     investorUsdcAccount,
                     fundingVault,
                     investorRwaAccount,
@@ -129,10 +141,8 @@ export function PurchaseCard({
                     tokenProgram: TOKEN_2022_PROGRAM_ID,
                     usdcTokenProgram: TOKEN_PROGRAM_ID,
                 })
-                .preInstructions([createUsdcAtaIx])
+                .preInstructions(preIxs)
                 .rpc();
-
-            await connection.confirmTransaction(signature, "confirmed");
 
             // DB 기록
             const dbRes = await fetch("/api/rwa/record-purchase", {
@@ -157,10 +167,7 @@ export function PurchaseCard({
             });
         } catch (err: any) {
             console.error("[PurchaseCard] tx error:", err);
-            const errStr = err?.message ?? String(err);
-            const msg = errStr.includes("0x1") ? "Insufficient USDC balance."
-                : errStr.includes("User rejected") ? "Transaction rejected by wallet."
-                : `Failed: ${errStr.slice(0, 80)}`;
+            const msg = parseAnchorError(err);
             toast({ title: "결제 실패", description: msg, variant: "destructive" });
         } finally {
             setIsProcessing(false);
@@ -175,9 +182,12 @@ export function PurchaseCard({
 
             {/* Token Input */}
             <div>
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-start justify-between mb-1.5">
                     <label className="text-xs font-medium text-stone-600">Amount</label>
-                    <span className="text-xs text-stone-400">Available: {availableTokens.toLocaleString()} tokens</span>
+                    <div className="text-xs text-stone-400 text-right">
+                        <div>Available: {availableTokens.toLocaleString()}</div>
+                        <div>Max per wallet: {maxPerInvestor.toLocaleString()}</div>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -189,14 +199,14 @@ export function PurchaseCard({
                         type="number"
                         min="1"
                         value={tokenCount}
-                        onChange={(e) => setTokenCount(Math.max(1, Math.min(parseInt(e.target.value) || 1, availableTokens)))}
+                        onChange={(e) => setTokenCount(Math.max(1, Math.min(parseInt(e.target.value) || 1, maxBuyable)))}
                         className="text-center text-lg font-semibold disabled:opacity-50"
                         disabled={isSoldOut || isNotMinted}
                     />
                     <button
                         className="h-10 w-10 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50"
-                        onClick={() => setTokenCount((c) => Math.min(c + 1, availableTokens))}
-                        disabled={isSoldOut || isNotMinted || tokenCount >= availableTokens}
+                        onClick={() => setTokenCount((c) => Math.min(c + 1, maxBuyable))}
+                        disabled={isSoldOut || isNotMinted || tokenCount >= maxBuyable}
                     >+</button>
                 </div>
             </div>
@@ -207,7 +217,12 @@ export function PurchaseCard({
                     <span>{tokenCount} tokens × {tokenPrice >= 1 ? `₩${Math.round(tokenPrice).toLocaleString()}` : `₩${tokenPrice.toFixed(4)}`}</span>
                     <span className="font-semibold text-stone-800">{fmtUsdc(subtotalUsdc)}</span>
                 </div>
-                <div className="flex justify-between text-[#17cf54] text-xs">
+                {apy > 1000 && (
+                    <div className="text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs">
+                        감정가가 낮게 설정되어 수익률이 과장될 수 있습니다.
+                    </div>
+                )}
+                <div className={`flex justify-between text-xs ${apy > 1000 ? "text-amber-500" : "text-[#17cf54]"}`}>
                     <span>Est. Annual Return</span>
                     <span className="font-bold">
                         {estAnnualReturn >= 1 ? `₩${Math.round(estAnnualReturn).toLocaleString()}` : `₩${estAnnualReturn.toFixed(4)}`}
@@ -225,7 +240,7 @@ export function PurchaseCard({
             </div>
 
             {/* Countdown */}
-            {countdown && (
+            {countdown ? (
                 <div className="bg-stone-50 border border-stone-100 rounded-2xl px-4 pt-3.5 pb-4">
                     <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-2">Funding Ends In</p>
                     <div className="grid grid-cols-4 gap-2">
@@ -245,46 +260,93 @@ export function PurchaseCard({
                         ))}
                     </div>
                 </div>
-            )}
+            ) : isDeadlineExpired ? (
+                <div className="bg-stone-50 border border-stone-100 rounded-2xl px-4 pt-3.5 pb-4">
+                    <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-2">Funding Ended</p>
+                    <div className="grid grid-cols-4 gap-2">
+                        {["Days", "Hrs", "Min", "Sec"].map((label, i) => (
+                            <div key={label} className="text-center relative">
+                                {i < 3 && <span className="absolute -right-1.5 top-2 text-base font-bold text-stone-300 select-none">:</span>}
+                                <div className="bg-stone-100 rounded-xl py-2.5">
+                                    <span className="text-2xl font-bold text-stone-300 tabular-nums">00</span>
+                                </div>
+                                <p className="text-[10px] text-stone-400 font-medium mt-1">{label}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : null}
 
             {/* CTA */}
             {isNotMinted ? (
-                <button disabled className="w-full h-14 rounded-2xl bg-stone-200 text-stone-400 text-base font-bold cursor-not-allowed flex items-center justify-center gap-2">
+                <Button disabled variant="secondary" size="xl" className="w-full cursor-not-allowed">
                     <span className="material-symbols-outlined text-[20px]">schedule</span>
                     Not Minted
-                </button>
+                </Button>
+            ) : isDeadlineExpired ? (
+                <div className="space-y-2">
+                    <Button disabled variant="secondary" size="xl" className="w-full cursor-not-allowed">
+                        <span className="material-symbols-outlined text-[20px]">event_busy</span>
+                        Funding Ended
+                    </Button>
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700 text-center">
+                        펀딩 기간이 종료되었습니다.<br />목표 미달 시 투자금이 환불됩니다.
+                    </div>
+                </div>
             ) : isSoldOut ? (
-                <button disabled className="w-full h-14 rounded-2xl bg-stone-300 text-stone-500 text-base font-bold cursor-not-allowed flex items-center justify-center gap-2">
-                    <span className="material-symbols-outlined text-[20px]">block</span>
-                    Sold Out
-                </button>
+                <div className="space-y-2">
+                    <Button disabled variant="secondary" size="xl" className="w-full cursor-not-allowed">
+                        <span className="material-symbols-outlined text-[20px]">lock</span>
+                        Sold Out
+                    </Button>
+                    <p className="text-center text-xs text-stone-400 leading-relaxed">
+                        펀딩 목표가 달성되었습니다.<br />첫 배당은 운영 시작 익월에 지급됩니다.
+                    </p>
+                </div>
             ) : connected ? (
-                isKycCompleted ? (
-                    <button
-                        className="w-full h-14 rounded-2xl bg-[#17cf54] hover:bg-[#14b847] text-white text-base font-bold transition-all shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                isWalletMismatch ? (
+                    <div className="space-y-2">
+                        <Button disabled variant="secondary" size="xl" className="w-full cursor-not-allowed">
+                            <span className="material-symbols-outlined text-[20px]">block</span>
+                            인증된 지갑으로 연결해주세요
+                        </Button>
+                        <p className="text-center text-xs text-stone-500 leading-relaxed">
+                            KYC 인증된 지갑과 다릅니다.<br />
+                            인증된 지갑으로 변경 후 다시 시도해주세요.
+                        </p>
+                    </div>
+                ) : isKycCompleted ? (
+                    <Button
+                        variant="success"
+                        size="xl"
+                        className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
                         onClick={handleInvest}
                         disabled={isProcessing}
                     >
                         <span className="material-symbols-outlined text-[20px]">
                             {isProcessing ? "hourglass_empty" : "account_balance_wallet"}
                         </span>
-                        {isProcessing ? "Processing Transaction..." : "Buy with USDC →"}
-                    </button>
+                        {isProcessing ? "Processing Transaction..." : "Buy with USDC"}
+                    </Button>
                 ) : (
-                    <button
-                        className="w-full h-14 rounded-2xl bg-[#17cf54] hover:bg-[#14b847] text-white text-base font-bold transition-all shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
+                    <Button
+                        variant="success"
+                        size="xl"
+                        className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
                         onClick={() => navigate("/kyc")}
                     >
                         Complete KYC to Invest
-                    </button>
+                    </Button>
                 )
             ) : (
-                <button
-                    className="w-full h-14 rounded-2xl bg-[#17cf54] hover:bg-[#14b847] text-white text-base font-bold transition-all shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
+                <Button
+                    variant="success"
+                    size="xl"
+                    className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
                     onClick={() => setVisible(true)}
                 >
                     Connect Wallet to Invest
-                </button>
+                </Button>
             )}
 
             <p className="text-center text-[10px] text-stone-400 font-bold uppercase tracking-widest">
@@ -301,10 +363,10 @@ export function PurchaseCard({
                 </div>
             </div>
 
-            <button className="w-full text-xs text-stone-400 hover:text-stone-600 transition-colors flex items-center justify-center gap-1">
+            <Button variant="ghost" size="sm" className="w-full text-stone-400 hover:text-stone-600">
                 <span className="material-symbols-outlined text-[14px]">flag</span>
                 문제 신고
-            </button>
+            </Button>
         </Card>
     );
 }

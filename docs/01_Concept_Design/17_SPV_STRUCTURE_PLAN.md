@@ -1,7 +1,7 @@
 # 20. SPV 구조 설계 (숙소별 특수목적회사)
 
 > Created: 2026-03-16 00:00
-> Last Updated: 2026-03-24 00:00
+> Last Updated: 2026-03-28 00:00
 
 본 문서는 Rural Rest의 RWA 토큰 발행을 위한 **숙소별 SPV(Special Purpose Vehicle, 특수목적회사) 구조**를 정의한다.
 
@@ -95,15 +95,9 @@ Rural Rest 주식회사 (모회사)
 **비용:**
 - 운영비 (청소, 공과금, 소모품 등)
 - 영업이익 배분:
-  - 지자체 40% (운영권 제공 대가, 오프체인 송금)
-  - 마을 운영자 30% (청소·체크인·유지보수 노무 대가, 온체인 지급)
-  - SPV 보유분 30% (토큰 보유자 배당, 온체인 지급)
-
-**마을 운영자 (Village Operator):**
-- `user.role = 'operator'`로 플랫폼에 등록
-- 숙소별 1명 배정 (`listings.operator_id` 연결)
-- 매월 말 플랫폼이 `operator_settlements` 테이블에 정산 내역 생성 후 온체인 USDC 지급
-- 상세: [01_DB_SCHEMA.md](../03_Technical_Specs/01_DB_SCHEMA.md) 2.12절
+  - 지자체 40%
+  - 마을공동체 30%
+  - SPV 보유분 30% (토큰 보유자에게 배당)
 
 ---
 
@@ -156,7 +150,7 @@ Rural Rest 주식회사 (모회사)
 **DAO 거버넌스 연계:**
 - RWA 토큰 = DAO Community Token
 - 주요 정책은 DAO 투표로 결정
-- 상세는 [14_DAO_GOVERNANCE_PLAN.md](./14_DAO_GOVERNANCE_PLAN.md) 참조
+- 상세는 [18_DAO_GOVERNANCE_PLAN.md](./18_DAO_GOVERNANCE_PLAN.md) 참조
 
 ---
 
@@ -184,9 +178,9 @@ SPV-3000 법인 계좌 입금
 영업이익 산정
     ↓
 영업이익 배분 (40 / 30 / 30)
-├─ 40% → 지자체 (오프체인 송금)
-├─ 30% → 마을 운영자 (온체인 USDC 지급, operator_settlements 테이블)
-└─ 30% → SPV-3000 주주들 (온체인 배당, rwa_dividends 테이블)
+├─ 40% → 지자체
+├─ 30% → 마을공동체
+└─ 30% → SPV-3000 주주들
     ├─ Rural Rest (보유 지분만큼)
     └─ 일반 투자자 (보유 토큰만큼)
 ```
@@ -310,13 +304,64 @@ SPV-3000 법인 계좌 입금
 
 ---
 
-## 9. Related Documents
+## 9. 온체인 SPV 구현 (Solana)
 
-- [15_RWA_ISSUANCE_PLAN.md](./15_RWA_ISSUANCE_PLAN.md) - RWA 토큰 발행 기획
-- [14_DAO_GOVERNANCE_PLAN.md](./14_DAO_GOVERNANCE_PLAN.md) - DAO 거버넌스 (RWA = 투표권)
+### 9.1. SPV = 매물별 전용 키페어
+
+온체인에서 SPV는 **Solana 키페어(keypair)** 로 표현된다.
+
+```
+1 빈집 = 1 SPV = 1 Authority 키페어 = 1 Token Mint
+```
+
+- SPV 키페어의 공개키(pubkey)가 Anchor 프로그램의 `authority` 계정
+- 투자금(USDC)은 `funding_vault` PDA에 에스크로
+- 펀딩 조건 충족 시 → `release_funds` 실행 → USDC가 SPV 지갑으로 이체
+- 운영 수익 정산 시 → `distribute_monthly_revenue` → SPV 지갑에서 `usdc_vault`로 입금
+- 투자자 → `claim_dividends` → `usdc_vault`에서 지분만큼 수령
+
+### 9.2. 키 관리 단계별 전략
+
+| 단계 | 서명 방식 | 설명 |
+|------|----------|------|
+| **MVP (현재)** | 서버 사이드 | SPV 키파일을 서버 환경변수로 관리, 자동 서명 |
+| **베타** | Squads 멀티시그 | Rural Rest + 지자체 대표 2-of-3 서명 필요 |
+| **정식 운영** | SPV 법인 직접 서명 | HSM 또는 법인 전용 키 관리 시스템 |
+
+**MVP 서버 사이드 방식:**
+- SPV 키페어를 `AUTHORITY_KEYPAIR` 환경변수로 관리
+- `initialize_property`, `release_funds`, `distribute_monthly_revenue` 모두 서버 자동 실행
+- 브라우저 지갑 서명 불필요
+- 먹튀 방지: 플랫폼 서버가 키를 관리 → 개인이 임의 인출 불가
+
+**정식 운영 전환 시:**
+- SPV 법인 설립 후 법인 전용 지갑으로 키 이전
+- 멀티시그 도입으로 단독 서명 불가 구조 확립
+
+### 9.3. 투자자 구매 상한
+
+| 구분 | 구매 상한 | 의결권 상한 |
+|------|----------|-----------|
+| 모든 투자자 | **30%** (총 발행량 기준) | **10%** (DAO Realms 레이어) |
+
+**변경 이유:**
+- 온체인 단독으로 지갑당 10% 상한은 멀티지갑 우회가 가능하여 실효성 없음
+- 구매 독점 방지보다 의결권 독점 방지가 실질적으로 중요
+- 의결권 상한(10%)은 Solana Realms 거버넌스 설정으로 별도 강제
+
+**의결권 상한 구현:**
+- Solana Realms에 Community Token으로 등록 시 `maxVotingTokens` 파라미터 설정
+- KYC 기반 실명 연동 전까지는 30% 단일 상한 유지
+
+---
+
+## 10. Related Documents
+
+- [19_RWA_ISSUANCE_PLAN.md](./19_RWA_ISSUANCE_PLAN.md) - RWA 토큰 발행 기획
+- [18_DAO_GOVERNANCE_PLAN.md](./18_DAO_GOVERNANCE_PLAN.md) - DAO 거버넌스 (RWA = 투표권)
 - [18_GYEONGJU_PILOT_DATA_RESEARCH.md](./18_GYEONGJU_PILOT_DATA_RESEARCH.md) - 경주 파일럿 5채 정보
 - **Technical_Specs**: [14_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/14_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세
-- **Logic_Progress**: [14_RWA_REAL_TIME_DIVIDEND_LOGIC.md](../04_Logic_Progress/14_RWA_REAL_TIME_DIVIDEND_LOGIC.md) - 배당 알고리즘
+- **Logic_Progress**: [10_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/10_RWA_DIVIDEND_LOGIC.md) - 배당 알고리즘
 
 ---
 

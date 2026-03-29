@@ -2,42 +2,61 @@ import { useLoaderData } from "react-router";
 import type { Route } from "./+types/invest.detail";
 import { Header, Footer } from "~/components/ui-mockup";
 import { db } from "~/db/index.server";
-import { listings, rwaTokens, rwaInvestments, user, bookings } from "~/db/schema";
+import { listings, rwaTokens, rwaInvestments, rwaDividends, user, bookings } from "~/db/schema";
 import { and, gte } from "drizzle-orm";
 import { eq, sql } from "drizzle-orm";
+import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
 import { PropertyMap } from "~/components/PropertyMap";
 import { RevenueChart } from "~/components/rwa/RevenueChart";
 import { TokenInfoCard } from "~/components/rwa/TokenInfoCard";
 import { PurchaseCard } from "~/components/rwa/PurchaseCard";
+import { RefundButton } from "~/components/rwa/RefundButton";
 import { PropertyGallery } from "~/components/rwa/PropertyGallery";
 
-// TODO: Pyth oracle로 교체
-const KRW_PER_USDC = 1350;
+import { KRW_PER_USDC } from "~/lib/constants";
+import { formatKrwLabel } from "~/lib/formatters";
 
-const TEMP_HOST_BIOS: Record<string, string> = {
-    "seed-spv-3000-hwango":    "황오동 골목을 직접 관리·운영하고 있습니다. 비어있던 이 공간에 다시 온기를 불어넣어, 방문하는 분들께 경주 구도심의 진짜 일상을 전하고 싶어요.",
-    "seed-spv-3001-seonggon":  "성건동 마을 주민들이 함께 관리하는 공간입니다. 첨성대 가까운 골목에서 한옥의 따뜻함을 나눠요.",
-    "seed-spv-3002-dongcheon": "동천동 주민들이 직접 운영하는 쉼터입니다. 느린 여행을 원하는 분들께 경주의 또 다른 얼굴을 보여드려요.",
-    "seed-spv-3003-geoncheon": "건천읍 마을 주민들이 함께 꾸리고 있는 농가주택입니다. 들녘 가까운 조용한 시골 일상을 나눠요.",
-    "seed-spv-3004-angang":    "안강읍 마을에서 직접 관리·운영하고 있습니다. 제철 농산물로 차린 시골 밥상과 함께 느린 하루를 선물해드려요.",
-};
 
-function formatKrw(won: number): string {
-    if (won >= 1_0000_0000) {
-        const eok = won / 1_0000_0000;
-        return `${eok % 1 === 0 ? eok : eok.toFixed(1)}억 원`;
+const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function buildDividendChartData(
+    actual: { month: string; totalUsdc: number }[],
+    pricePerTokenUsdc: number, // micro-USDC
+    apyBps: number,
+) {
+    // 실제 배당 내역이 있으면 사용
+    if (actual.length > 0) {
+        const byMonth = new Map(actual.map(r => [r.month.slice(5), r.totalUsdc / 1_000_000]));
+        let cumulative = 0;
+        return MONTH_LABELS.map((label, i) => {
+            const mm = String(i + 1).padStart(2, "0");
+            const dividend = byMonth.get(mm) ?? 0;
+            cumulative += dividend;
+            return { month: label, dividend, cumulative };
+        });
     }
-    if (won >= 1_0000) return `${Math.round(won / 1_0000)}만 원`;
-    return `${won.toLocaleString()}원`;
+
+    // 실제 데이터 없으면 APY 기반 예상치 (1,000토큰 기준)
+    const annualPerToken = (pricePerTokenUsdc / 1_000_000) * (apyBps / 10000);
+    const monthlyPer1000 = (annualPerToken * 1000) / 12;
+    // 계절성 가중치 (봄·가을 성수기)
+    const weights = [0.7, 0.7, 1.0, 1.2, 1.0, 0.8, 0.8, 0.9, 1.2, 1.1, 0.9, 0.7];
+    const weightSum = weights.reduce((a, b) => a + b, 0);
+    let cumulative = 0;
+    return MONTH_LABELS.map((label, i) => {
+        const dividend = Math.round(monthlyPer1000 * (weights[i] / weightSum) * 12 * 10) / 10;
+        cumulative = Math.round((cumulative + dividend) * 10) / 10;
+        return { month: label, dividend, cumulative };
+    });
 }
 
-function statusToKorean(status: string): string {
+function statusToLabel(status: string, fundingProgress: number): string {
     switch (status) {
-        case "funding": return "모집 중";
-        case "funded":  return "모집 완료";
-        case "active":  return "운영 중";
-        case "failed":  return "모집 실패";
-        default:        return status;
+        case "funding": return "Funding";
+        case "funded": return fundingProgress >= 100 ? "Sold Out" : "Funded";
+        case "active": return "Active";
+        case "failed": return "Closed";
+        default: return status;
     }
 }
 
@@ -75,6 +94,13 @@ export async function loader({ params }: Route.LoaderArgs) {
 
     if (!row) throw new Response("Not Found", { status: 404 });
 
+    // On-chain state (authoritative for status + tokensSold)
+    const onchain = await fetchPropertyOnchain(listingId!);
+    if (onchain) {
+        row.status = onchain.status as typeof row.status;
+        row.tokensSold = onchain.tokensSold;
+    }
+
     const hostUser = await db
         .select({ name: user.name })
         .from(user)
@@ -104,6 +130,21 @@ export async function loader({ params }: Route.LoaderArgs) {
     }, 0);
     const occupancyRate = Math.round((bookedNights / 90) * 100);
 
+    // 월별 배당 집계 (실제 지급 내역)
+    const dividendHistory = await db
+        .select({ month: rwaDividends.month, dividendUsdc: rwaDividends.dividendUsdc })
+        .from(rwaDividends)
+        .where(eq(rwaDividends.rwaTokenId, row.tokenId));
+
+    const dividendByMonth = new Map<string, number>();
+    for (const d of dividendHistory) {
+        dividendByMonth.set(d.month, (dividendByMonth.get(d.month) ?? 0) + d.dividendUsdc);
+    }
+    const dividendHistoryAgg = Array.from(dividendByMonth.entries()).map(([month, totalUsdc]) => ({ month, totalUsdc }));
+    const lastDividendMonth = dividendHistoryAgg.length > 0
+        ? dividendHistoryAgg.sort((a, b) => b.month.localeCompare(a.month))[0].month
+        : null;
+
     const images = row.images as string[];
     const amenities = row.amenities as string[];
     const usdcPrice = row.pricePerTokenUsdc / 1_000_000;
@@ -130,11 +171,11 @@ export async function loader({ params }: Route.LoaderArgs) {
         holders: holdersRow?.count ?? 0,
         soldTokens: row.tokensSold,
         fundingProgress,
-        raised: formatKrw(raisedUsdc * KRW_PER_USDC),
-        remaining: formatKrw(remainingUsdc * KRW_PER_USDC),
+        raised: formatKrwLabel(raisedUsdc * KRW_PER_USDC),
+        remaining: formatKrwLabel(remainingUsdc * KRW_PER_USDC),
         raisedUsdc,
         remainingUsdc,
-        status: statusToKorean(row.status),
+        status: statusToLabel(row.status, fundingProgress),
         rawStatus: row.status,
         about: row.description,
         amenities,
@@ -149,11 +190,13 @@ export async function loader({ params }: Route.LoaderArgs) {
         fundingDeadline: row.fundingDeadline instanceof Date
             ? row.fundingDeadline.getTime()
             : Number(row.fundingDeadline) * 1000,
-        lastDividend: null as string | null,
+        minFundingBps: row.minFundingBps,
+        dividendChartData: buildDividendChartData(dividendHistoryAgg, row.pricePerTokenUsdc, row.estimatedApyBps),
+        lastDividend: lastDividendMonth,
         occupancyRate,
         host: {
             name: hostUser?.name ?? "마을지기",
-            bio: TEMP_HOST_BIOS[row.hostId] ?? null,
+            bio: "우리 마을의 빈집을 되살려 여행자에게 특별한 경험을 제공하고 있습니다. 마을 주민들과 함께 숙소를 운영하며, 지역 문화와 자연을 나누는 일을 하고 있습니다.",
         },
     };
 }
@@ -170,9 +213,16 @@ export default function InvestDetail() {
                 {/* Title & Badges */}
                 <div className="mb-6 space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="bg-[#17cf54]/10 text-[#17cf54] text-xs font-bold px-3 py-1 rounded-full border border-[#17cf54]/20">
-                            {property.status}
-                        </span>
+                        {property.rawStatus === "funding" && (
+                            <span className="bg-card text-foreground text-xs font-bold px-3 py-1 rounded-full border border-border">
+                                Funding
+                            </span>
+                        )}
+                        {(property.rawStatus === "funded" || property.rawStatus === "active") && (
+                            <span className="bg-[#17cf54] text-white text-xs font-bold px-3 py-1 rounded-full">
+                                FUNDED
+                            </span>
+                        )}
                         <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">
                             {property.tokenName}
                         </span>
@@ -271,7 +321,7 @@ export default function InvestDetail() {
 
                         {/* Host Info */}
                         <section className="space-y-6 pt-8 border-t">
-                            <h2 className="text-2xl font-bold text-foreground">호스트 정보</h2>
+                            <h2 className="text-2xl font-bold text-foreground">마을 운영자</h2>
                             <div className="flex gap-6 items-start">
                                 <div className="h-16 w-16 rounded-full bg-stone-200 shrink-0 overflow-hidden border-2 border-white shadow-md">
                                     <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=e2e8f0" alt="Host Profile" className="w-full h-full object-cover" />
@@ -305,7 +355,11 @@ export default function InvestDetail() {
                                         : "Projected · per 1,000 tokens"}
                                 </span>
                             </div>
-                            <RevenueChart apy={property.apy} />
+                            <RevenueChart
+                                apy={property.apy}
+                                chartData={property.dividendChartData}
+                                isActual={property.dividendChartData.some(d => d.dividend > 0)}
+                            />
                         </section>
 
                         {/* Map */}
@@ -325,20 +379,44 @@ export default function InvestDetail() {
                     {/* ── Right Column ── */}
                     <div className="lg:col-span-1 space-y-4">
                         <div className="lg:sticky lg:top-24">
-                            <PurchaseCard
-                                listingId={property.id}
-                                tokenMint={property.tokenMint}
-                                tokenId={property.tokenId}
-                                tokenName={property.tokenName}
-                                tokenPrice={property.tokenPrice}
-                                usdcPrice={property.usdcPrice}
-                                apy={property.apy}
-                                fundingProgress={property.fundingProgress}
-                                availableTokens={property.availableTokens}
-                                holders={property.holders}
-                                soldTokens={property.soldTokens}
-                                fundingDeadlineMs={property.fundingDeadline}
-                            />
+                            {(() => {
+                                const deadlineExpired = Date.now() > property.fundingDeadline;
+                                const goalNotMet = property.fundingProgress < (property.minFundingBps / 100);
+                                const isRefundable = property.rawStatus === "failed" ||
+                                    (property.rawStatus === "funding" && deadlineExpired && goalNotMet);
+                                return isRefundable;
+                            })() ? (
+                                <div className="rounded-3xl bg-white border border-red-100 shadow-sm p-6 space-y-4">
+                                    <div className="flex items-center gap-2">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-stone-100 text-stone-500 border border-stone-200">
+                                            모집 종료
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-stone-500">
+                                        모집 목표를 달성하지 못했습니다. 투자하신 금액을 환불받으실 수 있습니다.
+                                    </p>
+                                    <RefundButton
+                                        listingId={property.id}
+                                        rwaTokenId={property.tokenId}
+                                    />
+                                </div>
+                            ) : (
+                                <PurchaseCard
+                                    listingId={property.id}
+                                    tokenMint={property.tokenMint}
+                                    tokenId={property.tokenId}
+                                    tokenName={property.tokenName}
+                                    tokenPrice={property.tokenPrice}
+                                    usdcPrice={property.usdcPrice}
+                                    apy={property.apy}
+                                    fundingProgress={property.fundingProgress}
+                                    availableTokens={property.availableTokens}
+                                    totalSupply={property.totalSupply}
+                                    holders={property.holders}
+                                    soldTokens={property.soldTokens}
+                                    fundingDeadlineMs={property.fundingDeadline}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>

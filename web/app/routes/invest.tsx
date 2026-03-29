@@ -7,44 +7,25 @@ import { useKyc } from "~/components/KycProvider";
 import { db } from "~/db/index.server";
 import { listings, rwaTokens } from "~/db/schema";
 import { eq } from "drizzle-orm";
+import { syncFundingStatuses } from "~/lib/rwa.server";
+import { fetchPropertiesOnchain } from "~/lib/rwa.onchain.server";
 
-// TODO: 추후 Pyth oracle로 교체
-const KRW_PER_USDC = 1350;
-
-function formatKrw(won: number): string {
-    if (won >= 1_0000_0000) {
-        const eok = won / 1_0000_0000;
-        return `${eok % 1 === 0 ? eok : eok.toFixed(1)}억 원`;
-    }
-    if (won >= 1_0000) {
-        const man = won / 1_0000;
-        return `${man % 1 === 0 ? man : man.toFixed(0)}만 원`;
-    }
-    return `${won.toLocaleString()}원`;
-}
-
-function fmtKrwDisplay(krw: number): string {
-    if (krw >= 1) return `₩${Math.round(krw).toLocaleString()}`;
-    return `₩${krw.toFixed(2)}`;
-}
-
-function fmtUsdcDisplay(usdc: number): string {
-    if (usdc >= 0.01) return `${usdc.toFixed(2)} USDC`;
-    if (usdc >= 0.0001) return `${usdc.toFixed(4)} USDC`;
-    return `${usdc.toFixed(6)} USDC`;
-}
+import { KRW_PER_USDC } from "~/lib/constants";
+import { formatKrwLabel, fmtKrw, fmtUsdc } from "~/lib/formatters";
 
 function statusToEnglish(status: string): string {
     switch (status) {
         case "funding": return "Funding";
         case "funded":  return "Funded";
         case "active":  return "Active";
-        case "failed":  return "Failed";
+        case "failed":  return "Closed";
         default:        return status;
     }
 }
 
 export async function loader() {
+    await syncFundingStatuses();
+
     const rows = await db
         .select({
             id: listings.id,
@@ -59,35 +40,38 @@ export async function loader() {
             pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc,
             estimatedApyBps: rwaTokens.estimatedApyBps,
             status: rwaTokens.status,
+            fundingDeadline: rwaTokens.fundingDeadline,
+            minFundingBps: rwaTokens.minFundingBps,
         })
         .from(listings)
-        .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id));
+        .innerJoin(rwaTokens, eq(rwaTokens.listingId, listings.id));
 
-    return rows.map((row) => {
-        const images = row.images as string[];
-
-        // RWA 미발행 매물 (온체인 미초기화) — Coming Soon
-        if (!row.tokenMint) {
-            return {
-                id: row.id,
-                title: row.title,
-                location: row.location,
-                region: row.region,
-                image: images[0] ?? "/house.png",
-                apy: 0,
-                tokenPrice: 0,
-                usdcPrice: 0,
-                valuationKrw: 0,
-                valuationUsdc: 0,
-                fundingProgress: 0,
-                raised: "—",
-                remaining: "—",
-                raisedUsdc: 0,
-                remainingUsdc: 0,
-                status: "coming_soon" as const,
-                themes: [] as string[],
-            };
+    // Fetch on-chain state (overrides DB status + tokensSold)
+    const initializedIds = rows.filter(r => r.tokenMint).map(r => r.id);
+    const onchainMap = await fetchPropertiesOnchain(initializedIds);
+    const now = Date.now();
+    for (const row of rows) {
+        const onchain = onchainMap.get(row.id);
+        if (onchain) {
+            row.status = onchain.status as typeof row.status;
+            row.tokensSold = onchain.tokensSold;
         }
+        // 데드라인 경과 + 목표 미달 → failed 보정
+        if (row.status === "funding" && row.fundingDeadline) {
+            const deadlineMs = new Date(row.fundingDeadline).getTime();
+            if (now > deadlineMs) {
+                const totalSupply = row.totalSupply ?? 0;
+                const tokensSold = row.tokensSold ?? 0;
+                const progressBps = totalSupply > 0 ? (tokensSold / totalSupply) * 10000 : 0;
+                if (progressBps < (row.minFundingBps ?? 6000)) {
+                    row.status = "failed";
+                }
+            }
+        }
+    }
+
+    return rows.filter(r => r.tokenMint).map((row) => {
+        const images = row.images as string[];
 
         const usdcPrice = row.pricePerTokenUsdc! / 1_000_000;
         const tokenPriceKrw = usdcPrice * KRW_PER_USDC;
@@ -112,8 +96,8 @@ export async function loader() {
             fundingProgress,
             tokensSold,
             totalSupply,
-            raised: formatKrw(raisedUsdc * KRW_PER_USDC),
-            remaining: formatKrw(remainingUsdc * KRW_PER_USDC),
+            raised: formatKrwLabel(raisedUsdc * KRW_PER_USDC),
+            remaining: formatKrwLabel(remainingUsdc * KRW_PER_USDC),
             raisedUsdc,
             remainingUsdc,
             status: statusToEnglish(row.status!),
@@ -157,11 +141,6 @@ export default function InvestDashboard() {
     } else if (selectedSort === "Latest") {
         filteredProperties.sort((a, b) => a.fundingProgress - b.fundingProgress);
     }
-
-    // Coming soon always last
-    filteredProperties.sort((a, b) =>
-        (a.status === "coming_soon" ? 1 : 0) - (b.status === "coming_soon" ? 1 : 0)
-    );
 
     const toggleTheme = (theme: string) => {
         setSelectedThemes(prev =>
@@ -263,6 +242,7 @@ export default function InvestDashboard() {
                                                 { value: "Funding", label: "Funding" },
                                                 { value: "Funded", label: "Funded" },
                                                 { value: "Active", label: "Active" },
+                                                { value: "Closed", label: "Closed" },
                                             ].map(({ value, label }) => (
                                                 <button
                                                     key={value}
@@ -354,20 +334,40 @@ export default function InvestDashboard() {
                     )}
 
                     <div className="w-full">
+                        {filteredProperties.length === 0 ? (
+                            <div className="py-24 text-center">
+                                <span className="material-symbols-outlined text-[56px] text-stone-300">real_estate_agent</span>
+                                <p className="text-lg font-bold text-stone-700 mt-4">Coming Soon</p>
+                                <p className="text-stone-500 mt-2">새로운 투자 매물이 준비 중입니다.</p>
+                            </div>
+                        ) : (
                         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             {filteredProperties.map((property) => (
                                 <div key={property.id} className={`group relative flex flex-col overflow-hidden rounded-[calc(var(--radius)*2)] bg-card border-none shadow-lg transition-all duration-300 hover:-translate-y-1 transform-gpu`}>
 
                                     <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary/20">
-                                        {property.status !== "coming_soon" && (
-                                            <div className="absolute top-3 right-3 z-10 rounded-full bg-card/90 px-2.5 py-1 text-xs font-bold text-foreground backdrop-blur-sm shadow-sm flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-[14px] text-green-600">trending_up</span>
-                                                APY {property.apy}%
+                                        {property.status === "Funding" && (
+                                            <div className="absolute top-3 left-3 z-10 rounded-full bg-card/90 px-2.5 py-1 text-xs font-bold backdrop-blur-sm shadow-sm text-foreground">
+                                                Funding
                                             </div>
                                         )}
+                                        {(property.status === "Funded" || property.status === "Active") && (
+                                            <div className="absolute top-3 left-3 z-10 rounded-full bg-[#17cf54]/90 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm shadow-sm">
+                                                FUNDED
+                                            </div>
+                                        )}
+                                        {property.status === "Closed" && (
+                                            <div className="absolute top-3 left-3 z-10 rounded-full bg-red-500/90 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm shadow-sm">
+                                                Closed
+                                            </div>
+                                        )}
+                                        <div className="absolute top-3 right-3 z-10 rounded-full bg-card/90 px-2.5 py-1 text-xs font-bold text-foreground backdrop-blur-sm shadow-sm flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-[14px] text-green-600">trending_up</span>
+                                            APY {property.apy}%
+                                        </div>
                                         <img
                                             alt={property.title}
-                                            className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${property.status === "coming_soon" ? "grayscale" : ""}`}
+                                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             src={property.image}
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent opacity-60"></div>
@@ -378,39 +378,19 @@ export default function InvestDashboard() {
                                             </div>
                                             <h3 className="text-xl font-bold">{property.title}</h3>
                                         </div>
-                                        {property.status === "coming_soon" && (
-                                            <div className="absolute inset-0 bg-background/50 z-20 flex items-center justify-center backdrop-blur-[2px]">
-                                                <div className="bg-card px-4 py-2 rounded-full shadow-lg border border-border text-sm font-bold text-foreground flex items-center gap-2">
-                                                    <span className="material-symbols-outlined text-primary text-[18px]">schedule</span>
-                                                    RWA Coming Soon
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
 
                                     <div className="flex flex-1 flex-col justify-between p-5">
-                                        {property.status === "coming_soon" ? (
-                                            <>
-                                                <div className="mb-4 space-y-2">
-                                                    <p className="text-xs font-medium text-foreground/50">Token Price</p>
-                                                    <p className="text-lg font-bold text-foreground/30">— / token</p>
-                                                    <p className="text-xs text-foreground/40 mt-1">Token issuance in preparation.</p>
-                                                </div>
-                                                <button disabled className="mt-auto w-full rounded-lg border border-border bg-transparent py-2.5 text-sm font-semibold text-foreground/40 cursor-not-allowed">
-                                                    Coming Soon
-                                                </button>
-                                            </>
-                                        ) : (
                                             <>
                                                 <div className="mb-4 grid grid-cols-2 gap-4">
                                                     <div>
                                                         <p className="text-xs font-medium text-foreground/60">Token Price</p>
-                                                        <p className="text-base font-bold text-foreground">{fmtKrwDisplay(property.tokenPrice)}</p>
-                                                        <p className="text-xs text-muted-foreground">{fmtUsdcDisplay(property.usdcPrice)} · /token</p>
+                                                        <p className="text-base font-bold text-foreground">{fmtKrw(property.tokenPrice)}</p>
+                                                        <p className="text-xs text-muted-foreground">{fmtUsdc(property.usdcPrice)} · /token</p>
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="text-xs font-medium text-foreground/60">Valuation</p>
-                                                        <p className="text-base font-bold text-foreground">{formatKrw(property.valuationKrw)}</p>
+                                                        <p className="text-base font-bold text-foreground">{formatKrwLabel(property.valuationKrw)}</p>
                                                         <p className="text-xs text-muted-foreground">${Math.round(property.valuationUsdc).toLocaleString()}</p>
                                                     </div>
                                                 </div>
@@ -435,7 +415,17 @@ export default function InvestDashboard() {
                                                         <span>{property.remaining} remaining</span>
                                                     </div>
                                                 </div>
-                                                {connected ? (
+                                                {(property.status !== "Funding" || property.fundingProgress >= 100) ? (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/invest/${property.id}`);
+                                                        }}
+                                                        className="mt-5 w-full rounded-lg border border-[#17cf54] py-2.5 text-sm font-semibold text-[#17cf54] hover:bg-[#17cf54]/10 transition-colors"
+                                                    >
+                                                        View
+                                                    </button>
+                                                ) : connected ? (
                                                     isKycCompleted ? (
                                                         <button
                                                             onClick={(e) => {
@@ -445,7 +435,6 @@ export default function InvestDashboard() {
                                                             className="mt-5 w-full rounded-lg bg-[#17cf54] hover:bg-[#14b847] py-2.5 text-sm font-semibold text-white transition-colors shadow-sm flex items-center justify-center gap-1"
                                                         >
                                                             Invest Now
-                                                            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                                                         </button>
                                                     ) : (
                                                         <button
@@ -470,11 +459,11 @@ export default function InvestDashboard() {
                                                     </button>
                                                 )}
                                             </>
-                                        )}
                                     </div>
                                 </div>
                             ))}
                         </div>
+                        )}
                     </div>
                 </div>
             </main>
