@@ -5,6 +5,7 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { PROGRAM_ID, USDC_MINT } from "~/lib/constants";
 import { getProgram, derivePdas } from "~/lib/anchor-client";
 const LOCAL_GOV_WALLET_STR = import.meta.env.VITE_LOCAL_GOV_WALLET ?? "";
+const OPERATOR_WALLET_STR = import.meta.env.VITE_OPERATOR_WALLET ?? "";
 
 interface Props {
     listingId: string;
@@ -209,16 +210,17 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
             }
 
             // TX2+TX3: 운영자(30%) + 지자체(40%) 한 트랜잭션으로 묶음
+            const effectiveOpWallet = preview.operatorWalletAddress || OPERATOR_WALLET_STR;
             const needPayout = !opPayoutTx && (
-                (preview.hasOperator && preview.operatorWalletAddress && preview.operatorUsdc > 0) ||
+                (effectiveOpWallet && preview.operatorUsdc > 0) ||
                 (LOCAL_GOV_WALLET_STR && preview.localGovUsdc > 0)
             );
             if (needPayout) {
                 setTxProgress((p) => ({ ...p, operatorPayout: "pending", govPayout: LOCAL_GOV_WALLET_STR ? "pending" : "idle" }));
                 try {
                     const combinedTx = new Transaction();
-                    if (preview.hasOperator && preview.operatorWalletAddress && preview.operatorUsdc > 0) {
-                        const operatorPubkey = new PublicKey(preview.operatorWalletAddress);
+                    if (effectiveOpWallet && preview.operatorUsdc > 0) {
+                        const operatorPubkey = new PublicKey(effectiveOpWallet);
                         const operatorUsdcAccount = getAssociatedTokenAddressSync(usdcMint, operatorPubkey, false, TOKEN_PROGRAM_ID);
                         combinedTx.add(createAssociatedTokenAccountIdempotentInstruction(authority, operatorUsdcAccount, operatorPubkey, usdcMint, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID));
                         combinedTx.add(createTransferCheckedInstruction(authorityUsdcAccount, usdcMint, operatorUsdcAccount, authority, preview.operatorUsdc, 6, [], TOKEN_PROGRAM_ID));

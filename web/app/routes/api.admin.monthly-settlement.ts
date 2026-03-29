@@ -8,7 +8,9 @@ import { v4 as uuidv4 } from "uuid";
 import { KRW_PER_USDC } from "~/lib/constants";
 
 // 지자체 고정 수령 지갑 (환경변수 미설정 시 devnet 테스트 지갑)
-const LOCAL_GOV_WALLET = import.meta.env?.VITE_LOCAL_GOV_WALLET ?? "GovWa11etXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+const LOCAL_GOV_WALLET = import.meta.env?.VITE_LOCAL_GOV_WALLET ?? "";
+// 마을 운영자 고정 수령 지갑 (MVP: 환경변수로 관리, 운영자 DB 지갑 미등록 시 fallback)
+const OPERATOR_WALLET = import.meta.env?.VITE_OPERATOR_WALLET ?? "";
 
 // base58 솔라나 tx 서명 형식 검증 (87-90자, base58 문자셋)
 function isValidSolanaTx(sig: unknown): sig is string {
@@ -56,7 +58,7 @@ export async function action({ request }: { request: Request }) {
         .where(eq(listings.id, listingId));
     if (!listing) return Response.json({ error: "매물 없음" }, { status: 404 });
 
-    // 운영자 지갑 주소 조회
+    // 운영자 지갑 주소 조회 (DB 우선, MVP fallback: 환경변수)
     let operatorWalletAddress: string | null = null;
     if (listing.operatorId) {
         const [operator] = await db
@@ -64,6 +66,9 @@ export async function action({ request }: { request: Request }) {
             .from(user)
             .where(eq(user.id, listing.operatorId));
         operatorWalletAddress = operator?.walletAddress ?? null;
+    }
+    if (!operatorWalletAddress && OPERATOR_WALLET) {
+        operatorWalletAddress = OPERATOR_WALLET;
     }
 
     // RWA 토큰 정보
