@@ -3,8 +3,9 @@ import { Form, useNavigation, Link } from "react-router";
 import type { Route } from "./+types/book";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
-import { listings } from "~/db/schema";
+import { listings, rwaTokens } from "~/db/schema";
 import { eq } from "drizzle-orm";
+import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
 
 
 function toCityLabel(location: string): string {
@@ -22,12 +23,25 @@ async function getListingById(id: string | undefined) {
             pricePerNight: listings.pricePerNight,
             maxGuests: listings.maxGuests,
             images: listings.images,
+            tokenStatus: rwaTokens.status,
         })
         .from(listings)
+        .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
         .where(eq(listings.id, id))
         .then((rows) => rows[0] ?? null);
 
     if (!row) return null;
+
+    // 온체인 상태가 진실 — DB는 fallback
+    if (row.tokenStatus) {
+        const onchain = await fetchPropertyOnchain(id);
+        if (onchain) {
+            row.tokenStatus = onchain.status as typeof row.tokenStatus;
+        }
+    }
+
+    // RWA 토큰이 있으면 active 상태일 때만 예약 가능
+    if (row.tokenStatus && row.tokenStatus !== "active") return null;
     const images = row.images as string[];
     return {
         id: row.id,

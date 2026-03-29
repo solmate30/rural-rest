@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { ConnectionProvider, WalletProvider, WalletContext, useWallet } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { SolflareWalletAdapter, PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 
@@ -41,7 +41,7 @@ export default function RwaWalletProvider({ children }: { children: React.ReactN
 
     // SSR/first-render: pass empty wallets to avoid adapter DOM init before hydration
     const wallets = useMemo(
-        () => isClient ? [new SolflareWalletAdapter()] : [],
+        () => isClient ? [new PhantomWalletAdapter(), new SolflareWalletAdapter()] : [],
         [isClient]
     );
 

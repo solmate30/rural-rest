@@ -2,7 +2,8 @@ import { Header, Button, Card, Badge, Slider, Footer } from "../components/ui-mo
 import { useState, useMemo } from "react";
 import { useLoaderData, useNavigate } from "react-router";
 import { db } from "~/db/index.server";
-import { listings } from "~/db/schema";
+import { listings, rwaTokens } from "~/db/schema";
+import { eq, and, inArray, isNotNull } from "drizzle-orm";
 
 function toCityLabel(location: string): string {
     const m = location.match(/([가-힣]+)시/);
@@ -21,8 +22,14 @@ export async function loader() {
             pricePerNight: listings.pricePerNight,
             maxGuests: listings.maxGuests,
             images: listings.images,
+            tokenStatus: rwaTokens.status,
         })
-        .from(listings);
+        .from(listings)
+        .innerJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
+        .where(and(
+            inArray(rwaTokens.status, ["funding", "funded"]),
+            isNotNull(rwaTokens.tokenMint),
+        ));
 
     return {
         featuredListings: rows.map((row) => ({

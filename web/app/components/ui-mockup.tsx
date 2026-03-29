@@ -155,11 +155,10 @@ export function Header() {
                                 {!session ? (
                                     <Button
                                         variant="outline"
-                                        className="h-10 text-xs font-bold gap-1 text-stone-500 hover:text-stone-700 hover:border-stone-400"
+                                        className="ml-4"
                                         onClick={() => navigate(`/auth?return=${location.pathname}`)}
                                     >
-                                        <span className="material-symbols-outlined text-[16px]">login</span>
-                                        로그인
+                                        Login
                                     </Button>
                                 ) : !isKycCompleted ? (
                                     <Button
@@ -168,7 +167,7 @@ export function Header() {
                                         onClick={() => navigate(`/kyc?return=${location.pathname}`)}
                                     >
                                         <span className="material-symbols-outlined text-[16px]">badge</span>
-                                        실명인증 하기
+                                        Verify Identity
                                     </Button>
                                 ) : (
                                     <WalletMultiButton className="!bg-[#17cf54] !text-white !border-none hover:!bg-[#14b847] !shadow-sm !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />
@@ -197,7 +196,7 @@ export function Header() {
                                         )}
                                         <span className="text-sm font-semibold text-foreground/80">{session.user.name}님</span>
                                     </div>
-                                    <Button variant="outline" onClick={handleSignOut} className="h-9 px-4 text-xs font-bold">로그아웃</Button>
+                                    <Button variant="outline" onClick={handleSignOut} className="h-9 px-4 text-xs font-bold">Logout</Button>
                                 </div>
                             ) : (
                                 <Button variant="outline" className="ml-4" onClick={() => window.location.href = '/auth'}>Login</Button>
