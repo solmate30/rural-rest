@@ -160,8 +160,8 @@ export const rwaTokens = sqliteTable("rwa_tokens", {
     valuationKrw: integer("valuation_krw").notNull(),
     pricePerTokenUsdc: integer("price_per_token_usdc").notNull(), // micro-USDC (6자리)
     status: text("status", {
-        enum: ["funding", "funded", "active", "failed"],
-    }).notNull().default("funding"),
+        enum: ["draft", "funding", "funded", "active", "failed"],
+    }).notNull().default("draft"),
     fundingDeadline: integer("funding_deadline", { mode: "timestamp" }).notNull(),
     estimatedApyBps: integer("estimated_apy_bps").notNull().default(0), // 예상 연수익률 (basis points, 820 = 8.2%)
     minFundingBps: integer("min_funding_bps").notNull().default(6000), // 60%
