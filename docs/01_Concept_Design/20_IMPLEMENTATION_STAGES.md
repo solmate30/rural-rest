@@ -110,4 +110,4 @@ node web/scripts/check-onchain.mjs  # acc_dividend_per_share > 0 확인
 | `anchor/CLAUDE.md` | Critical Rules, 수정 대기 목록 |
 | `docs/03_Technical_Specs/11_ANCHOR_PROGRAM_SPEC.md` | PDA seeds, 수학 명세, 에러코드 |
 | `docs/03_Technical_Specs/10_ANCHOR_PROGRAM_AUDIT.md` | CU 가이드, 보안 이슈 목록 |
-| `docs/01_Concept_Design/22_COLOSSEUM_HACKATHON_GAP_ANALYSIS.md` | 경쟁 환경, 심사위원 분석 |
+| `docs/01_Concept_Design/19_COLOSSEUM_HACKATHON_GAP_ANALYSIS.md` | 경쟁 환경, 심사위원 분석 |
