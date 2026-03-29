@@ -1,7 +1,7 @@
 # 14. RWA 발행 구현 명세서 (Technical Specification)
 
 > Created: 2026-03-10 12:00
-> Last Updated: 2026-03-18 13:00
+> Last Updated: 2026-03-30 15:00
 
 본 문서는 [15_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md) 기획서를 바탕으로 Rural Rest RWA(빈집 자산)의 Solana 발행·매수·배당 연동을 정의한다. 착수 전 체크리스트, 기술 스택, 토큰·프로그램 설계, 발행 흐름, 클라이언트 연동, 마일스톤을 기술한다.
 
@@ -122,9 +122,9 @@
 
 ## 4. DB·오프체인 연동
 
-*   **rwa_tokens**: listing_id, token_mint, symbol, total_supply, tokens_sold, price_per_token_usdc, valuation_krw, status 등. 구현 명세는 아카이브 10_RWA_TOKEN_SPEC Section 6 참조.
+*   **rwa_tokens**: listing_id, token_mint, symbol (`RURAL-{nodeId}`, 예: `RURAL-3000`), total_supply, tokens_sold, price_per_token_usdc, valuation_krw, status 등. 토큰 네이밍 규칙은 기획서 15 §2.3 참조.
 *   **rwa_investments**: user_id, token_mint_address, amount, total_invested_usdc, purchase_tx_signature 등.
-*   **배당**: 이력은 **rwa_dividends** 및 Anchor DividendPool과 연동. **배당 주기 = 1달(월 단위)**. 배당 기준 = **순이익**(총 매출 − 모든 운영 비용). **적자 시** 해당 월 배당 = 0(음수 배당 없음). 손실 이월 정책은 별도 검토. **운영 준비금**: 적자 월 급여·필수 비용 지급을 위해 **회사 보유 RWA의 일부를 매각한 대금**을 운영준비금으로 적립·보유(B안). 부족 시 준비금에서 충당. 보유 비율·매각 시점·목표 규모는 기획서 19 §2.5 및 별도 정책 참조. 상세는 10_RWA_DIVIDEND_LOGIC 참조.
+*   **배당**: 이력은 **rwa_dividends** 및 온체인 배당 모델(`acc_dividend_per_share` + `reward_debt`, Masterchef 패턴)과 연동. **배당 주기 = 1달(월 단위)**. 배당 기준 = **순이익**(총 매출 − 모든 운영 비용). **적자 시** 해당 월 배당 = 0(음수 배당 없음). 손실 이월 정책은 별도 검토. **운영 준비금**: 적자 월 급여·필수 비용 지급을 위해 **회사 보유 RWA의 일부를 매각한 대금**을 운영준비금으로 적립·보유(B안). 부족 시 준비금에서 충당. 보유 비율·매각 시점·목표 규모는 기획서 19 §2.5 및 별도 정책 참조. 상세는 10_RWA_DIVIDEND_LOGIC 참조.
 
 ---
 

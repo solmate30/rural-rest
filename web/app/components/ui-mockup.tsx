@@ -4,6 +4,7 @@ import { authClient } from "~/lib/auth.client";
 import { cn } from "~/lib/utils";
 import { useToast } from "~/hooks/use-toast";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useLocation, useNavigate } from "react-router";
 import { useKyc } from "./KycProvider";
 
@@ -116,9 +117,11 @@ export function Header() {
     const location = useLocation();
     const navigate = useNavigate();
     const { isKycCompleted } = useKyc();
+    const { disconnect } = useWallet();
     const isInvestRoute = location.pathname.startsWith('/invest') || location.pathname.startsWith('/my-investments');
 
     const handleSignOut = async () => {
+        await disconnect().catch(() => {});
         await authClient.signOut();
         toast({
             title: "로그아웃되었습니다",
@@ -166,8 +169,7 @@ export function Header() {
                                         className="h-10 text-xs font-bold gap-1 text-amber-600 hover:text-amber-700 border-amber-300 hover:border-amber-400 hover:bg-amber-50"
                                         onClick={() => navigate(`/kyc?return=${location.pathname}`)}
                                     >
-                                        <span className="material-symbols-outlined text-[16px]">badge</span>
-                                        Verify Identity
+                                        Verify KYC
                                     </Button>
                                 ) : (
                                     <WalletMultiButton className="!bg-[#17cf54] !text-white !border-none hover:!bg-[#14b847] !shadow-sm !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />

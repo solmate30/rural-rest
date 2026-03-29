@@ -250,7 +250,7 @@
 
 ## 6. Related Documents
 
-*   **Technical_Specs**: [23_GYEONGJU_MOCK_DATA_SPEC.md](../03_Technical_Specs/23_GYEONGJU_MOCK_DATA_SPEC.md) - 경주 파일럿 Mock 데이터 명세서 (개발자 전용) ⭐
+*   **Technical_Specs**: [15_GYEONGJU_MOCK_DATA_SPEC.md](../03_Technical_Specs/15_GYEONGJU_MOCK_DATA_SPEC.md) - 경주 파일럿 Mock 데이터 명세서 (개발자 전용) ⭐
 *   **Concept_Design**: [Vision Core](./01_VISION_CORE.md) - Phase 1 파일럿 전략
 *   **Concept_Design**: [Pitch Deck](./12_PITCH_DECK_v2.md) - 3자 협력 구조 (Slide 4, 7)
 *   **Concept_Design**: [Local Tourism Trends](./16_LOCAL_TOURISM_TRENDS.md) - 경주 황리단길 사례

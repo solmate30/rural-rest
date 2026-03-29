@@ -123,13 +123,13 @@ async function main() {
 
         db.prepare(`
             INSERT INTO rwa_tokens (
-                id, listing_id, total_supply, tokens_sold,
+                id, listing_id, symbol, total_supply, tokens_sold,
                 valuation_krw, price_per_token_usdc,
                 status, funding_deadline, estimated_apy_bps,
                 min_funding_bps, program_id, created_at, updated_at
-            ) VALUES (?, ?, ?, 0, ?, ?, 'funding', ?, 0, 6000, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, 0, ?, ?, 'funding', ?, 0, 6000, ?, ?, ?)
         `).run(
-            tokenId, listingId, totalSupply,
+            tokenId, listingId, `RURAL-${listingId}`, totalSupply,
             valuation, pricePerTokenUsdc,
             fundingDeadline, PROGRAM_ID, now, now
         );

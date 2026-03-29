@@ -52,6 +52,8 @@ export async function action({ request }: { request: Request }) {
         ? calcApyBps(listing.pricePerNight, valuationKrw)
         : 0;
 
+    const symbol = `RURAL-${listingId}`;
+
     const existing = await db
         .select({ id: rwaTokens.id })
         .from(rwaTokens)
@@ -62,6 +64,7 @@ export async function action({ request }: { request: Request }) {
             .update(rwaTokens)
             .set({
                 tokenMint,
+                symbol,
                 totalSupply: TOTAL_SUPPLY,
                 tokensSold: 0,
                 valuationKrw,
@@ -78,6 +81,7 @@ export async function action({ request }: { request: Request }) {
             id: uuidv4(),
             listingId,
             tokenMint,
+            symbol,
             totalSupply: TOTAL_SUPPLY,
             tokensSold: 0,
             valuationKrw,

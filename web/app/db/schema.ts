@@ -154,6 +154,7 @@ export const rwaTokens = sqliteTable("rwa_tokens", {
     id: text("id").primaryKey(), // UUID v4
     listingId: text("listing_id").notNull().references(() => listings.id),
     tokenMint: text("token_mint").unique(), // SPL Token Mint 주소 (null = 온체인 미초기화)
+    symbol: text("symbol").unique(),       // 토큰 심볼 (RURAL-3000, RURAL-3001, ...)
     totalSupply: integer("total_supply").notNull(),
     tokensSold: integer("tokens_sold").notNull().default(0),
     valuationKrw: integer("valuation_krw").notNull(),

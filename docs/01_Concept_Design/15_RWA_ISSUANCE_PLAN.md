@@ -39,9 +39,14 @@
     *   구매 상한과 별개 — 30% 보유자도 의결권은 10%로 제한
     *   Solana Realms Community Token 설정으로 구현 (DAO Phase 1)
 
-### 2.3. 메타데이터
+### 2.3. 토큰 네이밍 & 메타데이터
 
-*   온체인/오프체인 메타데이터: 숙소명, 심볼(예: YANG-001), 설명, 이미지 URI, location, valuation_krw, total_supply, listing_id 등. 상세 스키마는 구현 명세서 참조.
+*   **심볼 규칙**: `RURAL-{nodeId}` (예: `RURAL-3000` = 황오동 청송재)
+    *   nodeId: listings 테이블의 숙소 노드 번호 (3000, 3001, ...)
+    *   토큰화 시 `RURAL-{nodeId}` 형태로 자동 생성, rwa_tokens.symbol에 저장
+*   **토큰 이름**: `Rural Rest {숙소명}` (예: `Rural Rest 황오동 청송재`)
+*   **온체인 구현**: Token-2022 Metadata Extension으로 mint 생성 시 설정 (Stage 2 예정, 현재 미적용)
+*   **오프체인 메타데이터**: 숙소명, 설명, 이미지 URI, location, valuation_krw, total_supply, listing_id, nodeId 등. 상세 스키마는 구현 명세서 참조.
 
 ### 2.4. 배당 주기 및 기준
 
