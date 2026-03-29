@@ -196,7 +196,7 @@ export async function loader({ params }: Route.LoaderArgs) {
         occupancyRate,
         host: {
             name: hostUser?.name ?? "마을지기",
-            bio: null as string | null,
+            bio: "우리 마을의 빈집을 되살려 여행자에게 특별한 경험을 제공하고 있습니다. 마을 주민들과 함께 숙소를 운영하며, 지역 문화와 자연을 나누는 일을 하고 있습니다.",
         },
     };
 }
@@ -321,7 +321,7 @@ export default function InvestDetail() {
 
                         {/* Host Info */}
                         <section className="space-y-6 pt-8 border-t">
-                            <h2 className="text-2xl font-bold text-foreground">호스트 정보</h2>
+                            <h2 className="text-2xl font-bold text-foreground">마을 운영자</h2>
                             <div className="flex gap-6 items-start">
                                 <div className="h-16 w-16 rounded-full bg-stone-200 shrink-0 overflow-hidden border-2 border-white shadow-md">
                                     <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=e2e8f0" alt="Host Profile" className="w-full h-full object-cover" />
