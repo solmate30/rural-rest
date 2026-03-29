@@ -1,19 +1,44 @@
 /**
  * 00_seed_gyeongju.ts — 경주 파일럿 5채 DB 시드
  *
- * 실행:
+ * 실행 (로컬 DB):
  *   cd web
  *   npx tsx scripts/00_seed_gyeongju.ts
+ *
+ * 실행 (Turso 원격):
+ *   cd web
+ *   TURSO_DATABASE_URL=libsql://... TURSO_AUTH_TOKEN=... npx tsx scripts/00_seed_gyeongju.ts
  */
 
-import Database from "better-sqlite3";
+import { createClient } from "@libsql/client";
+import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { v4 as uuidv4 } from "uuid";
 
+// .env 파일 로드
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, "../local.db");
+const envPath = path.join(__dirname, "../.env");
+if (fs.existsSync(envPath)) {
+    for (const line of fs.readFileSync(envPath, "utf-8").split("\n")) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) continue;
+        const eqIdx = trimmed.indexOf("=");
+        if (eqIdx < 0) continue;
+        const key = trimmed.slice(0, eqIdx).trim();
+        const val = trimmed.slice(eqIdx + 1).trim();
+        if (!process.env[key]) process.env[key] = val;
+    }
+}
+
+const dbUrl = process.env.TURSO_DATABASE_URL ?? "file:./local.db";
+const authToken = process.env.TURSO_AUTH_TOKEN;
+
+const db = createClient({
+    url: dbUrl,
+    authToken: dbUrl.startsWith("file:") ? undefined : authToken,
+});
+
 const PROGRAM_ID = "EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR";
 const TOTAL_SUPPLY = 100_000_000;
 const KRW_PER_USDC = 1350;
@@ -123,98 +148,104 @@ const LISTINGS = [
 ];
 
 async function main() {
-    if (!fs.existsSync(DB_PATH)) {
-        console.error(`오류: DB 파일이 없습니다: ${DB_PATH}`);
-        console.error("npm run dev 를 한 번 실행하면 DB가 초기화됩니다.");
-        process.exit(1);
-    }
-
-    const db = new Database(DB_PATH);
+    const isRemote = dbUrl.startsWith("libsql://");
     const now = Math.floor(Date.now() / 1000);
 
     console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("  [Seed] 경주 파일럿 5채");
+    console.log(`  [Seed] 경주 파일럿 5채 (${isRemote ? "Turso 원격" : "로컬 DB"})`);
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     // 1. 호스트 유저
-    let hostRow = db.prepare("SELECT id FROM user WHERE email = ?").get(HOST_EMAIL) as { id: string } | undefined;
-    if (hostRow) {
-        db.prepare("UPDATE user SET name = ? WHERE id = ?").run("마을지기", hostRow.id);
-        console.log(`\n  [업데이트] 호스트: ${hostRow.id} → 마을지기`);
+    const hostResult = await db.execute({ sql: "SELECT id FROM user WHERE email = ?", args: [HOST_EMAIL] });
+    let hostId: string;
+
+    if (hostResult.rows.length > 0) {
+        hostId = hostResult.rows[0].id as string;
+        await db.execute({ sql: "UPDATE user SET name = ? WHERE id = ?", args: ["마을지기", hostId] });
+        console.log(`\n  [업데이트] 호스트: ${hostId} → 마을지기`);
     } else {
-        const hostId = uuidv4();
-        db.prepare(`
-            INSERT INTO user (id, name, email, email_verified, role, preferred_lang, kyc_verified, created_at, updated_at)
-            VALUES (?, ?, ?, 1, 'host', 'ko', 1, ?, ?)
-        `).run(hostId, "마을지기", HOST_EMAIL, now, now);
-        hostRow = { id: hostId };
+        hostId = uuidv4();
+        await db.execute({
+            sql: `INSERT INTO user (id, name, email, email_verified, role, preferred_lang, kyc_verified, created_at, updated_at)
+                  VALUES (?, ?, ?, 1, 'host', 'ko', 1, ?, ?)`,
+            args: [hostId, "마을지기", HOST_EMAIL, now, now],
+        });
         console.log(`\n  [신규] 호스트: ${hostId}`);
     }
 
     // 2. listings + rwa_tokens
     for (const l of LISTINGS) {
-        const existingListing = db.prepare("SELECT id FROM listings WHERE id = ?").get(l.id);
-        if (existingListing) {
-            db.prepare(`
-                UPDATE listings SET
-                    title = ?, description = ?,
-                    price_per_night = ?, valuation_krw = ?, max_guests = ?,
-                    location = ?, region = ?, amenities = ?, images = ?,
-                    lat = ?, lng = ?, renovation_history = ?
-                WHERE id = ?
-            `).run(
-                l.title, l.description,
-                l.pricePerNight, l.valuationKrw, l.maxGuests,
-                l.location, l.region,
-                JSON.stringify(l.amenities), JSON.stringify(l.images),
-                l.lat, l.lng, JSON.stringify(l.renovationHistory),
-                l.id
-            );
+        const existing = await db.execute({ sql: "SELECT id FROM listings WHERE id = ?", args: [l.id] });
+
+        if (existing.rows.length > 0) {
+            await db.execute({
+                sql: `UPDATE listings SET
+                        title = ?, description = ?,
+                        price_per_night = ?, valuation_krw = ?, max_guests = ?,
+                        location = ?, region = ?, amenities = ?, images = ?,
+                        lat = ?, lng = ?, renovation_history = ?
+                      WHERE id = ?`,
+                args: [
+                    l.title, l.description,
+                    l.pricePerNight, l.valuationKrw, l.maxGuests,
+                    l.location, l.region,
+                    JSON.stringify(l.amenities), JSON.stringify(l.images),
+                    l.lat, l.lng, JSON.stringify(l.renovationHistory),
+                    l.id,
+                ],
+            });
             console.log(`  [업데이트] listing: ${l.id} ${l.title}`);
         } else {
-            db.prepare(`
-                INSERT INTO listings (
-                    id, host_id, title, description,
-                    price_per_night, valuation_krw, max_guests,
-                    location, region, amenities, images,
-                    lat, lng, renovation_history, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(
-                l.id, hostRow.id, l.title, l.description,
-                l.pricePerNight, l.valuationKrw, l.maxGuests,
-                l.location, l.region,
-                JSON.stringify(l.amenities), JSON.stringify(l.images),
-                l.lat, l.lng, JSON.stringify(l.renovationHistory), now
-            );
+            await db.execute({
+                sql: `INSERT INTO listings (
+                        id, host_id, title, description,
+                        price_per_night, valuation_krw, max_guests,
+                        location, region, amenities, images,
+                        lat, lng, renovation_history, created_at
+                      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                args: [
+                    l.id, hostId, l.title, l.description,
+                    l.pricePerNight, l.valuationKrw, l.maxGuests,
+                    l.location, l.region,
+                    JSON.stringify(l.amenities), JSON.stringify(l.images),
+                    l.lat, l.lng, JSON.stringify(l.renovationHistory), now,
+                ],
+            });
             console.log(`  [신규] listing: ${l.id} ${l.title}`);
         }
 
-        const existingToken = db.prepare("SELECT id FROM rwa_tokens WHERE listing_id = ?").get(l.id);
-        if (existingToken) {
-            console.log(`         rwa_tokens: 재사용`);
+        const existingToken = await db.execute({ sql: "SELECT id FROM rwa_tokens WHERE listing_id = ?", args: [l.id] });
+        if (existingToken.rows.length > 0) {
+            const pricePerTokenUsdc = Math.max(1, Math.round((l.valuationKrw / TOTAL_SUPPLY) / KRW_PER_USDC * 1_000_000));
+            await db.execute({
+                sql: `UPDATE rwa_tokens SET
+                        status = 'draft', valuation_krw = ?, price_per_token_usdc = ?, updated_at = ?
+                      WHERE listing_id = ?`,
+                args: [l.valuationKrw, pricePerTokenUsdc, now, l.id],
+            });
+            console.log(`         rwa_tokens: draft로 업데이트`);
         } else {
             const tokenId = uuidv4();
             const pricePerTokenUsdc = Math.max(1, Math.round((l.valuationKrw / TOTAL_SUPPLY) / KRW_PER_USDC * 1_000_000));
-            const fundingDeadline = now + 60 * 24 * 60 * 60; // 60일 후
+            const fundingDeadline = now + 60 * 24 * 60 * 60;
             const symbol = `RURAL-${l.id}`;
 
-            db.prepare(`
-                INSERT INTO rwa_tokens (
-                    id, listing_id, symbol, total_supply, tokens_sold,
-                    valuation_krw, price_per_token_usdc,
-                    status, funding_deadline, estimated_apy_bps,
-                    min_funding_bps, program_id, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, 0, ?, ?, 'funding', ?, 0, 6000, ?, ?, ?)
-            `).run(
-                tokenId, l.id, symbol, TOTAL_SUPPLY,
-                l.valuationKrw, pricePerTokenUsdc,
-                fundingDeadline, PROGRAM_ID, now, now
-            );
+            await db.execute({
+                sql: `INSERT INTO rwa_tokens (
+                        id, listing_id, symbol, total_supply, tokens_sold,
+                        valuation_krw, price_per_token_usdc,
+                        status, funding_deadline, estimated_apy_bps,
+                        min_funding_bps, program_id, created_at, updated_at
+                      ) VALUES (?, ?, ?, ?, 0, ?, ?, 'draft', ?, 0, 6000, ?, ?, ?)`,
+                args: [
+                    tokenId, l.id, symbol, TOTAL_SUPPLY,
+                    l.valuationKrw, pricePerTokenUsdc,
+                    fundingDeadline, PROGRAM_ID, now, now,
+                ],
+            });
             console.log(`         rwa_tokens: ${symbol}, price=${pricePerTokenUsdc} micro-USDC`);
         }
     }
-
-    db.close();
 
     console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log("  완료! 경주 파일럿 5채 시드 완료");
