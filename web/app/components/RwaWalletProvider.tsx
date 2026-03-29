@@ -39,13 +39,11 @@ export default function RwaWalletProvider({ children }: { children: React.ReactN
         [network]
     );
 
-    // SSR/first-render: pass empty wallets to avoid adapter DOM init before hydration
     const wallets = useMemo(
         () => isClient ? [new PhantomWalletAdapter(), new SolflareWalletAdapter()] : [],
         [isClient]
     );
 
-    // Always render providers so useWallet()/useConnection() have context on every render
     return (
         <ConnectionProvider endpoint={endpoint}>
             <WalletProvider wallets={wallets} autoConnect>
