@@ -216,9 +216,15 @@ export async function getOperatorListings(operatorId: string): Promise<HostListi
             pricePerNight: listings.pricePerNight,
             images: listings.images,
             operatorId: listings.operatorId,
+            valuationKrw: listings.valuationKrw,
             tokenStatus: rwaTokens.status,
             tokenMint: rwaTokens.tokenMint,
             rwaTokenId: rwaTokens.id,
+            tokensSold: rwaTokens.tokensSold,
+            totalSupply: rwaTokens.totalSupply,
+            fundingDeadline: rwaTokens.fundingDeadline,
+            minFundingBps: rwaTokens.minFundingBps,
+            pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc,
         })
         .from(listings)
         .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
@@ -239,9 +245,15 @@ export async function getOperatorListings(operatorId: string): Promise<HostListi
             pricePerNight: r.pricePerNight,
             image,
             operatorId: r.operatorId ?? null,
+            valuationKrw: r.valuationKrw ?? 0,
             tokenStatus: onchain?.status ?? r.tokenStatus ?? null,
             tokenMint: r.tokenMint ?? null,
             rwaTokenId: r.rwaTokenId ?? null,
+            tokensSold: onchain?.tokensSold ?? r.tokensSold ?? 0,
+            totalSupply: r.totalSupply ?? 0,
+            fundingDeadline: r.fundingDeadline ? new Date(r.fundingDeadline).toISOString() : null,
+            minFundingBps: r.minFundingBps ?? 6000,
+            pricePerTokenUsdc: r.pricePerTokenUsdc ?? 0,
         };
     });
 }
