@@ -32,8 +32,12 @@
 ### 2.2. 최소 투자 단위 및 상한
 
 *   **최소 매수**: 1 토큰 (소액 투자 접근성)
-*   **최대 매수 (일반)**: 해당 빈집 총 발행량의 10% (집중 리스크 방지)
-*   **최대 매수 (적격 투자자)**: 총 발행량의 30% (상한 완화)
+*   **최대 매수 (구매)**: 총 발행량의 **30%** — 온체인(Anchor) 하드캡
+    *   일반/적격 투자자 구분은 KYC 연동 단계에서 분기 예정 (현재는 단일 30% 적용)
+    *   2차 유통 시장 도입 시 락업 조건과 함께 재검토
+*   **의결권 상한**: 총 발행량의 **10%** per entity (KYC 기반 실명 집계)
+    *   구매 상한과 별개 — 30% 보유자도 의결권은 10%로 제한
+    *   Solana Realms Community Token 설정으로 구현 (DAO Phase 1)
 
 ### 2.3. 메타데이터
 
@@ -112,7 +116,7 @@
 - [14_DAO_GOVERNANCE_PLAN.md](./14_DAO_GOVERNANCE_PLAN.md) - DAO 기획 (RWA = Community Token)
 - [08_PITCH_DECK_v2.md](./08_PITCH_DECK_v2.md) - 피치 덱 (RWA·DAO 전략)
 - **Technical_Specs**: [09_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세서
-- **Logic_Progress**: [11_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/11_RWA_DIVIDEND_LOGIC.md) - RWA 배당 로직
+- **Logic_Progress**: [10_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/10_RWA_DIVIDEND_LOGIC.md) - RWA 배당 로직
 - **Archive**: [12_RWA_TOKENIZATION_LOGIC.md](../00_ARCHIVE/future_blockchain/12_RWA_TOKENIZATION_LOGIC.md) - 토큰화 파이프라인·배당 알고리즘 (참고용)
 - **Archive**: [10_RWA_TOKEN_SPEC.md](../00_ARCHIVE/future_blockchain/10_RWA_TOKEN_SPEC.md) - 레거시 RWA 토큰 상세 명세 (참고용)
-- **QA_Validation**: [RWA_ISSUANCE_TEST_SCENARIOS.md](../05_QA_Validation/RWA_ISSUANCE_TEST_SCENARIOS.md) - RWA 발행·매수 테스트 시나리오
+- **QA_Validation**: [08_RWA_ISSUANCE_TEST_SCENARIOS.md](../05_QA_Validation/08_RWA_ISSUANCE_TEST_SCENARIOS.md) - RWA 발행·매수 테스트 시나리오
