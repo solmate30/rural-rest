@@ -11,8 +11,16 @@ Rural Rest is an Airbnb-style platform for renovated abandoned houses in rural K
 This is a **split-root** project:
 - **Root (`/`)** -- Management layer: Git, documentation (`docs/`), project-level config (`AGENTS.md`, `DESIGN.md`)
 - **App (`/web/`)** -- Implementation layer: all source code, dependencies, build config
+- **Anchor (`/anchor/`)** -- Solana on-chain program (RWA tokenization, USDC escrow, dividend distribution)
 
-Git operations run from root. App commands (`npm run dev`, etc.) run from `web/`.
+Git operations run from root. App commands (`npm run dev`, etc.) run from `web/`. Anchor commands run from `anchor/`.
+
+## Anchor Program
+
+온체인 RWA 프로그램 (`anchor/programs/rural-rest-rwa/src/lib.rs`).
+- 개발 가이드 및 Critical Rules: `anchor/CLAUDE.md`
+- 기술 명세 (PDA seeds, 수학, 에러코드, 테스트): `docs/03_Technical_Specs/11_ANCHOR_PROGRAM_SPEC.md`
+- 보안/CU 감사: `docs/03_Technical_Specs/10_ANCHOR_PROGRAM_AUDIT.md`
 
 ## Development Commands
 
