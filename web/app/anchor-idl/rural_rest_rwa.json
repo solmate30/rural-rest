@@ -68,6 +68,141 @@
       ]
     },
     {
+      "name": "cancel_position",
+      "discriminator": [
+        238,
+        238,
+        23,
+        104,
+        199,
+        77,
+        104,
+        68
+      ],
+      "accounts": [
+        {
+          "name": "investor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "property_token",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  112,
+                  101,
+                  114,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "listing_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "investor_position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "property_token"
+              },
+              {
+                "kind": "account",
+                "path": "investor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_mint",
+          "writable": true
+        },
+        {
+          "name": "investor_rwa_account",
+          "writable": true
+        },
+        {
+          "name": "funding_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  117,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "listing_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "investor_usdc_account",
+          "writable": true
+        },
+        {
+          "name": "usdc_mint"
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "usdc_token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "listing_id",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "claim_dividend",
       "discriminator": [
         15,
@@ -518,7 +653,7 @@
           "type": "u64"
         },
         {
-          "name": "valudation_krw",
+          "name": "valuation_krw",
           "type": "u64"
         },
         {
@@ -532,6 +667,89 @@
         {
           "name": "min_funding_bps",
           "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "open_position",
+      "discriminator": [
+        135,
+        128,
+        47,
+        77,
+        15,
+        152,
+        240,
+        49
+      ],
+      "accounts": [
+        {
+          "name": "investor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "property_token",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  112,
+                  101,
+                  114,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "listing_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "investor_position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "property_token"
+              },
+              {
+                "kind": "account",
+                "path": "investor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_listing_id",
+          "type": "string"
         }
       ]
     },
@@ -1050,6 +1268,36 @@
       "code": 6011,
       "name": "AuthorityCannotInvest",
       "msg": "The property authority cannot invest in their own property."
+    },
+    {
+      "code": 6012,
+      "name": "ZeroAmount",
+      "msg": "Amount must be greater than zero."
+    },
+    {
+      "code": 6013,
+      "name": "ZeroRevenue",
+      "msg": "Revenue must be greater than zero."
+    },
+    {
+      "code": 6014,
+      "name": "FundsAlreadyReleased",
+      "msg": "Funds have already been released."
+    },
+    {
+      "code": 6015,
+      "name": "InvalidFundingBps",
+      "msg": "Invalid funding bps: must be between 1 and 10000."
+    },
+    {
+      "code": 6016,
+      "name": "InvalidPrice",
+      "msg": "Invalid price: must be greater than zero."
+    },
+    {
+      "code": 6017,
+      "name": "DeadlineTooFar",
+      "msg": "Deadline too far in the future (max 365 days)."
     }
   ],
   "types": [
@@ -1119,6 +1367,10 @@
             "type": "pubkey"
           },
           {
+            "name": "usdc_mint",
+            "type": "pubkey"
+          },
+          {
             "name": "total_supply",
             "type": "u64"
           },
@@ -1127,7 +1379,7 @@
             "type": "u64"
           },
           {
-            "name": "valudation_krw",
+            "name": "valuation_krw",
             "type": "u64"
           },
           {
@@ -1153,6 +1405,10 @@
           {
             "name": "min_funding_bps",
             "type": "u16"
+          },
+          {
+            "name": "funds_released",
+            "type": "bool"
           },
           {
             "name": "funding_vault_bump",

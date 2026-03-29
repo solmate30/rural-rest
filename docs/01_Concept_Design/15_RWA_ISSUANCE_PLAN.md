@@ -32,12 +32,21 @@
 ### 2.2. 최소 투자 단위 및 상한
 
 *   **최소 매수**: 1 토큰 (소액 투자 접근성)
-*   **최대 매수 (일반)**: 해당 빈집 총 발행량의 10% (집중 리스크 방지)
-*   **최대 매수 (적격 투자자)**: 총 발행량의 30% (상한 완화)
+*   **최대 매수 (구매)**: 총 발행량의 **30%** — 온체인(Anchor) 하드캡
+    *   일반/적격 투자자 구분은 KYC 연동 단계에서 분기 예정 (현재는 단일 30% 적용)
+    *   2차 유통 시장 도입 시 락업 조건과 함께 재검토
+*   **의결권 상한**: 총 발행량의 **10%** per entity (KYC 기반 실명 집계)
+    *   구매 상한과 별개 — 30% 보유자도 의결권은 10%로 제한
+    *   Solana Realms Community Token 설정으로 구현 (DAO Phase 1)
 
-### 2.3. 메타데이터
+### 2.3. 토큰 네이밍 & 메타데이터
 
-*   온체인/오프체인 메타데이터: 숙소명, 심볼(예: YANG-001), 설명, 이미지 URI, location, valuation_krw, total_supply, listing_id 등. 상세 스키마는 구현 명세서 참조.
+*   **심볼 규칙**: `RURAL-{nodeId}` (예: `RURAL-3000` = 황오동 청송재)
+    *   nodeId: listings 테이블의 숙소 노드 번호 (3000, 3001, ...)
+    *   토큰화 시 `RURAL-{nodeId}` 형태로 자동 생성, rwa_tokens.symbol에 저장
+*   **토큰 이름**: `Rural Rest {숙소명}` (예: `Rural Rest 황오동 청송재`)
+*   **온체인 구현**: Token-2022 Metadata Extension으로 mint 생성 시 설정 (Stage 2 예정, 현재 미적용)
+*   **오프체인 메타데이터**: 숙소명, 설명, 이미지 URI, location, valuation_krw, total_supply, listing_id, nodeId 등. 상세 스키마는 구현 명세서 참조.
 
 ### 2.4. 배당 주기 및 기준
 
@@ -112,7 +121,7 @@
 - [14_DAO_GOVERNANCE_PLAN.md](./14_DAO_GOVERNANCE_PLAN.md) - DAO 기획 (RWA = Community Token)
 - [08_PITCH_DECK_v2.md](./08_PITCH_DECK_v2.md) - 피치 덱 (RWA·DAO 전략)
 - **Technical_Specs**: [09_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세서
-- **Logic_Progress**: [11_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/11_RWA_DIVIDEND_LOGIC.md) - RWA 배당 로직
+- **Logic_Progress**: [10_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/10_RWA_DIVIDEND_LOGIC.md) - RWA 배당 로직
 - **Archive**: [12_RWA_TOKENIZATION_LOGIC.md](../00_ARCHIVE/future_blockchain/12_RWA_TOKENIZATION_LOGIC.md) - 토큰화 파이프라인·배당 알고리즘 (참고용)
 - **Archive**: [10_RWA_TOKEN_SPEC.md](../00_ARCHIVE/future_blockchain/10_RWA_TOKEN_SPEC.md) - 레거시 RWA 토큰 상세 명세 (참고용)
-- **QA_Validation**: [RWA_ISSUANCE_TEST_SCENARIOS.md](../05_QA_Validation/RWA_ISSUANCE_TEST_SCENARIOS.md) - RWA 발행·매수 테스트 시나리오
+- **QA_Validation**: [08_RWA_ISSUANCE_TEST_SCENARIOS.md](../05_QA_Validation/08_RWA_ISSUANCE_TEST_SCENARIOS.md) - RWA 발행·매수 테스트 시나리오

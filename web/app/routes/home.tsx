@@ -2,20 +2,14 @@ import { Header, Button, Card, Badge, Slider, Footer } from "../components/ui-mo
 import { useState, useMemo } from "react";
 import { useLoaderData, useNavigate } from "react-router";
 import { db } from "~/db/index.server";
-import { listings } from "~/db/schema";
+import { listings, rwaTokens } from "~/db/schema";
+import { eq, and, inArray, isNotNull } from "drizzle-orm";
 
 function toCityLabel(location: string): string {
     const m = location.match(/([가-힣]+)시/);
     return m ? `${m[1]} 근처` : location;
 }
 
-const FAKE_RATINGS: Record<string, number> = {
-    "seed-listing-gyeongju-3000": 4.9,
-    "seed-listing-gyeongju-3001": 4.8,
-    "seed-listing-gyeongju-3002": 4.7,
-    "seed-listing-gyeongju-3003": 5.0,
-    "seed-listing-gyeongju-3004": 4.8,
-};
 
 export async function loader() {
     const rows = await db
@@ -28,8 +22,14 @@ export async function loader() {
             pricePerNight: listings.pricePerNight,
             maxGuests: listings.maxGuests,
             images: listings.images,
+            tokenStatus: rwaTokens.status,
         })
-        .from(listings);
+        .from(listings)
+        .innerJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
+        .where(and(
+            inArray(rwaTokens.status, ["funding", "funded"]),
+            isNotNull(rwaTokens.tokenMint),
+        ));
 
     return {
         featuredListings: rows.map((row) => ({
@@ -42,7 +42,7 @@ export async function loader() {
             pricePerNight: row.pricePerNight,
             maxGuests: row.maxGuests,
             image: (row.images as string[])[0] ?? "/house.png",
-            rating: FAKE_RATINGS[row.id] ?? 4.7,
+            rating: null as number | null,
         })),
     };
 }
@@ -183,9 +183,11 @@ export default function Home() {
                   <div className="p-6 bg-white">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-bold text-primary tracking-widest uppercase">{listing.cityLabel}</span>
-                      <span className="text-xs text-stone-500 font-medium flex items-center gap-0.5">
-                        ★ {listing.rating}
-                      </span>
+                      {listing.rating != null && (
+                        <span className="text-xs text-stone-500 font-medium flex items-center gap-0.5">
+                          ★ {listing.rating}
+                        </span>
+                      )}
                     </div>
                     <h3 className="text-xl font-bold mb-2">{listing.title}</h3>
                     <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{listing.description}</p>

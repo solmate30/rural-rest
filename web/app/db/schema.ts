@@ -11,6 +11,9 @@ export const user = sqliteTable("user", {
     preferredLang: text("preferred_lang").notNull().default("en"),
     walletAddress: text("wallet_address"), // Solana 지갑 주소
     walletConnectedAt: text("wallet_connected_at"), // 지갑 연결 시간
+    kycVerified: integer("kyc_verified", { mode: "boolean" }).notNull().default(false),
+    kycVerifiedAt: text("kyc_verified_at"),
+    walletNonce: text("wallet_nonce"), // SIWS 서명 챌린지용 일회성 nonce
     createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
@@ -151,17 +154,19 @@ export const rwaTokens = sqliteTable("rwa_tokens", {
     id: text("id").primaryKey(), // UUID v4
     listingId: text("listing_id").notNull().references(() => listings.id),
     tokenMint: text("token_mint").unique(), // SPL Token Mint 주소 (null = 온체인 미초기화)
+    symbol: text("symbol").unique(),       // 토큰 심볼 (RURAL-3000, RURAL-3001, ...)
     totalSupply: integer("total_supply").notNull(),
     tokensSold: integer("tokens_sold").notNull().default(0),
     valuationKrw: integer("valuation_krw").notNull(),
     pricePerTokenUsdc: integer("price_per_token_usdc").notNull(), // micro-USDC (6자리)
     status: text("status", {
-        enum: ["funding", "funded", "active", "failed"],
-    }).notNull().default("funding"),
+        enum: ["draft", "funding", "funded", "active", "failed"],
+    }).notNull().default("draft"),
     fundingDeadline: integer("funding_deadline", { mode: "timestamp" }).notNull(),
     estimatedApyBps: integer("estimated_apy_bps").notNull().default(0), // 예상 연수익률 (basis points, 820 = 8.2%)
     minFundingBps: integer("min_funding_bps").notNull().default(6000), // 60%
     programId: text("program_id").notNull(), // Anchor 프로그램 ID
+    lastSettlementAt: integer("last_settlement_at", { mode: "timestamp" }), // 마지막 정산 시각
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
     updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });
@@ -193,10 +198,11 @@ export const rwaDividends = sqliteTable("rwa_dividends", {
 });
 
 // =====================
-// 마을 운영자 정산
+// 정산 (운영자 / 지자체)
 // =====================
 
-// 월별 운영자 정산 내역 (영업이익의 30% → 마을 운영자, 온체인 지급)
+// 월별 운영자 정산 내역 (영업이익의 30% → 마을 운영자)
+// 어드민이 직접 전송(push)하고 tx 서명을 기록 — 클레임 불필요
 export const operatorSettlements = sqliteTable("operator_settlements", {
     id: text("id").primaryKey(), // UUID v4
     operatorId: text("operator_id").notNull().references(() => user.id),
@@ -206,7 +212,22 @@ export const operatorSettlements = sqliteTable("operator_settlements", {
     operatingCostKrw: integer("operating_cost_krw").notNull().default(0), // 운영비 (청소, 공과금, 소모품 등)
     operatingProfitKrw: integer("operating_profit_krw").notNull(), // 영업이익 = 매출 - 운영비
     settlementUsdc: integer("settlement_usdc").notNull(),    // 운영자 몫 micro-USDC (영업이익 × 30%)
-    claimTx: text("claim_tx"),                               // Solana 트랜잭션 서명 (null = 미수령)
-    claimedAt: integer("claimed_at", { mode: "timestamp" }),
+    payoutTx: text("payout_tx"),                             // Solana 전송 tx 서명 (null = 미전송)
+    paidAt: integer("paid_at", { mode: "timestamp" }),       // 자동 지급 시각
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+});
+
+// 월별 지자체 분배 내역 (영업이익의 40% → 지자체 고정 지갑)
+// 어드민이 고정 지갑으로 직접 전송(push) — 클레임 불필요
+export const localGovSettlements = sqliteTable("local_gov_settlements", {
+    id: text("id").primaryKey(), // UUID v4
+    listingId: text("listing_id").notNull().references(() => listings.id),
+    month: text("month").notNull(),                           // "2026-03" 형식
+    grossRevenueKrw: integer("gross_revenue_krw").notNull(),
+    operatingProfitKrw: integer("operating_profit_krw").notNull(),
+    settlementUsdc: integer("settlement_usdc").notNull(),     // 지자체 몫 micro-USDC (영업이익 × 40%)
+    govWalletAddress: text("gov_wallet_address"),             // 지자체 수령 지갑 (환경변수로 관리)
+    payoutTx: text("payout_tx"),                             // Solana 전송 tx 서명
+    paidAt: integer("paid_at", { mode: "timestamp" }),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });

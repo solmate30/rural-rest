@@ -4,13 +4,22 @@ import { db } from "../db/index.server";
 import { listings, rwaTokens } from "../db/schema";
 import { requireUser } from "../lib/auth.server";
 
-// 예상 APY = pricePerNight × 365 × 55% 점유율 × 30% 순수익률 / 감정가
+// 예상 APY = pricePerNight × 365 × 점유율 × (1 - 운영비율) × 투자자배분 / 감정가
+// 상세 근거: docs/04_Logic_Progress/16_APY_CALCULATION_SPEC.md
+const OCCUPANCY_RATE = 0.55;       // 점유율 55%
+const OPERATING_COST_RATIO = 0.45; // 운영비 45% (청소/관리/플랫폼수수료/유지보수/세금)
+const INVESTOR_SHARE = 0.30;       // 투자자 배분 30% (SPV 수익 분배 구조)
+
 function calcApyBps(pricePerNight: number, valuationKrw: number): number {
-    return Math.round((pricePerNight * 365 * 0.55 * 0.30) / valuationKrw * 10000);
+    if (valuationKrw <= 0) return 0;
+    const annualGross = pricePerNight * 365 * OCCUPANCY_RATE;
+    const noi = annualGross * (1 - OPERATING_COST_RATIO);
+    const investorReturn = noi * INVESTOR_SHARE;
+    return Math.round(investorReturn / valuationKrw * 10000);
 }
 
-const PROGRAM_ID = process.env.RWA_PROGRAM_ID ?? "EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR";
-const TOTAL_SUPPLY = 100_000_000;
+import { SERVER_PROGRAM_ID } from "~/lib/constants.server";
+import { TOTAL_SUPPLY } from "~/lib/constants";
 
 interface SaveMintBody {
     listingId: string;
@@ -43,6 +52,8 @@ export async function action({ request }: { request: Request }) {
         ? calcApyBps(listing.pricePerNight, valuationKrw)
         : 0;
 
+    const symbol = `RURAL-${listingId}`;
+
     const existing = await db
         .select({ id: rwaTokens.id })
         .from(rwaTokens)
@@ -53,6 +64,7 @@ export async function action({ request }: { request: Request }) {
             .update(rwaTokens)
             .set({
                 tokenMint,
+                symbol,
                 totalSupply: TOTAL_SUPPLY,
                 tokensSold: 0,
                 valuationKrw,
@@ -69,6 +81,7 @@ export async function action({ request }: { request: Request }) {
             id: uuidv4(),
             listingId,
             tokenMint,
+            symbol,
             totalSupply: TOTAL_SUPPLY,
             tokensSold: 0,
             valuationKrw,
@@ -77,7 +90,7 @@ export async function action({ request }: { request: Request }) {
             estimatedApyBps,
             fundingDeadline,
             status: "funding",
-            programId: PROGRAM_ID,
+            programId: SERVER_PROGRAM_ID,
             createdAt: new Date(),
             updatedAt: new Date(),
         });

@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { ConnectionProvider, WalletProvider, WalletContext, useWallet } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { SolflareWalletAdapter, PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 
@@ -34,13 +34,15 @@ export default function RwaWalletProvider({ children }: { children: React.ReactN
     const network = (import.meta.env.VITE_SOLANA_NETWORK as WalletAdapterNetwork)
         ?? WalletAdapterNetwork.Devnet;
 
-    const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+    const endpoint = useMemo(
+        () => import.meta.env.VITE_SOLANA_RPC ?? clusterApiUrl(network),
+        [network]
+    );
 
-    const wallets = useMemo(() => [new SolflareWalletAdapter()], []);
-
-    if (!isClient) {
-        return <>{children}</>;
-    }
+    const wallets = useMemo(
+        () => isClient ? [new PhantomWalletAdapter(), new SolflareWalletAdapter()] : [],
+        [isClient]
+    );
 
     return (
         <ConnectionProvider endpoint={endpoint}>

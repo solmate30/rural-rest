@@ -8,14 +8,11 @@ import {
     ResponsiveContainer,
 } from "recharts";
 
-const DUMMY_DIVIDENDS = [3.2, 3.0, 3.9, 3.5, 4.5, 4.2, 5.2, 4.9, 4.4, 5.4, 5.1, 4.1];
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-const chartData = MONTHS.map((month, i) => ({
-    month,
-    dividend: DUMMY_DIVIDENDS[i],
-    cumulative: DUMMY_DIVIDENDS.slice(0, i + 1).reduce((a, b) => a + b, 0),
-}));
+interface ChartEntry {
+    month: string;
+    dividend: number;
+    cumulative: number;
+}
 
 function CustomTooltip({ active, payload, label }: any) {
     if (!active || !payload?.length) return null;
@@ -42,17 +39,20 @@ function CustomTooltip({ active, payload, label }: any) {
 
 interface Props {
     apy: number;
+    chartData: ChartEntry[];
+    isActual?: boolean;
 }
 
-export function RevenueChart({ apy }: Props) {
-    const annualTotal = DUMMY_DIVIDENDS.reduce((a, b) => a + b, 0);
+export function RevenueChart({ apy, chartData, isActual = false }: Props) {
+    const annualTotal = chartData.reduce((sum, d) => sum + d.dividend, 0);
 
     return (
         <div className="rounded-3xl bg-white border border-stone-100 shadow-sm overflow-hidden">
-            {/* Header */}
             <div className="px-6 pt-6 pb-5 flex items-start justify-between">
                 <div>
-                    <p className="text-xs text-stone-400 font-medium">Est. Annual Dividend</p>
+                    <p className="text-xs text-stone-400 font-medium">
+                        {isActual ? "Annual Dividend (Actual)" : "Est. Annual Dividend"}
+                    </p>
                     <p className="text-3xl font-bold text-[#4a3b2c] mt-0.5">
                         {annualTotal.toFixed(1)}
                         <span className="text-base font-normal text-stone-400 ml-1.5">USDC / 1,000 tokens</span>
@@ -64,7 +64,6 @@ export function RevenueChart({ apy }: Props) {
                 </div>
             </div>
 
-            {/* Chart */}
             <div className="h-[200px] px-4">
                 <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={chartData} margin={{ top: 0, right: 10, left: -28, bottom: 0 }} barSize={18}>
@@ -84,7 +83,6 @@ export function RevenueChart({ apy }: Props) {
                 </ResponsiveContainer>
             </div>
 
-            {/* Legend */}
             <div className="flex justify-center items-center gap-6 px-6 py-4 border-t border-stone-100">
                 <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-sm bg-[#17cf54] opacity-85" />
@@ -94,6 +92,9 @@ export function RevenueChart({ apy }: Props) {
                     <div className="w-3 h-3 rounded-full bg-[#ab9ff2]" />
                     <span className="text-xs text-stone-500">Cumulative</span>
                 </div>
+                {!isActual && (
+                    <span className="text-xs text-stone-400 ml-2">* Projected</span>
+                )}
             </div>
         </div>
     );

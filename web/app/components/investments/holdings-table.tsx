@@ -1,34 +1,32 @@
-import { Wallet, Sparkles } from "lucide-react";
+import { ClaimButton } from "./ClaimButton";
+import { CancelPositionButton } from "./CancelPositionButton";
+import { RefundButton } from "~/components/rwa/RefundButton";
 
-const KRW_PER_USDC = 1350;
-
-function fmtUsdc(v: number) {
-    if (v === 0) return "0 USDC";
-    if (v >= 0.01) return `${v.toFixed(2)} USDC`;
-    if (v >= 0.0001) return `${v.toFixed(4)} USDC`;
-    return `${v.toFixed(6)} USDC`;
-}
-
-function fmtKrw(v: number) {
-    if (v >= 1) return `₩${Math.floor(v).toLocaleString()}`;
-    return `₩${v.toFixed(2)}`;
-}
+import { KRW_PER_USDC } from "~/lib/constants";
+import { fmtUsdc, fmtKrw } from "~/lib/formatters";
 
 interface Holding {
-    id: string;
+    id: string;          // listingId
+    rwaTokenId: string;
+    tokenMint: string;
     propertyName: string;
     tokenName: string;
     tokensOwned: number;
-    totalValue: number; // USDC
+    totalValue: number;  // USDC
     dividendStatus: "claimed" | "pending";
     dividendAmount: number; // USDC
+    tokenStatus: string;
+    totalSupply: number;
+    minFundingBps: number;
+    fundingDeadlineMs: number;
 }
 
 interface Props {
     holdings: Holding[];
+    walletAddress: string;
 }
 
-export function HoldingsTable({ holdings }: Props) {
+export function HoldingsTable({ holdings, walletAddress }: Props) {
     if (holdings.length === 0) {
         return (
             <div className="py-16 text-center bg-stone-50 rounded-2xl border border-dashed border-stone-200">
@@ -49,15 +47,15 @@ export function HoldingsTable({ holdings }: Props) {
                             <th className="py-3.5 px-5">Property</th>
                             <th className="py-3.5 px-5">Token</th>
                             <th className="py-3.5 px-5 text-right">Holdings</th>
-                            <th className="py-3.5 px-5 text-right">Invested</th>
                             <th className="py-3.5 px-5 text-right">Value</th>
+                            <th className="py-3.5 px-5 text-right">Pending Dividend</th>
                             <th className="py-3.5 px-5" />
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
                         {holdings.map((h) => (
-                            <tr key={h.id} className="hover:bg-stone-50/40 transition-colors">
-                                <td className="py-4 px-5 font-semibold text-stone-800 text-sm">{h.propertyName}</td>
+                            <tr key={h.id} className="hover:bg-stone-50/40 transition-colors cursor-pointer" onClick={() => window.location.href = `/invest/${h.id}`}>
+                                <td className="py-4 px-5 font-semibold text-stone-800 text-sm hover:text-primary transition-colors">{h.propertyName}</td>
                                 <td className="py-4 px-5">
                                     <span className="px-2 py-0.5 rounded bg-stone-100 text-stone-500 text-[11px] font-bold font-mono">
                                         {h.tokenName}
@@ -71,21 +69,48 @@ export function HoldingsTable({ holdings }: Props) {
                                     <p className="text-xs text-stone-400">{fmtKrw(h.totalValue * KRW_PER_USDC)}</p>
                                 </td>
                                 <td className="py-4 px-5 text-right text-sm">
-                                    <p className="font-semibold text-stone-800">{fmtUsdc(h.totalValue)}</p>
-                                    <p className="text-xs text-stone-400">{fmtKrw(h.totalValue * KRW_PER_USDC)}</p>
-                                </td>
-                                <td className="py-4 px-5 text-right">
                                     {h.dividendStatus === "pending" ? (
-                                        <button
-                                            onClick={() => alert("배당금(USDC) 수령 트랜잭션이 시작됩니다.")}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#17cf54] text-white text-xs font-bold hover:bg-[#14b847] transition-colors"
-                                        >
-                                            <Sparkles className="w-3 h-3" />
-                                            Claim
-                                        </button>
+                                        <p className="font-semibold text-amber-600">{fmtUsdc(h.dividendAmount)}</p>
                                     ) : (
                                         <span className="text-xs text-stone-300">—</span>
                                     )}
+                                </td>
+                                <td className="py-4 px-5 text-right" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex flex-col items-end gap-1.5">
+                                        {h.dividendStatus === "pending" && (
+                                            <ClaimButton
+                                                listingId={h.id}
+                                                rwaTokenId={h.rwaTokenId}
+                                                tokenMint={h.tokenMint}
+                                                walletAddress={walletAddress}
+                                                onClaimed={() => window.location.reload()}
+                                            />
+                                        )}
+                                        {(h.tokenStatus === "funding" || h.tokenStatus === "funded") &&
+                                            Date.now() <= h.fundingDeadlineMs && (
+                                            <CancelPositionButton
+                                                listingId={h.id}
+                                                rwaTokenId={h.rwaTokenId}
+                                                propertyName={h.propertyName}
+                                                tokensOwned={h.tokensOwned}
+                                                refundUsdc={h.totalValue}
+                                                onCancelled={() => window.location.reload()}
+                                            />
+                                        )}
+                                        {(() => {
+                                            const deadlineExpired = Date.now() > h.fundingDeadlineMs;
+                                            const isRefundable = h.tokenStatus === "failed" ||
+                                                (h.tokenStatus === "funding" && deadlineExpired);
+                                            return isRefundable ? (
+                                                <RefundButton listingId={h.id} rwaTokenId={h.rwaTokenId} />
+                                            ) : null;
+                                        })()}
+                                        {h.dividendStatus !== "pending" &&
+                                            !(h.tokenStatus === "funding" || h.tokenStatus === "funded") &&
+                                            h.tokenStatus !== "failed" && (
+                                            <span className="text-xs text-stone-300">—</span>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ))}

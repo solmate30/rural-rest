@@ -3,17 +3,10 @@ import { Form, useNavigation, Link } from "react-router";
 import type { Route } from "./+types/book";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
-import { listings } from "~/db/schema";
+import { listings, rwaTokens } from "~/db/schema";
 import { eq } from "drizzle-orm";
+import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
 
-// TODO: reviews 테이블 집계로 교체
-const TEMP_RATINGS: Record<string, number> = {
-    "gyeongju-3000": 4.8,
-    "gyeongju-3001": 4.9,
-    "gyeongju-3002": 4.7,
-    "gyeongju-3003": 4.6,
-    "gyeongju-3004": 4.8,
-};
 
 function toCityLabel(location: string): string {
     const m = location.match(/([가-힣]+)시/);
@@ -30,12 +23,25 @@ async function getListingById(id: string | undefined) {
             pricePerNight: listings.pricePerNight,
             maxGuests: listings.maxGuests,
             images: listings.images,
+            tokenStatus: rwaTokens.status,
         })
         .from(listings)
+        .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
         .where(eq(listings.id, id))
         .then((rows) => rows[0] ?? null);
 
     if (!row) return null;
+
+    // 온체인 상태가 진실 — DB는 fallback
+    if (row.tokenStatus) {
+        const onchain = await fetchPropertyOnchain(id);
+        if (onchain) {
+            row.tokenStatus = onchain.status as typeof row.tokenStatus;
+        }
+    }
+
+    // RWA 토큰이 있으면 active 상태일 때만 예약 가능
+    if (row.tokenStatus && row.tokenStatus !== "active") return null;
     const images = row.images as string[];
     return {
         id: row.id,
@@ -44,7 +50,7 @@ async function getListingById(id: string | undefined) {
         maxGuests: row.maxGuests,
         image: images[0] ?? "/house.png",
         locationLabel: toCityLabel(row.location),
-        rating: TEMP_RATINGS[row.id] ?? null,
+        rating: null as number | null,
         reviews: [] as { id: string }[],
         pickupPoints: [] as { id: string; name: string; description: string; estimatedTimeToProperty: string }[],
     };
