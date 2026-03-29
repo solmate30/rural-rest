@@ -1,6 +1,7 @@
 import { Link, useLoaderData } from "react-router";
 import { Header } from "../components/ui-mockup";
 import { requireUser } from "../lib/auth.server";
+import { WalletConnectSection } from "../components/WalletConnectSection";
 import {
     getDashboardStats,
     getOperatorListings,
@@ -49,7 +50,8 @@ const statusColor: Record<string, string> = {
 };
 
 export default function OperatorDashboard() {
-    const { stats, listings, bookings, settlements } = useLoaderData() as {
+    const { user, stats, listings, bookings, settlements } = useLoaderData() as {
+        user: { walletAddress: string | null };
         stats: DashboardStats;
         listings: HostListingRow[];
         bookings: OperatorBookingRow[];
@@ -69,7 +71,7 @@ export default function OperatorDashboard() {
     return (
         <div className="min-h-screen bg-[#fcfaf7] font-sans">
             <Header />
-            <main className="container mx-auto pt-24 pb-16 px-4 max-w-5xl">
+            <main className="container mx-auto py-16 px-4 sm:px-8">
 
                 {/* Page header */}
                 <div className="mb-8">
@@ -135,6 +137,12 @@ export default function OperatorDashboard() {
                         </div>
                     </section>
                 )}
+
+                {/* 정산 지갑 등록 */}
+                <section className="mb-8">
+                    <h2 className="text-lg font-bold text-[#4a3b2c] mb-3">정산 지갑</h2>
+                    <WalletConnectSection currentWalletAddress={user.walletAddress} />
+                </section>
 
                 {/* 정산 내역 */}
                 {settlements.length > 0 && (

@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db/index.server";
 import { rwaInvestments, rwaTokens } from "../db/schema";
-import { getSession } from "../lib/auth.server";
+import { requireWallet } from "../lib/auth.server";
 
 interface RecordPurchaseBody {
     rwaTokenId: string;
@@ -13,6 +13,8 @@ interface RecordPurchaseBody {
 }
 
 export async function action({ request }: { request: Request }) {
+    const { userId, walletAddress } = await requireWallet(request);
+
     const body = await request.json() as RecordPurchaseBody;
     const { rwaTokenId, tokenAmount, investedUsdc, purchaseTx, investorWallet } = body;
 
@@ -20,13 +22,13 @@ export async function action({ request }: { request: Request }) {
         return Response.json({ error: "rwaTokenId, tokenAmount, purchaseTx, investorWallet are required" }, { status: 400 });
     }
 
-    // Better Auth 세션 있으면 userId도 함께 저장, 없으면 wallet 주소를 fallback으로 사용
-    const session = await getSession(request);
-    const userId = session?.user?.id ?? `wallet:${investorWallet}`;
+    if (walletAddress !== investorWallet) {
+        return Response.json({ error: "세션 지갑과 요청 지갑이 일치하지 않습니다" }, { status: 403 });
+    }
 
     await db.insert(rwaInvestments).values({
         id: uuidv4(),
-        walletAddress: investorWallet,
+        walletAddress,
         userId,
         rwaTokenId,
         tokenAmount,

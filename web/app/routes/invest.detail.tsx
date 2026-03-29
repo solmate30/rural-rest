@@ -5,6 +5,7 @@ import { db } from "~/db/index.server";
 import { listings, rwaTokens, rwaInvestments, rwaDividends, user, bookings } from "~/db/schema";
 import { and, gte } from "drizzle-orm";
 import { eq, sql } from "drizzle-orm";
+import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
 import { PropertyMap } from "~/components/PropertyMap";
 import { RevenueChart } from "~/components/rwa/RevenueChart";
 import { TokenInfoCard } from "~/components/rwa/TokenInfoCard";
@@ -12,8 +13,8 @@ import { PurchaseCard } from "~/components/rwa/PurchaseCard";
 import { RefundButton } from "~/components/rwa/RefundButton";
 import { PropertyGallery } from "~/components/rwa/PropertyGallery";
 
-// TODO: Pyth oracle로 교체
-const KRW_PER_USDC = 1350;
+import { KRW_PER_USDC } from "~/lib/constants";
+import { formatKrwLabel } from "~/lib/formatters";
 
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -49,22 +50,13 @@ function buildDividendChartData(
     });
 }
 
-function formatKrw(won: number): string {
-    if (won >= 1_0000_0000) {
-        const eok = won / 1_0000_0000;
-        return `${eok % 1 === 0 ? eok : eok.toFixed(1)}억 원`;
-    }
-    if (won >= 1_0000) return `${Math.round(won / 1_0000)}만 원`;
-    return `${won.toLocaleString()}원`;
-}
-
-function statusToKorean(status: string): string {
+function statusToLabel(status: string, fundingProgress: number): string {
     switch (status) {
-        case "funding": return "모집 중";
-        case "funded":  return "모집 완료";
-        case "active":  return "운영 중";
-        case "failed":  return "모집 종료";
-        default:        return status;
+        case "funding": return "Funding";
+        case "funded": return fundingProgress >= 100 ? "Sold Out" : "Funded";
+        case "active": return "Active";
+        case "failed": return "Closed";
+        default: return status;
     }
 }
 
@@ -101,6 +93,13 @@ export async function loader({ params }: Route.LoaderArgs) {
         .then(rows => rows[0] ?? null);
 
     if (!row) throw new Response("Not Found", { status: 404 });
+
+    // On-chain state (authoritative for status + tokensSold)
+    const onchain = await fetchPropertyOnchain(listingId!);
+    if (onchain) {
+        row.status = onchain.status as typeof row.status;
+        row.tokensSold = onchain.tokensSold;
+    }
 
     const hostUser = await db
         .select({ name: user.name })
@@ -172,11 +171,11 @@ export async function loader({ params }: Route.LoaderArgs) {
         holders: holdersRow?.count ?? 0,
         soldTokens: row.tokensSold,
         fundingProgress,
-        raised: formatKrw(raisedUsdc * KRW_PER_USDC),
-        remaining: formatKrw(remainingUsdc * KRW_PER_USDC),
+        raised: formatKrwLabel(raisedUsdc * KRW_PER_USDC),
+        remaining: formatKrwLabel(remainingUsdc * KRW_PER_USDC),
         raisedUsdc,
         remainingUsdc,
-        status: statusToKorean(row.status),
+        status: statusToLabel(row.status, fundingProgress),
         rawStatus: row.status,
         about: row.description,
         amenities,
@@ -191,6 +190,7 @@ export async function loader({ params }: Route.LoaderArgs) {
         fundingDeadline: row.fundingDeadline instanceof Date
             ? row.fundingDeadline.getTime()
             : Number(row.fundingDeadline) * 1000,
+        minFundingBps: row.minFundingBps,
         dividendChartData: buildDividendChartData(dividendHistoryAgg, row.pricePerTokenUsdc, row.estimatedApyBps),
         lastDividend: lastDividendMonth,
         occupancyRate,
@@ -213,9 +213,16 @@ export default function InvestDetail() {
                 {/* Title & Badges */}
                 <div className="mb-6 space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="bg-[#17cf54]/10 text-[#17cf54] text-xs font-bold px-3 py-1 rounded-full border border-[#17cf54]/20">
-                            {property.status}
-                        </span>
+                        {property.rawStatus === "funding" && (
+                            <span className="bg-card text-foreground text-xs font-bold px-3 py-1 rounded-full border border-border">
+                                Funding
+                            </span>
+                        )}
+                        {(property.rawStatus === "funded" || property.rawStatus === "active") && (
+                            <span className="bg-[#17cf54] text-white text-xs font-bold px-3 py-1 rounded-full">
+                                FUNDED
+                            </span>
+                        )}
                         <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">
                             {property.tokenName}
                         </span>
@@ -372,7 +379,13 @@ export default function InvestDetail() {
                     {/* ── Right Column ── */}
                     <div className="lg:col-span-1 space-y-4">
                         <div className="lg:sticky lg:top-24">
-                            {property.rawStatus === "failed" ? (
+                            {(() => {
+                                const deadlineExpired = Date.now() > property.fundingDeadline;
+                                const goalNotMet = property.fundingProgress < (property.minFundingBps / 100);
+                                const isRefundable = property.rawStatus === "failed" ||
+                                    (property.rawStatus === "funding" && deadlineExpired && goalNotMet);
+                                return isRefundable;
+                            })() ? (
                                 <div className="rounded-3xl bg-white border border-red-100 shadow-sm p-6 space-y-4">
                                     <div className="flex items-center gap-2">
                                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-stone-100 text-stone-500 border border-stone-200">
@@ -380,12 +393,11 @@ export default function InvestDetail() {
                                         </span>
                                     </div>
                                     <p className="text-sm text-stone-500">
-                                        모집 기간이 종료되었습니다. 투자하신 금액을 환불받으실 수 있습니다.
+                                        모집 목표를 달성하지 못했습니다. 투자하신 금액을 환불받으실 수 있습니다.
                                     </p>
                                     <RefundButton
                                         listingId={property.id}
                                         rwaTokenId={property.tokenId}
-                                        investedUsdc={property.raisedUsdc}
                                     />
                                 </div>
                             ) : (
@@ -399,6 +411,7 @@ export default function InvestDetail() {
                                     apy={property.apy}
                                     fundingProgress={property.fundingProgress}
                                     availableTokens={property.availableTokens}
+                                    totalSupply={property.totalSupply}
                                     holders={property.holders}
                                     soldTokens={property.soldTokens}
                                     fundingDeadlineMs={property.fundingDeadline}

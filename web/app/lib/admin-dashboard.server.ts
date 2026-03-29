@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import { eq, and, inArray, sql, desc } from "drizzle-orm";
 import { db } from "../db/index.server";
 import { listings, bookings, rwaTokens, user as userTable, operatorSettlements } from "../db/schema";
+import { fetchPropertiesOnchain } from "./rwa.onchain.server";
 
 export interface DashboardStats {
     totalRevenueThisMonth: number;
@@ -21,6 +22,12 @@ export interface HostListingRow {
     tokenMint: string | null;
     rwaTokenId: string | null;
     operatorId: string | null;
+    valuationKrw: number;
+    tokensSold: number;
+    totalSupply: number;
+    fundingDeadline: string | null;
+    minFundingBps: number;
+    pricePerTokenUsdc: number;
 }
 
 /**
@@ -143,9 +150,15 @@ export async function getHostListings(hostId: string, role: string): Promise<Hos
             pricePerNight: listings.pricePerNight,
             images: listings.images,
             operatorId: listings.operatorId,
+            valuationKrw: listings.valuationKrw,
             tokenStatus: rwaTokens.status,
             tokenMint: rwaTokens.tokenMint,
             rwaTokenId: rwaTokens.id,
+            tokensSold: rwaTokens.tokensSold,
+            totalSupply: rwaTokens.totalSupply,
+            fundingDeadline: rwaTokens.fundingDeadline,
+            minFundingBps: rwaTokens.minFundingBps,
+            pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc,
         })
         .from(listings)
         .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
@@ -155,9 +168,13 @@ export async function getHostListings(hostId: string, role: string): Promise<Hos
             desc(listings.createdAt)
         );
 
+    const initializedIds = rows.filter(r => r.tokenMint).map(r => r.id);
+    const onchainMap = await fetchPropertiesOnchain(initializedIds);
+
     return rows.map((r) => {
         const imgs = r.images as string[] | null;
         const image = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : "";
+        const onchain = onchainMap.get(r.id);
         return {
             id: r.id,
             title: r.title,
@@ -165,9 +182,15 @@ export async function getHostListings(hostId: string, role: string): Promise<Hos
             pricePerNight: r.pricePerNight,
             image,
             operatorId: r.operatorId ?? null,
-            tokenStatus: r.tokenStatus ?? null,
+            valuationKrw: r.valuationKrw ?? 0,
+            tokenStatus: onchain?.status ?? r.tokenStatus ?? null,
             tokenMint: r.tokenMint ?? null,
             rwaTokenId: r.rwaTokenId ?? null,
+            tokensSold: onchain?.tokensSold ?? r.tokensSold ?? 0,
+            totalSupply: r.totalSupply ?? 0,
+            fundingDeadline: r.fundingDeadline ? new Date(r.fundingDeadline).toISOString() : null,
+            minFundingBps: r.minFundingBps ?? 6000,
+            pricePerTokenUsdc: r.pricePerTokenUsdc ?? 0,
         };
     });
 }
@@ -202,9 +225,13 @@ export async function getOperatorListings(operatorId: string): Promise<HostListi
         .where(eq(listings.operatorId, operatorId))
         .orderBy(desc(listings.createdAt));
 
+    const initializedIds = rows.filter(r => r.tokenMint).map(r => r.id);
+    const onchainMap = await fetchPropertiesOnchain(initializedIds);
+
     return rows.map((r) => {
         const imgs = r.images as string[] | null;
         const image = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : "";
+        const onchain = onchainMap.get(r.id);
         return {
             id: r.id,
             title: r.title,
@@ -212,7 +239,7 @@ export async function getOperatorListings(operatorId: string): Promise<HostListi
             pricePerNight: r.pricePerNight,
             image,
             operatorId: r.operatorId ?? null,
-            tokenStatus: r.tokenStatus ?? null,
+            tokenStatus: onchain?.status ?? r.tokenStatus ?? null,
             tokenMint: r.tokenMint ?? null,
             rwaTokenId: r.rwaTokenId ?? null,
         };

@@ -2,14 +2,17 @@ import { PortfolioSummary } from "../components/investments/portfolio-summary";
 import { HoldingsTable } from "../components/investments/holdings-table";
 import { DividendHistory } from "../components/investments/dividend-history";
 import { Header, Footer } from "../components/ui-mockup";
+import { Button } from "~/components/ui/button";
 import { useLoaderData, useSearchParams } from "react-router";
 import { useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import type { Route } from "./+types/my-investments";
 import { db } from "~/db/index.server";
-import { listings, rwaTokens, rwaInvestments, rwaDividends } from "~/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { listings, rwaTokens, rwaInvestments, rwaDividends, user } from "~/db/schema";
+import { eq, desc, isNull, and } from "drizzle-orm";
+import { fetchPropertiesOnchain } from "~/lib/rwa.onchain.server";
+import { getSession } from "~/lib/auth.server";
 
 export const meta = () => {
     return [
@@ -25,7 +28,7 @@ const EMPTY = {
 };
 
 function buildOwnedTokens(
-    investmentRows: { rwaTokenId: string; tokenAmount: number; investedUsdc: number; pricePerTokenUsdc: number; estimatedApyBps: number; listingId: string; listingTitle: string; tokenMint: string }[],
+    investmentRows: { rwaTokenId: string; tokenAmount: number; investedUsdc: number; pricePerTokenUsdc: number; estimatedApyBps: number; listingId: string; listingTitle: string; tokenMint: string; tokenStatus: string; totalSupply: number; minFundingBps: number; fundingDeadline: Date | number | null }[],
     pendingByToken: Map<string, number>
 ) {
     const tokenMap = new Map<string, typeof investmentRows[0] & { totalTokenAmount: number; totalInvestedMicro: number }>();
@@ -41,6 +44,9 @@ function buildOwnedTokens(
     return Array.from(tokenMap.values()).map((row) => {
         const pendingMicro = pendingByToken.get(row.rwaTokenId) ?? 0;
         const dividendAmountUsdc = pendingMicro / 1_000_000;
+        const deadlineMs = row.fundingDeadline instanceof Date
+            ? row.fundingDeadline.getTime()
+            : Number(row.fundingDeadline) * 1000;
         return {
             id: row.listingId,
             rwaTokenId: row.rwaTokenId,
@@ -51,6 +57,10 @@ function buildOwnedTokens(
             totalValue: row.totalTokenAmount * row.pricePerTokenUsdc / 1_000_000,
             dividendStatus: dividendAmountUsdc > 0 ? "pending" as const : "claimed" as const,
             dividendAmount: dividendAmountUsdc,
+            tokenStatus: row.tokenStatus,
+            totalSupply: row.totalSupply,
+            minFundingBps: row.minFundingBps,
+            fundingDeadlineMs: deadlineMs,
         };
     });
 }
@@ -72,7 +82,27 @@ export async function loader({ request }: Route.LoaderArgs) {
     const url = new URL(request.url);
     const walletAddress = url.searchParams.get("wallet");
 
+    // 1. 로그인 필수
+    const session = await getSession(request);
+    if (!session) {
+        throw new Response(null, { status: 302, headers: { Location: "/auth?return=/my-investments" } });
+    }
+
+    // 2. KYC + 지갑 등록 필수
+    const [dbUser] = await db
+        .select({ walletAddress: user.walletAddress, kycVerified: user.kycVerified })
+        .from(user)
+        .where(eq(user.id, session.user.id));
+
+    if (!dbUser?.kycVerified || !dbUser.walletAddress) {
+        throw new Response(null, { status: 302, headers: { Location: "/kyc?return=/my-investments" } });
+    }
+
+    // 3. URL의 wallet이 본인 지갑과 일치하는지 검증
     if (!walletAddress) return EMPTY;
+    if (dbUser.walletAddress !== walletAddress) {
+        throw new Response("접근 권한이 없습니다", { status: 403 });
+    }
 
     const investmentRows = await db
         .select({
@@ -83,13 +113,45 @@ export async function loader({ request }: Route.LoaderArgs) {
             pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc,
             estimatedApyBps: rwaTokens.estimatedApyBps,
             tokenMint: rwaTokens.tokenMint,
+            tokenStatus: rwaTokens.status,
+            totalSupply: rwaTokens.totalSupply,
+            minFundingBps: rwaTokens.minFundingBps,
+            fundingDeadline: rwaTokens.fundingDeadline,
             listingId: listings.id,
             listingTitle: listings.title,
         })
         .from(rwaInvestments)
         .innerJoin(rwaTokens, eq(rwaInvestments.rwaTokenId, rwaTokens.id))
         .innerJoin(listings, eq(rwaTokens.listingId, listings.id))
-        .where(eq(rwaInvestments.walletAddress, walletAddress));
+        .where(and(
+            eq(rwaInvestments.walletAddress, walletAddress),
+            isNull(rwaInvestments.refundTx),
+        ));
+
+    // Override tokenStatus with authoritative on-chain state
+    const uniqueListingIds = [...new Set(investmentRows.map(r => r.listingId))];
+    const onchainMap = await fetchPropertiesOnchain(uniqueListingIds);
+    const now = Date.now();
+    for (const row of investmentRows) {
+        const onchain = onchainMap.get(row.listingId);
+        if (onchain) {
+            row.tokenStatus = onchain.status;
+        }
+        // 데드라인 경과 + 목표 미달 → failed 보정
+        if (row.tokenMint && row.tokenStatus === "funding" && row.fundingDeadline) {
+            const deadlineMs = row.fundingDeadline instanceof Date
+                ? row.fundingDeadline.getTime()
+                : Number(row.fundingDeadline) * 1000;
+            if (now > deadlineMs) {
+                const totalSupply = row.totalSupply ?? 0;
+                const tokensSold = onchain?.tokensSold ?? 0;
+                const progressBps = totalSupply > 0 ? (tokensSold / totalSupply) * 10000 : 0;
+                if (progressBps < (row.minFundingBps ?? 6000)) {
+                    row.tokenStatus = "failed";
+                }
+            }
+        }
+    }
 
     const dividendRows = await db
         .select({
@@ -120,9 +182,10 @@ export async function loader({ request }: Route.LoaderArgs) {
         : 0;
 
     const ownedTokens = buildOwnedTokens(
-        investmentRows.map(r => ({ ...r, tokenMint: r.tokenMint ?? "" })),
+        investmentRows.map(r => ({ ...r, tokenMint: r.tokenMint ?? "", totalSupply: r.totalSupply ?? 0, minFundingBps: r.minFundingBps ?? 6000 })),
         pendingByToken
     );
+
     const currentValueUsdc = ownedTokens.reduce((sum, t) => sum + t.totalValue, 0);
 
     return {
@@ -158,7 +221,7 @@ export default function MyInvestmentsRoute() {
     return (
         <div className="min-h-screen bg-[#fcfaf7] font-sans">
             <Header />
-            <main className="container mx-auto px-4 max-w-5xl pt-24 pb-16">
+            <main className="container mx-auto px-4 sm:px-8 py-16">
                 <header className="mb-10">
                     <h1 className="text-3xl font-bold text-[#4a3b2c] mb-2">My Investments</h1>
                     <p className="text-stone-500">Track your portfolio and manage your returns.</p>
@@ -168,12 +231,14 @@ export default function MyInvestmentsRoute() {
                     <div className="py-24 text-center">
                         <span className="material-symbols-outlined text-[56px] text-stone-300">account_balance_wallet</span>
                         <p className="text-stone-500 mt-4 mb-6 font-medium">Connect your wallet to view your portfolio.</p>
-                        <button
+                        <Button
                             onClick={() => setVisible(true)}
-                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#17cf54] text-white font-bold hover:bg-[#14b847] transition-all shadow-lg shadow-[#17cf54]/20"
+                            variant="success"
+                            size="lg"
+                            className="shadow-lg shadow-[#17cf54]/20"
                         >
                             Connect Wallet
-                        </button>
+                        </Button>
                     </div>
                 ) : (
                     <>
