@@ -25,6 +25,7 @@ export default function KycRoute() {
     const { setVisible } = useWalletModal();
 
     const [step, setStep] = useState<"intro" | "scanning" | "success" | "onboarding">("intro");
+    const [signingInProgress, setSigningInProgress] = useState(false);
 
     // 로그인 필수
     useEffect(() => {
@@ -42,8 +43,9 @@ export default function KycRoute() {
 
     // onboarding 단계에서 지갑 연결 완료 시 → SIWS 서명 검증 후 DB 저장
     useEffect(() => {
-        if (!connected || !publicKey || !signMessage || step !== "onboarding") return;
+        if (!connected || !publicKey || !signMessage || step !== "onboarding" || signingInProgress) return;
 
+        setSigningInProgress(true);
         const walletAddress = publicKey.toBase58();
 
         (async () => {
@@ -52,7 +54,7 @@ export default function KycRoute() {
                 const nonceRes = await fetch("/api/user/wallet-nonce");
                 const { nonce } = await nonceRes.json() as { nonce: string };
 
-                // 2. 지갑(Solflare)으로 메시지 서명 → 팝업 표시됨
+                // 2. 지갑으로 메시지 서명 → 팝업 표시됨
                 const messageBytes = new TextEncoder().encode(nonce);
                 const sig = await signMessage(messageBytes);
 
@@ -76,9 +78,10 @@ export default function KycRoute() {
                 navigate(returnUrl);
             } catch (e) {
                 console.error("지갑 서명 실패:", e);
+                setSigningInProgress(false);
             }
         })();
-    }, [connected, publicKey, signMessage, step, completeKyc, navigate, returnUrl]);
+    }, [connected, publicKey, signMessage, step, signingInProgress, completeKyc, navigate, returnUrl]);
 
     const handleStartScan = () => {
         setStep("scanning");
@@ -152,12 +155,11 @@ export default function KycRoute() {
                         </div>
                     </div>
 
-                    {/* Right: KYC Card — 고정 높이로 footer 안 올라옴 */}
+                    {/* Right: KYC Card */}
                     <div className="w-full max-w-md mx-auto relative lg:mr-0 z-10">
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[#8D6E63]/10 blur-3xl -z-10 rounded-full hidden lg:block" />
 
                         <Card className="w-full bg-white/95 backdrop-blur-sm rounded-[calc(var(--radius)*2)] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-stone-100 relative overflow-hidden">
-                            {/* 고정 높이 컨테이너 — 단계 전환 시 크기 변화 없음 */}
                             <div className="h-[480px] flex flex-col items-center justify-center p-8 md:p-10">
 
                                 {step === "intro" && (
