@@ -1,6 +1,6 @@
 # 00. Product Backlog & Implementation Status
 > Created: 2026-02-07 17:34
-> Last Updated: 2026-03-24 00:00
+> Last Updated: 2026-03-30 00:00
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
@@ -42,7 +42,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 ### Admin / Editor 보강
 *   [ ] **Admin Edit: 실시간 검증 및 미저장 경고**: 가격·최대 인원 등 Zod 실시간 검증, 이탈 시 미저장 경고 모달. → [05_ADMIN_EDITOR_REVIEW](../02_UI_Screens/05_ADMIN_EDITOR_REVIEW.md) §3.2
 
-### RWA (10_RWA_IMPLEMENTATION_LOG)
+### RWA
 
 #### 완료 (2026-03-24)
 *   [x] **DB 스키마 확장**: `rwa_tokens` (estimated_apy_bps 포함), `rwa_investments`, `rwa_dividends`, `operator_settlements` 테이블 추가
@@ -55,13 +55,18 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 #### 진행 중
 *   [ ] **`/invest` loader DB 전환**: `ALL_PROPERTIES` 하드코딩 제거 → listings JOIN rwa_tokens 쿼리 ← **지금**
 
+#### 완료 (2026-03-30)
+*   [x] **Anchor 프로그램 9개 instruction 구현**: initialize_property, open_position, purchase_tokens, release_funds, cancel_position, refund, activate_property, distribute_monthly_revenue, claim_dividend
+*   [x] **Anchor localnet 테스트 완료**: 34개 테스트 케이스 + E2E 스크립트 12개
+*   [x] **`/admin/tokenize`**: 호스트 토큰화 신청 폼 (InitializePropertyButton 연동)
+*   [x] **투자 매수/취소/환불 UI**: PurchaseCard, CancelPositionButton, RefundButton
+*   [x] **배당 분배/수령 UI**: MonthlySettlementButton (온체인), ClaimButton
+*   [x] **3자 정산 아키텍처**: 지자체 40% + 운영자 30% + 투자자 30%
+
 #### 다음 단계
 *   [ ] **`/invest/:id` loader DB 전환**: 개별 토큰 상세 + 투자 현황 쿼리
 *   [ ] **`/my-investments` loader DB 전환**: 유저별 rwa_investments + rwa_dividends 쿼리
-*   [ ] **Anchor `purchase_tokens` instruction**: USDC 결제 → RWA 토큰 전송
-*   [ ] **Anchor `claim_dividend` instruction**: 투자자 배당 수령 (Reward Debt 모델)
-*   [ ] **Anchor Devnet 배포**: E2E 테스트 (발행→구매→수익→배당)
-*   [ ] **`/admin/tokenize`**: 호스트 토큰화 신청 폼 + 심사 상태 관리
+*   [ ] **Anchor Devnet 배포**: devnet E2E 테스트 (발행→구매→수익→배당)
 *   [ ] **RWA Entry Hooks**: 숙소 상세에서 RWA 투자 배너/버튼
 
 ### DAO (08_DAO_IMPLEMENTATION_SPEC)
@@ -83,5 +88,5 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 - **Specs**: [Admin Management Spec](../03_Technical_Specs/04_ADMIN_MANAGEMENT_SPEC.md) - 호스트 관리 명세 및 구현 상태 (Section 1.1)
 - **Specs**: [Database Schema](../03_Technical_Specs/01_DB_SCHEMA.md) - `listings`, `bookings` 테이블 참조
 - **Test**: [Test Scenarios](../05_QA_Validation/01_TEST_SCENARIOS.md) - 핵심 시나리오 검증
-- **RWA**: [RWA Implementation Log](./10_RWA_IMPLEMENTATION_LOG.md), [RWA Issuance Spec](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md), [RWA Issuance Plan](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md)
+- **RWA**: [RWA Issuance Spec](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md), [RWA Issuance Plan](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md)
 - **DAO**: [DAO Implementation Spec](../03_Technical_Specs/08_DAO_IMPLEMENTATION_SPEC.md), [DAO Governance Plan](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md)
