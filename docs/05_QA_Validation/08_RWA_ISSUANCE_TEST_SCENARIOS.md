@@ -1,7 +1,7 @@
 # RWA 발행 및 매수 QA 테스트 시나리오
 
 > Created: 2026-03-10 12:00
-> Last Updated: 2026-03-10 12:00
+> Last Updated: 2026-03-30 00:00
 
 본 문서는 [15_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md) 및 [09_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md)에 정의된 RWA 발행·매수·토큰 설계를 검증하기 위한 통합 및 E2E 테스트 시나리오를 정의한다.
 
@@ -62,12 +62,12 @@
   - [ ] 트랜잭션 실패 및 적절한 에러 메시지 반환
   - [ ] RWA 토큰·USDC 잔액 변화 없음
 
-### 시나리오 3.3: 최대 매수 한도(10%) 초과 시 실패
-- **목적**: 일반 투자자 10% 상한이 프로그램 또는 오프체인에서 적용되는지 확인
-- **사전 조건**: 총 발행량 1,000토큰, 이미 100토큰 보유한 Investor A
-- **Action**: 동일 Investor A로 추가 1토큰 매수 시도 (총 101토큰 = 10.1%)
+### 시나리오 3.3: 최대 매수 한도(30%) 초과 시 실패
+- **목적**: 개인 투자자 30% 상한이 온체인 프로그램에서 적용되는지 확인 (의결권 10% 캡은 DAO 별도)
+- **사전 조건**: 총 발행량 1,000토큰, 이미 300토큰 보유한 Investor A (30%)
+- **Action**: 동일 Investor A로 추가 1토큰 매수 시도 (총 301토큰 = 30.1%)
 - **Expected Result**:
-  - [ ] 프로그램 제한이 있다면 트랜잭션 실패. 없다면 오프체인/UI에서 차단하고 그 동작 확인
+  - [ ] 온체인 `ExceedsInvestorCap` 에러로 트랜잭션 실패
 
 ---
 
@@ -93,13 +93,14 @@
 
 ## 5. 발행·배당 분리 검증 (선택)
 
-### 시나리오 5.1: RWA 발행/매수와 배당 프로그램 상태 독립성
-- **목적**: 발행·매수 프로그램과 배당(Dividend) 프로그램이 상태를 공유하지 않음을 검증 (09_RWA_ISSUANCE_SPEC 및 08_DAO Section 5 분리 원칙과 일치)
-- **사전 조건**: RWA Mint 생성·매수 완료, 배당 풀 프로그램 별도 배포(있는 경우)
-- **Action**: 배당 풀 상태 조회 (또는 distribute_dividends 미호출 상태 확인)
+### 시나리오 5.1: RWA 발행/매수와 배당 상태 분리 검증
+- **목적**: 발행·매수 단계에서는 배당 누적기(`acc_dividend_per_share`)가 변하지 않음을 검증. 배당은 단일 프로그램 내 `distribute_monthly_revenue` instruction으로 분리 동작.
+- **사전 조건**: RWA Mint 생성·매수 완료, `distribute_monthly_revenue` 미호출 상태
+- **Action**: PropertyToken PDA의 `acc_dividend_per_share` 값 조회
 - **Expected Result**:
-  - [ ] RWA 발행/매수 트랜잭션만으로는 배당 풀 계정이 생성·변경되지 않음
-  - [ ] 공유 계정 없이 발행·배당이 별도 PDA/계정으로 동작함을 확인
+  - [ ] `acc_dividend_per_share == 0` (배당 분배 전이므로)
+  - [ ] InvestorPosition의 `reward_debt == 0` (배당 미수령 상태)
+  - [ ] `distribute_monthly_revenue` 호출 후에만 `acc_dividend_per_share` 증가 확인
 
 ---
 
@@ -107,5 +108,5 @@
 
 - **Concept_Design**: [15_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md) - RWA 발행 기획서
 - **Technical_Specs**: [09_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/09_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세서
-- **Logic_Progress**: [11_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/11_RWA_DIVIDEND_LOGIC.md) - 배당 로직 (발행과 분리)
+- **Logic_Progress**: [10_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/10_RWA_DIVIDEND_LOGIC.md) - 배당 로직 (발행과 분리)
 - **Archive**: [10_RWA_TOKEN_SPEC.md](../00_ARCHIVE/future_blockchain/10_RWA_TOKEN_SPEC.md) - 레거시 RWA 토큰·Anchor 상세 (참고용)
