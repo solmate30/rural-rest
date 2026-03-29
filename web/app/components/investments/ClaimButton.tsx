@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { Button } from "~/components/ui/button";
 
-const PROGRAM_ID_STR = import.meta.env.VITE_RWA_PROGRAM_ID ?? "EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR";
-const USDC_MINT_STR = import.meta.env.VITE_USDC_MINT ?? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+import { PROGRAM_ID, USDC_MINT } from "~/lib/constants";
+import { getProgram, derivePdas, parseAnchorError } from "~/lib/anchor-client";
 
 interface Props {
     listingId: string;
@@ -25,29 +25,19 @@ export function ClaimButton({ listingId, rwaTokenId, tokenMint, walletAddress, o
         setErrorMsg("");
 
         try {
-            const { Program, AnchorProvider } = await import("@coral-xyz/anchor");
             const { PublicKey } = await import("@solana/web3.js");
             const {
                 getAssociatedTokenAddressSync,
                 TOKEN_PROGRAM_ID,
+                ASSOCIATED_TOKEN_PROGRAM_ID,
             } = await import("@solana/spl-token");
             const { SystemProgram } = await import("@solana/web3.js");
-            const { default: IDL } = await import("~/anchor-idl/rural_rest_rwa.json");
 
-            const ASSOCIATED_TOKEN_PROGRAM = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
-
-            const programId = new PublicKey(PROGRAM_ID_STR);
-            const usdcMint = new PublicKey(USDC_MINT_STR);
             const investor = walletCtx.publicKey;
+            const program = await getProgram(connection, walletCtx);
+            const { propertyToken, investorPosition } = await derivePdas(listingId, investor);
 
-            const [propertyToken] = PublicKey.findProgramAddressSync(
-                [Buffer.from("property"), Buffer.from(listingId)],
-                programId
-            );
-            const [investorPosition] = PublicKey.findProgramAddressSync(
-                [Buffer.from("investor"), propertyToken.toBuffer(), investor.toBuffer()],
-                programId
-            );
+            const usdcMint = new PublicKey(USDC_MINT);
             const investorUsdcAccount = getAssociatedTokenAddressSync(
                 usdcMint, investor, false, TOKEN_PROGRAM_ID
             );
@@ -55,9 +45,6 @@ export function ClaimButton({ listingId, rwaTokenId, tokenMint, walletAddress, o
             const usdcVault = getAssociatedTokenAddressSync(
                 usdcMint, propertyToken, true, TOKEN_PROGRAM_ID
             );
-
-            const provider = new AnchorProvider(connection, walletCtx as any, { commitment: "confirmed" });
-            const program = new Program(IDL as any, provider);
 
             const signature = await program.methods
                 .claimDividend(listingId)
@@ -69,7 +56,7 @@ export function ClaimButton({ listingId, rwaTokenId, tokenMint, walletAddress, o
                     investorUsdcAccount,
                     usdcMint,
                     usdcTokenProgram: TOKEN_PROGRAM_ID,
-                    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM,
+                    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
                     systemProgram: SystemProgram.programId,
                 })
                 .rpc();
@@ -78,7 +65,7 @@ export function ClaimButton({ listingId, rwaTokenId, tokenMint, walletAddress, o
             await recordClaim(signature);
         } catch (err: any) {
             console.error("[ClaimButton] 온체인 클레임 실패:", err.message);
-            setErrorMsg(err.message?.slice(0, 80) ?? "트랜잭션 실패");
+            setErrorMsg(parseAnchorError(err));
             setStatus("error");
         }
     }
@@ -105,14 +92,16 @@ export function ClaimButton({ listingId, rwaTokenId, tokenMint, walletAddress, o
 
     return (
         <div className="flex flex-col items-end gap-1">
-            <button
+            <Button
                 onClick={handleClaim}
                 disabled={status === "loading"}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#17cf54] text-white text-xs font-bold hover:bg-[#14b847] transition-colors disabled:opacity-50"
+                size="sm"
+                variant="success"
+                className="text-xs gap-1.5 shadow-sm shadow-[#17cf54]/20"
             >
-                <Sparkles className="w-3 h-3" />
+                <span className="material-symbols-outlined text-[14px]">payments</span>
                 {status === "loading" ? "처리 중..." : "Claim"}
-            </button>
+            </Button>
             {status === "error" && (
                 <span className="text-[10px] text-red-500">{errorMsg}</span>
             )}
