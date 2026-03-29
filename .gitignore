@@ -55,4 +55,6 @@ web/scripts/bulk-investor-*.json
 web/scripts/test-payer.json
 web/scripts/test-usdc-mint.json
 web/scripts/spv-wallet.json
+web/scripts/government-wallet.json
+web/scripts/village-operator-wallet.json
 *.bak
