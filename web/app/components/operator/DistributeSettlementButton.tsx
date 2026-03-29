@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const KRW_PER_USDC = 1350;
+import { KRW_PER_USDC } from "~/lib/constants";
 
 interface Props {
     listingId: string;

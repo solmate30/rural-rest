@@ -1,3 +1,5 @@
+import { formatKrwLabel } from "~/lib/formatters";
+
 interface Props {
     tokenName: string;
     totalSupply: number;
@@ -11,16 +13,6 @@ interface Props {
     apy: number;
 }
 
-function fmtKrw(won: number): string {
-    if (won >= 1_0000_0000) {
-        const eok = won / 1_0000_0000;
-        return `${eok % 1 === 0 ? eok : eok.toFixed(1)}억`;
-    }
-    if (won >= 1_0000) return `${Math.round(won / 1_0000)}만`;
-    if (won >= 1) return `${Math.round(won).toLocaleString()}`;
-    return won.toFixed(2);
-}
-
 export function TokenInfoCard({
     tokenName, totalSupply, tokenPrice, usdcPrice,
     valuationKrw, valuationUsdc,
@@ -28,38 +20,42 @@ export function TokenInfoCard({
 }: Props) {
     const priceKrwStr = tokenPrice >= 1
         ? `₩${Math.round(tokenPrice).toLocaleString()}`
-        : `₩${tokenPrice.toFixed(2)}`;
+        : tokenPrice >= 0.01 ? `₩${tokenPrice.toFixed(2)}`
+        : tokenPrice >= 0.0001 ? `₩${tokenPrice.toFixed(4)}`
+        : `₩${tokenPrice.toFixed(6)}`;
     const priceUsdcStr = usdcPrice >= 0.01 ? `${usdcPrice.toFixed(2)} USDC`
         : usdcPrice >= 0.0001 ? `${usdcPrice.toFixed(4)} USDC`
             : `${usdcPrice.toFixed(6)} USDC`;
 
-    const valuationKrwStr = `${fmtKrw(valuationKrw)}원`;
+    const valuationKrwStr = formatKrwLabel(valuationKrw);
     const valuationUsdStr = `$${Math.round(valuationUsdc).toLocaleString()}`;
 
     const soldPct = Math.min(fundingProgress, 100);
     const barWidth = soldPct < 1 && soldTokens > 0 ? 2 : soldPct;
 
     const boxes = [
-        { label: "Price / Token", primary: priceKrwStr, secondary: priceUsdcStr, green: false },
-        { label: "Valuation", primary: valuationKrwStr, secondary: valuationUsdStr, green: false },
-        { label: "Est. APY", primary: `${apy}%`, secondary: "projected", green: true },
-        { label: "Investors", primary: `${holders}`, secondary: "holders", green: false },
+        { label: "Price / Token", primary: priceKrwStr, secondary: priceUsdcStr, green: false, warn: false },
+        { label: "Valuation", primary: valuationKrwStr, secondary: valuationUsdStr, green: false, warn: false },
+        { label: "Est. APY", primary: `${apy}%`,
+          secondary: apy > 500 ? "예상 수익률 (변동 가능)" : apy > 30 ? "높은 수익률" : "projected",
+          green: apy <= 30 && apy > 0, warn: false },
+        { label: "Investors", primary: `${holders}`, secondary: "holders", green: false, warn: false },
     ];
 
     return (
         <div className="space-y-4">
             {/* 4-box grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {boxes.map(({ label, primary, secondary, green }) => (
+                {boxes.map(({ label, primary, secondary, green, warn }) => (
                     <div
                         key={label}
-                        className="rounded-2xl p-4 flex flex-col gap-1 bg-stone-50 border border-stone-100"
+                        className={`rounded-2xl p-4 flex flex-col gap-1 border ${warn ? "bg-amber-50 border-amber-200" : "bg-stone-50 border-stone-100"}`}
                     >
                         <p className="text-[10px] uppercase font-bold tracking-wider text-stone-400">{label}</p>
-                        <p className={`text-xl font-bold leading-tight ${green ? "text-[#17cf54]" : "text-[#4a3b2c]"}`}>
+                        <p className={`text-xl font-bold leading-tight ${warn ? "text-amber-500" : green ? "text-[#17cf54]" : "text-[#4a3b2c]"}`}>
                             {primary}
                         </p>
-                        <p className="text-xs text-stone-400">{secondary}</p>
+                        <p className={`text-xs ${warn ? "text-amber-500" : "text-stone-400"}`}>{secondary}</p>
                     </div>
                 ))}
             </div>
