@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface KycContextType {
     isKycCompleted: boolean;
+    /** DB에 등록된 지갑 주소 (KYC 완료 시 저장됨) */
+    registeredWallet: string | null;
     completeKyc: () => void;
     resetKyc: () => void;
 }
@@ -10,6 +12,7 @@ const KycContext = createContext<KycContextType | undefined>(undefined);
 
 export function KycProvider({ children }: { children: React.ReactNode }) {
     const [isKycCompleted, setIsKycCompleted] = useState<boolean>(false);
+    const [registeredWallet, setRegisteredWallet] = useState<string | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
@@ -21,16 +24,17 @@ export function KycProvider({ children }: { children: React.ReactNode }) {
         fetch("/api/user/kyc-status")
             .then((res) => {
                 if (!res.ok) {
-                    // 로그인 안 된 경우 (401) → false
                     setIsKycCompleted(false);
+                    setRegisteredWallet(null);
                     localStorage.removeItem("ruralrest_kyc");
                     return null;
                 }
-                return res.json() as Promise<{ kycVerified: boolean }>;
+                return res.json() as Promise<{ kycVerified: boolean; walletAddress: string | null }>;
             })
             .then((data) => {
                 if (!data) return;
                 setIsKycCompleted(data.kycVerified);
+                setRegisteredWallet(data.walletAddress);
                 if (data.kycVerified) {
                     localStorage.setItem("ruralrest_kyc", "true");
                 } else {
@@ -50,13 +54,14 @@ export function KycProvider({ children }: { children: React.ReactNode }) {
 
     const resetKyc = () => {
         setIsKycCompleted(false);
+        setRegisteredWallet(null);
         localStorage.removeItem("ruralrest_kyc");
     };
 
     if (!isLoaded) return null;
 
     return (
-        <KycContext.Provider value={{ isKycCompleted, completeKyc, resetKyc }}>
+        <KycContext.Provider value={{ isKycCompleted, registeredWallet, completeKyc, resetKyc }}>
             {children}
         </KycContext.Provider>
     );

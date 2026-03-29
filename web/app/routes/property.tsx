@@ -5,9 +5,10 @@ import type { Route } from "./+types/property";
 import { cn } from "~/lib/utils";
 import { PropertyMap } from "~/components/PropertyMap";
 import { db } from "~/db/index.server";
-import { listings, user } from "~/db/schema";
+import { listings, user, rwaTokens } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import { InvestmentUpsellCard } from "~/components/InvestmentUpsellCard";
+import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
 
 function toCityLabel(location: string): string {
     const m = location.match(/([가-힣]+)시/);
@@ -61,12 +62,25 @@ export async function loader({ params }: Route.LoaderArgs) {
             lat: listings.lat,
             lng: listings.lng,
             hostId: listings.hostId,
+            tokenStatus: rwaTokens.status,
         })
         .from(listings)
+        .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
         .where(eq(listings.id, params.id!))
         .then((rows) => rows[0] ?? null);
 
     if (!row) throw new Response("Not Found", { status: 404 });
+
+    // 온체인 상태가 진실 — DB는 fallback
+    if (row.tokenStatus) {
+        const onchain = await fetchPropertyOnchain(params.id!);
+        if (onchain) {
+            row.tokenStatus = onchain.status as typeof row.tokenStatus;
+        }
+    }
+
+    // RWA 토큰이 있으면 active 상태일 때만 예약 가능
+    const bookingAllowed = !row.tokenStatus || row.tokenStatus === "active";
 
     const hostUser = await db
         .select({ name: user.name })
@@ -99,11 +113,11 @@ export async function loader({ params }: Route.LoaderArgs) {
         pickupPoints: [] as { id: string; name: string; description: string; estimatedTimeToProperty: string }[],
     };
 
-    return { listing };
+    return { listing, bookingAllowed };
 }
 
 export default function PropertyDetail() {
-    const { listing } = useLoaderData<typeof loader>();
+    const { listing, bookingAllowed } = useLoaderData<typeof loader>();
     const navigate = useNavigate();
     const [showGallery, setShowGallery] = useState(false);
 
@@ -413,15 +427,24 @@ export default function PropertyDetail() {
                                         </div>
                                     </div>
 
-                                    <Button
-                                        className="w-full h-14 text-xl font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                        onClick={() => navigate(`/book/${listing.id}`)}
-                                    >
-                                        Reserve Now
-                                    </Button>
-                                    <p className="text-center text-[10px] text-stone-400 font-bold uppercase tracking-widest">
-                                        No charge until host approval
-                                    </p>
+                                    {bookingAllowed ? (
+                                        <>
+                                            <Button
+                                                className="w-full h-14 text-xl font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                                onClick={() => navigate(`/book/${listing.id}`)}
+                                            >
+                                                Reserve Now
+                                            </Button>
+                                            <p className="text-center text-[10px] text-stone-400 font-bold uppercase tracking-widest">
+                                                No charge until host approval
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <div className="w-full h-14 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center gap-0.5">
+                                            <span className="text-sm font-bold text-stone-400">펀딩 모집 중</span>
+                                            <span className="text-[10px] text-stone-300">펀딩 완료 후 예약이 오픈됩니다</span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-4 pt-6 border-t border-stone-100 font-medium text-sm">
