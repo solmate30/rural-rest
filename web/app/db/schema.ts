@@ -165,6 +165,7 @@ export const rwaTokens = sqliteTable("rwa_tokens", {
     estimatedApyBps: integer("estimated_apy_bps").notNull().default(0), // 예상 연수익률 (basis points, 820 = 8.2%)
     minFundingBps: integer("min_funding_bps").notNull().default(6000), // 60%
     programId: text("program_id").notNull(), // Anchor 프로그램 ID
+    lastSettlementAt: integer("last_settlement_at", { mode: "timestamp" }), // 마지막 정산 시각
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
     updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });

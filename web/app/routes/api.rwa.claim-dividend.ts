@@ -2,12 +2,19 @@ import type { Route } from "./+types/api.rwa.claim-dividend";
 import { db } from "~/db/index.server";
 import { rwaDividends } from "~/db/schema";
 import { and, eq, isNull } from "drizzle-orm";
+import { requireWallet } from "~/lib/auth.server";
 
 export async function action({ request }: Route.ActionArgs) {
-    const { rwaTokenId, walletAddress, claimTx } = await request.json();
+    const { walletAddress } = await requireWallet(request);
 
-    if (!rwaTokenId || !walletAddress || !claimTx) {
+    const { rwaTokenId, walletAddress: bodyWallet, claimTx } = await request.json();
+
+    if (!rwaTokenId || !bodyWallet || !claimTx) {
         return Response.json({ error: "rwaTokenId, walletAddress, claimTx required" }, { status: 400 });
+    }
+
+    if (walletAddress !== bodyWallet) {
+        return Response.json({ error: "세션 지갑과 요청 지갑이 일치하지 않습니다" }, { status: 403 });
     }
 
     const now = new Date();
