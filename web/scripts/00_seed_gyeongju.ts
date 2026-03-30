@@ -161,8 +161,7 @@ async function main() {
 
     if (hostResult.rows.length > 0) {
         hostId = hostResult.rows[0].id as string;
-        await db.execute({ sql: "UPDATE user SET name = ? WHERE id = ?", args: ["마을지기", hostId] });
-        console.log(`\n  [업데이트] 호스트: ${hostId} → 마을지기`);
+        console.log(`\n  [기존] 호스트: ${hostId}`);
     } else {
         hostId = uuidv4();
         await db.execute({

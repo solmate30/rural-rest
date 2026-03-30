@@ -104,7 +104,7 @@ export async function loader({ params }: Route.LoaderArgs) {
         image: images[0] ?? "/house.png",
         rating: null as number | null,
         reviews: [] as { id: string; authorName: string; authorImage: string; rating: number; comment: string; date: string }[],
-        hostName: hostUser?.name ?? "마을지기",
+        hostName: `${row.location.split(" ").at(-1)} 마을지기`,
         hostImage: `https://api.dicebear.com/7.x/notionists/svg?seed=${row.hostId}&backgroundColor=e2e8f0`,
         hostBio: "우리 마을의 빈집을 되살려 여행자에게 특별한 경험을 제공하고 있습니다. 마을 주민들과 함께 숙소를 운영하며, 지역 문화와 자연을 나누는 일을 하고 있습니다.",
         coordinates: { lat: row.lat ?? 35.8394, lng: row.lng ?? 129.2917 },
