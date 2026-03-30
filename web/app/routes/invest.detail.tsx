@@ -195,7 +195,7 @@ export async function loader({ params }: Route.LoaderArgs) {
         lastDividend: lastDividendMonth,
         occupancyRate,
         host: {
-            name: hostUser?.name ?? "마을지기",
+            name: `${row.location.split(" ").at(-1)} 마을지기`,
             bio: "우리 마을의 빈집을 되살려 여행자에게 특별한 경험을 제공하고 있습니다. 마을 주민들과 함께 숙소를 운영하며, 지역 문화와 자연을 나누는 일을 하고 있습니다.",
         },
     };
