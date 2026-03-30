@@ -1,9 +1,21 @@
-# 13. DAO 구현 명세서 (Technical Specification)
+# 08. DAO 구현 명세서 (Technical Specification)
 
 > Created: 2026-02-18 12:00
-> Last Updated: 2026-03-10 05:00
+> Last Updated: 2026-03-30 16:00
+> Migration: Realms → Custom Anchor (2026-03-30). 이전 Realms 버전은 `docs/00_ARCHIVE/08_DAO_IMPLEMENTATION_SPEC_REALMS.md`에 보존.
 
 본 문서는 [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md) 기획서를 바탕으로 Rural Rest DAO의 1단계 기술 구현을 정의한다. RWA 1차 발행 직후 투표 기능만을 온체인으로 구현하는 범위를 기술한다.
+
+---
+
+## Realms 폐기 사유
+
+| # | 사유 | 심각도 |
+|---|------|--------|
+| 1 | **Token-2022 미지원** — spl-governance는 구형 SPL Token만 지원. RWA 토큰이 Token-2022 NonTransferable extension을 사용하므로 Realms에 토큰 입금/투표 불가 | Hard Blocker |
+| 2 | **유지보수 중단** — v3.1.0 (2022.12) 이후 3년간 메이저 업데이트 없음. 원본 repo (solana-labs/SPL) 2025.03 아카이브 | High Risk |
+| 3 | **10% 캡 미지원** — Realms 네이티브 지원 없음. Voter Weight Addin 커스텀 프로그램을 별도 작성해야 하므로 결국 커스텀 코드 불가피 | Complexity |
+| 4 | **다중 Mint 비호환** — Realms는 단일 communityMint 요구. 매물별 개별 mint 구조와 비호환 | Architecture |
 
 ---
 
@@ -11,263 +23,453 @@
 
 ### 1.1. 기반 문서
 
-*   **기획서**: [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md)
-*   **핵심 가정**: RWA 1차 발행 직후 DAO 운영 시작, 1단계는 **투표만** 구현
+- **기획서**: [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md)
+- **투표 방어 로직**: [16_DAO_VOTING_DEFENSE_LOGIC.md](../01_Concept_Design/16_DAO_VOTING_DEFENSE_LOGIC.md)
+- **핵심 가정**: RWA 1차 발행 직후 DAO 운영 시작, 1단계는 **투표만** 구현 (자동 온체인 실행 없음)
 
 ### 1.2. 착수 전 준비 체크리스트 (Pre-Implementation Checklist)
 
-> 아래 항목이 모두 완료되어야 구현을 시작할 수 있다. 미완료 항목이 있으면 해당 단계에서 블로킹된다.
+> 아래 항목이 모두 완료되어야 구현을 시작할 수 있다.
 
-#### A. RWA 토큰 준비 (첫 번째 블로커)
+#### A. RWA 토큰 준비
 
-- [ ] **RWA SPL Token Mint 생성** (Devnet 기준)
-    - Devnet에서 RWA Token Mint 배포 완료
-    - `RWA_TOKEN_MINT` 환경 변수에 실제 공개키 기입
-- [ ] **총 발행량 확정**
-    - `minCommunityTokensToCreateProposal` 파라미터를 토큰 단위로 환산하려면 총 발행량이 확정되어야 함
-    - 예: 총 발행량 1,000,000 RWA → 0.5% = 5,000 토큰 단위로 설정
-- [ ] **테스트용 RWA 토큰 분배**
-    - 테스트 지갑(Wallet C, D 등)에 Devnet RWA 토큰 배분 완료
+- [x] **RWA Token-2022 Mint** — Anchor 프로그램(`rural-rest-rwa`)의 `initialize_property`에서 생성됨
+- [x] **NonTransferable extension** — 적용 완료 (2026-03-30)
+- [x] **테스트용 RWA 토큰 분배** — localnet 테스트에서 `purchase_tokens`로 분배
 
 #### B. Council Token 준비
 
-- [ ] **Council SPL Token Mint 생성** (Devnet 기준)
-    - Non-transferable(Freeze Authority 설정) 옵션 적용
-    - `COUNCIL_TOKEN_MINT` 환경 변수에 실제 공개키 기입
-- [ ] **마을 대표·지방정부 지갑 목록 확보**
-    - Council Token 발급 대상 지갑 주소 목록 준비
+- [ ] **Council Token-2022 Mint 생성** (NonTransferable extension 적용)
+    - `COUNCIL_TOKEN_MINT` 환경 변수에 공개키 기입
+- [ ] **마을 대표/지방정부 지갑 목록 확보**
+    - Council Token 발급 대상 지갑 주소 준비
 
 #### C. Squads Multisig 준비
 
 - [ ] **Squads Protocol v4 Multisig 생성**
-    - M-of-N 서명자 구성 확정 (예: 3-of-5)
-    - 서명자 지갑 주소 목록 확정
-    - `MULTISIG_PUBKEY` 환경 변수에 실제 공개키 기입
+    - M-of-N 서명자 구성 확정 (예: 2-of-3)
+    - `MULTISIG_PUBKEY` 환경 변수에 공개키 기입
 - [ ] **Council Token Mint Authority → Multisig 이전**
-    - 이전 완료 후 단일 지갑 민팅 불가 확인 (QA 시나리오 2.2)
 
-#### D. 웹앱 기존 연동 상태 확인
+#### D. DAO 프로그램 배포
 
-- [ ] **`web/` 디렉토리 내 Solana Wallet Adapter 연동 상태 점검**
-    - 기존 투자 플로우에서 사용 중인 `@solana/wallet-adapter-react` 버전 확인
-    - DAO 연동에 재사용 가능한지 확인
-- [ ] **신규 패키지 설치 가능 여부 확인**
-    - `@solana/spl-governance`, `@sqds/multisig` 의존성 충돌 없음 확인
+- [ ] **`rural-rest-dao` Anchor 프로그램 빌드 및 배포**
+    - `DAO_PROGRAM_ID` 환경 변수에 공개키 기입
 
 #### E. 환경 변수 완성
 
-- [ ] 아래 5개 환경 변수 모두 실제 값 기입 완료
+| 변수 | 용도 | 상태 |
+|------|------|------|
+| `SOLANA_NETWORK` | `devnet` (초기) | 기존 |
+| `DAO_PROGRAM_ID` | DAO Anchor 프로그램 공개키 | D 완료 후 |
+| `COUNCIL_TOKEN_MINT` | Council Token Mint 공개키 | B 완료 후 |
+| `MULTISIG_PUBKEY` | Squads multisig 공개키 | C 완료 후 |
 
-| 변수 | 상태 | 값 |
-| :--- | :--- | :--- |
-| `SOLANA_NETWORK` | 필수 | `devnet` (초기) |
-| `REALMS_REALM_ID` | Realm 생성 후 기입 | - |
-| `RWA_TOKEN_MINT` | A 완료 후 기입 | - |
-| `COUNCIL_TOKEN_MINT` | B 완료 후 기입 | - |
-| `MULTISIG_PUBKEY` | C 완료 후 기입 | - |
-
-#### F. 구현 순서 준수
-
-> 순서가 바뀌면 Realm 파라미터를 재설정해야 하므로 반드시 아래 순서를 따른다.
+#### F. 구현 순서
 
 ```
-1. RWA Token Mint 생성 (A)
-2. Council Token Mint 생성 (B)
-3. Squads Multisig 생성 → Council Mint Authority 이전 (C)
-4. Realms Realm 생성 (환경 변수 E 완성 후)
-5. UI 구현 (D 확인 후)
+1. Anchor DAO 프로그램 작성 + localnet 테스트
+2. Council Token Mint 생성 스크립트
+3. Squads Multisig 생성 + Council Mint Authority 이전
+4. Devnet 배포 + initialize_dao + E2E 테스트
+5. 웹 UI (/invest/:id/governance)
 6. QA 시나리오 전체 통과 확인
 ```
 
 ---
 
-### 1.3. 구현 상태 (Implementation Status)
-
-| 구성 요소 | 상태 | 비고 |
-| :--- | :--- | :--- |
-| Realms Realm 생성 | 미구현 | Solana Realms 기반 DAO 셋업 |
-| RWA 토큰 기반 1:1 투표권 | 미구현 | SPL Token 잔액 = 투표권 |
-| 제안(Proposal) 생성·투표 UI | 미구현 | `/invest/:id/governance` (투자 상세 내 거버넌스 탭) |
-| 오프체인 보조 (포럼·회의록) | 미구현 | 문서/포럼 연동 (선택) |
-
----
-
 ## 2. 기술 스택
 
-### 2.1. 체인 및 도구
-
-| 항목 | 선택 | 버전/비고 |
-| :--- | :--- | :--- |
-| **체인** | Solana | Mainnet / Devnet (초기 개발) |
-| **DAO 프레임워크** | Realms | Solana Realms DAO 툴킷 |
-| **토큰 표준** | SPL Token | RWA 토큰 = 투표권 소스 |
-| **지갑 연동** | Solana Wallet Adapter | 기존 투자 플로우와 동일 |
-
-### 2.2. 환경 변수
-
-| 변수 | 용도 |
-| :--- | :--- |
-| `SOLANA_NETWORK` | `mainnet-beta` / `devnet` |
-| `REALMS_REALM_ID` | Realms DAO Realm 공개키 |
-| `RWA_TOKEN_MINT` | RWA SPL Token Mint 공개키 (투표권 산정용) |
-| `COUNCIL_TOKEN_MINT` | Council SPL Token Mint 공개키 (제안 생성 권한용) |
-| `MULTISIG_PUBKEY` | Squads 멀티시그 지갑 공개키 (비상 관리 권한) |
+| 항목 | 선택 | 비고 |
+|------|------|------|
+| **체인** | Solana | Devnet → Mainnet |
+| **DAO 프레임워크** | 커스텀 Anchor 프로그램 (`rural-rest-dao`) | Realms 폐기, 사유 상단 참조 |
+| **토큰 표준** | Token-2022 | RWA (NonTransferable) + Council (NonTransferable) |
+| **비상 관리** | Squads Protocol v4 | M-of-N multisig |
+| **지갑 연동** | Solana Wallet Adapter | 기존 투자 플로우 재사용 |
+| **Anchor** | 0.32.1 | anchor-spl 0.32.1 |
 
 ---
 
-## 3. 투표권 산정 (RWA 1:1)
+## 3. State Accounts (PDA 구조)
 
-### 3.1. 규칙
+### 3.1. DaoConfig
 
-*   **투표권 = RWA 토큰 보유량 1:1**
-*   **스냅샷 시점**: **제안 생성 시점 스냅샷 고정** (투표 진행 중 매수를 통한 영향력 조작 방지)
-*   **참여자 구분 없음**: 투자자·마을 대표·지방정부 모두 동일. 별도 가중치·특별 권한 없음
+```
+PDA Seeds: ["dao_config"]
+```
 
-### 3.2. 토큰 이중 구조 (권한 분리)
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `authority` | Pubkey | 관리자 (Squads multisig) |
+| `council_mint` | Pubkey | Council Token Mint |
+| `voting_period` | i64 | 투표 기간 (초). 기본 604800 (7일) |
+| `quorum_bps` | u16 | 정족수 (BPS). 기본 1000 (10%) |
+| `approval_threshold_bps` | u16 | 가결 기준 (BPS). 기본 6000 (60%) |
+| `voting_cap_bps` | u16 | 투표권 하드 캡 (BPS). 기본 1000 (10%) |
+| `proposal_count` | u64 | 제안 카운터 (자동 증가) |
+| `rwa_program` | Pubkey | RWA 프로그램 ID (InvestorPosition 읽기용) |
+| `bump` | u8 | PDA bump |
 
-Realms의 Community/Council 이중 토큰 구조를 활용하여 투표권과 제안 생성 권한을 분리한다.
+### 3.2. Proposal
 
-| 토큰 | 대상 | 역할 |
-| :--- | :--- | :--- |
-| **Community Token** (RWA SPL Token) | 투자자·마을 대표·지방정부 전체 | 투표권 (1:1) |
-| **Council Token** (별도 SPL Token) | 마을 대표·지방정부에게만 발급 | 제안 생성 권한 |
+```
+PDA Seeds: ["proposal", proposal_id.to_le_bytes()]
+```
 
-*   Council Token은 양도 불가(Non-transferable) 설정 권장. 마을 대표·지방정부 교체 시 운영자가 재발급
-*   투자자는 Community Token(RWA)만 보유하므로 투표는 가능하나 제안 생성 불가
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `id` | u64 | 제안 ID (DaoConfig.proposal_count에서 할당) |
+| `creator` | Pubkey | 제안 생성자 (Council Token 보유자) |
+| `title` | String (max 128) | 제안 제목 |
+| `description_uri` | String (max 256) | IPFS/Arweave URI (긴 설명) |
+| `category` | ProposalCategory | Operations / Guidelines / FundUsage / Other |
+| `status` | ProposalStatus | Voting / Succeeded / Defeated / Cancelled |
+| `votes_for` | u64 | 찬성 투표 가중치 합계 |
+| `votes_against` | u64 | 반대 투표 가중치 합계 |
+| `votes_abstain` | u64 | 기권 투표 가중치 합계 |
+| `total_eligible_weight` | u64 | 제안 생성 시점 전체 RWA 유통량 스냅샷 |
+| `voting_starts_at` | i64 | 투표 시작 시간 (Unix timestamp) |
+| `voting_ends_at` | i64 | 투표 종료 시간 (Unix timestamp) |
+| `created_at` | i64 | 생성 시간 (Unix timestamp) |
+| `bump` | u8 | PDA bump |
 
-### 3.3. Realms 파라미터 (Realm 생성 시 설정값)
+### 3.3. VoteRecord
 
-| Realms 파라미터 | 값 | 설명 |
-| :--- | :--- | :--- |
-| `communityMint` | `RWA_TOKEN_MINT` | 투표권 토큰 = RWA SPL Token |
-| `councilMint` | `COUNCIL_TOKEN_MINT` | 제안 생성 권한 토큰 (마을 대표·지방정부 전용) |
-| `minCommunityTokensToCreateProposal` | `u64::MAX` (사실상 비활성화) | Community Token으로는 제안 생성 불가 |
-| `minCouncilTokensToCreateProposal` | **1** | Council Token 1개 이상 보유 시 제안 생성 가능 |
-| `voteThresholdPercentage` | **60%** | 가결 기준 (참여 투표 대비) |
-| `communityVoteThreshold` (Quorum) | **10%** | 총 유통량 대비 최소 참여 비율 |
-| `maxVotingTime` | **604800** (7일, 초 단위) | 기본 투표 기간; 긴급 안건은 별도 합의로 259200(3일) 적용 |
+```
+PDA Seeds: ["vote", proposal_id.to_le_bytes(), voter.key()]
+```
 
-### 3.4. 기술적 흐름
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `proposal` | Pubkey | 대상 Proposal |
+| `voter` | Pubkey | 투표자 |
+| `vote_type` | VoteType | For / Against / Abstain |
+| `weight` | u64 | 캡 적용 후 실제 투표 가중치 |
+| `raw_weight` | u64 | 캡 적용 전 원래 보유량 |
+| `bump` | u8 | PDA bump |
 
-1. Realms Realm 생성 시 `communityMint = RWA_TOKEN_MINT`, `councilMint = COUNCIL_TOKEN_MINT` 설정
-2. 마을 대표·지방정부 지갑에 Council Token 발급 (운영자가 민팅)
-3. 제안 생성 블록 기준 RWA 잔액을 스냅샷으로 투표권 확정
-4. 투표 결과는 온체인에 기록되며, 수익 배분·Eco-Points 시스템과 **상태·데이터를 공유하지 않음**
+### 3.4. Enums
+
+```rust
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
+pub enum ProposalCategory {
+    Operations,   // 숙소 운영 규칙 (예약/취소, 숙박 일수 등)
+    Guidelines,   // 브랜드/서비스 가이드라인
+    FundUsage,    // 마을 기금 사용
+    Other,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
+pub enum ProposalStatus {
+    Voting,
+    Succeeded,
+    Defeated,
+    Cancelled,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
+pub enum VoteType {
+    For,
+    Against,
+    Abstain,
+}
+```
 
 ---
 
-## 4. 비상 관리 권한 (Multisig)
+## 4. Instructions (5개)
 
-### 4.1. 구성
+### 4.1. `initialize_dao`
 
-*   **도구**: Squads Protocol v4 (`@sqds/multisig` 패키지)
-*   **서명 구조**: M-of-N (예: 3-of-5). 핵심 팀원·마을 대표·외부 자문으로 구성
-*   **멀티시그 지갑 주소**: 환경 변수 `MULTISIG_PUBKEY`에 기록, 커뮤니티에 공개
+- **서명자**: authority (Squads multisig)
+- **동작**: DaoConfig PDA 초기화, 파라미터 설정
+- **검증**:
+  - `council_mint` 유효한 Token-2022 Mint
+  - `voting_period` > 0
+  - `quorum_bps` <= 10000
+  - `approval_threshold_bps` <= 10000
+  - `voting_cap_bps` <= 10000
+  - `rwa_program` 유효한 프로그램 ID
 
-### 4.2. 통제 범위 (한정적)
+### 4.2. `create_proposal`
 
-| 대상 | 통제 가능 여부 | 내용 |
-| :--- | :--- | :--- |
-| Council Token Mint Authority | 가능 | 마을 대표·지방정부 교체 시 재발급 |
-| 커스텀 프로그램 (배당 풀 등) | 가능 | Upgrade Authority 또는 Pause 키를 멀티시그로 설정 |
-| DAO Treasury | 가능 | 비상 자금 이동 |
-| Realms(`spl-governance`) 자체 | **불가** | Solana 재단 관리 공개 프로그램. 일시 중단·강제 롤백 대상 아님 |
+- **서명자**: creator (Council Token 보유자)
+- **동작**: Proposal PDA 생성, 투표 기간 시작, proposal_count 증가
+- **검증**:
+  - creator의 Council Token ATA 잔액 >= 1
+  - `title` 길이 <= 128 bytes
+  - `description_uri` 길이 <= 256 bytes
+- **Remaining Accounts**: 모든 Active 상태 PropertyToken 계정 (readonly)
+  ```
+  total_eligible_weight = sum(property_token.tokens_sold for each active property)
+  ```
+- **스냅샷**: 생성 시점의 `total_eligible_weight` 기록 → 정족수/캡 계산 기준
 
-### 4.3. 의존성 추가
+### 4.3. `cast_vote`
 
-| 패키지 | 용도 |
-| :--- | :--- |
-| `@sqds/multisig` | Squads Protocol v4 클라이언트 |
+- **서명자**: voter
+- **동작**: VoteRecord PDA 생성, Proposal 투표수 업데이트
+- **투표권 계산**:
+  ```
+  raw_weight = sum(investor_position.amount for each property where owner == voter)
+  cap = total_eligible_weight * voting_cap_bps / 10000
+  weight = min(raw_weight, cap)
+  ```
+- **Remaining Accounts**: voter의 모든 InvestorPosition PDA (readonly)
+  - 각 position의 `owner == voter.key()` 검증
+- **검증**:
+  - `voting_starts_at <= now <= voting_ends_at`
+  - `status == Voting`
+  - VoteRecord PDA 미존재 (중복 투표 방지)
+  - `raw_weight > 0` (투표권 없는 사용자 차단)
+
+### 4.4. `finalize_proposal`
+
+- **서명자**: 누구나 (permissionless, 투표 기간 종료 후)
+- **동작**: 최종 결과 판정, status 업데이트
+- **판정 로직**:
+  ```
+  total_voted = votes_for + votes_against + votes_abstain
+  quorum_met = total_voted >= total_eligible_weight * quorum_bps / 10000
+
+  // 기권은 정족수에 포함되지만 가결 판정에서 제외
+  approval = votes_for >= (votes_for + votes_against) * approval_threshold_bps / 10000
+
+  if !quorum_met → Defeated
+  if approval → Succeeded
+  else → Defeated
+  ```
+- **검증**:
+  - `now > voting_ends_at`
+  - `status == Voting`
+
+### 4.5. `cancel_proposal`
+
+- **서명자**: creator 또는 authority (Squads multisig)
+- **동작**: status → Cancelled
+- **검증**: `status == Voting`
 
 ---
 
-## 5. 거버넌스와 수익 배분의 완전한 분리
+## 5. CU 예산 (예상)
 
-### 5.1. 분리 원칙
+| Instruction | 예상 CU | 비고 |
+|-------------|---------|------|
+| `initialize_dao` | 20,000 | 단순 초기화 |
+| `create_proposal` | 50,000 | PropertyToken remaining accounts 읽기 |
+| `cast_vote` | 60,000-80,000 | InvestorPosition remaining accounts 읽기 (매물 수에 비례) |
+| `finalize_proposal` | 15,000 | 산술 연산만 |
+| `cancel_proposal` | 10,000 | 상태 변경만 |
 
-*   **로직·시스템 수준 완전 분리**
-*   DAO(Realms) 스마트 컨트랙트와 수익 배분·배당 스마트 컨트랙트는 **별도 프로그램**
-*   공유 상태(Shared State) 없음. DAO 결과가 수익 배분 로직에 직접 입력되지 않음
+경주 파일럿 5개 매물 기준 → remaining accounts 최대 5개 → CU 충분.
 
-### 5.2. 구현 지침
+---
 
-| 구분 | DAO (본 문서) | 수익 배분 (별도 문서) |
-| :--- | :--- | :--- |
-| 프로그램 | Realms 기반 | RWA Dividend Pool 등 별도 Anchor Program |
-| 데이터 소스 | RWA 토큰 잔액 (투표권) | RWA 토큰 잔액 (배당 비율) |
-| 트랜잭션 | 제안·투표·실행 | 배당금 Claim |
+## 6. 투표권 산정
+
+### 6.1. 규칙
+
+- **투표권 = 전체 매물 RWA 보유량 합산** (InvestorPosition.amount across all properties)
+- **10% 하드 캡**: 온체인 네이티브 적용. `min(raw_weight, total_eligible_weight * 10%)`
+- **스냅샷**: `total_eligible_weight`는 제안 생성 시점에 기록 (PropertyToken.tokens_sold 합산)
+- **개인 투표권**: cast_vote 시점의 InvestorPosition 잔액 조회
+
+### 6.2. 토큰 이중 구조 (권한 분리)
+
+| 토큰 | 대상 | 역할 | 표준 |
+|------|------|------|------|
+| **RWA Token** | 투자자 전체 | 투표권 (보유량 비례) | Token-2022 NonTransferable |
+| **Council Token** | 마을 대표/지방정부 | 제안 생성 권한 | Token-2022 NonTransferable |
+
+- Council Token은 Squads multisig만 발급 가능 (Mint Authority → multisig)
+- 투자자는 RWA Token으로 투표만 가능, 제안 생성 불가
+
+### 6.3. Remaining Accounts 패턴
+
+**`cast_vote`에서 투표권 합산:**
+```
+remaining_accounts: [
+  investor_position_property_1 (readonly),
+  investor_position_property_2 (readonly),
+  ...
+]
+```
+각 account를 역직렬화 → `owner == voter` 검증 → `amount` 합산 → 캡 적용.
+
+**`create_proposal`에서 전체 유통량 스냅샷:**
+```
+remaining_accounts: [
+  property_token_1 (readonly),  // Active 상태
+  property_token_2 (readonly),
+  ...
+]
+```
+각 account의 `tokens_sold` 합산 → `total_eligible_weight`.
+
+---
+
+## 7. 비상 관리 권한 (Multisig)
+
+### 7.1. 구성
+
+- **도구**: Squads Protocol v4
+- **서명 구조**: M-of-N (예: 2-of-3: Rural Rest + 지방정부 + 마을 대표)
+- **공개키**: `MULTISIG_PUBKEY` 환경 변수
+
+### 7.2. 통제 범위
+
+| 대상 | 가능 | 내용 |
+|------|------|------|
+| Council Token Mint Authority | O | 마을 대표 교체 시 재발급 |
+| DaoConfig 파라미터 변경 | O | authority만 호출 가능 |
+| cancel_proposal | O | 비상 제안 취소 |
+| DAO 프로그램 Upgrade Authority | O | 프로그램 업그레이드 |
+| RWA 프로그램 | X | 별도 authority 관리 |
+
+---
+
+## 8. 거버넌스와 수익 배분의 완전한 분리
+
+### 8.1. 분리 원칙
+
+- DAO 프로그램(`rural-rest-dao`)과 RWA 프로그램(`rural-rest-rwa`)은 **별도 프로그램**
+- **공유 상태 없음**. DAO는 RWA의 InvestorPosition/PropertyToken을 **읽기만** 수행 (CPI 없음, 직접 역직렬화)
+- DAO 가결 결과가 수익 배분 로직에 직접 입력되지 않음
+
+### 8.2. 구현 지침
+
+| 구분 | DAO (본 문서) | 수익 배분 (별도) |
+|------|---------------|------------------|
+| 프로그램 | `rural-rest-dao` | `rural-rest-rwa` |
+| 데이터 소스 | InvestorPosition.amount (투표권) | InvestorPosition.amount (배당 비율) |
+| 트랜잭션 | 제안/투표/finalize | distribute/claim |
 | 연동 | 없음 | 없음 |
 
 ---
 
-## 6. 제안(Proposal) 및 투표 흐름
+## 9. 클라이언트 연동
 
-### 6.1. 의사결정 대상 (기획서 Section 4 기준)
+### 9.1. 웹 앱 요구사항
 
-*   숙소 운영 규칙 (예약·취소, 최소/최대 숙박 일수)
-*   브랜드·서비스 가이드라인
-*   마을 기금 사용 기준
-*   기타 DAO 규약에 정의된 운영 가이드라인
+- **지갑 연결**: 기존 Solana Wallet Adapter 재사용
+- **진입점**: 투자 상세 페이지(`/invest/:id`) 내 [거버넌스] 탭
+  - RWA 보유자 전용 기능이므로 일반 방문자 노출 최소화
+- **라우트**: `/invest/:listingId/governance`
 
-### 6.2. 기술 흐름 (Realms 표준)
+### 9.2. 의존성
 
-1. **제안 생성**: Council Token 보유자(마을 대표·지방정부)가 제안서 작성 후 Realms에 등록
-2. **투표 기간**: 설정된 기간 동안 RWA 1:1 투표권으로 찬성/반대/기권
-3. **결과 확정**: 정족수·과반수 조건 충족 시 온체인에 결과 기록
-4. **실행(Optional)**: 자동 실행이 필요한 안건은 Realms Instruction 실행. 규칙 변경 등은 오프체인 운영 반영
+| 패키지 | 용도 |
+|--------|------|
+| `@coral-xyz/anchor` | DAO 프로그램 IDL 기반 클라이언트 |
+| `@solana/web3.js` | RPC, 트랜잭션 |
+| `@solana/spl-token` | Council Token ATA 잔액 조회 |
+| `@solana/wallet-adapter-react` | 지갑 연결 (기존 재사용) |
+| `@sqds/multisig` | Squads Protocol v4 (비상 관리) |
+
+### 9.3. DB 스키마 (오프체인 캐시)
+
+```sql
+-- 제안 오프체인 메타데이터 (온체인 Proposal과 동기화)
+CREATE TABLE dao_proposals (
+    id TEXT PRIMARY KEY,
+    proposal_id INTEGER NOT NULL UNIQUE,     -- 온체인 ID
+    proposal_pubkey TEXT UNIQUE,
+    creator_wallet TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,               -- 전체 설명 (온체인은 URI만)
+    category TEXT NOT NULL,                  -- operations/guidelines/fund_usage/other
+    status TEXT NOT NULL,                    -- voting/succeeded/defeated/cancelled
+    votes_for INTEGER NOT NULL DEFAULT 0,
+    votes_against INTEGER NOT NULL DEFAULT 0,
+    votes_abstain INTEGER NOT NULL DEFAULT 0,
+    voting_ends_at INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+```
+
+### 9.4. UI 상태 분기
+
+| 상태 | 표시 |
+|------|------|
+| 지갑 미연결 | "지갑을 연결하세요" + 연결 버튼 |
+| RWA 미보유 | "투표권이 없습니다. 투자하여 거버넌스에 참여하세요." |
+| RWA 보유 | 제안 목록 + 투표 가능 + 투표권 표시 |
+| Council Token 보유 | 위 + "제안 생성" 버튼 활성화 |
 
 ---
 
-## 7. 클라이언트 연동
+## 10. 셋업 스크립트
 
-### 7.1. 웹 앱 요구사항
-
-*   **지갑 연결**: 기존 Solana Wallet Adapter 재사용 (투자 플로우와 동일)
-*   **진입점**: 상단 네비게이션바에 노출하지 않음. 투자 상세 페이지(`/invest/:id`) 내 [거버넌스] 탭으로 진입
-    *   이유: RWA 보유자 전용 기능이므로 일반 방문자 노출을 최소화하고, 투자 → 보유 → 거버넌스 참여의 자연스러운 흐름 유지
-    *   1단계 이후 DAO가 성숙하면 `/governance` 독립 경로 + 네비게이션 추가로 전환 검토
-*   **라우트**: `/invest/:id/governance` — 제안 목록·투표 폼 노출
-*   **RWA 잔액 표시**: SPL Token `getTokenAccountBalance` 또는 Realms SDK로 투표권(예상) 표시
-
-### 7.2. 의존성
-
-| 패키지 | 버전 | 용도 |
-| :--- | :--- | :--- |
-| `@solana/web3.js` | latest | RPC, 트랜잭션 |
-| `@solana/spl-token` | latest | RWA 토큰 잔액 조회 |
-| `@solana/wallet-adapter-react` | latest | 지갑 연결 (기존 투자 플로우 재사용) |
-| `@solana/spl-governance` | latest | Realms 프로그램 클라이언트 (Realm 생성·제안·투표 호출) |
-| `@sqds/multisig` | latest | Squads Protocol v4 (비상 관리 멀티시그) |
+| 스크립트 | 동작 |
+|----------|------|
+| `setup-council-mint.ts` | Council Token Mint 생성 (Token-2022, NonTransferable) |
+| `setup-squads-multisig.ts` | Squads v4 multisig 생성 (M-of-N) |
+| `transfer-council-authority.ts` | Council Mint Authority → Squads multisig 이전 |
+| `initialize-dao.ts` | DaoConfig 초기화 (multisig 서명) |
+| `mint-council-tokens.ts` | 마을 대표 지갑에 Council Token 발급 |
+| `verify-dao-setup.ts` | 온체인 상태 검증 |
 
 ---
 
-## 8. 환경 및 배포
-
-### 8.1. 초기 시범 운영
-
-*   **법인 미등록**: 온체인만으로 시작 (기획서 Section 8)
-*   **네트워크**: Devnet으로 개발·테스트 후 Mainnet 전환 검토
-*   **오프체인 보조**: GitHub Discussions에서 제안 사전 토론 및 회의록 보관. 온체인 투표 전 커뮤니티 합의 형성 용도
-
-### 8.2. 마일스톤
+## 11. 마일스톤
 
 | 단계 | 내용 | 완료 조건 |
-| :--- | :--- | :--- |
-| 1 | Realms Realm 생성 (RWA Mint + Council Token 연동) | Devnet Realm 배포, RWA 1:1 투표권 및 제안 권한 분리 확인 |
-| 2 | Squads 멀티시그 설정 | M-of-N 서명자 구성, Council Mint Authority 이전 완료 |
-| 3 | 제안 생성·투표 UI | 웹에서 제안 조회·투표 가능 (`/invest/:id/governance`) |
-| 4 | 오프체인 보조 (선택) | GitHub Discussions 링크 연동 |
-| 5 | QA 테스트 시나리오 검증 | `05_QA_Validation/07_DAO_TEST_SCENARIOS.md` 기준 전체 시나리오 통과 |
+|------|------|-----------|
+| 1 | Anchor DAO 프로그램 작성 + localnet 테스트 | 5개 instruction, 테스트 전체 통과 |
+| 2 | Council Token + Squads Multisig 셋업 | 스크립트 실행 + 권한 이전 확인 |
+| 3 | Devnet 배포 + E2E | initialize_dao → create_proposal → cast_vote → finalize 전체 플로우 |
+| 4 | 웹 UI | `/invest/:id/governance` 제안 조회/투표/생성 |
+| 5 | QA 시나리오 전체 검증 | `07_DAO_TEST_SCENARIOS.md` 기준 통과 |
 
 ---
 
-## 9. Related Documents
+## 12. Phase 2+ Backlog (운영환경 전환 시)
 
-- **Concept_Design**: [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md) - DAO 기획서 (본 명세의 기반)
-- **Concept_Design**: [15_RWA_ISSUANCE_PLAN.md](../01_Concept_Design/15_RWA_ISSUANCE_PLAN.md) - RWA 발행 기획 (DAO Community Token = RWA)
-- **Technical_Specs**: [09_RWA_ISSUANCE_SPEC.md](./09_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세 (RWA Mint 선행 필요)
-- **Concept_Design**: [08_PITCH_DECK_v2.md](../01_Concept_Design/08_PITCH_DECK_v2.md) - 피치 덱 (RWA·DAO 전략)
-- **Archive**: [future_blockchain/11_RWA_DAO_GOVERNANCE_VISION.md](../00_ARCHIVE/future_blockchain/11_RWA_DAO_GOVERNANCE_VISION.md) - 레거시 DAO 비전
-- **Archive**: [future_blockchain/09_BLOCKCHAIN_ROADMAP.md](../00_ARCHIVE/future_blockchain/09_BLOCKCHAIN_ROADMAP.md) - 블록체인 로드맵 (Phase 4 DAO)
-- **Logic_Progress**: [10_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/10_RWA_DIVIDEND_LOGIC.md) - RWA 배당 로직 (수익 배분, DAO와 분리)
-- **QA_Validation**: [07_DAO_TEST_SCENARIOS.md](../05_QA_Validation/07_DAO_TEST_SCENARIOS.md) - DAO 투표·제안·멀티시그 테스트 시나리오
+| # | 항목 | 심각도 | 설명 |
+|---|------|--------|------|
+| 1 | 보안 감사 | High | Sec3 + OtterSec 등 외부 감사 |
+| 2 | 개인별 스냅샷 정교화 | High | 제안 시점 개인별 잔액 머클 트리 (현재는 cast_vote 시점 조회) |
+| 3 | KYC 연동 Sybil 방어 | High | 동일인 다중 지갑 방어 |
+| 4 | remaining accounts 확장성 | Medium | 매물 50개+ 시 머클 증명 온체인 검증으로 전환 |
+| 5 | 프로그램 업그레이드 전략 | Medium | Upgrade Authority → multisig |
+| 6 | `emit!` 이벤트 + 인덱싱 | Medium | ProposalCreated, VoteCast, ProposalFinalized |
+| 7 | Dual-Pass (핵심 안건) | Low | RWA 투표 + Council 추가 승인 이중 통과 |
+| 8 | 이차 투표 (Quadratic Voting) | Low | 10% 하드 캡의 보완/대체안 |
+
+> **참고**: RWA 토큰이 non-transferable이므로 "토큰 이동을 통한 투표 조작"은 불가. 제안 후 신규 purchase_tokens만 해당되며, 이는 실제 투자이므로 Phase 1에서는 허용 가능.
+
+---
+
+## 13. Error Codes
+
+| 코드 | 이름 | 조건 |
+|------|------|------|
+| 6000 | `InvalidVotingPeriod` | voting_period <= 0 |
+| 6001 | `InvalidQuorum` | quorum_bps > 10000 |
+| 6002 | `InvalidThreshold` | approval_threshold_bps > 10000 |
+| 6003 | `InvalidVotingCap` | voting_cap_bps > 10000 |
+| 6004 | `TitleTooLong` | title > 128 bytes |
+| 6005 | `DescriptionUriTooLong` | description_uri > 256 bytes |
+| 6006 | `InsufficientCouncilTokens` | Council Token ATA 잔액 < 1 |
+| 6007 | `VotingNotStarted` | now < voting_starts_at |
+| 6008 | `VotingEnded` | now > voting_ends_at |
+| 6009 | `VotingNotEnded` | finalize 시 now <= voting_ends_at |
+| 6010 | `InvalidProposalStatus` | 예상 status와 불일치 |
+| 6011 | `NoVotingPower` | raw_weight == 0 |
+| 6012 | `InvalidPositionOwner` | InvestorPosition.owner != voter |
+| 6013 | `InvalidPropertyStatus` | PropertyToken.status != Active |
+| 6014 | `MathOverflow` | checked_* 산술 실패 |
+| 6015 | `Unauthorized` | cancel 시 creator/authority 아닌 서명자 |
+
+---
+
+## 14. Related Documents
+
+- **기획서**: [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md) — DAO 기획 (본 명세의 기반)
+- **투표 방어 로직**: [16_DAO_VOTING_DEFENSE_LOGIC.md](../01_Concept_Design/16_DAO_VOTING_DEFENSE_LOGIC.md) — 10% 캡, KYC, Sybil 방어
+- **RWA 프로그램 명세**: [11_ANCHOR_PROGRAM_SPEC.md](./11_ANCHOR_PROGRAM_SPEC.md) — InvestorPosition/PropertyToken PDA 구조
+- **배당 로직**: [10_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/10_RWA_DIVIDEND_LOGIC.md) — DAO와 분리된 수익 배분
+- **QA 시나리오**: [07_DAO_TEST_SCENARIOS.md](../05_QA_Validation/07_DAO_TEST_SCENARIOS.md) — DAO 테스트 시나리오
+- **Known Issues**: [11_RWA_KNOWN_ISSUES.md](../04_Logic_Progress/11_RWA_KNOWN_ISSUES.md) — RWA 알려진 이슈
+- **Archive**: [08_DAO_IMPLEMENTATION_SPEC_REALMS.md](../00_ARCHIVE/08_DAO_IMPLEMENTATION_SPEC_REALMS.md) — 이전 Realms 기반 명세

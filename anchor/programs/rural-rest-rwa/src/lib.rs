@@ -1,8 +1,14 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program::invoke;
+use anchor_lang::system_program;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token_interface::{
     burn, mint_to, set_authority, transfer_checked,
-    spl_token_2022::instruction::AuthorityType,
+    spl_token_2022::{
+        self,
+        extension::ExtensionType,
+        instruction::AuthorityType,
+    },
     Burn, Mint, MintTo, SetAuthority, TokenAccount, TokenInterface, TransferChecked,
 };
 
@@ -118,14 +124,10 @@ pub struct InitializeProperty<'info> {
     )]
     pub property_token: Account<'info, PropertyToken>,
 
-    #[account(
-        init,
-        payer = authority,
-        mint::decimals = 0,
-        mint::authority = property_token,
-        mint::token_program = token_program,
-    )]
-    pub token_mint: InterfaceAccount<'info, Mint>,
+    // NonTransferable extension 적용을 위해 수동 초기화 (Anchor init은 이 extension 미지원)
+    // 순서: create_account → initialize_non_transferable_mint → initialize_mint2
+    #[account(mut)]
+    pub token_mint: Signer<'info>,
 
     // 구매대금 에스크로 볼트 (펀딩 기간 동안 USDC 보관)
     #[account(
@@ -545,6 +547,52 @@ pub mod rural_rest_rwa {
             funding_deadline <= clock.unix_timestamp + 365 * 24 * 3600,
             RwaError::DeadlineTooFar
         );
+
+        // ── Token-2022 Mint + NonTransferable extension 수동 초기화 ──
+        // Anchor init은 Token-2022 extension을 지원하지 않으므로 3단계 CPI로 처리
+        // 참고: https://solana.com/developers/guides/token-extensions/non-transferable
+        let token_program_id = ctx.accounts.token_program.key();
+
+        // 1) create_account — extension 포함 공간 할당
+        let space = ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(
+            &[ExtensionType::NonTransferable],
+        ).map_err(|_| RwaError::MathOverflow)?;
+        let rent = Rent::get()?;
+        let lamports = rent.minimum_balance(space);
+
+        system_program::create_account(
+            CpiContext::new(
+                ctx.accounts.system_program.to_account_info(),
+                system_program::CreateAccount {
+                    from: ctx.accounts.authority.to_account_info(),
+                    to: ctx.accounts.token_mint.to_account_info(),
+                },
+            ),
+            lamports,
+            space as u64,
+            &token_program_id,
+        )?;
+
+        // 2) initialize_non_transferable_mint — extension 등록 (mint 초기화 전에 반드시)
+        invoke(
+            &spl_token_2022::instruction::initialize_non_transferable_mint(
+                &token_program_id,
+                &ctx.accounts.token_mint.key(),
+            )?,
+            &[ctx.accounts.token_mint.to_account_info()],
+        )?;
+
+        // 3) initialize_mint2 — decimals=0, mint_authority=property_token PDA
+        invoke(
+            &spl_token_2022::instruction::initialize_mint2(
+                &token_program_id,
+                &ctx.accounts.token_mint.key(),
+                &ctx.accounts.property_token.key(),  // mint authority
+                None,                                  // freeze authority 없음
+                0,                                     // decimals
+            )?,
+            &[ctx.accounts.token_mint.to_account_info()],
+        )?;
 
         let property = &mut ctx.accounts.property_token;
         property.authority = ctx.accounts.authority.key();

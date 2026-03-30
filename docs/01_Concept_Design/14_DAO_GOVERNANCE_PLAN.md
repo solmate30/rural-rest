@@ -1,7 +1,7 @@
 # 18. DAO 거버넌스 기획서
 
 > Created: 2026-02-18 12:00
-> Last Updated: 2026-03-10 03:00
+> Last Updated: 2026-03-30 16:00
 
 본 문서는 RWA 1차 발행 직후 운영을 시작하는 Rural Rest DAO의 1단계 거버넌스 설계를 정의한다. 참여 구조, 투표권, 의사결정 범위, 기술 스택, 운영 형태 및 규제 대응 방침을 명시한다.
 
@@ -66,7 +66,7 @@
 
 *   **확정 방식**: **제안 생성 시점 스냅샷 고정**
 *   **이유**: 실시간 잔액 방식은 투표 진행 중 RWA 매수를 통한 영향력 조작이 가능하므로, 제안 등록 블록 기준 잔액을 투표권으로 고정한다.
-*   **구현**: Realms에서 제안 생성 블록 기준 투표권 스냅샷 적용. 투표 기간·가결 기준은 `maxVotingTime`, `voteThresholdPercentage` 등 별도 파라미터로 설정
+*   **구현**: 커스텀 Anchor 프로그램에서 `create_proposal` 시 `total_eligible_weight`(전체 PropertyToken.tokens_sold 합산) 스냅샷 기록. 개인 투표권은 `cast_vote` 시점 InvestorPosition.amount 합산 (non-transferable이므로 이동 불가)
 
 ---
 
@@ -104,14 +104,16 @@
     *   Council Token 민팅 권한 (마을 대표·지방정부 교체 시)
     *   향후 개발될 커스텀 프로그램(배당 풀 등)의 Upgrade Authority 또는 Pause
     *   DAO Treasury 자금 이동
-*   **통제 불가 범위**: Realms(`spl-governance`) 자체는 Solana 재단이 관리하는 검증된 공개 프로그램이므로 일시 중단·강제 롤백 대상이 아님
+*   **통제 가능 추가**: DAO 프로그램(`rural-rest-dao`) Upgrade Authority, DaoConfig 파라미터 변경, 비상 제안 취소(`cancel_proposal`)
 *   **투명성**: 멀티시그 지갑 주소와 서명자 목록을 공개 문서에 기재하여 커뮤니티가 감시할 수 있도록 한다
 
 ---
 
 ## 7. 기술 스택 및 운영 방식
 
-*   **플랫폼**: Solana + Realms 기반 구상 유지
+*   **플랫폼**: Solana + **커스텀 Anchor 프로그램** (`rural-rest-dao`)
+    > Realms(spl-governance) → 커스텀 전환 (2026-03-30). 사유: Token-2022 미지원(Hard Blocker), 유지보수 중단(3년), 10% 캡 네이티브 불가, 다중 Mint 비호환. 상세: `docs/03_Technical_Specs/08_DAO_IMPLEMENTATION_SPEC.md`
+*   **비상 관리**: Squads Protocol v4 (M-of-N multisig)
 *   **온체인/오프체인 비중**: 온체인 중심 + 보조 오프체인 (포럼·회의록 등)
 *   **1단계 운영 형태**: 법인·단체 등록 없이 **온체인만으로 시작**
 *   **오프체인 보조 플랫폼**: GitHub Discussions (제안 사전 토론·회의록 보관 용도)
