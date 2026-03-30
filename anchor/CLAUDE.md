@@ -96,6 +96,76 @@ claim           → transfer_checked: usdc_vault → investor_usdc
 
 ---
 
+## DAO Program (`rural-rest-dao`)
+
+별도 Anchor 프로그램. RWA 프로그램과 **완전 분리** (공유 상태 없음, CPI 없음).
+
+### Dev Commands
+
+```bash
+# DAO 프로그램 빌드
+cd programs/rural-rest-dao && anchor build
+
+# DAO 테스트
+anchor test -- --features dao
+
+# IDL 복사
+cp target/idl/rural_rest_dao.json web/app/anchor-idl/
+```
+
+### PDA Seeds
+
+| Account | Seeds | 설명 |
+|---------|-------|------|
+| DaoConfig | `["dao_config"]` | DAO 설정 (1개) |
+| Proposal | `["proposal", id.to_le_bytes()]` | 제안 |
+| VoteRecord | `["vote", proposal_id.to_le_bytes(), voter.key()]` | 투표 기록 |
+
+### Instructions (5개)
+
+| Instruction | 서명자 | 핵심 동작 |
+|-------------|--------|-----------|
+| `initialize_dao` | authority | DaoConfig 초기화 |
+| `create_proposal` | creator (Council Token) | Proposal 생성, total_eligible_weight 스냅샷 |
+| `cast_vote` | voter | VoteRecord 생성, 투표권 합산 + 10% 캡 |
+| `finalize_proposal` | 누구나 | 정족수/가결 판정, status 변경 |
+| `cancel_proposal` | creator or authority | status → Cancelled |
+
+### Critical Rules (DAO)
+
+- **NEVER** RWA 프로그램에 CPI 호출 — InvestorPosition/PropertyToken은 remaining accounts로 **읽기만**
+- **ALWAYS** remaining accounts의 각 account를 역직렬화 후 owner/status 검증
+- **ALWAYS** 투표권 계산에 `checked_*` 산술 사용, 캡 적용은 `min(raw, cap)`
+- **ALWAYS** VoteRecord PDA로 중복 투표 방지 (init constraint)
+
+### Remaining Accounts 패턴
+
+`cast_vote`:
+```
+remaining_accounts: [InvestorPosition_1, InvestorPosition_2, ...]
+→ 각 account: owner == voter 검증 + amount 합산 → 캡 적용
+```
+
+`create_proposal`:
+```
+remaining_accounts: [PropertyToken_1, PropertyToken_2, ...]
+→ 각 account: status == Active 검증 + tokens_sold 합산 → total_eligible_weight
+```
+
+### 판정 로직
+
+```
+total_voted = votes_for + votes_against + votes_abstain
+quorum_met = total_voted >= total_eligible_weight * quorum_bps / 10000
+approval = votes_for >= (votes_for + votes_against) * approval_threshold_bps / 10000
+→ !quorum_met: Defeated | approval: Succeeded | else: Defeated
+```
+
+> 구현 명세: `docs/03_Technical_Specs/08_DAO_IMPLEMENTATION_SPEC.md`
+> 테스트 시나리오: `docs/05_QA_Validation/07_DAO_TEST_SCENARIOS.md`
+
+---
+
 ## Decisions
 
 작업하면서 내린 설계 결정 기록. 변경 시 이유와 함께 업데이트.

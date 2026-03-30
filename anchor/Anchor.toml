@@ -7,9 +7,11 @@ skip-lint = false
 
 [programs.localnet]
 rural_rest_rwa = "EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR"
+rural_rest_dao = "3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX"
 
 [programs.devnet]
 rural_rest_rwa = "EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR"
+rural_rest_dao = "3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX"
 
 [registry]
 url = "https://api.apr.dev"
