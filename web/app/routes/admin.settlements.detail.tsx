@@ -10,6 +10,7 @@ import { eq, and, sql, inArray } from "drizzle-orm";
 import { DateTime } from "luxon";
 import type { Route } from "./+types/admin.settlements.detail";
 import { MonthlySettlementButton } from "~/components/admin/MonthlySettlementButton";
+import { syncFundingStatuses } from "~/lib/rwa.server";
 
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -64,6 +65,9 @@ interface InvestorRow {
 
 export async function loader({ request, params }: Route.LoaderArgs) {
     await requireUser(request, ["admin"]);
+
+    // 온체인 상태와 DB 동기화 (funded→active 전환 자동 반영)
+    await syncFundingStatuses().catch(() => {});
 
     const url = new URL(request.url);
     const { listingId } = params;
@@ -152,13 +156,15 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     let claimedCount = 0;
 
     if (tokenRow) {
+        // 지갑별 보유 토큰 합산 (동일 지갑의 여러 구매 내역을 합쳐서 비율 계산)
         const investmentRows = await db
             .select({
                 walletAddress: rwaInvestments.walletAddress,
-                tokenAmount: rwaInvestments.tokenAmount,
+                tokenAmount: sql<number>`sum(${rwaInvestments.tokenAmount})`,
             })
             .from(rwaInvestments)
-            .where(eq(rwaInvestments.rwaTokenId, tokenRow.id));
+            .where(eq(rwaInvestments.rwaTokenId, tokenRow.id))
+            .groupBy(rwaInvestments.walletAddress);
 
         const dividendRows = await db
             .select({
@@ -187,7 +193,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         investorCount = Number(divAgg?.cnt ?? 0);
         claimedCount = Number(divAgg?.claimed ?? 0);
 
-        const totalTokensSold = tokenRow.tokensSold || 1;
+        // 비율 기준: 실제 투자자 보유 토큰 합산 기준 (항상 합이 100%)
+        const totalTokensSold = investmentRows.reduce((sum, r) => sum + r.tokenAmount, 0) || 1;
         investors = investmentRows.map((inv) => {
             const div = dividendMap.get(inv.walletAddress);
             return {

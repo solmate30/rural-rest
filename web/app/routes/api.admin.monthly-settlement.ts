@@ -7,10 +7,10 @@ import { v4 as uuidv4 } from "uuid";
 
 import { KRW_PER_USDC } from "~/lib/constants";
 
-// 지자체 고정 수령 지갑 (환경변수 미설정 시 devnet 테스트 지갑)
-const LOCAL_GOV_WALLET = import.meta.env?.VITE_LOCAL_GOV_WALLET ?? "";
+// 지자체 고정 수령 지갑 (환경변수 미설정 시 빈 문자열)
+const LOCAL_GOV_WALLET = process.env.LOCAL_GOV_WALLET ?? process.env.VITE_LOCAL_GOV_WALLET ?? "";
 // 마을 운영자 고정 수령 지갑 (MVP: 환경변수로 관리, 운영자 DB 지갑 미등록 시 fallback)
-const OPERATOR_WALLET = import.meta.env?.VITE_OPERATOR_WALLET ?? "";
+const OPERATOR_WALLET = process.env.OPERATOR_WALLET ?? process.env.VITE_OPERATOR_WALLET ?? "";
 
 // base58 솔라나 tx 서명 형식 검증 (87-90자, base58 문자셋)
 function isValidSolanaTx(sig: unknown): sig is string {
@@ -73,7 +73,7 @@ export async function action({ request }: { request: Request }) {
 
     // RWA 토큰 정보
     const [token] = await db
-        .select({ id: rwaTokens.id, status: rwaTokens.status, totalSupply: rwaTokens.totalSupply })
+        .select({ id: rwaTokens.id, status: rwaTokens.status, totalSupply: rwaTokens.totalSupply, tokensSold: rwaTokens.tokensSold })
         .from(rwaTokens)
         .where(eq(rwaTokens.listingId, listingId));
 
@@ -228,12 +228,14 @@ export async function action({ request }: { request: Request }) {
                 .groupBy(rwaInvestments.walletAddress);
 
             if (investments.length > 0) {
+                // 분모: 실제 투자자 보유 토큰 합산 (항상 합이 100%, 중복 기록 방지)
+                const soldSupply = investments.reduce((sum, r) => sum + r.tokenAmount, 0) || 1;
                 const rows = investments.map((inv) => ({
                     id: `div-${token.id}-${month}-${inv.walletAddress.slice(0, 8)}`,
                     walletAddress: inv.walletAddress,
                     rwaTokenId: token.id,
                     month,
-                    dividendUsdc: Math.floor((inv.tokenAmount / token.totalSupply) * investorUsdc),
+                    dividendUsdc: Math.floor((inv.tokenAmount / soldSupply) * investorUsdc),
                     createdAt: now,
                 }));
                 await db.insert(rwaDividends).values(rows).onConflictDoNothing();
