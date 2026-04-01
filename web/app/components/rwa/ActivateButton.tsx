@@ -3,7 +3,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 
 import { PROGRAM_ID } from "~/lib/constants";
-import { getProgram, derivePdas, parseAnchorError } from "~/lib/anchor-client";
+import { getProgram, derivePdas, deriveRwaConfigPda, parseAnchorError } from "~/lib/anchor-client";
 import { Button } from "~/components/ui/button";
 
 interface Props {
@@ -32,12 +32,14 @@ export function ActivateButton({ rwaTokenId, listingId, tokenMint }: Props) {
 
             const program = await getProgram(connection, wallet);
             const { propertyToken } = await derivePdas(listingId);
+            const rwaConfig = await deriveRwaConfigPda();
 
             const sig = await program.methods
                 .activateProperty(listingId)
                 .accounts({
                     propertyToken,
-                    authority: wallet.publicKey,
+                    operator: wallet.publicKey,
+                    rwaConfig,
                     tokenMint: new PublicKey(tokenMint),
                     tokenProgram: TOKEN_2022_PROGRAM_ID,
                 })

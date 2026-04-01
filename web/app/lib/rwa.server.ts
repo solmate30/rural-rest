@@ -1,8 +1,8 @@
 import { db } from "~/db/index.server";
-import { rwaTokens } from "~/db/schema";
+import { rwaTokens, listings } from "~/db/schema";
 import { eq, and, lt } from "drizzle-orm";
 import { sql } from "drizzle-orm";
-import { fetchPropertiesOnchain } from "~/lib/rwa.onchain.server";
+import { fetchPropertiesOnchain, tryAutoActivate } from "~/lib/rwa.onchain.server";
 
 /**
  * funding 상태인 rwaTokens를 검사해 deadline 기준으로 상태를 전환한다.
@@ -37,11 +37,24 @@ export async function syncFundingStatuses() {
     const listingIds = fundingTokens.map(t => t.listingId);
     const onchainMap = await fetchPropertiesOnchain(listingIds);
 
+    let updated = 0;
     for (const token of fundingTokens) {
         const onchain = onchainMap.get(token.listingId);
-        const tokensSold = onchain?.tokensSold ?? token.tokensSold;
 
+        // 온체인 데이터 없으면:
+        //  - funded 방향은 DB tokensSold로 fallback 허용 (잘못 funded → releaseFunds 실패로 끝남, 안전)
+        //  - failed 방향은 skip (잘못 failed → 환불 오픈, 위험)
+        const tokensSold = onchain?.tokensSold ?? token.tokensSold;
         const minRequired = Math.floor((token.totalSupply * token.minFundingBps) / 10000);
+
+        if (!onchain && tokensSold < minRequired) {
+            console.warn(`[syncFundingStatuses] 온체인 데이터 없음 + 미달성 — failed 전환 보류: ${token.listingId}`);
+            continue;
+        }
+        if (!onchain) {
+            console.warn(`[syncFundingStatuses] 온체인 데이터 없음 — DB 기준 funded 전환: ${token.listingId}`);
+        }
+
         const newStatus = tokensSold >= minRequired ? "funded" : "failed";
 
         await db
@@ -52,9 +65,41 @@ export async function syncFundingStatuses() {
                 updatedAt: now,
             })
             .where(eq(rwaTokens.id, token.id));
+
+        updated++;
     }
 
-    return fundingTokens.length;
+    return updated;
+}
+
+/**
+ * funded 상태인 매물을 crank_authority로 자동 releaseFunds + activateProperty.
+ * CRANK_SECRET_KEY 설정 시 온체인 트랜잭션 실행 후 DB 상태도 active로 갱신.
+ * 반환: { activated: listingId[], failed: listingId[] }
+ */
+export async function crankActivateFundedTokens(): Promise<{ activated: string[]; failed: string[] }> {
+    const funded = await db
+        .select({ id: rwaTokens.id, listingId: rwaTokens.listingId })
+        .from(rwaTokens)
+        .where(eq(rwaTokens.status, "funded"));
+
+    const activated: string[] = [];
+    const failed: string[] = [];
+
+    for (const token of funded) {
+        const ok = await tryAutoActivate(token.listingId);
+        if (ok) {
+            await db
+                .update(rwaTokens)
+                .set({ status: "active", updatedAt: new Date() })
+                .where(eq(rwaTokens.id, token.id));
+            activated.push(token.listingId);
+        } else {
+            failed.push(token.listingId);
+        }
+    }
+
+    return { activated, failed };
 }
 
 /**
