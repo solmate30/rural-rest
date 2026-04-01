@@ -55,6 +55,19 @@ export async function getUsdcMint() {
 }
 
 /**
+ * RwaConfig PDA (seeds: ["rwa_config"])
+ */
+export async function deriveRwaConfigPda() {
+    const { PublicKey } = await import("@solana/web3.js");
+    const programId = new PublicKey(PROGRAM_ID);
+    const [rwaConfig] = PublicKey.findProgramAddressSync(
+        [Buffer.from("rwa_config")],
+        programId
+    );
+    return rwaConfig;
+}
+
+/**
  * 공통 Anchor 에러 메시지 파싱
  * componentErrors로 컴포넌트별 에러 메시지를 추가할 수 있음.
  */

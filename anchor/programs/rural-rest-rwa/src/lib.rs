@@ -1,8 +1,14 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program::invoke;
+use anchor_lang::system_program;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token_interface::{
     burn, mint_to, set_authority, transfer_checked,
-    spl_token_2022::instruction::AuthorityType,
+    spl_token_2022::{
+        self,
+        extension::ExtensionType,
+        instruction::AuthorityType,
+    },
     Burn, Mint, MintTo, SetAuthority, TokenAccount, TokenInterface, TransferChecked,
 };
 
@@ -53,6 +59,8 @@ pub enum RwaError {
     DeadlineTooFar,                 // 6017
     #[msg("Funding period is still open. Wait until deadline passes.")]
     FundingStillOpen,               // 6018
+    #[msg("Invalid crank authority.")]
+    InvalidCrankAuthority,          // 6019
 }
 
 // =====================
@@ -100,6 +108,50 @@ pub struct InvestorPosition {
     pub bump: u8,
 }
 
+#[account]
+#[derive(InitSpace)]
+pub struct RwaConfig {
+    pub authority: Pubkey,
+    pub crank_authority: Pubkey,  // Pubkey::default() = 비활성
+    pub bump: u8,
+}
+
+// =====================
+// initialize_config
+// =====================
+#[derive(Accounts)]
+pub struct InitializeConfig<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + RwaConfig::INIT_SPACE,
+        seeds = [b"rwa_config"],
+        bump,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
+
+    pub system_program: Program<'info, System>,
+}
+
+// =====================
+// set_crank_authority
+// =====================
+#[derive(Accounts)]
+pub struct SetCrankAuthority<'info> {
+    #[account(
+        mut,
+        seeds = [b"rwa_config"],
+        bump = rwa_config.bump,
+        has_one = authority,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
+
+    pub authority: Signer<'info>,
+}
+
 // =====================
 // initialize_property
 // =====================
@@ -118,14 +170,10 @@ pub struct InitializeProperty<'info> {
     )]
     pub property_token: Account<'info, PropertyToken>,
 
-    #[account(
-        init,
-        payer = authority,
-        mint::decimals = 0,
-        mint::authority = property_token,
-        mint::token_program = token_program,
-    )]
-    pub token_mint: InterfaceAccount<'info, Mint>,
+    // NonTransferable extension 적용을 위해 수동 초기화 (Anchor init은 이 extension 미지원)
+    // 순서: create_account → initialize_non_transferable_mint → initialize_mint2
+    #[account(mut)]
+    pub token_mint: Signer<'info>,
 
     // 구매대금 에스크로 볼트 (펀딩 기간 동안 USDC 보관)
     #[account(
@@ -265,12 +313,18 @@ pub struct ReleaseFunds<'info> {
         mut,
         seeds = [b"property", listing_id.as_bytes()],
         bump = property_token.bump,
-        has_one = authority,
     )]
     pub property_token: Account<'info, PropertyToken>,
 
+    /// authority 또는 crank_authority
     #[account(mut)]
-    pub authority: Signer<'info>,
+    pub operator: Signer<'info>,
+
+    #[account(
+        seeds = [b"rwa_config"],
+        bump = rwa_config.bump,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
 
     #[account(
         mut,
@@ -282,10 +336,11 @@ pub struct ReleaseFunds<'info> {
     )]
     pub funding_vault: InterfaceAccount<'info, TokenAccount>,
 
+    /// USDC 수신: 항상 property authority의 계좌 (signer와 무관)
     #[account(
         mut,
         token::mint = usdc_mint,
-        token::authority = authority,
+        token::authority = property_token.authority,
         token::token_program = usdc_token_program,
     )]
     pub authority_usdc_account: InterfaceAccount<'info, TokenAccount>,
@@ -420,11 +475,17 @@ pub struct ActivateProperty<'info> {
         mut,
         seeds = [b"property", listing_id.as_bytes()],
         bump = property_token.bump,
-        has_one = authority,
     )]
     pub property_token: Account<'info, PropertyToken>,
 
-    pub authority: Signer<'info>,
+    /// authority 또는 crank_authority
+    pub operator: Signer<'info>,
+
+    #[account(
+        seeds = [b"rwa_config"],
+        bump = rwa_config.bump,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
 
     #[account(mut, address = property_token.token_mint)]
     pub token_mint: InterfaceAccount<'info, Mint>,
@@ -526,6 +587,24 @@ pub struct ClaimDividend<'info> {
 pub mod rural_rest_rwa {
     use super::*;
 
+    /// RwaConfig 초기화 (1회성). authority 설정, crank은 비활성 상태로 시작.
+    pub fn initialize_config(ctx: Context<InitializeConfig>) -> Result<()> {
+        let config = &mut ctx.accounts.rwa_config;
+        config.authority = ctx.accounts.authority.key();
+        config.crank_authority = Pubkey::default();
+        config.bump = ctx.bumps.rwa_config;
+        Ok(())
+    }
+
+    /// crank_authority 설정/교체. authority만 호출 가능.
+    pub fn set_crank_authority(
+        ctx: Context<SetCrankAuthority>,
+        new_crank: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.rwa_config.crank_authority = new_crank;
+        Ok(())
+    }
+
     pub fn initialize_property(
         ctx: Context<InitializeProperty>,
         listing_id: String,
@@ -545,6 +624,52 @@ pub mod rural_rest_rwa {
             funding_deadline <= clock.unix_timestamp + 365 * 24 * 3600,
             RwaError::DeadlineTooFar
         );
+
+        // ── Token-2022 Mint + NonTransferable extension 수동 초기화 ──
+        // Anchor init은 Token-2022 extension을 지원하지 않으므로 3단계 CPI로 처리
+        // 참고: https://solana.com/developers/guides/token-extensions/non-transferable
+        let token_program_id = ctx.accounts.token_program.key();
+
+        // 1) create_account — extension 포함 공간 할당
+        let space = ExtensionType::try_calculate_account_len::<spl_token_2022::state::Mint>(
+            &[ExtensionType::NonTransferable],
+        ).map_err(|_| RwaError::MathOverflow)?;
+        let rent = Rent::get()?;
+        let lamports = rent.minimum_balance(space);
+
+        system_program::create_account(
+            CpiContext::new(
+                ctx.accounts.system_program.to_account_info(),
+                system_program::CreateAccount {
+                    from: ctx.accounts.authority.to_account_info(),
+                    to: ctx.accounts.token_mint.to_account_info(),
+                },
+            ),
+            lamports,
+            space as u64,
+            &token_program_id,
+        )?;
+
+        // 2) initialize_non_transferable_mint — extension 등록 (mint 초기화 전에 반드시)
+        invoke(
+            &spl_token_2022::instruction::initialize_non_transferable_mint(
+                &token_program_id,
+                &ctx.accounts.token_mint.key(),
+            )?,
+            &[ctx.accounts.token_mint.to_account_info()],
+        )?;
+
+        // 3) initialize_mint2 — decimals=0, mint_authority=property_token PDA
+        invoke(
+            &spl_token_2022::instruction::initialize_mint2(
+                &token_program_id,
+                &ctx.accounts.token_mint.key(),
+                &ctx.accounts.property_token.key(),  // mint authority
+                None,                                  // freeze authority 없음
+                0,                                     // decimals
+            )?,
+            &[ctx.accounts.token_mint.to_account_info()],
+        )?;
 
         let property = &mut ctx.accounts.property_token;
         property.authority = ctx.accounts.authority.key();
@@ -669,12 +794,20 @@ pub mod rural_rest_rwa {
         Ok(())
     }
 
-    // 펀딩 성공 시 에스크로 해제 → 운영자 계좌로 송금 (운영자 전용)
+    // 펀딩 성공 시 에스크로 해제 → 운영자 계좌로 송금 (authority 또는 crank)
     // 조건: 완판(Funded) OR (deadline 경과 + 최소 판매율 달성)
     pub fn release_funds(
         ctx: Context<ReleaseFunds>,
         listing_id: String,
     ) -> Result<()> {
+        // operator 검증: authority 또는 crank_authority
+        let op = ctx.accounts.operator.key();
+        require!(
+            op == ctx.accounts.property_token.authority
+                || op == ctx.accounts.rwa_config.crank_authority,
+            RwaError::Unauthorized
+        );
+
         let property = &ctx.accounts.property_token;
 
         // 중복 호출 방지
@@ -852,6 +985,14 @@ pub mod rural_rest_rwa {
         ctx: Context<ActivateProperty>,
         listing_id: String,
     ) -> Result<()> {
+        // operator 검증: authority 또는 crank_authority
+        let op = ctx.accounts.operator.key();
+        require!(
+            op == ctx.accounts.property_token.authority
+                || op == ctx.accounts.rwa_config.crank_authority,
+            RwaError::Unauthorized
+        );
+
         let property = &mut ctx.accounts.property_token;
         require!(property.status == PropertyStatus::Funded, RwaError::InvalidStatus);
         property.status = PropertyStatus::Active;

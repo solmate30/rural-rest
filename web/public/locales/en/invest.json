@@ -1,0 +1,108 @@
+{
+  "tagline": "Invest in Korea's rural revival.",
+  "filter": {
+    "button": "Filter",
+    "title": "Filter Properties",
+    "sortBy": "Sort By",
+    "sort": {
+      "yield": "Highest Yield",
+      "latest": "Newest",
+      "price": "Token Price"
+    },
+    "status": "Status",
+    "statusAll": "All",
+    "statusFunding": "Funding",
+    "statusFunded": "Funded",
+    "statusActive": "Active",
+    "statusClosed": "Closed",
+    "minApy": "Min APY",
+    "maxPrice": "Max Token Price",
+    "theme": "Theme",
+    "reset": "Reset",
+    "apply": "View {{count}} listings"
+  },
+  "region": {
+    "all": "All Regions",
+    "경기": "Gyeonggi",
+    "강원": "Gangwon",
+    "충청": "Chungcheong",
+    "전라": "Jeolla",
+    "경상": "Gyeongsang",
+    "제주": "Jeju"
+  },
+  "status": {
+    "funding": "Funding",
+    "funded": "Funded",
+    "active": "Active",
+    "closed": "Closed"
+  },
+  "card": {
+    "tokenPrice": "Token Price",
+    "valuation": "Valuation",
+    "tokensSold": "Tokens Sold",
+    "sold": "{{count}} sold",
+    "raised": "{{amount}} raised",
+    "remaining": "{{amount}} remaining",
+    "view": "View",
+    "investNow": "Invest Now",
+    "completeKyc": "Complete KYC to Invest",
+    "connectWallet": "Connect Wallet to Invest"
+  },
+  "empty": {
+    "title": "Coming Soon",
+    "desc": "New investment properties are on the way."
+  },
+  "detail": {
+    "tokenInfo": "Token Information",
+    "aboutHome": "About This Home",
+    "renovation": "Renovation History",
+    "maxGuests": "Max Guests",
+    "guestsCount": "{{count}} guests",
+    "occupancy": "Occupancy (90d)",
+    "amenities": "Amenities",
+    "operator": "Village Operator",
+    "rating": "Guest Rating",
+    "verified": "Identity Verified",
+    "revenueActive": "Revenue Distribution",
+    "revenueEst": "Est. Revenue",
+    "revenueNote": "Last 12 months · per 1,000 tokens",
+    "revenueNoteEst": "Projected · per 1,000 tokens",
+    "location": "Location & Map",
+    "fundingClosed": "Funding Closed",
+    "refundNotice": "This property did not reach its funding goal. You can claim a refund for your investment."
+  },
+  "portfolio": {
+    "title": "My Investments",
+    "subtitle": "Track your portfolio and manage your returns.",
+    "connectWallet": "Connect your wallet to view your portfolio.",
+    "connectButton": "Connect Wallet",
+    "holdings": "Your Holdings",
+    "holdingsSubtitle": "Manage your real estate tokens",
+    "assets": "{{count}} assets",
+    "totalInvested": "Total Invested",
+    "currentValue": "Current Value",
+    "totalDividends": "Total Dividends"
+  },
+  "holdings": {
+    "empty": "No tokens in your portfolio yet.",
+    "emptyLink": "Browse investments",
+    "colProperty": "Property",
+    "colToken": "Token",
+    "colHoldings": "Holdings",
+    "colValue": "Value",
+    "colDividend": "Pending Dividend",
+    "tokens": "tokens"
+  },
+  "dividends": {
+    "title": "Dividend History",
+    "export": "Export CSV",
+    "colDate": "Date",
+    "colProperty": "Property",
+    "colAmount": "Amount (USDC)",
+    "colStatus": "Status",
+    "colTx": "Transaction",
+    "empty": "No dividend records found.",
+    "statusCompleted": "Completed",
+    "statusPending": "Pending"
+  }
+}

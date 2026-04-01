@@ -69,9 +69,12 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [ ] **Anchor Devnet 배포**: devnet E2E 테스트 (발행→구매→수익→배당)
 *   [ ] **RWA Entry Hooks**: 숙소 상세에서 RWA 투자 배너/버튼
 
-### DAO (08_DAO_IMPLEMENTATION_SPEC)
-*   [ ] **DAO 착수 전 체크리스트**: RWA/Council Token Mint(Devnet), Squads Multisig, 환경변수 5종 확정
-*   [ ] **DAO 1단계 구현**: Realms Realm 생성, `/invest/:id/governance` 투표 UI·플로우
+### DAO (커스텀 Anchor -- Realms 대체, 08_DAO_IMPLEMENTATION_SPEC)
+*   [ ] **Anchor DAO 프로그램**: `rural-rest-dao` 5개 instruction 구현 (initialize_dao, create_proposal, cast_vote, finalize_proposal, cancel_proposal) + localnet 테스트
+*   [ ] **Council Token**: Token-2022 NonTransferable Mint 생성 스크립트 (`setup-council-mint.ts`)
+*   [ ] **Squads Multisig**: M-of-N 생성 + Council Mint Authority 이전
+*   [ ] **Devnet 배포**: DAO 프로그램 + `initialize_dao` + E2E 테스트
+*   [ ] **웹 UI**: `/invest/:listingId/governance` 투표 UI (제안 목록/투표/생성)
 
 ## 3. Completed (History)
 **(Archived to `docs/04_Logic_Progress/00_ARCHIVE/`)**

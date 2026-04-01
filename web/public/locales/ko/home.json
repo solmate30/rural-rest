@@ -1,0 +1,37 @@
+{
+  "hero": {
+    "headline": "비어있던 집,",
+    "headlineSub": "다시 숨을 쉬다",
+    "subtitle": "도시 근처, 가장 조용하고 한국적인 시골 숙소를 만나보세요."
+  },
+  "search": {
+    "whereTo": "어디로 떠나실 건가요?",
+    "priceCap": "최대 예산",
+    "priceUnder": "{{price}} 이하",
+    "priceMin": "₩5만",
+    "priceMax": "₩50만+",
+    "findStay": "숙소 찾기",
+    "available": "{{region}} 에서 {{count}}곳의 숙소를 찾았어요",
+    "availableAll": "전국 {{count}}곳의 숙소를 찾았어요",
+    "noResults": "조건에 맞는 숙소가 없어요",
+    "noResultsSub": "지역이나 예산을 바꿔 가며 당신만의 휴식처를 찾아보세요.",
+    "reset": "필터 초기화",
+    "allRegions": "전체 지역",
+    "loadMore": "더 보기 ({{count}}곳 남음)"
+  },
+  "featured": {
+    "title": "엄선된 숙소",
+    "viewAll": "전체 보기",
+    "count": "{{count}}곳",
+    "perNight": "/ 박",
+    "viewDetail": "자세히 보기"
+  },
+  "regions": {
+    "경상도": "경상도",
+    "경기도": "경기도",
+    "강원도": "강원도",
+    "충청도": "충청도",
+    "전라도": "전라도",
+    "제주도": "제주도"
+  }
+}

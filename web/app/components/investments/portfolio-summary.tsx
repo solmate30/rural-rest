@@ -1,4 +1,5 @@
 import { ArrowUpRight, TrendingUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface PortfolioSummaryProps {
     totalInvested: number;
@@ -13,6 +14,8 @@ export function PortfolioSummary({
     yieldPercent,
     totalDividends,
 }: PortfolioSummaryProps) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { t } = useTranslation("invest") as any;
     const gainLoss = currentValue - totalInvested;
     const gainLossPercent = totalInvested > 0 ? ((gainLoss / totalInvested) * 100).toFixed(1) : "0.0";
 
@@ -24,7 +27,7 @@ export function PortfolioSummary({
                     <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center">
                         <span className="material-symbols-outlined text-[18px] text-stone-500">account_balance_wallet</span>
                     </div>
-                    <p className="text-stone-500 text-sm font-bold">Total Invested</p>
+                    <p className="text-stone-500 text-sm font-bold">{t("portfolio.totalInvested")}</p>
                 </div>
                 <p className="text-[#4a3b2c] text-3xl font-bold">
                     {totalInvested.toLocaleString()}
@@ -40,7 +43,7 @@ export function PortfolioSummary({
                         <div className="w-8 h-8 rounded-full bg-[#17cf54]/10 flex items-center justify-center">
                             <span className="material-symbols-outlined text-[18px] text-[#17cf54]">monitoring</span>
                         </div>
-                        <p className="text-stone-500 text-sm font-bold">Current Value</p>
+                        <p className="text-stone-500 text-sm font-bold">{t("portfolio.currentValue")}</p>
                     </div>
                     <div className={`px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${gainLoss >= 0 ? "bg-[#17cf54]/10 text-[#17cf54]" : "bg-red-50 text-red-600"}`}>
                         <span className="material-symbols-outlined text-[14px]">
@@ -62,7 +65,7 @@ export function PortfolioSummary({
                     <div className="w-8 h-8 rounded-full bg-[#ab9ff2]/20 flex items-center justify-center">
                         <span className="material-symbols-outlined text-[18px] text-[#ab9ff2]">payments</span>
                     </div>
-                    <p className="text-stone-500 text-sm font-bold">Total Dividends</p>
+                    <p className="text-stone-500 text-sm font-bold">{t("portfolio.totalDividends")}</p>
                 </div>
                 <p className="text-[#17cf54] text-3xl font-bold relative z-10">
                     +{totalDividends.toLocaleString()}

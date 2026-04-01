@@ -19,10 +19,25 @@ export function fmtKrw(v: number): string {
 }
 
 /**
- * KRW 표시 — 억/만 단위 (큰 금액용)
- * 150000000 → "1.5억 원", 50000 → "5만 원", 3000 → "3,000원"
+ * KRW 표시 — 억/만 단위 (큰 금액용, locale 지원)
+ *
+ * ko (기본): 150000000 → "1.5억 원", 50000 → "5만 원", 3000 → "3,000원"
+ * en:        150000000 → "₩150M",    50000 → "₩50K",    3000 → "₩3,000"
  */
-export function formatKrwLabel(won: number): string {
+export function formatKrwLabel(won: number, locale: "ko" | "en" = "ko"): string {
+    if (locale === "en") {
+        if (won >= 1_000_000) {
+            const m = won / 1_000_000;
+            return `₩${m % 1 === 0 ? m : m.toFixed(1)}M`;
+        }
+        if (won >= 1_000) {
+            const k = won / 1_000;
+            return `₩${k % 1 === 0 ? k : k.toFixed(0)}K`;
+        }
+        return `₩${won.toLocaleString("en-US")}`;
+    }
+
+    // 한국어 (기존 로직 유지)
     if (won >= 1_0000_0000) {
         const eok = won / 1_0000_0000;
         return `${eok % 1 === 0 ? eok : eok.toFixed(1)}억 원`;

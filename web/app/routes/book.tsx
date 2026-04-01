@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Form, useNavigation, Link } from "react-router";
+import { useTranslation } from "react-i18next";
 import type { Route } from "./+types/book";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
@@ -75,16 +76,16 @@ export async function action({ params, request }: Route.ActionArgs) {
   const guests = Number(formData.get("guests"));
 
   if (!checkIn || !checkOut || !guests) {
-    return { success: false as const, error: "모든 필드를 입력해 주세요." };
+    return { success: false as const, error: "error.required" };
   }
   if (new Date(checkIn) >= new Date(checkOut)) {
-    return { success: false as const, error: "체크아웃은 체크인 이후여야 합니다." };
+    return { success: false as const, error: "error.checkoutBeforeCheckin" };
   }
   if (new Date(checkIn) < new Date(new Date().toDateString())) {
-    return { success: false as const, error: "과거 날짜는 선택할 수 없습니다." };
+    return { success: false as const, error: "error.pastDate" };
   }
   if (guests > listing.maxGuests) {
-    return { success: false as const, error: `최대 ${listing.maxGuests}명까지 예약 가능합니다.` };
+    return { success: false as const, error: "error.guestLimit", max: listing.maxGuests };
   }
 
   const nights = Math.ceil(
@@ -109,6 +110,7 @@ export async function action({ params, request }: Route.ActionArgs) {
 
 export default function Book({ loaderData, actionData }: Route.ComponentProps) {
   const { listing, user } = loaderData;
+  const { t } = useTranslation("book");
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
@@ -145,10 +147,10 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
             </div>
 
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-              예약이 접수되었습니다
+              {t("confirm.title")}
             </h1>
             <p className="text-muted-foreground">
-              호스트가 24시간 내에 예약을 승인합니다.
+              {t("confirm.message")}
             </p>
 
             {/* Booking details */}
@@ -156,23 +158,23 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
               <h3 className="font-bold text-lg">{booking.listingTitle}</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">예약 번호</span>
+                  <span className="text-muted-foreground">{t("confirm.bookingId")}</span>
                   <span className="font-mono text-xs">{booking.id.slice(0, 8).toUpperCase()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">체크인</span>
+                  <span className="text-muted-foreground">{t("confirm.checkin")}</span>
                   <span className="font-medium">{booking.checkIn}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">체크아웃</span>
+                  <span className="text-muted-foreground">{t("confirm.checkout")}</span>
                   <span className="font-medium">{booking.checkOut}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">인원</span>
-                  <span className="font-medium">{booking.guests}명</span>
+                  <span className="text-muted-foreground">{t("confirm.guests")}</span>
+                  <span className="font-medium">{t("confirm.guestsCount", { count: booking.guests })}</span>
                 </div>
                 <div className="flex justify-between border-t pt-3">
-                  <span className="font-bold">총 금액</span>
+                  <span className="font-bold">{t("confirm.total")}</span>
                   <span className="font-bold">₩{booking.totalPrice.toLocaleString()}</span>
                 </div>
               </div>
@@ -181,10 +183,10 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
             {/* Action buttons */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
               <Link to="/">
-                <Button className="w-full sm:w-auto px-8">홈으로 돌아가기</Button>
+                <Button className="w-full sm:w-auto px-8">{t("confirm.backHome")}</Button>
               </Link>
               <Link to={`/property/${listing.id}`}>
-                <Button variant="outline" className="w-full sm:w-auto px-8">숙소 다시 보기</Button>
+                <Button variant="outline" className="w-full sm:w-auto px-8">{t("confirm.viewProperty")}</Button>
               </Link>
             </div>
           </div>
@@ -199,7 +201,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
     <div className="min-h-screen bg-background font-sans">
       <Header />
       <main className="container mx-auto py-8 md:py-12 px-4 sm:px-8 max-w-5xl">
-        <h1 className="text-2xl md:text-3xl font-bold mb-8 text-foreground">Confirm your booking</h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-8 text-foreground">{t("title")}</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
           {/* Left Column: Form */}
@@ -207,18 +209,19 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
             {/* Error message */}
             {actionData?.success === false && (
               <div className="bg-red-50 text-red-600 rounded-xl p-3 text-sm font-medium">
-                {actionData.error}
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {(t as any)(actionData.error, { max: (actionData as { max?: number }).max })}
               </div>
             )}
 
             <Form method="post">
               {/* Your Trip Section */}
               <section className="space-y-6 mb-8">
-                <h2 className="text-xl font-bold text-foreground">Your Trip</h2>
+                <h2 className="text-xl font-bold text-foreground">{t("section.trip")}</h2>
                 <Card className="p-6 space-y-5">
                   <div className="space-y-2">
                     <label htmlFor="checkIn" className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">
-                      Check-in
+                      {t("field.checkin")}
                     </label>
                     <input
                       type="date"
@@ -236,7 +239,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="checkOut" className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">
-                      Check-out
+                      {t("field.checkout")}
                     </label>
                     <input
                       type="date"
@@ -251,7 +254,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="guests" className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">
-                      Guests
+                      {t("field.guests")}
                     </label>
                     <select
                       id="guests"
@@ -267,6 +270,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                         </option>
                       ))}
                     </select>
+                    <p className="text-xs text-stone-400">{t("field.maxGuests", { max: listing.maxGuests })}</p>
                   </div>
                 </Card>
               </section>
@@ -274,7 +278,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
               {/* Transport Concierge Section */}
               {listing.pickupPoints.length > 0 && (
                 <section className="space-y-4 mb-8">
-                  <h2 className="text-xl font-bold text-foreground">Transport Concierge</h2>
+                  <h2 className="text-xl font-bold text-foreground">{t("section.transport")}</h2>
 
                   {/* Free shuttle banner */}
                   <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/5 border border-primary/10">
@@ -282,7 +286,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 17h.01M16 17h.01M3 11l1-6h16l1 6M3 11h18M3 11v6a1 1 0 001 1h1m14-7v6a1 1 0 01-1 1h-1m-10 0h8" />
                     </svg>
                     <p className="text-sm text-stone-600">
-                      <span className="font-bold text-primary">무료 셔틀</span> &mdash; 예약 확정 후 셔틀 일정을 조율합니다.
+                      <span className="font-bold text-primary">{t("field.shuttleFree")}</span> &mdash; {t("field.shuttleDesc")}
                     </p>
                   </div>
 
@@ -302,7 +306,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                           <p className="font-bold text-sm text-stone-800">{point.name}</p>
                           <p className="text-xs text-stone-500 mt-0.5">{point.description}</p>
                           <p className="text-xs text-primary font-semibold mt-1.5">
-                            숙소까지 {point.estimatedTimeToProperty}
+                            {t("field.travelTime", { time: point.estimatedTimeToProperty })}
                           </p>
                         </div>
                       </div>
@@ -317,10 +321,10 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                 disabled={isSubmitting}
                 className="w-full h-14 text-xl font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
               >
-                {isSubmitting ? "처리 중..." : "Confirm and Pay"}
+                {isSubmitting ? t("submitting") : t("submit")}
               </Button>
               <p className="text-center text-[10px] text-stone-400 font-bold uppercase tracking-widest mt-3">
-                No charge until host approval
+                {t("noCharge")}
               </p>
             </Form>
           </div>
@@ -355,15 +359,15 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                 </div>
                 <div className="flex justify-between items-center text-stone-600">
                   <div className="flex items-center gap-1">
-                    <span>Transport Concierge</span>
+                    <span>{t("price.concierge")}</span>
                     <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  <span className="text-primary font-bold">Free</span>
+                  <span className="text-primary font-bold">{t("price.conciergePrice")}</span>
                 </div>
                 <div className="flex justify-between border-t border-stone-200 pt-5 text-xl font-bold text-stone-900">
-                  <span>Total</span>
+                  <span>{t("price.total")}</span>
                   <span>{nights > 0 ? `₩${subtotal.toLocaleString()}` : "—"}</span>
                 </div>
               </div>

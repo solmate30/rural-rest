@@ -1,4 +1,5 @@
 import { useLoaderData, Link, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Header } from "../components/ui-mockup";
 import { requireUser } from "../lib/auth.server";
 import { db } from "../db/index.server";
@@ -10,6 +11,8 @@ import { eq, and, sql, inArray } from "drizzle-orm";
 import { DateTime } from "luxon";
 import type { Route } from "./+types/admin.settlements.detail";
 import { MonthlySettlementButton } from "~/components/admin/MonthlySettlementButton";
+import { syncFundingStatuses } from "~/lib/rwa.server";
+import { formatKrwLabel } from "~/lib/formatters";
 
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -64,6 +67,9 @@ interface InvestorRow {
 
 export async function loader({ request, params }: Route.LoaderArgs) {
     await requireUser(request, ["admin"]);
+
+    // 온체인 상태와 DB 동기화 (funded→active 전환 자동 반영)
+    await syncFundingStatuses().catch(() => {});
 
     const url = new URL(request.url);
     const { listingId } = params;
@@ -152,13 +158,15 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     let claimedCount = 0;
 
     if (tokenRow) {
+        // 지갑별 보유 토큰 합산 (동일 지갑의 여러 구매 내역을 합쳐서 비율 계산)
         const investmentRows = await db
             .select({
                 walletAddress: rwaInvestments.walletAddress,
-                tokenAmount: rwaInvestments.tokenAmount,
+                tokenAmount: sql<number>`sum(${rwaInvestments.tokenAmount})`,
             })
             .from(rwaInvestments)
-            .where(eq(rwaInvestments.rwaTokenId, tokenRow.id));
+            .where(eq(rwaInvestments.rwaTokenId, tokenRow.id))
+            .groupBy(rwaInvestments.walletAddress);
 
         const dividendRows = await db
             .select({
@@ -187,7 +195,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         investorCount = Number(divAgg?.cnt ?? 0);
         claimedCount = Number(divAgg?.claimed ?? 0);
 
-        const totalTokensSold = tokenRow.tokensSold || 1;
+        // 비율 기준: 실제 투자자 보유 토큰 합산 기준 (항상 합이 100%)
+        const totalTokensSold = investmentRows.reduce((sum, r) => sum + r.tokenAmount, 0) || 1;
         investors = investmentRows.map((inv) => {
             const div = dividendMap.get(inv.walletAddress);
             return {
@@ -285,6 +294,7 @@ const statusBadgeClass: Record<string, string> = {
 /* ------------------------------------------------------------------ */
 
 export default function AdminSettlementsDetail() {
+    const { t, i18n } = useTranslation("admin");
     const {
         listing, selectedMonth, currentMonth,
         monthSummaries, selectedData, investors, tokenInfo,
@@ -321,9 +331,7 @@ export default function AdminSettlementsDetail() {
                                     statusBadgeClass[tokenInfo.status] ?? "bg-stone-100 text-stone-500 border-stone-200"
                                 )}
                             >
-                                {tokenInfo.status === "active" ? "Active" :
-                                 tokenInfo.status === "funded" ? "Funded" :
-                                 tokenInfo.status === "funding" ? "Funding" : tokenInfo.status}
+                                {t(`settlements.status.${tokenInfo.status}` as any) ?? tokenInfo.status}
                             </Badge>
                         )}
                         {monthSummaries.length > 0 && (
@@ -337,7 +345,7 @@ export default function AdminSettlementsDetail() {
                                 <SelectContent>
                                     {monthSummaries.map((ms) => (
                                         <SelectItem key={ms.month} value={ms.month}>
-                                            {ms.month}{ms.settled ? " (완료)" : ms.grossRevenueKrw > 0 ? " (미정산)" : ""}
+                                            {ms.month}{ms.settled ? ` (${t("settlements.status.settled")})` : ms.grossRevenueKrw > 0 ? ` (${t("settlements.status.unsettled")})` : ""}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -351,33 +359,33 @@ export default function AdminSettlementsDetail() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         <Card className="rounded-3xl border-stone-100 shadow-sm">
                             <CardContent className="pt-5 pb-5">
-                                <p className="text-[11px] text-stone-400 mb-1">숙박 매출</p>
+                                <p className="text-[11px] text-stone-400 mb-1">{t("settlements.revenue")}</p>
                                 <p className="text-lg font-bold text-[#4a3b2c]">
                                     {selectedData.grossRevenueKrw > 0
-                                        ? <>{selectedData.grossRevenueKrw.toLocaleString()}<span className="text-xs font-normal text-stone-400 ml-0.5">원</span></>
+                                        ? <>{formatKrwLabel(selectedData.grossRevenueKrw, i18n.language as "ko" | "en")}</>
                                         : <span className="text-stone-300">--</span>}
                                 </p>
                                 {selectedData.bookingCount > 0 && (
-                                    <p className="text-[10px] text-stone-400 mt-0.5">{selectedData.bookingCount}건 예약</p>
+                                    <p className="text-[10px] text-stone-400 mt-0.5">{t("settlements.bookingCount", { count: selectedData.bookingCount })}</p>
                                 )}
                             </CardContent>
                         </Card>
                         <Card className="rounded-3xl border-stone-100 shadow-sm">
                             <CardContent className="pt-5 pb-5">
-                                <p className="text-[11px] text-stone-400 mb-1">영업이익</p>
+                                <p className="text-[11px] text-stone-400 mb-1">{t("settlements.operatingProfit")}</p>
                                 <p className="text-lg font-bold text-[#4a3b2c]">
                                     {selectedData.operatingProfitKrw != null
-                                        ? <>{selectedData.operatingProfitKrw.toLocaleString()}<span className="text-xs font-normal text-stone-400 ml-0.5">원</span></>
+                                        ? <>{formatKrwLabel(selectedData.operatingProfitKrw, i18n.language as "ko" | "en")}</>
                                         : <span className="text-stone-300">--</span>}
                                 </p>
                                 {selectedData.operatingCostKrw != null && (
-                                    <p className="text-[10px] text-stone-400 mt-0.5">운영비 {selectedData.operatingCostKrw.toLocaleString()}원</p>
+                                    <p className="text-[10px] text-stone-400 mt-0.5">{t("settlements.operatingCost", { amount: selectedData.operatingCostKrw.toLocaleString() })}</p>
                                 )}
                             </CardContent>
                         </Card>
                         <Card className="rounded-3xl border-stone-100 shadow-sm">
                             <CardContent className="pt-5 pb-5">
-                                <p className="text-[11px] text-stone-400 mb-1">총 분배액</p>
+                                <p className="text-[11px] text-stone-400 mb-1">{t("settlements.totalDistributed")}</p>
                                 <p className="text-lg font-bold text-[#4a3b2c]">
                                     {totalDistributedUsdc > 0
                                         ? <>{usdcFmt(totalDistributedUsdc)}<span className="text-xs font-normal text-stone-400 ml-0.5">USDC</span></>
@@ -387,21 +395,21 @@ export default function AdminSettlementsDetail() {
                         </Card>
                         <Card className="rounded-3xl border-stone-100 shadow-sm">
                             <CardContent className="pt-5 pb-5">
-                                <p className="text-[11px] text-stone-400 mb-1">정산 상태</p>
+                                <p className="text-[11px] text-stone-400 mb-1">{t("settlements.settlementStatus")}</p>
                                 {selectedData.settled ? (
                                     <div className="flex items-center gap-1.5 mt-1">
                                         <span className="w-2 h-2 rounded-full bg-[#17cf54]" />
-                                        <span className="text-sm font-semibold text-[#17cf54]">완료</span>
+                                        <span className="text-sm font-semibold text-[#17cf54]">{t("settlements.status.settled")}</span>
                                     </div>
                                 ) : selectedData.grossRevenueKrw > 0 && selectedMonth < currentMonth ? (
                                     <div className="flex items-center gap-1.5 mt-1">
                                         <span className="w-2 h-2 rounded-full bg-amber-400" />
-                                        <span className="text-sm font-semibold text-amber-500">미정산</span>
+                                        <span className="text-sm font-semibold text-amber-500">{t("settlements.status.unsettled")}</span>
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-1.5 mt-1">
                                         <span className="w-2 h-2 rounded-full bg-stone-200" />
-                                        <span className="text-sm font-medium text-stone-400">해당 없음</span>
+                                        <span className="text-sm font-medium text-stone-400">{t("settlements.status.na")}</span>
                                     </div>
                                 )}
                                 {!selectedData.settled && selectedData.grossRevenueKrw > 0 && selectedMonth < currentMonth && (
@@ -418,7 +426,7 @@ export default function AdminSettlementsDetail() {
                         <Card className="rounded-3xl border-stone-100 shadow-sm">
                             <CardHeader>
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-base font-bold text-[#4a3b2c]">분배 내역</CardTitle>
+                                    <CardTitle className="text-base font-bold text-[#4a3b2c]">{t("settlements.distributionDetail")}</CardTitle>
                                     <span className="text-xs text-stone-400">{selectedMonth}</span>
                                 </div>
                             </CardHeader>
@@ -430,8 +438,8 @@ export default function AdminSettlementsDetail() {
                                             <span className="material-symbols-outlined text-blue-500 text-[18px]">account_balance</span>
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-stone-700">지자체</p>
-                                            <p className="text-[10px] text-stone-400">영업이익의 40%</p>
+                                            <p className="text-sm font-medium text-stone-700">{t("settlements.municipality")}</p>
+                                            <p className="text-[10px] text-stone-400">{t("settlements.municipalityShare")}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -443,7 +451,7 @@ export default function AdminSettlementsDetail() {
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-0.5 text-[10px] text-[#17cf54] hover:underline mt-0.5"
                                             >
-                                                Explorer
+                                                {t("settlements.explorerLink")}
                                                 <span className="material-symbols-outlined text-[12px]">open_in_new</span>
                                             </a>
                                         )}
@@ -456,8 +464,8 @@ export default function AdminSettlementsDetail() {
                                             <span className="material-symbols-outlined text-amber-500 text-[18px]">person</span>
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-stone-700">운영자</p>
-                                            <p className="text-[10px] text-stone-400">영업이익의 30%</p>
+                                            <p className="text-sm font-medium text-stone-700">{t("settlements.operator")}</p>
+                                            <p className="text-[10px] text-stone-400">{t("settlements.operatorShare")}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -469,7 +477,7 @@ export default function AdminSettlementsDetail() {
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-0.5 text-[10px] text-[#17cf54] hover:underline mt-0.5"
                                             >
-                                                Explorer
+                                                {t("settlements.explorerLink")}
                                                 <span className="material-symbols-outlined text-[12px]">open_in_new</span>
                                             </a>
                                         )}
@@ -482,14 +490,14 @@ export default function AdminSettlementsDetail() {
                                             <span className="material-symbols-outlined text-[#17cf54] text-[18px]">groups</span>
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-stone-700">투자자 배당</p>
-                                            <p className="text-[10px] text-stone-400">영업이익의 30% / {selectedData.investorCount}명</p>
+                                            <p className="text-sm font-medium text-stone-700">{t("settlements.investorDividend")}</p>
+                                            <p className="text-[10px] text-stone-400">{t("settlements.investorShare", { count: selectedData.investorCount })}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm font-semibold text-stone-800">{usdcFmt(selectedData.investorTotalUsdc)} USDC</p>
                                         <p className="text-[10px] text-stone-400 mt-0.5">
-                                            {selectedData.claimedCount}/{selectedData.investorCount}명 청구 완료
+                                            {t("settlements.claimedCount", { claimed: selectedData.claimedCount, total: selectedData.investorCount })}
                                         </p>
                                     </div>
                                 </div>
@@ -502,19 +510,19 @@ export default function AdminSettlementsDetail() {
                         <Card className="rounded-3xl border-stone-100 shadow-sm">
                             <CardHeader>
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-base font-bold text-[#4a3b2c]">투자자별 배당 내역</CardTitle>
-                                    <span className="text-xs text-stone-400">{investors.length}명</span>
+                                    <CardTitle className="text-base font-bold text-[#4a3b2c]">{t("settlements.investorDetail")}</CardTitle>
+                                    <span className="text-xs text-stone-400">{t("settlements.investorCount", { count: investors.length })}</span>
                                 </div>
                             </CardHeader>
                             <CardContent className="p-0">
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="border-stone-100">
-                                            <TableHead className="pl-6">지갑 주소</TableHead>
-                                            <TableHead className="text-right">보유 토큰</TableHead>
-                                            <TableHead className="text-right">비율</TableHead>
-                                            <TableHead className="text-right">배당금</TableHead>
-                                            <TableHead className="text-center pr-6">청구 상태</TableHead>
+                                            <TableHead className="pl-6">{t("settlements.tableWallet")}</TableHead>
+                                            <TableHead className="text-right">{t("settlements.tableTokens")}</TableHead>
+                                            <TableHead className="text-right">{t("settlements.tableRatio")}</TableHead>
+                                            <TableHead className="text-right">{t("settlements.tableDividend")}</TableHead>
+                                            <TableHead className="text-center pr-6">{t("settlements.tableStatus")}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -543,11 +551,11 @@ export default function AdminSettlementsDetail() {
                                                         <span className="text-xs text-stone-300">--</span>
                                                     ) : inv.claimed ? (
                                                         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/10 text-xs font-bold rounded-full">
-                                                            청구 완료
+                                                            {t("settlements.claimed")}
                                                         </Badge>
                                                     ) : (
                                                         <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 hover:bg-amber-500/10 text-xs font-bold rounded-full">
-                                                            미청구
+                                                            {t("settlements.unclaimed")}
                                                         </Badge>
                                                     )}
                                                 </TableCell>
@@ -563,8 +571,8 @@ export default function AdminSettlementsDetail() {
                     {!selectedData.settled && selectedData.grossRevenueKrw > 0 && selectedMonth < currentMonth && investors.length === 0 && (
                         <Card className="rounded-3xl border-amber-200/60 bg-amber-50/50 shadow-sm">
                             <CardContent className="py-8 text-center">
-                                <p className="text-sm text-amber-700 font-medium">이 달은 아직 정산이 진행되지 않았습니다.</p>
-                                <p className="text-xs text-amber-500 mt-1">위의 정산하기 버튼으로 정산을 실행하세요.</p>
+                                <p className="text-sm text-amber-700 font-medium">{t("settlements.notSettledYet")}</p>
+                                <p className="text-xs text-amber-500 mt-1">{t("settlements.notSettledHint")}</p>
                             </CardContent>
                         </Card>
                     )}
@@ -573,7 +581,7 @@ export default function AdminSettlementsDetail() {
                     {selectedData.grossRevenueKrw === 0 && !selectedData.settled && (
                         <Card className="rounded-3xl border-stone-100 shadow-sm">
                             <CardContent className="py-12 text-center">
-                                <p className="text-sm text-stone-400">이 달에는 예약 매출이 없습니다.</p>
+                                <p className="text-sm text-stone-400">{t("settlements.noRevenue")}</p>
                             </CardContent>
                         </Card>
                     )}

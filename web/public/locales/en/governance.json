@@ -1,0 +1,114 @@
+{
+  "title": "Governance",
+  "subtitle": "Vote on community policies and fund allocation.",
+  "daoNotReady": "DAO has not been initialized yet.",
+  "newProposal": "Submit a Proposal",
+  "tabs": {
+    "active": "Active",
+    "closed": "Closed",
+    "all": "All"
+  },
+  "filter": {
+    "category": "Category",
+    "all": "All",
+    "operations": "Operations",
+    "guidelines": "Guidelines",
+    "funding": "Funding",
+    "other": "Other"
+  },
+  "rules": {
+    "title": "Participation Guide",
+    "proposal": "Submit Proposal",
+    "proposalDesc": "Only council token holders may submit proposals.",
+    "vote": "Voting Rights",
+    "voteDesc": "Each property token grants one vote.",
+    "approval": "Approval Threshold",
+    "approvalDesc": "After quorum is met, a {{threshold}}% approval rate is required to pass.",
+    "limit": "Vote Limit per Person",
+    "limitDesc": "Each voter may cast up to {{cap}} votes."
+  },
+  "empty": {
+    "active": "No active proposals right now.",
+    "closed": "No closed proposals yet.",
+    "all": "No proposals yet.",
+    "hint": "New proposals will appear here."
+  },
+  "new": {
+    "breadcrumb": "Governance",
+    "title": "Submit a Proposal",
+    "desc": "Your proposal will be recorded on-chain and voting will begin immediately.",
+    "validatorWarning": "Local validator is not running. DAO data cannot be loaded. Please start the validator and refresh.",
+    "preview": "Preview",
+    "voting": "Voting",
+    "deadline": "Ends {{date}}",
+    "titlePlaceholder": "Enter a title",
+    "bodyPlaceholder": "Your content will appear here.",
+    "bodyHint": "Write on the left to see a live preview."
+  },
+  "detail": {
+    "breadcrumb": "Governance",
+    "proposer": "Proposer",
+    "proposedAt": "Proposed",
+    "deadline": "Deadline",
+    "timeLeft": "Time Left",
+    "ended": "Ended",
+    "body": "Proposal Details",
+    "viewSource": "View Source",
+    "viewSourceLabel": "Source link:",
+    "voteStatus": "Voting Status",
+    "approvalRate": "Current Approval Rate",
+    "approvalThreshold": "Pass threshold: {{pct}}%",
+    "vote": "Cast Your Vote"
+  },
+  "stats": {
+    "votingPeriod": "Voting Period",
+    "quorum": "Quorum",
+    "approval": "Approval",
+    "votingCap": "Voting Cap"
+  },
+  "vote": {
+    "for": "For",
+    "against": "Against",
+    "abstain": "Abstain",
+    "total": "Total",
+    "votes": "votes",
+    "participants": " voters",
+    "quorum": "Quorum",
+    "quorumMet": "Met",
+    "quorumShort": "Not met"
+  },
+  "form": {
+    "author": "Author",
+    "category": "Category",
+    "categoryPlaceholder": "Select category",
+    "deadline": "Voting Deadline",
+    "deadlineHint": "Min 1 day, max 30 days. Default: 7 days.",
+    "agendaTitle": "Proposal Title",
+    "titlePlaceholder": "Enter the title of your proposal.",
+    "description": "Description",
+    "descriptionOptional": "(Optional)",
+    "descriptionPlaceholder": "Write your proposal in Markdown.\n\n## Background\nDescribe the current situation...\n\n## Proposal\n- Item 1\n- Item 2\n\n## Expected Outcome\nAnticipated results...",
+    "descriptionHint": "Markdown is supported (headings, lists, bold, etc.).",
+    "cancel": "Cancel",
+    "submit": "Submit Proposal",
+    "submitting": "Processing...",
+    "uploadingIssue": "Creating issue...",
+    "errorTitle": "Please enter a title.",
+    "errorDaoNotInit": "DAO is not initialized on-chain. Please start the local validator and refresh."
+  },
+  "card": {
+    "ended": "Ended",
+    "secLeft": "{{n}}s left",
+    "minLeft": "{{n}}m left",
+    "hrLeft": "{{n}}h left",
+    "dayLeft": "{{n}}d left",
+    "statusVoting": "Voting",
+    "statusSucceeded": "Passed",
+    "statusDefeated": "Failed",
+    "statusCancelled": "Cancelled",
+    "catOperations": "Operations",
+    "catGuidelines": "Guidelines",
+    "catFundUsage": "Fund Usage",
+    "catOther": "Other"
+  }
+}

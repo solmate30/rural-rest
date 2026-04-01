@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "findStay": "숙소 찾기",
+    "hostHome": "집 등록하기",
+    "invest": "투자하기 (RWA)",
+    "governance": "거버넌스",
+    "myPortfolio": "내 포트폴리오",
+    "login": "로그인",
+    "logout": "로그아웃",
+    "logoutSuccess": "로그아웃되었습니다",
+    "logoutDesc": "다음에 또 만나요!",
+    "admin": "관리자",
+    "verifyKyc": "KYC 인증",
+    "connectWallet": "지갑 연결"
+  },
+  "footer": {
+    "tagline": "비어있던 집, 다시 숨을 쉬다.",
+    "taglineSub": "한국의 시골 빈집을 정성껏 고쳐",
+    "taglineSub2": "당신만의 특별한 휴식처를 제공합니다.",
+    "sections": {
+      "stays": "숙소",
+      "invest": "투자",
+      "company": "회사",
+      "support": "지원"
+    },
+    "links": {
+      "findStay": "숙소 찾기",
+      "hostHome": "집 등록하기",
+      "featuredStays": "추천 숙소",
+      "investRwa": "RWA 투자",
+      "whitepaper": "백서",
+      "governance": "거버넌스",
+      "about": "소개",
+      "blog": "블로그",
+      "press": "언론",
+      "careers": "채용",
+      "helpCenter": "고객센터",
+      "safetyInfo": "안전 정보",
+      "terms": "이용약관",
+      "privacy": "개인정보처리방침"
+    },
+    "copyright": "Rural Rest Inc."
+  },
+  "error": {
+    "title": "오류가 발생했습니다",
+    "details": "예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+    "404": "404 - 페이지를 찾을 수 없습니다",
+    "404Details": "요청하신 페이지가 존재하지 않습니다. URL을 확인해주세요.",
+    "403": "접근 권한이 없습니다",
+    "403Details": "이 페이지에 접근할 권한이 없습니다.",
+    "500": "서버 오류",
+    "500Details": "서버에서 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+    "code": "오류 {{code}}",
+    "devInfo": "개발자 정보 보기"
+  },
+  "button": {
+    "backHome": "홈으로 돌아가기",
+    "backPrev": "이전 페이지로",
+    "confirm": "확인",
+    "cancel": "취소",
+    "save": "저장",
+    "edit": "수정",
+    "delete": "삭제",
+    "close": "닫기",
+    "loading": "로딩 중..."
+  }
+}

@@ -9,6 +9,7 @@ import { listings, rwaTokens } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import { syncFundingStatuses } from "~/lib/rwa.server";
 import { fetchPropertiesOnchain } from "~/lib/rwa.onchain.server";
+import { useTranslation } from "react-i18next";
 
 import { KRW_PER_USDC } from "~/lib/constants";
 import { formatKrwLabel, fmtKrw, fmtUsdc } from "~/lib/formatters";
@@ -112,6 +113,7 @@ export default function InvestDashboard() {
     const { connected } = useWallet();
     const { setVisible } = useWalletModal();
     const [showFilter, setShowFilter] = useState(false);
+    const { t, i18n } = useTranslation("invest");
 
     // Filter States
     const [selectedRegion, setSelectedRegion] = useState("All");
@@ -162,7 +164,7 @@ export default function InvestDashboard() {
                                 Invest in Rural Korea
                             </h1>
                             <p className="text-lg text-muted-foreground">
-                                빈집의 재탄생에 함께하세요.<br />
+                                {t("tagline")}<br />
 
                             </p>
                         </div>
@@ -173,17 +175,17 @@ export default function InvestDashboard() {
                                     className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground/80 shadow-sm hover:bg-background shrink-0"
                                 >
                                     <span className="material-symbols-outlined text-[18px]">tune</span>
-                                    Filter
+                                    {t("filter.button")}
                                 </button>
                                 <div className="h-9 w-[1px] bg-border mx-1 shrink-0 hidden sm:block"></div>
                                 {[
-                                    { value: "All", label: "All Regions" },
-                                    { value: "경기", label: "경기" },
-                                    { value: "강원", label: "강원" },
-                                    { value: "충청", label: "충청" },
-                                    { value: "전라", label: "전라" },
-                                    { value: "경상", label: "경상" },
-                                    { value: "제주", label: "제주" },
+                                    { value: "All", label: t("region.all") },
+                                    { value: "경기", label: t("region.경기") },
+                                    { value: "강원", label: t("region.강원") },
+                                    { value: "충청", label: t("region.충청") },
+                                    { value: "전라", label: t("region.전라") },
+                                    { value: "경상", label: t("region.경상") },
+                                    { value: "제주", label: t("region.제주") },
                                 ].map(({ value, label }) => (
                                     <button
                                         key={value}
@@ -205,7 +207,7 @@ export default function InvestDashboard() {
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
                             <Card className="w-full max-w-md p-6 space-y-6 max-h-[90vh] overflow-y-auto">
                                 <div className="flex items-center justify-between sticky top-0 bg-card py-2 z-10">
-                                    <h2 className="text-xl font-bold">Filter</h2>
+                                    <h2 className="text-xl font-bold">{t("filter.title")}</h2>
                                     <button onClick={() => setShowFilter(false)} className="p-2 hover:bg-secondary rounded-lg transition-colors">
                                         <span className="material-symbols-outlined">close</span>
                                     </button>
@@ -213,12 +215,12 @@ export default function InvestDashboard() {
 
                                 <div className="space-y-6">
                                     <div>
-                                        <label className="text-sm font-bold mb-3 block text-foreground">Sort By</label>
+                                        <label className="text-sm font-bold mb-3 block text-foreground">{t("filter.sortBy")}</label>
                                         <div className="flex flex-wrap gap-2">
                                             {[
-                                                { value: "Yield", label: "Yield" },
-                                                { value: "Latest", label: "Latest" },
-                                                { value: "Price", label: "Price" },
+                                                { value: "Yield", label: t("filter.sort.yield") },
+                                                { value: "Latest", label: t("filter.sort.latest") },
+                                                { value: "Price", label: t("filter.sort.price") },
                                             ].map(({ value, label }) => (
                                                 <button
                                                     key={value}
@@ -235,14 +237,14 @@ export default function InvestDashboard() {
                                     </div>
 
                                     <div>
-                                        <label className="text-sm font-bold mb-3 block text-foreground">Status</label>
+                                        <label className="text-sm font-bold mb-3 block text-foreground">{t("filter.status")}</label>
                                         <div className="flex flex-wrap gap-2">
                                             {[
-                                                { value: "All", label: "All" },
-                                                { value: "Funding", label: "Funding" },
-                                                { value: "Funded", label: "Funded" },
-                                                { value: "Active", label: "Active" },
-                                                { value: "Closed", label: "Closed" },
+                                                { value: "All", label: t("filter.statusAll") },
+                                                { value: "Funding", label: t("filter.statusFunding") },
+                                                { value: "Funded", label: t("filter.statusFunded") },
+                                                { value: "Active", label: t("filter.statusActive") },
+                                                { value: "Closed", label: t("filter.statusClosed") },
                                             ].map(({ value, label }) => (
                                                 <button
                                                     key={value}
@@ -260,7 +262,7 @@ export default function InvestDashboard() {
 
                                     <div className="border-t border-border pt-4">
                                         <label className="text-sm font-bold mb-3 flex justify-between text-foreground">
-                                            <span>Min APY</span>
+                                            <span>{t("filter.minApy")}</span>
                                             <span className="text-[#17cf54]">{minApy}%+</span>
                                         </label>
                                         <input
@@ -274,7 +276,7 @@ export default function InvestDashboard() {
 
                                     <div className="border-t border-border pt-4">
                                         <label className="text-sm font-bold mb-3 flex justify-between text-foreground">
-                                            <span>Max Token Price</span>
+                                            <span>{t("filter.maxPrice")}</span>
                                             <span className="text-[#17cf54]">₩{maxPrice.toLocaleString()}</span>
                                         </label>
                                         <input
@@ -287,7 +289,7 @@ export default function InvestDashboard() {
                                     </div>
 
                                     <div className="border-t border-border pt-4">
-                                        <label className="text-sm font-bold mb-3 block text-foreground">Theme</label>
+                                        <label className="text-sm font-bold mb-3 block text-foreground">{t("filter.theme")}</label>
                                         <div className="flex flex-wrap gap-2">
                                             {["한옥", "오션뷰", "숲속 오두막", "돌담"].map((theme) => (
                                                 <button
@@ -320,13 +322,13 @@ export default function InvestDashboard() {
                                             setSelectedThemes([]);
                                         }}
                                     >
-                                        Reset
+                                        {t("filter.reset")}
                                     </button>
                                     <button
                                         className="flex-1 px-4 py-3 rounded-xl bg-[#17cf54] hover:bg-[#14b847] text-white font-bold transition-transform active:scale-[0.98] shadow-lg shadow-[#17cf54]/20"
                                         onClick={() => setShowFilter(false)}
                                     >
-                                        View {filteredProperties.length} listings
+                                        {t("filter.apply", { count: filteredProperties.length })}
                                     </button>
                                 </div>
                             </Card>
@@ -337,8 +339,8 @@ export default function InvestDashboard() {
                         {filteredProperties.length === 0 ? (
                             <div className="py-24 text-center">
                                 <span className="material-symbols-outlined text-[56px] text-stone-300">real_estate_agent</span>
-                                <p className="text-lg font-bold text-stone-700 mt-4">Coming Soon</p>
-                                <p className="text-stone-500 mt-2">새로운 투자 매물이 준비 중입니다.</p>
+                                <p className="text-lg font-bold text-stone-700 mt-4">{t("empty.title")}</p>
+                                <p className="text-stone-500 mt-2">{t("empty.desc")}</p>
                             </div>
                         ) : (
                         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -348,17 +350,17 @@ export default function InvestDashboard() {
                                     <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary/20">
                                         {property.status === "Funding" && (
                                             <div className="absolute top-3 left-3 z-10 rounded-full bg-card/90 px-2.5 py-1 text-xs font-bold backdrop-blur-sm shadow-sm text-foreground">
-                                                Funding
+                                                {t("status.funding")}
                                             </div>
                                         )}
                                         {(property.status === "Funded" || property.status === "Active") && (
                                             <div className="absolute top-3 left-3 z-10 rounded-full bg-[#17cf54]/90 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm shadow-sm">
-                                                FUNDED
+                                                {t("status.funded")}
                                             </div>
                                         )}
                                         {property.status === "Closed" && (
                                             <div className="absolute top-3 left-3 z-10 rounded-full bg-red-500/90 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm shadow-sm">
-                                                Closed
+                                                {t("status.closed")}
                                             </div>
                                         )}
                                         <div className="absolute top-3 right-3 z-10 rounded-full bg-card/90 px-2.5 py-1 text-xs font-bold text-foreground backdrop-blur-sm shadow-sm flex items-center gap-1">
@@ -384,23 +386,23 @@ export default function InvestDashboard() {
                                             <>
                                                 <div className="mb-4 grid grid-cols-2 gap-4">
                                                     <div>
-                                                        <p className="text-xs font-medium text-foreground/60">Token Price</p>
+                                                        <p className="text-xs font-medium text-foreground/60">{t("card.tokenPrice")}</p>
                                                         <p className="text-base font-bold text-foreground">{fmtKrw(property.tokenPrice)}</p>
                                                         <p className="text-xs text-muted-foreground">{fmtUsdc(property.usdcPrice)} · /token</p>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="text-xs font-medium text-foreground/60">Valuation</p>
-                                                        <p className="text-base font-bold text-foreground">{formatKrwLabel(property.valuationKrw)}</p>
+                                                        <p className="text-xs font-medium text-foreground/60">{t("card.valuation")}</p>
+                                                        <p className="text-base font-bold text-foreground">{formatKrwLabel(property.valuationKrw, i18n.language as "ko" | "en")}</p>
                                                         <p className="text-xs text-muted-foreground">${Math.round(property.valuationUsdc).toLocaleString()}</p>
                                                     </div>
                                                 </div>
 
                                                 <div className="space-y-2">
                                                     <div className="flex justify-between text-sm">
-                                                        <span className="font-medium text-foreground/80">Tokens Sold</span>
+                                                        <span className="font-medium text-foreground/80">{t("card.tokensSold")}</span>
                                                         <span className="font-bold text-green-600">
                                                             {property.fundingProgress < 1 && property.tokensSold > 0
-                                                                ? `${property.tokensSold.toLocaleString()} sold`
+                                                                ? t("card.sold", { count: property.tokensSold })
                                                                 : `${property.fundingProgress}%`}
                                                         </span>
                                                     </div>
@@ -411,8 +413,8 @@ export default function InvestDashboard() {
                                                         />
                                                     </div>
                                                     <div className="flex justify-between text-xs text-foreground/50 pt-1">
-                                                        <span>{property.raised} raised</span>
-                                                        <span>{property.remaining} remaining</span>
+                                                        <span>{t("card.raised", { amount: property.raised })}</span>
+                                                        <span>{t("card.remaining", { amount: property.remaining })}</span>
                                                     </div>
                                                 </div>
                                                 {(property.status !== "Funding" || property.fundingProgress >= 100) ? (
@@ -423,7 +425,7 @@ export default function InvestDashboard() {
                                                         }}
                                                         className="mt-5 w-full rounded-lg border border-[#17cf54] py-2.5 text-sm font-semibold text-[#17cf54] hover:bg-[#17cf54]/10 transition-colors"
                                                     >
-                                                        View
+                                                        {t("card.view")}
                                                     </button>
                                                 ) : connected ? (
                                                     isKycCompleted ? (
@@ -434,7 +436,7 @@ export default function InvestDashboard() {
                                                             }}
                                                             className="mt-5 w-full rounded-lg bg-[#17cf54] hover:bg-[#14b847] py-2.5 text-sm font-semibold text-white transition-colors shadow-sm flex items-center justify-center gap-1"
                                                         >
-                                                            Invest Now
+                                                            {t("card.investNow")}
                                                         </button>
                                                     ) : (
                                                         <button
@@ -444,7 +446,7 @@ export default function InvestDashboard() {
                                                             }}
                                                             className="mt-5 w-full rounded-lg bg-[#17cf54] hover:bg-[#14b847] py-2.5 text-sm font-semibold text-white transition-colors shadow-sm"
                                                         >
-                                                            Complete KYC to Invest
+                                                            {t("card.completeKyc")}
                                                         </button>
                                                     )
                                                 ) : (
@@ -455,7 +457,7 @@ export default function InvestDashboard() {
                                                         }}
                                                         className="mt-5 w-full rounded-lg bg-[#17cf54] hover:bg-[#14b847] py-2.5 text-sm font-semibold text-white transition-colors shadow-sm"
                                                     >
-                                                        Connect Wallet to Invest
+                                                        {t("card.connectWallet")}
                                                     </button>
                                                 )}
                                             </>

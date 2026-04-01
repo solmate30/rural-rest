@@ -59,4 +59,6 @@ web/scripts/government-wallet.json
 web/scripts/village-operator-wallet.json
 web/scripts/devnet-gov-wallet.json
 web/scripts/devnet-operator-wallet.json
+web/test-wallets.json
+anchor/test-ledger/
 *.bak

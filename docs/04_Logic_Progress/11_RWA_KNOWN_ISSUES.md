@@ -26,7 +26,7 @@ Token-2022 `non_transferable` extension을 적용할 예정이며, 2차 시장(D
 
 | 항목 | 설명 |
 |------|------|
-| `non_transferable` extension | `initialize_property` 시 Token-2022 NonTransferable extension 적용. 현재 미적용 — 토큰 전송이 기술적으로 가능하나 `investor_position` PDA 불일치로 배당 수령 불가. 실질적 위험 낮음. |
+| ~~`non_transferable` extension~~ | **완료 (2026-03-30)**. `initialize_property`에서 Token-2022 NonTransferable extension 적용. 3단계 수동 CPI: `create_account` → `initialize_non_transferable_mint` → `initialize_mint2`. 전송 차단 테스트(#35) 추가됨. |
 | `emit!` 이벤트 | `PurchaseEvent`, `DividendDistributedEvent`, `DividendClaimedEvent`, `RefundEvent`. 이벤트 기반 UI 업데이트 및 인덱서 연동용. |
 | 클라이언트 CU 한도 | `ComputeBudgetProgram.setComputeUnitLimit` 명시적 설정. `purchase_tokens` 70,000 CU, `claim_dividend` 35,000 CU 권장. 현재 기본값(200,000) 사용 중. |
 | `investor_position` close | 환불 후 rent 회수 instruction. |

@@ -22,10 +22,14 @@ export default [
     route("api/rwa/release-funds", "routes/api.rwa.release-funds.ts"),
     route("api/rwa/distribute-dividend", "routes/api.rwa.distribute-dividend.ts"),
     route("api/rwa/cancel-position", "routes/api.rwa.cancel-position.ts"),
+    route("api/rwa/crank-activate", "routes/api.rwa.crank-activate.ts"),
     route("api/operator/distribute-settlement", "routes/api.operator.distribute-settlement.ts"),
     route("api/operator/claim-settlement", "routes/api.operator.claim-settlement.ts"),
     route("api/admin/monthly-settlement", "routes/api.admin.monthly-settlement.ts"),
+    route("api/admin/force-fund", "routes/api.admin.force-fund.ts"),
     route("api/chat/concierge", "routes/api.chat.concierge.ts"),
+    route("api/set-language", "routes/api.set-language.ts"),
+    route("api/governance/issue", "routes/api.governance.issue.ts"),
     route("api/user/kyc-status", "routes/api.user.kyc-status.ts"),
     route("api/user/save-kyc", "routes/api.user.save-kyc.ts"),
     route("api/user/wallet-nonce", "routes/api.user.wallet-nonce.ts"),
@@ -35,5 +39,8 @@ export default [
     route("invest/:listingId", "routes/invest.detail.tsx"),
     route("my-investments", "routes/my-investments.tsx"),
     route("kyc", "routes/kyc.tsx"),
+    route("governance", "routes/governance.tsx"),
+    route("governance/new", "routes/governance.new.tsx"),
+    route("governance/:id", "routes/governance.$id.tsx"),
 
 ] satisfies RouteConfig;

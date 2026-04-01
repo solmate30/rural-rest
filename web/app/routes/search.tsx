@@ -1,33 +1,49 @@
 import { Header, Button, Card, Badge, Slider, Footer } from "~/components/ui-mockup";
 import { useState, useMemo } from "react";
 import { useLoaderData, useNavigate, useSearchParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import type { Route } from "./+types/search";
 import { db } from "~/db/index.server";
 import { listings } from "~/db/schema";
-import { and, lte, like, sql } from "drizzle-orm";
+import { and, lte, like } from "drizzle-orm";
+import { detectLocale } from "~/lib/i18n.server";
+import { applyListingLocale } from "~/data/listing-translations";
 
 const ITEMS_PER_PAGE = 12;
 
-const locations = [
-    { name: "서울 근처", value: "seoul-suburbs", keyword: "서울" },
-    { name: "부산 근처", value: "busan-suburbs", keyword: "부산" },
-    { name: "경주 근처", value: "gyeongju", keyword: "경주" },
-    { name: "인천 근처", value: "incheon", keyword: "인천" },
-    { name: "제주도", value: "jeju", keyword: "제주" },
+// 검색 필터용 지역 목록 (value는 region 코드 = DB region 컬럼과 일치)
+const LOCATION_DEFS = [
+    { value: "경상", keyword: "경상" },
+    { value: "경기", keyword: "경기" },
+    { value: "강원", keyword: "강원" },
+    { value: "충청", keyword: "충청" },
+    { value: "전라", keyword: "전라" },
+    { value: "제주", keyword: "제주" },
 ];
 
-function toCityLabel(location: string): string {
+function toCityLabel(location: string, locale: string): string {
     const m = location.match(/([가-힣]+)시/);
-    return m ? `${m[1]} 근처` : location;
+    if (!m) return location;
+    const city = m[1];
+    if (locale === "en") {
+        const map: Record<string, string> = {
+            "경주": "Gyeongju", "서울": "Seoul", "부산": "Busan",
+            "강릉": "Gangneung", "전주": "Jeonju", "제주": "Jeju",
+            "인천": "Incheon", "수원": "Suwon",
+        };
+        return `Near ${map[city] ?? city}`;
+    }
+    return `${city} 근처`;
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
+    const locale = await detectLocale(request);
     const url = new URL(request.url);
     const location = url.searchParams.get("location");
     const maxPrice = Number(url.searchParams.get("maxPrice")) || 500000;
 
     const keyword = location
-        ? (locations.find((l) => l.value === location)?.keyword ?? location)
+        ? (LOCATION_DEFS.find((l) => l.value === location)?.keyword ?? location)
         : null;
 
     const conditions = [lte(listings.pricePerNight, maxPrice)];
@@ -48,16 +64,17 @@ export async function loader({ request }: Route.LoaderArgs) {
         .from(listings)
         .where(and(...conditions));
 
-    const result = rows.map((row) => ({
+    const result = rows.map((row) => applyListingLocale({
         id: row.id,
         title: row.title,
         description: row.description,
-        locationLabel: toCityLabel(row.location),
+        cityLabel: toCityLabel(row.location, locale),
+        locationLabel: toCityLabel(row.location, locale),
         pricePerNight: row.pricePerNight,
         maxGuests: row.maxGuests,
         image: (row.images as string[])[0] ?? "/house.png",
         rating: null as number | null,
-    }));
+    }, locale));
 
     return {
         listings: result,
@@ -68,16 +85,24 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function SearchResults() {
     const { listings, totalCount, filters } = useLoaderData<typeof loader>();
+    const { t, i18n } = useTranslation("home");
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
 
-    // 필터 상태: URL params에서 초기화
+    // 지역 목록: t()로 번역된 이름
+    const locations = [
+        { name: t("regions.경상도"), value: "경상" },
+        { name: t("regions.경기도"), value: "경기" },
+        { name: t("regions.강원도"), value: "강원" },
+        { name: t("regions.충청도"), value: "충청" },
+        { name: t("regions.전라도"), value: "전라" },
+        { name: t("regions.제주도"), value: "제주" },
+    ];
+
     const [selectedLocation, setSelectedLocation] = useState<string | null>(
         filters.location
     );
     const [maxPrice, setMaxPrice] = useState(filters.maxPrice);
-
-    // 페이지네이션 상태
     const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
     const visibleListings = useMemo(
@@ -86,13 +111,12 @@ export default function SearchResults() {
     );
     const hasMore = visibleCount < listings.length;
 
-    // 필터 변경 핸들러: URL params 업데이트 -> loader 재호출
     function applyFilters(location: string | null, price: number) {
         const params = new URLSearchParams();
         if (location) params.set("location", location);
         params.set("maxPrice", String(price));
         setSearchParams(params);
-        setVisibleCount(ITEMS_PER_PAGE); // 페이지네이션 초기화
+        setVisibleCount(ITEMS_PER_PAGE);
     }
 
     function handleLocationChange(value: string) {
@@ -106,6 +130,10 @@ export default function SearchResults() {
         applyFilters(selectedLocation, value);
     }
 
+    const selectedLocationName = selectedLocation
+        ? locations.find((l) => l.value === selectedLocation)?.name
+        : null;
+
     return (
         <div className="min-h-screen bg-background font-sans">
             <Header />
@@ -116,7 +144,7 @@ export default function SearchResults() {
                         {/* Location Badges */}
                         <div className="space-y-3">
                             <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">
-                                Where to?
+                                {t("search.whereTo")}
                             </label>
                             <div className="flex flex-wrap gap-2">
                                 {locations.map((loc) => (
@@ -136,10 +164,10 @@ export default function SearchResults() {
                         <div className="space-y-3">
                             <div className="flex justify-between items-center">
                                 <label className="text-xs font-bold text-stone-500 uppercase tracking-widest">
-                                    Max Budget
+                                    {t("search.priceCap")}
                                 </label>
                                 <span className="text-sm font-bold text-primary">
-                                    ₩{maxPrice.toLocaleString()} 미만
+                                    {t("search.priceUnder", { price: "₩" + maxPrice.toLocaleString() })}
                                 </span>
                             </div>
                             <Slider
@@ -149,8 +177,8 @@ export default function SearchResults() {
                                 onChange={handlePriceChange}
                             />
                             <div className="flex justify-between text-[10px] text-stone-400 font-medium px-1">
-                                <span>₩5만</span>
-                                <span>₩50만+</span>
+                                <span>{t("search.priceMin")}</span>
+                                <span>{t("search.priceMax")}</span>
                             </div>
                         </div>
                     </div>
@@ -159,12 +187,12 @@ export default function SearchResults() {
                 {/* Results Summary */}
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                        {selectedLocation
-                            ? locations.find((l) => l.value === selectedLocation)?.name
-                            : "전체 지역"}
+                        {selectedLocationName ?? t("search.allRegions")}
                     </h1>
                     <span className="text-sm text-stone-500 font-medium">
-                        {totalCount}곳의 숙소를 찾았어요
+                        {selectedLocationName
+                            ? t("search.available", { region: selectedLocationName, count: totalCount })
+                            : t("search.availableAll", { count: totalCount })}
                     </span>
                 </div>
 
@@ -202,7 +230,7 @@ export default function SearchResults() {
                                             <span className="text-lg font-bold">
                                                 ₩{listing.pricePerNight.toLocaleString()}{" "}
                                                 <span className="text-sm font-normal text-muted-foreground">
-                                                    / night
+                                                    {t("featured.perNight")}
                                                 </span>
                                             </span>
                                             <Button
@@ -211,7 +239,7 @@ export default function SearchResults() {
                                                     navigate(`/property/${listing.id}`);
                                                 }}
                                             >
-                                                Details
+                                                {t("featured.viewDetail")}
                                             </Button>
                                         </div>
                                     </div>
@@ -227,7 +255,7 @@ export default function SearchResults() {
                                     className="px-10 h-12 rounded-full"
                                     onClick={() => setVisibleCount((prev) => prev + ITEMS_PER_PAGE)}
                                 >
-                                    더 보기 ({listings.length - visibleCount}곳 남음)
+                                    {t("search.loadMore", { count: listings.length - visibleCount })}
                                 </Button>
                             </div>
                         )}
@@ -242,10 +270,10 @@ export default function SearchResults() {
                             </svg>
                         </div>
                         <h3 className="text-xl font-bold text-stone-900 mb-2">
-                            조건에 맞는 숙소가 없어요
+                            {t("search.noResults")}
                         </h3>
                         <p className="text-stone-500 max-w-xs mx-auto">
-                            지역이나 예산을 바꿔 가며 당신만의 휴식처를 찾아보세요.
+                            {t("search.noResultsSub")}
                         </p>
                         <Button
                             variant="outline"
@@ -256,7 +284,7 @@ export default function SearchResults() {
                                 applyFilters(null, 500000);
                             }}
                         >
-                            필터 초기화
+                            {t("search.reset")}
                         </Button>
                     </div>
                 )}

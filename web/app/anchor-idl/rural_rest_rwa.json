@@ -46,11 +46,33 @@
           }
         },
         {
-          "name": "authority",
-          "signer": true,
-          "relations": [
-            "property_token"
-          ]
+          "name": "operator",
+          "docs": [
+            "authority 또는 crank_authority"
+          ],
+          "signer": true
+        },
+        {
+          "name": "rwa_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  119,
+                  97,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "token_mint",
@@ -489,6 +511,57 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "initialize_config",
+      "docs": [
+        "RwaConfig 초기화 (1회성). authority 설정, crank은 비활성 상태로 시작."
+      ],
+      "discriminator": [
+        208,
+        127,
+        21,
+        1,
+        194,
+        190,
+        196,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "rwa_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  119,
+                  97,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
     },
     {
       "name": "initialize_property",
@@ -1116,12 +1189,34 @@
           }
         },
         {
-          "name": "authority",
+          "name": "operator",
+          "docs": [
+            "authority 또는 crank_authority"
+          ],
           "writable": true,
-          "signer": true,
-          "relations": [
-            "property_token"
-          ]
+          "signer": true
+        },
+        {
+          "name": "rwa_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  119,
+                  97,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "funding_vault",
@@ -1155,6 +1250,9 @@
         },
         {
           "name": "authority_usdc_account",
+          "docs": [
+            "USDC 수신: 항상 property authority의 계좌 (signer와 무관)"
+          ],
           "writable": true
         },
         {
@@ -1176,6 +1274,60 @@
         {
           "name": "listing_id",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "set_crank_authority",
+      "docs": [
+        "crank_authority 설정/교체. authority만 호출 가능."
+      ],
+      "discriminator": [
+        158,
+        239,
+        112,
+        185,
+        20,
+        25,
+        150,
+        203
+      ],
+      "accounts": [
+        {
+          "name": "rwa_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  119,
+                  97,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "rwa_config"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "new_crank",
+          "type": "pubkey"
         }
       ]
     }
@@ -1206,6 +1358,19 @@
         232,
         170
       ]
+    },
+    {
+      "name": "RwaConfig",
+      "discriminator": [
+        103,
+        48,
+        215,
+        148,
+        74,
+        15,
+        31,
+        129
+      ]
     }
   ],
   "errors": [
@@ -1217,7 +1382,7 @@
     {
       "code": 6001,
       "name": "ExceedsInvestorCap",
-      "msg": "Exceeds individual investor cap (10%)."
+      "msg": "Exceeds individual investor cap (30%)."
     },
     {
       "code": 6002,
@@ -1298,6 +1463,16 @@
       "code": 6017,
       "name": "DeadlineTooFar",
       "msg": "Deadline too far in the future (max 365 days)."
+    },
+    {
+      "code": 6018,
+      "name": "FundingStillOpen",
+      "msg": "Funding period is still open. Wait until deadline passes."
+    },
+    {
+      "code": 6019,
+      "name": "InvalidCrankAuthority",
+      "msg": "Invalid crank authority."
     }
   ],
   "types": [
@@ -1413,6 +1588,26 @@
           {
             "name": "funding_vault_bump",
             "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RwaConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "crank_authority",
+            "type": "pubkey"
           },
           {
             "name": "bump",

@@ -13,6 +13,7 @@ import { listings, rwaTokens, rwaInvestments, rwaDividends, user } from "~/db/sc
 import { eq, desc, isNull, and } from "drizzle-orm";
 import { fetchPropertiesOnchain } from "~/lib/rwa.onchain.server";
 import { getSession } from "~/lib/auth.server";
+import { useTranslation } from "react-i18next";
 
 export const meta = () => {
     return [
@@ -205,6 +206,7 @@ export default function MyInvestmentsRoute() {
     const { publicKey } = useWallet();
     const { setVisible } = useWalletModal();
     const [searchParams, setSearchParams] = useSearchParams();
+    const { t, i18n } = useTranslation("invest");
 
     // 지갑 연결되면 URL에 wallet 파라미터 자동 추가 → 로더 재실행
     useEffect(() => {
@@ -223,21 +225,21 @@ export default function MyInvestmentsRoute() {
             <Header />
             <main className="container mx-auto px-4 sm:px-8 py-16">
                 <header className="mb-10">
-                    <h1 className="text-3xl font-bold text-[#4a3b2c] mb-2">My Investments</h1>
-                    <p className="text-stone-500">Track your portfolio and manage your returns.</p>
+                    <h1 className="text-3xl font-bold text-[#4a3b2c] mb-2">{t("portfolio.title")}</h1>
+                    <p className="text-stone-500">{t("portfolio.subtitle")}</p>
                 </header>
 
                 {!walletParam ? (
                     <div className="py-24 text-center">
                         <span className="material-symbols-outlined text-[56px] text-stone-300">account_balance_wallet</span>
-                        <p className="text-stone-500 mt-4 mb-6 font-medium">Connect your wallet to view your portfolio.</p>
+                        <p className="text-stone-500 mt-4 mb-6 font-medium">{t("portfolio.connectWallet")}</p>
                         <Button
                             onClick={() => setVisible(true)}
                             variant="success"
                             size="lg"
                             className="shadow-lg shadow-[#17cf54]/20"
                         >
-                            Connect Wallet
+                            {t("portfolio.connectButton")}
                         </Button>
                     </div>
                 ) : (
@@ -247,10 +249,10 @@ export default function MyInvestmentsRoute() {
                         <section className="mb-12">
                             <div className="flex items-baseline justify-between mb-6">
                                 <div>
-                                    <h2 className="text-2xl font-bold text-[#4a3b2c] mb-1">Your Holdings</h2>
-                                    <p className="text-sm text-stone-500">Manage your real estate tokens</p>
+                                    <h2 className="text-2xl font-bold text-[#4a3b2c] mb-1">{t("portfolio.holdings")}</h2>
+                                    <p className="text-sm text-stone-500">{t("portfolio.holdingsSubtitle")}</p>
                                 </div>
-                                <span className="text-sm text-stone-400">{ownedTokens.length} assets</span>
+                                <span className="text-sm text-stone-400">{t("portfolio.assets", { count: ownedTokens.length })}</span>
                             </div>
                             <HoldingsTable holdings={ownedTokens} walletAddress={walletParam ?? ""} />
                         </section>
