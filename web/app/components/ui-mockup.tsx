@@ -7,6 +7,7 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useLocation, useNavigate } from "react-router";
 import { useKyc } from "./KycProvider";
+import { useTranslation } from "react-i18next";
 
 export function Button({
     className,
@@ -119,19 +120,30 @@ export function Header() {
     const { isKycCompleted } = useKyc();
     const { disconnect } = useWallet();
     const isInvestRoute = location.pathname.startsWith('/invest') || location.pathname.startsWith('/my-investments') || location.pathname.startsWith('/governance');
+    const { t, i18n } = useTranslation("common");
 
     const handleSignOut = async () => {
         await disconnect().catch(() => {});
         await authClient.signOut();
         toast({
-            title: "로그아웃되었습니다",
-            description: "다음에 또 만나요!",
+            title: t("nav.logoutSuccess"),
+            description: t("nav.logoutDesc", "다음에 또 만나요!"),
             variant: "success",
         });
-        // Toast가 표시된 후 페이지 이동
         setTimeout(() => {
             window.location.href = "/";
         }, 500);
+    };
+
+    const handleLangToggle = async () => {
+        const next = i18n.language === "ko" ? "en" : "ko";
+        await i18n.changeLanguage(next);
+        // 서버에 언어 설정 저장 (쿠키 + DB)
+        fetch("/api/set-language", {
+            method: "POST",
+            body: JSON.stringify({ locale: next }),
+            headers: { "Content-Type": "application/json" },
+        }).catch(() => {});
     };
 
     return (
@@ -144,19 +156,18 @@ export function Header() {
                     <span className="text-xl font-bold tracking-tight text-primary">Rural Rest</span>
                 </div>
                 <nav className="hidden md:flex items-center gap-6">
-                    <a href="/" className="text-sm font-medium hover:text-primary transition-colors">Find a Stay</a>
-                    <a href="/operator" className="text-sm font-medium hover:text-primary transition-colors">Host your Home</a>
-                    <a href="/invest" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">Invest (RWA)</a>
-                    <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">Governance</a>
+                    <a href="/" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.findStay")}</a>
+                    <a href="/operator" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.hostHome")}</a>
+                    <a href="/invest" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">{t("nav.invest")}</a>
+                    <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
                     {isInvestRoute && (
-                        <a href="/my-investments" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">My Portfolio</a>
+                        <a href="/my-investments" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">{t("nav.myPortfolio")}</a>
                     )}
 
                     {/* Conditional Auth Rendering */}
                     {isInvestRoute ? (
                         mounted && (
                             <div className="ml-2 pl-6 border-l border-border h-10 flex items-center gap-3">
-                                {/* 로그인 상태 표시 (invest 구간에서도) */}
                                 {session && (
                                     <button
                                         onClick={handleSignOut}
@@ -176,7 +187,7 @@ export function Header() {
                                         className="h-9 text-sm"
                                         onClick={() => navigate(`/auth?return=${location.pathname}`)}
                                     >
-                                        로그인
+                                        {t("nav.login")}
                                     </Button>
                                 ) : !isKycCompleted ? (
                                     <Button
@@ -184,7 +195,7 @@ export function Header() {
                                         className="h-10 text-xs font-bold gap-1 text-amber-600 hover:text-amber-700 border-amber-300 hover:border-amber-400 hover:bg-amber-50"
                                         onClick={() => navigate(`/kyc?return=${location.pathname}`)}
                                     >
-                                        Verify KYC
+                                        {t("nav.verifyKyc")}
                                     </Button>
                                 ) : (
                                     <WalletMultiButton className="!bg-[#17cf54] !text-white !border-none hover:!bg-[#14b847] !shadow-sm !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />
@@ -205,22 +216,35 @@ export function Header() {
                                                 />
                                             </div>
                                         ) : (
-                                            <div className={`h-9 w-9 rounded-full flex items-center justify-center border-2 border-white ring-1 shadow-sm ${(session.user as any).role === "admin" ? "bg-amber-500/10 ring-amber-400/30" : "bg-primary/10 ring-primary/20"}`}>
-                                                <span className={`text-xs font-bold ${(session.user as any).role === "admin" ? "text-amber-600" : "text-primary"}`}>
-                                                    {(session.user as any).role === "admin" ? "A" : session.user.name?.charAt(0).toUpperCase()}
+                                            <div className={`h-9 w-9 rounded-full flex items-center justify-center border-2 border-white ring-1 shadow-sm ${(session.user as Record<string, unknown>).role === "admin" ? "bg-amber-500/10 ring-amber-400/30" : "bg-primary/10 ring-primary/20"}`}>
+                                                <span className={`text-xs font-bold ${(session.user as Record<string, unknown>).role === "admin" ? "text-amber-600" : "text-primary"}`}>
+                                                    {(session.user as Record<string, unknown>).role === "admin" ? "A" : session.user.name?.charAt(0).toUpperCase()}
                                                 </span>
                                             </div>
                                         )}
                                         <span className="text-sm font-semibold text-foreground/80">
-                                            {(session.user as any).role === "admin" ? "관리자" : `${session.user.name}님`}
+                                            {(session.user as Record<string, unknown>).role === "admin"
+                                                ? t("nav.admin")
+                                                : `${session.user.name}님`}
                                         </span>
                                     </div>
-                                    <Button variant="outline" onClick={handleSignOut} className="h-9 px-4 text-xs font-bold">Logout</Button>
+                                    <Button variant="outline" onClick={handleSignOut} className="h-9 px-4 text-xs font-bold">{t("nav.logout")}</Button>
                                 </div>
                             ) : (
-                                <Button variant="outline" className="ml-4" onClick={() => window.location.href = '/auth'}>Login</Button>
+                                <Button variant="outline" className="ml-4" onClick={() => window.location.href = '/auth'}>{t("nav.login")}</Button>
                             )
                         )
+                    )}
+
+                    {/* 언어 스위처 */}
+                    {mounted && (
+                        <button
+                            onClick={handleLangToggle}
+                            className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-border hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                            aria-label="언어 변경 / Change language"
+                        >
+                            {i18n.language === "ko" ? "EN" : "한국어"}
+                        </button>
                     )}
                 </nav>
             </div>
@@ -229,6 +253,7 @@ export function Header() {
 }
 
 export function Footer() {
+    const { t } = useTranslation("common");
     return (
         <footer className="bg-stone-50 border-t border-stone-200 pt-16 pb-8">
             <div className="container mx-auto px-4 sm:px-8">
@@ -242,9 +267,9 @@ export function Footer() {
                             <span className="text-lg font-bold tracking-tight text-primary">Rural Rest</span>
                         </div>
                         <p className="text-stone-500 text-sm leading-relaxed max-w-xs transition-opacity hover:opacity-80">
-                            비어있던 집, 다시 숨을 쉬다. <br />
-                            한국의 시골 빈집을 정성껏 고쳐 <br />
-                            당신만의 특별한 휴식처를 제공합니다.
+                            {t("footer.tagline")} <br />
+                            {t("footer.taglineSub")} <br />
+                            {t("footer.taglineSub2")}
                         </p>
                     </div>
 
@@ -252,7 +277,7 @@ export function Footer() {
                     <div>
                         <h4 className="font-bold text-stone-900 mb-4 tracking-tight">Search</h4>
                         <ul className="space-y-3 text-sm text-stone-500">
-                            <li><a href="/" className="hover:text-primary transition-colors">Find a Stay</a></li>
+                            <li><a href="/" className="hover:text-primary transition-colors">{t("footer.links.findStay")}</a></li>
                             <li><a href="/" className="hover:text-primary transition-colors">Near Seoul</a></li>
                             <li><a href="/" className="hover:text-primary transition-colors">Near Busan</a></li>
                             <li><a href="/" className="hover:text-primary transition-colors">Gyeongju Stays</a></li>
@@ -263,7 +288,7 @@ export function Footer() {
                     <div>
                         <h4 className="font-bold text-stone-900 mb-4 tracking-tight">Hosting</h4>
                         <ul className="space-y-3 text-sm text-stone-500">
-                            <li><a href="/host" className="hover:text-primary transition-colors">Host your Home</a></li>
+                            <li><a href="/host" className="hover:text-primary transition-colors">{t("footer.links.hostHome")}</a></li>
                             <li><a href="#" className="hover:text-primary transition-colors">Why Host?</a></li>
                             <li><a href="#" className="hover:text-primary transition-colors">Hosting Policy</a></li>
                             <li><a href="#" className="hover:text-primary transition-colors">Community Stories</a></li>
@@ -274,8 +299,8 @@ export function Footer() {
                     <div>
                         <h4 className="font-bold text-stone-900 mb-4 tracking-tight">Support</h4>
                         <ul className="space-y-3 text-sm text-stone-500">
-                            <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
-                            <li><a href="#" className="hover:text-primary transition-colors">Safety Info</a></li>
+                            <li><a href="#" className="hover:text-primary transition-colors">{t("footer.links.helpCenter")}</a></li>
+                            <li><a href="#" className="hover:text-primary transition-colors">{t("footer.links.safetyInfo")}</a></li>
                             <li><a href="#" className="hover:text-primary transition-colors">Cancellation Options</a></li>
                             <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
                         </ul>
@@ -285,9 +310,9 @@ export function Footer() {
                 {/* Bottom Bar */}
                 <div className="pt-8 border-t border-stone-200 flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex flex-wrap items-center justify-center gap-6 text-[13px] text-stone-400 font-medium">
-                        <span>© 2026 Rural Rest Inc.</span>
-                        <a href="#" className="hover:text-stone-600 transition-colors underline-offset-4 hover:underline">Privacy</a>
-                        <a href="#" className="hover:text-stone-600 transition-colors underline-offset-4 hover:underline">Terms</a>
+                        <span>© 2026 {t("footer.copyright")}</span>
+                        <a href="#" className="hover:text-stone-600 transition-colors underline-offset-4 hover:underline">{t("footer.links.privacy")}</a>
+                        <a href="#" className="hover:text-stone-600 transition-colors underline-offset-4 hover:underline">{t("footer.links.terms")}</a>
                         <a href="#" className="hover:text-stone-600 transition-colors underline-offset-4 hover:underline">Sitemap</a>
                     </div>
                     <div className="flex items-center gap-5">

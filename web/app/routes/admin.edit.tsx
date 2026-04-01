@@ -1,8 +1,10 @@
 import { Header, Button, Input, Card } from "../components/ui-mockup";
+import { useTranslation } from "react-i18next";
 import { useCloudinaryUpload } from "~/hooks/use-cloudinary-upload";
 import { useState, useRef } from "react";
 
 export default function AdminEdit() {
+    const { t } = useTranslation("admin");
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [images, setImages] = useState<string[]>([]);
 
@@ -34,12 +36,12 @@ export default function AdminEdit() {
             <main className="container mx-auto py-12 px-4 max-w-4xl">
                 <div className="flex items-center justify-between mb-8">
                     <div className="space-y-1">
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Edit Listing</h1>
-                        <p className="text-muted-foreground">Manage your property details and availability.</p>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("edit.title")}</h1>
+                        <p className="text-muted-foreground">{t("edit.desc")}</p>
                     </div>
                     <div className="flex gap-4">
-                        <Button variant="outline">Preview Guest View</Button>
-                        <Button>Save Changes</Button>
+                        <Button variant="outline">{t("edit.previewGuest")}</Button>
+                        <Button>{t("edit.saveChanges")}</Button>
                     </div>
                 </div>
 
@@ -48,7 +50,7 @@ export default function AdminEdit() {
                     <section className="space-y-4">
                         <h2 className="text-xl font-bold flex items-center gap-2">
                             <span className="h-6 w-1 bg-primary rounded-full" />
-                            Photo Manager
+                            {t("edit.photoManager")}
                         </h2>
                         <input
                             type="file"
@@ -67,7 +69,7 @@ export default function AdminEdit() {
                                             style={{ width: `${progress}%` }}
                                         />
                                     </div>
-                                    <p className="text-xs font-medium text-primary uppercase tracking-widest">{progress}% Uploading...</p>
+                                    <p className="text-xs font-medium text-primary uppercase tracking-widest">{t("edit.uploading", { pct: progress })}</p>
                                 </div>
                             )}
 
@@ -84,7 +86,7 @@ export default function AdminEdit() {
                                         className="aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-stone-100 transition-colors"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
-                                        <span className="text-xs mt-1 font-medium">Add More</span>
+                                        <span className="text-xs mt-1 font-medium">{t("edit.addMore")}</span>
                                     </button>
                                 </div>
                             ) : (
@@ -93,10 +95,10 @@ export default function AdminEdit() {
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" x2="12" y1="3" y2="15" /></svg>
                                     </div>
                                     <div className="text-center">
-                                        <p className="font-bold">Click to upload or drag and drop</p>
-                                        <p className="text-sm text-muted-foreground">Highest quality (JPG/PNG) recommended.</p>
+                                        <p className="font-bold">{t("edit.uploadHint")}</p>
+                                        <p className="text-sm text-muted-foreground">{t("edit.uploadHint2")}</p>
                                     </div>
-                                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Browse Files</Button>
+                                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>{t("edit.browseFiles")}</Button>
                                 </>
                             )}
                         </Card>
@@ -106,32 +108,32 @@ export default function AdminEdit() {
                     <section className="space-y-4">
                         <h2 className="text-xl font-bold flex items-center gap-2">
                             <span className="h-6 w-1 bg-primary rounded-full" />
-                            Listing Details
+                            {t("edit.listingDetails")}
                         </h2>
                         <Card className="p-8 space-y-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Property Title</label>
-                                <Input defaultValue="Grandma's Stone House" />
+                                <label className="text-sm font-medium">{t("edit.propertyTitle")}</label>
+                                <Input defaultValue={t("edit.propertyTitleEx")} />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Description</label>
+                                <label className="text-sm font-medium">{t("edit.description")}</label>
                                 <div className="border rounded-xl bg-background overflow-hidden">
                                     <div className="border-b bg-stone-50 p-2 flex gap-4">
                                         <button className="p-1 hover:bg-white rounded font-bold">B</button>
                                         <button className="p-1 hover:bg-white rounded italic">I</button>
                                         <button className="p-1 hover:bg-white rounded underline">U</button>
                                     </div>
-                                    <textarea className="w-full min-h-[200px] p-4 text-sm focus:outline-none bg-transparent" defaultValue="Nestled in a quiet valley, this traditional stone house has been preserved for three generations..."></textarea>
+                                    <textarea className="w-full min-h-[200px] p-4 text-sm focus:outline-none bg-transparent" defaultValue={t("edit.descriptionEx")}></textarea>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">Base Price (KRW)</label>
-                                    <Input type="number" defaultValue="120000" />
+                                    <label className="text-sm font-medium">{t("edit.basePrice")}</label>
+                                    <Input type="number" defaultValue={t("edit.basePriceEx")} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">Max Guests</label>
-                                    <Input type="number" defaultValue="4" />
+                                    <label className="text-sm font-medium">{t("edit.maxGuests")}</label>
+                                    <Input type="number" defaultValue={t("edit.maxGuestsEx")} />
                                 </div>
                             </div>
                         </Card>
@@ -141,7 +143,7 @@ export default function AdminEdit() {
                     <section className="space-y-4">
                         <h2 className="text-xl font-bold flex items-center gap-2">
                             <span className="h-6 w-1 bg-primary rounded-full" />
-                            Availability & Dynamic Pricing
+                            {t("edit.availability")}
                         </h2>
                         <Card className="p-8 flex flex-col items-center">
                             <div className="w-full max-w-sm border rounded-2xl p-6 bg-white overflow-hidden shadow-inner">
@@ -153,7 +155,13 @@ export default function AdminEdit() {
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-bold text-muted-foreground uppercase mb-2">
-                                    <span>Sum</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                                    <span>{t("edit.days.sun")}</span>
+                                    <span>{t("edit.days.mon")}</span>
+                                    <span>{t("edit.days.tue")}</span>
+                                    <span>{t("edit.days.wed")}</span>
+                                    <span>{t("edit.days.thu")}</span>
+                                    <span>{t("edit.days.fri")}</span>
+                                    <span>{t("edit.days.sat")}</span>
                                 </div>
                                 <div className="grid grid-cols-7 gap-2">
                                     {Array.from({ length: 31 }).map((_, i) => (
@@ -166,13 +174,13 @@ export default function AdminEdit() {
                             </div>
                             <div className="mt-8 flex gap-6 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-2">
-                                    <div className="h-3 w-3 rounded bg-primary" /> Available
+                                    <div className="h-3 w-3 rounded bg-primary" /> {t("edit.legend.available")}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="h-3 w-3 rounded bg-stone-200" /> Booked/Blocked
+                                    <div className="h-3 w-3 rounded bg-stone-200" /> {t("edit.legend.blocked")}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="h-3 w-3 rounded border border-primary/40 bg-primary/5" /> Selected
+                                    <div className="h-3 w-3 rounded border border-primary/40 bg-primary/5" /> {t("edit.legend.selected")}
                                 </div>
                             </div>
                         </Card>
@@ -185,11 +193,11 @@ export default function AdminEdit() {
                 <div className="container mx-auto flex justify-between items-center max-w-4xl">
                     <div className="flex items-center gap-2 text-primary font-medium">
                         <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                        Editing Active Listing
+                        {t("edit.editingActive")}
                     </div>
                     <div className="flex gap-4">
-                        <Button variant="outline" className="px-8 shadow-sm">Discard</Button>
-                        <Button className="px-8 shadow-md">Publish Changes</Button>
+                        <Button variant="outline" className="px-8 shadow-sm">{t("edit.discard")}</Button>
+                        <Button className="px-8 shadow-md">{t("edit.publish")}</Button>
                     </div>
                 </div>
             </div>

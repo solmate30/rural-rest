@@ -12,6 +12,7 @@ import { TokenInfoCard } from "~/components/rwa/TokenInfoCard";
 import { PurchaseCard } from "~/components/rwa/PurchaseCard";
 import { RefundButton } from "~/components/rwa/RefundButton";
 import { PropertyGallery } from "~/components/rwa/PropertyGallery";
+import { useTranslation } from "react-i18next";
 
 import { KRW_PER_USDC } from "~/lib/constants";
 import { formatKrwLabel } from "~/lib/formatters";
@@ -218,6 +219,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 
 export default function InvestDetail() {
     const property = useLoaderData<typeof loader>();
+    const { t, i18n } = useTranslation("invest");
 
     return (
         <div className="min-h-screen bg-background font-sans">
@@ -230,12 +232,12 @@ export default function InvestDetail() {
                     <div className="flex items-center gap-2 flex-wrap">
                         {property.rawStatus === "funding" && (
                             <span className="bg-card text-foreground text-xs font-bold px-3 py-1 rounded-full border border-border">
-                                Funding
+                                {t("status.funding")}
                             </span>
                         )}
                         {(property.rawStatus === "funded" || property.rawStatus === "active") && (
                             <span className="bg-[#17cf54] text-white text-xs font-bold px-3 py-1 rounded-full">
-                                FUNDED
+                                {t("status.funded")}
                             </span>
                         )}
                         <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">
@@ -262,7 +264,7 @@ export default function InvestDetail() {
 
                         {/* Token Info */}
                         <section className="pt-8 border-t">
-                            <h2 className="text-2xl font-bold text-foreground mb-6">Token Information</h2>
+                            <h2 className="text-2xl font-bold text-foreground mb-6">{t("detail.tokenInfo")}</h2>
                             <TokenInfoCard
                                 tokenName={property.tokenName}
                                 totalSupply={property.totalSupply}
@@ -279,13 +281,13 @@ export default function InvestDetail() {
 
                         {/* About */}
                         <section className="space-y-4 pt-8 border-t">
-                            <h2 className="text-2xl font-bold text-foreground">About This Home</h2>
+                            <h2 className="text-2xl font-bold text-foreground">{t("detail.aboutHome")}</h2>
                             <p className="text-muted-foreground leading-relaxed text-lg">{property.about}</p>
                         </section>
 
                         {/* Renovation History */}
                         <section className="space-y-6 pt-8 border-t">
-                            <h2 className="text-2xl font-bold text-foreground">리모델링 이력</h2>
+                            <h2 className="text-2xl font-bold text-foreground">{t("detail.renovation")}</h2>
                             <div className="space-y-4">
                                 {property.renovationHistory.map((item, i) => (
                                     <div key={i} className="flex items-start gap-4">
@@ -307,12 +309,12 @@ export default function InvestDetail() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5 p-4 rounded-xl bg-stone-50 border border-stone-100 shadow-sm">
                                     <span className="material-symbols-outlined text-stone-400 text-[20px]">group</span>
-                                    <p className="text-[10px] uppercase font-bold tracking-wider text-stone-400">Max Guests</p>
-                                    <p className="text-xl font-bold text-[#4a3b2c]">{property.maxGuests}<span className="text-sm font-normal text-stone-400 ml-1">명</span></p>
+                                    <p className="text-[10px] uppercase font-bold tracking-wider text-stone-400">{t("detail.maxGuests")}</p>
+                                    <p className="text-xl font-bold text-[#4a3b2c]">{t("detail.guestsCount", { count: property.maxGuests })}</p>
                                 </div>
                                 <div className="flex flex-col gap-1.5 p-4 rounded-xl bg-stone-50 border border-stone-100 shadow-sm">
                                     <span className="material-symbols-outlined text-stone-400 text-[20px]">bar_chart</span>
-                                    <p className="text-[10px] uppercase font-bold tracking-wider text-stone-400">Occupancy (90d)</p>
+                                    <p className="text-[10px] uppercase font-bold tracking-wider text-stone-400">{t("detail.occupancy")}</p>
                                     <p className="text-xl font-bold text-[#4a3b2c]">{property.occupancyRate}<span className="text-sm font-normal text-stone-400 ml-0.5">%</span></p>
                                 </div>
                             </div>
@@ -320,7 +322,7 @@ export default function InvestDetail() {
 
                         {/* Amenities */}
                         <section className="space-y-6 pt-8 border-t">
-                            <h2 className="text-2xl font-bold text-foreground">Amenities</h2>
+                            <h2 className="text-2xl font-bold text-foreground">{t("detail.amenities")}</h2>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 {property.amenities.map((amenity) => (
                                     <div
@@ -336,7 +338,7 @@ export default function InvestDetail() {
 
                         {/* Host Info */}
                         <section className="space-y-6 pt-8 border-t">
-                            <h2 className="text-2xl font-bold text-foreground">마을 운영자</h2>
+                            <h2 className="text-2xl font-bold text-foreground">{t("detail.operator")}</h2>
                             <div className="flex gap-6 items-start">
                                 <div className="h-16 w-16 rounded-full bg-stone-200 shrink-0 overflow-hidden border-2 border-white shadow-md">
                                     <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=e2e8f0" alt="Host Profile" className="w-full h-full object-cover" />
@@ -347,11 +349,11 @@ export default function InvestDetail() {
                                     <div className="flex gap-4 pt-2">
                                         <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600">
                                             <span className="material-symbols-outlined text-[16px]">star</span>
-                                            {property.rating} 후기 평점
+                                            {property.rating} {t("detail.rating")}
                                         </div>
                                         <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600">
                                             <span className="material-symbols-outlined text-[16px]">verified_user</span>
-                                            신원 인증 완료
+                                            {t("detail.verified")}
                                         </div>
                                     </div>
                                 </div>
@@ -362,12 +364,12 @@ export default function InvestDetail() {
                         <section className="space-y-4 pt-8 border-t">
                             <div className="flex items-baseline justify-between">
                                 <h2 className="text-2xl font-bold text-foreground">
-                                    {property.rawStatus === "active" ? "Revenue Distribution" : "Est. Revenue"}
+                                    {property.rawStatus === "active" ? t("detail.revenueActive") : t("detail.revenueEst")}
                                 </h2>
                                 <span className="text-xs text-muted-foreground">
                                     {property.rawStatus === "active"
-                                        ? "Last 12 months · per 1,000 tokens"
-                                        : "Projected · per 1,000 tokens"}
+                                        ? t("detail.revenueNote")
+                                        : t("detail.revenueNoteEst")}
                                 </span>
                             </div>
                             <RevenueChart
@@ -379,7 +381,7 @@ export default function InvestDetail() {
 
                         {/* Map */}
                         <section className="space-y-4 pt-8 border-t pb-12">
-                            <h2 className="text-2xl font-bold text-foreground">Location & Map</h2>
+                            <h2 className="text-2xl font-bold text-foreground">{t("detail.location")}</h2>
                             <p className="text-sm text-muted-foreground">{property.location}</p>
                             <PropertyMap
                                 lat={property.coordinates.lat}
@@ -404,11 +406,11 @@ export default function InvestDetail() {
                                 <div className="rounded-3xl bg-white border border-red-100 shadow-sm p-6 space-y-4">
                                     <div className="flex items-center gap-2">
                                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-stone-100 text-stone-500 border border-stone-200">
-                                            모집 종료
+                                            {t("detail.fundingClosed")}
                                         </span>
                                     </div>
                                     <p className="text-sm text-stone-500">
-                                        모집 목표를 달성하지 못했습니다. 투자하신 금액을 환불받으실 수 있습니다.
+                                        {t("detail.refundNotice")}
                                     </p>
                                     <RefundButton
                                         listingId={property.id}

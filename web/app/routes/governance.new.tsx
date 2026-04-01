@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import type { Route } from "./+types/governance.new";
 import { fetchDaoConfig, fetchActiveListingIds } from "~/lib/dao.onchain.server";
 import type { DaoConfigData } from "~/lib/dao.onchain.server";
+import { useTranslation } from "react-i18next";
 
 import { Header, Footer } from "~/components/ui-mockup";
 import { CreateProposalForm, CATEGORIES } from "~/components/governance/CreateProposalForm";
@@ -38,6 +39,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function GovernanceNewPage() {
     const { daoConfig, activeListingIds, isMock } = useLoaderData<typeof loader>();
     const navigate = useNavigate();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { t, i18n } = useTranslation("governance") as any;
 
     const defaultDeadline = new Date(Date.now() + 7 * 86400 * 1000).toISOString().slice(0, 16);
     const [preview, setPreview] = useState<{
@@ -53,11 +56,13 @@ export default function GovernanceNewPage() {
     });
 
     const session = authClient.useSession?.()?.data;
-    const creatorLabel = session?.user?.name ?? "작성자";
-    const categoryLabel = CATEGORIES.find((c) => c.value === preview.category)?.label ?? "";
+    const creatorLabel = session?.user?.name ?? t("form.author");
+    const locale = i18n.language === "ko" ? "ko-KR" : "en-US";
+    const catValue = preview.category;
+    const categoryLabel = t(`card.cat${catValue.charAt(0).toUpperCase()}${catValue.slice(1)}`);
     const hasContent = preview.title.trim() || preview.markdown.trim();
     const deadlineDisplay = preview.votingDeadline
-        ? new Date(preview.votingDeadline).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })
+        ? new Date(preview.votingDeadline).toLocaleString(locale, { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })
         : "";
 
     return (
@@ -74,19 +79,19 @@ export default function GovernanceNewPage() {
                         className="group flex items-center gap-1.5 text-[12px] font-bold tracking-widest uppercase text-[#A1887F] hover:text-[#8D6E63] transition-colors mb-6"
                     >
                         <span className="group-hover:-translate-x-1 transition-transform">&larr;</span>
-                        거버넌스 목록
+                        {t("new.breadcrumb")}
                     </button>
 
                     <h1 className="text-3xl font-bold text-[#3E2723] tracking-tight mb-2">
-                        새 안건 상정
+                        {t("new.title")}
                     </h1>
                     <p className="text-[15px] text-[#8D6E63] mb-4">
-                        제안 내용을 작성하면 온체인에 기록되고 투표가 시작됩니다.
+                        {t("new.desc")}
                     </p>
 
                     {isMock && (
                         <div className="mb-8 p-4 rounded-lg bg-[#FFF3E0] border border-[#FFCC02]/60 text-[13px] text-[#E65100] font-medium">
-                            로컬 validator가 실행되지 않아 DAO 온체인 데이터를 불러올 수 없습니다. 제안 등록을 하려면 validator를 실행한 후 새로고침하세요.
+                            {t("new.validatorWarning")}
                         </div>
                     )}
 
@@ -106,7 +111,7 @@ export default function GovernanceNewPage() {
                         {/* 오른쪽: 게시글 전체 프리뷰 */}
                         <div className="flex flex-col">
                             <span className="text-[11px] font-bold uppercase tracking-widest text-[#A1887F] mb-3 block">
-                                게시글 미리보기
+                                {t("new.preview")}
                             </span>
                             <div className="border border-[#D7CCC8] bg-white rounded-lg p-6 sm:p-8 shadow-sm flex-1 overflow-y-auto">
                                 {hasContent ? (
@@ -114,7 +119,7 @@ export default function GovernanceNewPage() {
                                         {/* 분류 뱃지 */}
                                         <div className="flex items-center gap-3 mb-5">
                                             <span className="inline-flex items-center text-[11px] font-bold px-3 py-1 tracking-widest bg-[#8D6E63] text-white">
-                                                투표중
+                                                {t("new.voting")}
                                             </span>
                                             <span className="text-[12px] font-bold tracking-widest text-[#8D6E63] px-2 border-l border-[#D7CCC8]">
                                                 {categoryLabel}
@@ -123,18 +128,18 @@ export default function GovernanceNewPage() {
 
                                         {/* 제목 */}
                                         <h2 className="text-2xl sm:text-3xl font-bold text-[#3E2723] leading-snug mb-6">
-                                            {preview.title || "제목 미입력"}
+                                            {preview.title || t("new.titlePlaceholder")}
                                         </h2>
 
                                         {/* 메타 정보 */}
                                         <div className="flex flex-wrap items-center gap-3 text-[12px] text-[#A1887F] font-medium tracking-wider mb-6 pb-4 border-b border-[#D7CCC8]/40">
-                                            <span className="font-mono">{session?.user?.name ?? "작성자"}</span>
+                                            <span className="font-mono">{session?.user?.name ?? creatorLabel}</span>
                                             <span className="text-[#D7CCC8]">|</span>
-                                            <span>{new Date().toLocaleDateString("ko-KR")}</span>
+                                            <span>{new Date().toLocaleDateString(locale)}</span>
                                             {deadlineDisplay && (
                                                 <>
                                                     <span className="text-[#D7CCC8]">|</span>
-                                                    <span className="text-[#FFAB91] font-bold">마감 {deadlineDisplay}</span>
+                                                    <span className="text-[#FFAB91] font-bold">{t("new.deadline", { date: deadlineDisplay })}</span>
                                                 </>
                                             )}
                                         </div>
@@ -166,14 +171,14 @@ export default function GovernanceNewPage() {
                                             </div>
                                         ) : (
                                             <p className="text-[13px] text-[#A1887F] italic">
-                                                본문을 작성하면 여기에 표시됩니다.
+                                                {t("new.bodyHint")}
                                             </p>
                                         )}
                                     </article>
                                 ) : (
                                     <div className="flex items-center justify-center h-full min-h-[350px]">
                                         <p className="text-[14px] text-[#A1887F] italic">
-                                            왼쪽에서 내용을 입력하면 실시간으로 미리보기가 표시됩니다.
+                                            {t("new.bodyPlaceholder")}
                                         </p>
                                     </div>
                                 )}

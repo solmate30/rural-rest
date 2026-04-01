@@ -28,6 +28,7 @@ export default [
     route("api/admin/monthly-settlement", "routes/api.admin.monthly-settlement.ts"),
     route("api/admin/force-fund", "routes/api.admin.force-fund.ts"),
     route("api/chat/concierge", "routes/api.chat.concierge.ts"),
+    route("api/set-language", "routes/api.set-language.ts"),
     route("api/governance/issue", "routes/api.governance.issue.ts"),
     route("api/user/kyc-status", "routes/api.user.kyc-status.ts"),
     route("api/user/save-kyc", "routes/api.user.save-kyc.ts"),

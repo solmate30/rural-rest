@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
@@ -37,6 +38,8 @@ export function ProposalDetailSheet({
     onOpenChange,
     onUpdated,
 }: ProposalDetailSheetProps) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { t } = useTranslation("governance") as any;
     const wallet = useWallet();
     const { connection } = useConnection();
     const [actionLoading, setActionLoading] = useState(false);
@@ -118,8 +121,8 @@ export function ProposalDetailSheet({
                             </p>
                             <p className={`font-bold ${isVoting ? 'text-[#FFAB91]' : 'text-[#3E2723]'}`}>
                                 {isVoting
-                                    ? formatTimeRemaining(proposal.votingEndsAt)
-                                    : new Date(proposal.createdAt * 1000).toLocaleDateString("ko-KR")
+                                    ? formatTimeRemaining(proposal.votingEndsAt, t)
+                                    : new Date(proposal.createdAt * 1000).toLocaleDateString()
                                 }
                             </p>
                         </div>

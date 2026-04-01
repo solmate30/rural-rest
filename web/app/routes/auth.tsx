@@ -5,6 +5,7 @@ import { redirect } from "react-router";
 import type { Route } from "./+types/auth";
 import { useState } from "react";
 import { useToast } from "../hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 export async function loader({ request }: Route.LoaderArgs) {
     const session = await getSession(request);
@@ -21,6 +22,7 @@ export default function Auth() {
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const { t } = useTranslation("auth");
 
     const handleGoogleSignIn = async () => {
         try {
@@ -30,8 +32,8 @@ export default function Auth() {
             });
         } catch (error) {
             toast({
-                title: "소셜 로그인 실패",
-                description: "소셜 로그인 중 오류가 발생했습니다. 다시 시도해주세요.",
+                title: t("toast.socialError"),
+                description: t("toast.socialErrorDesc"),
                 variant: "destructive",
             });
         }
@@ -45,8 +47,8 @@ export default function Auth() {
             });
         } catch (error) {
             toast({
-                title: "소셜 로그인 실패",
-                description: "소셜 로그인 중 오류가 발생했습니다. 다시 시도해주세요.",
+                title: t("toast.socialError"),
+                description: t("toast.socialErrorDesc"),
                 variant: "destructive",
             });
         }
@@ -65,14 +67,14 @@ export default function Auth() {
                 });
                 if (signInError) {
                     toast({
-                        title: "로그인 실패",
-                        description: signInError.message || "이메일 또는 비밀번호가 올바르지 않습니다.",
+                        title: t("toast.loginError"),
+                        description: signInError.message || t("toast.loginErrorDesc"),
                         variant: "destructive",
                     });
                 } else if (data?.user) {
                     toast({
-                        title: "로그인되었습니다",
-                        description: `${data.user.name}님, 환영합니다!`,
+                        title: t("toast.loginSuccess"),
+                        description: t("toast.loginSuccessDesc", { name: data.user.name }),
                         variant: "success",
                     });
                     // Toast가 표시된 후 리다이렉트
@@ -89,14 +91,14 @@ export default function Auth() {
                 });
                 if (signUpError) {
                     toast({
-                        title: "회원가입 실패",
-                        description: signUpError.message || "이미 가입된 이메일입니다.",
+                        title: t("toast.signupError"),
+                        description: signUpError.message || t("toast.signupErrorDesc"),
                         variant: "destructive",
                     });
                 } else if (data?.user) {
                     toast({
-                        title: "회원가입 완료",
-                        description: "Rural Rest에 오신 것을 환영합니다!",
+                        title: t("toast.signupSuccess"),
+                        description: t("toast.signupSuccessDesc"),
                         variant: "success",
                     });
                     // Toast가 표시된 후 리다이렉트
@@ -107,8 +109,8 @@ export default function Auth() {
             }
         } catch (err) {
             toast({
-                title: "오류 발생",
-                description: "알 수 없는 오류가 발생했습니다.",
+                title: t("toast.unknownError"),
+                description: t("toast.unknownErrorDesc"),
                 variant: "destructive",
             });
         } finally {
@@ -123,12 +125,11 @@ export default function Auth() {
                 {/* Brand Story Section */}
                 <div className="flex-1 max-w-lg space-y-6 hidden md:block">
                     <h2 className="text-4xl lg:text-5xl font-bold tracking-tight text-foreground leading-[1.1]">
-                        비어있던 집, <br />
-                        <span className="text-primary font-bold">당신의 휴식</span>이 되다.
+                        {t("tagline1")} <br />
+                        <span className="text-primary font-bold">{t("tagline2")}</span>
                     </h2>
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                        도시의 소음에서 벗어나 남해의 정취를 느껴보세요.
-                        마을의 이야기가 담긴 특별한 공간들이 당신을 기다립니다.
+                        {t("taglineDesc")}
                     </p>
                     <div className="flex items-center gap-4">
                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -136,15 +137,15 @@ export default function Auth() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
-                        <span className="font-medium text-foreground/80">1초 만에 시작하는 원스톱 예약</span>
+                        <span className="font-medium text-foreground/80">{t("feature")}</span>
                     </div>
                 </div>
 
                 <Card className="w-full max-w-md p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border-none bg-white">
                     <div className="text-center space-y-2 mb-8">
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">{isLogin ? "로그인" : "회원가입"}</h1>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">{isLogin ? t("loginTitle") : t("signupTitle")}</h1>
                         <p className="text-muted-foreground">
-                            {isLogin ? "Rural Rest와 함께 특별한 여정을 시작하세요." : "지금 가입하고 마을의 이야기를 만나보세요."}
+                            {isLogin ? t("loginDesc") : t("signupDesc")}
                         </p>
                     </div>
 
@@ -156,7 +157,7 @@ export default function Auth() {
                             disabled={isLoading}
                         >
                             <img src="https://upload.wikimedia.org/wikipedia/commons/e/e3/KakaoTalk_logo.svg" alt="Kakao" className="w-6 h-6" />
-                            카카오로 {isLogin ? "로그인" : "시작하기"}
+                            {t("kakaoLogin")}
                         </Button>
                         <Button
                             variant="outline"
@@ -165,7 +166,7 @@ export default function Auth() {
                             disabled={isLoading}
                         >
                             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
-                            Google로 {isLogin ? "로그인" : "시작하기"}
+                            {t("googleLogin")}
                         </Button>
                     </div>
 
@@ -174,17 +175,17 @@ export default function Auth() {
                             <span className="w-full border-t border-muted" />
                         </div>
                         <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-white px-4 text-muted-foreground font-medium tracking-widest">OR</span>
+                            <span className="bg-white px-4 text-muted-foreground font-medium tracking-widest">{t("or")}</span>
                         </div>
                     </div>
 
                     <form className="space-y-4" onSubmit={handleAuthSubmit}>
                         {!isLogin && (
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-foreground/70 uppercase tracking-widest ml-1">이름</label>
+                                <label className="text-sm font-semibold text-foreground/70 uppercase tracking-widest ml-1">{t("name")}</label>
                                 <Input
                                     type="text"
-                                    placeholder="홍길동"
+                                    placeholder={t("namePlaceholder")}
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     required
@@ -193,10 +194,10 @@ export default function Auth() {
                             </div>
                         )}
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-foreground/70 uppercase tracking-widest ml-1">이메일</label>
+                            <label className="text-sm font-semibold text-foreground/70 uppercase tracking-widest ml-1">{t("email")}</label>
                             <Input
                                 type="email"
-                                placeholder="name@example.com"
+                                placeholder={t("emailPlaceholder")}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -204,10 +205,10 @@ export default function Auth() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-foreground/70 uppercase tracking-widest ml-1">비밀번호</label>
+                            <label className="text-sm font-semibold text-foreground/70 uppercase tracking-widest ml-1">{t("password")}</label>
                             <Input
                                 type="password"
-                                placeholder="••••••••"
+                                placeholder={t("passwordPlaceholder")}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
@@ -219,18 +220,18 @@ export default function Auth() {
                             className="w-full h-14 text-lg font-bold mt-4 shadow-lg shadow-primary/20 rounded-xl"
                             disabled={isLoading}
                         >
-                            {isLoading ? "처리 중..." : (isLogin ? "이메일로 로그인" : "회원가입 완료")}
+                            {isLoading ? t("submitting") : (isLogin ? t("submitLogin") : t("submitSignup"))}
                         </Button>
                     </form>
 
                     <p className="text-center text-sm text-muted-foreground mt-8">
-                        {isLogin ? "아직 계정이 없으신가요?" : "이미 계정이 있으신가요?"}
+                        {isLogin ? t("toggleToSignup") : t("toggleToLogin")}
                         <button
                             type="button"
                             onClick={() => setIsLogin(!isLogin)}
                             className="text-primary font-bold hover:underline ml-2"
                         >
-                            {isLogin ? "회원가입" : "로그인"}
+                            {isLogin ? t("switchToSignup") : t("switchToLogin")}
                         </button>
                     </p>
                 </Card>

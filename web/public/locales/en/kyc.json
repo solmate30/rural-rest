@@ -1,0 +1,52 @@
+{
+  "badge": "Security First",
+  "heading1": "Safe & Transparent",
+  "heading2": "RWA Investment",
+  "desc": "Rural Rest complies with all applicable regulations and provides tamper-proof, transparent ownership records via blockchain.",
+  "feature": {
+    "identity": {
+      "title": "Identity Verification",
+      "desc": "We verify every investor's identity to ensure safe and secure investments."
+    },
+    "privacy": {
+      "title": "Privacy Protected",
+      "desc": "Your information is encrypted and used solely for identity verification."
+    },
+    "wallet": {
+      "title": "Web3 Wallet Integration",
+      "desc": "After KYC, connect your personal wallet to receive dividends directly."
+    }
+  },
+  "form": {
+    "title": "Identity Verification (KYC)",
+    "desc": "Identity verification is required by law for fractional real estate investment.",
+    "privacy": "Your ID information is used only for identity verification.",
+    "start": "Start ID Scan",
+    "later": "Do this later"
+  },
+  "scan": {
+    "title": "Scanning ID...",
+    "instruction": "Hold your ID in front of the camera."
+  },
+  "done": {
+    "title": "Verified!",
+    "message": "Redirecting to wallet setup..."
+  },
+  "wallet": {
+    "title": "Connect Your Wallet",
+    "message": "Ownership and monthly rental income are sent directly to your personal wallet.",
+    "info": "You need a Solana-compatible wallet (e.g., Solflare).",
+    "connect": "Connect Wallet",
+    "getWallet": "Don't have a wallet?",
+    "skip": "Skip for now"
+  },
+  "walletSection": {
+    "heading": "Settlement Wallet",
+    "desc": "Connect your Solana wallet to receive dividends (USDC).",
+    "registered": "Registered",
+    "change": "Change wallet",
+    "signing": "Waiting for signature...",
+    "register": "Connect Wallet",
+    "networkInfo": "Supports Solana-compatible wallets (e.g., Solflare)"
+  }
+}

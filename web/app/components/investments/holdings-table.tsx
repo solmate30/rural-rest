@@ -1,6 +1,7 @@
 import { ClaimButton } from "./ClaimButton";
 import { CancelPositionButton } from "./CancelPositionButton";
 import { RefundButton } from "~/components/rwa/RefundButton";
+import { useTranslation } from "react-i18next";
 
 import { KRW_PER_USDC } from "~/lib/constants";
 import { fmtUsdc, fmtKrw } from "~/lib/formatters";
@@ -27,12 +28,15 @@ interface Props {
 }
 
 export function HoldingsTable({ holdings, walletAddress }: Props) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { t } = useTranslation("invest") as any;
+
     if (holdings.length === 0) {
         return (
             <div className="py-16 text-center bg-stone-50 rounded-2xl border border-dashed border-stone-200">
-                <p className="text-stone-400 font-medium">아직 보유 중인 토큰이 없습니다.</p>
+                <p className="text-stone-400 font-medium">{t("holdings.empty")}</p>
                 <a href="/invest" className="mt-4 inline-block text-sm font-bold text-primary underline underline-offset-2">
-                    투자 가능한 매물 보기
+                    {t("holdings.emptyLink")}
                 </a>
             </div>
         );
@@ -44,11 +48,11 @@ export function HoldingsTable({ holdings, walletAddress }: Props) {
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-stone-50/70 text-stone-400 text-xs font-bold uppercase tracking-wider border-b border-stone-100">
-                            <th className="py-3.5 px-5">Property</th>
-                            <th className="py-3.5 px-5">Token</th>
-                            <th className="py-3.5 px-5 text-right">Holdings</th>
-                            <th className="py-3.5 px-5 text-right">Value</th>
-                            <th className="py-3.5 px-5 text-right">Pending Dividend</th>
+                            <th className="py-3.5 px-5">{t("holdings.colProperty")}</th>
+                            <th className="py-3.5 px-5">{t("holdings.colToken")}</th>
+                            <th className="py-3.5 px-5 text-right">{t("holdings.colHoldings")}</th>
+                            <th className="py-3.5 px-5 text-right">{t("holdings.colValue")}</th>
+                            <th className="py-3.5 px-5 text-right">{t("holdings.colDividend")}</th>
                             <th className="py-3.5 px-5" />
                         </tr>
                     </thead>
@@ -62,7 +66,7 @@ export function HoldingsTable({ holdings, walletAddress }: Props) {
                                     </span>
                                 </td>
                                 <td className="py-4 px-5 text-right text-sm font-semibold text-stone-700">
-                                    {h.tokensOwned.toLocaleString()} <span className="text-xs font-normal text-stone-400">tokens</span>
+                                    {h.tokensOwned.toLocaleString()} <span className="text-xs font-normal text-stone-400">{t("holdings.tokens")}</span>
                                 </td>
                                 <td className="py-4 px-5 text-right text-sm">
                                     <p className="font-semibold text-stone-800">{fmtUsdc(h.totalValue)}</p>

@@ -8,7 +8,14 @@ import { eq } from "drizzle-orm";
 export async function loader({ request }: { request: Request }) {
     const session = await requireUser(request);
 
-    const nonce = `Rural Rest wants you to sign in with your Solana account.\n\nBy signing, you confirm wallet ownership.\nNonce: ${crypto.randomUUID()}\nIssued At: ${new Date().toISOString()}`;
+    const url = new URL(request.url);
+    const lang = url.searchParams.get("lang");
+    const uuid = crypto.randomUUID();
+    const issuedAt = new Date().toISOString();
+
+    const nonce = lang === "ko"
+        ? `Rural Rest에서 솔라나 지갑 연결을 요청합니다.\n\n서명을 통해 지갑 소유권을 확인합니다.\nNonce: ${uuid}\nIssued At: ${issuedAt}`
+        : `Rural Rest wants you to sign in with your Solana account.\n\nBy signing, you confirm wallet ownership.\nNonce: ${uuid}\nIssued At: ${issuedAt}`;
 
     await db
         .update(user)

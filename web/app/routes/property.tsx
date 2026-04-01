@@ -1,12 +1,15 @@
 import { Header, Button, Card, Footer } from "~/components/ui-mockup";
 import { useState } from "react";
 import { useLoaderData, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import type { Route } from "./+types/property";
 import { cn } from "~/lib/utils";
 import { PropertyMap } from "~/components/PropertyMap";
 import { db } from "~/db/index.server";
 import { listings, user, rwaTokens } from "~/db/schema";
 import { eq } from "drizzle-orm";
+import { detectLocale } from "~/lib/i18n.server";
+import { applyListingLocale, translateAmenities } from "~/data/listing-translations";
 import { InvestmentUpsellCard } from "~/components/InvestmentUpsellCard";
 import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
 
@@ -47,7 +50,8 @@ function TransportIcon({ mode }: { mode: TransportMode }) {
 }
 
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
+    const locale = await detectLocale(request);
     const row = await db
         .select({
             id: listings.id,
@@ -90,23 +94,36 @@ export async function loader({ params }: Route.LoaderArgs) {
 
     const images = row.images as string[];
 
-    const listing = {
+    const listingBase = applyListingLocale({
         id: row.id,
         title: row.title,
         description: row.description,
-        about: row.description,
+        cityLabel: toCityLabel(row.location),
+    }, locale);
+
+    const hostBio = locale === "en"
+        ? "We breathe new life into abandoned rural homes and share the culture and nature of our village with travelers from around the world."
+        : "우리 마을의 빈집을 되살려 여행자에게 특별한 경험을 제공하고 있습니다. 마을 주민들과 함께 숙소를 운영하며, 지역 문화와 자연을 나누는 일을 하고 있습니다.";
+
+    const listing = {
+        id: listingBase.id,
+        title: listingBase.title,
+        description: listingBase.description,
+        about: listingBase.description,
         location: row.location,
-        locationLabel: toCityLabel(row.location),
+        locationLabel: listingBase.cityLabel,
         pricePerNight: row.pricePerNight,
         maxGuests: row.maxGuests,
-        amenities: row.amenities as string[],
+        amenities: translateAmenities(row.amenities as string[], locale),
         images,
         image: images[0] ?? "/house.png",
         rating: null as number | null,
         reviews: [] as { id: string; authorName: string; authorImage: string; rating: number; comment: string; date: string }[],
-        hostName: `${row.location.split(" ").at(-1)} 마을지기`,
+        hostName: locale === "en"
+            ? `${row.location.split(" ").at(-1)} Village Host`
+            : `${row.location.split(" ").at(-1)} 마을지기`,
         hostImage: `https://api.dicebear.com/7.x/notionists/svg?seed=${row.hostId}&backgroundColor=e2e8f0`,
-        hostBio: "우리 마을의 빈집을 되살려 여행자에게 특별한 경험을 제공하고 있습니다. 마을 주민들과 함께 숙소를 운영하며, 지역 문화와 자연을 나누는 일을 하고 있습니다.",
+        hostBio,
         coordinates: { lat: row.lat ?? 35.8394, lng: row.lng ?? 129.2917 },
         nearbyLandmarks: [] as string[],
         transportOptions: [] as { mode: TransportMode; label: string; routeName: string; estimatedTime: string; estimatedCost: string; description: string }[],
@@ -119,6 +136,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 export default function PropertyDetail() {
     const { listing, bookingAllowed } = useLoaderData<typeof loader>();
     const navigate = useNavigate();
+    const { t } = useTranslation("property");
     const [showGallery, setShowGallery] = useState(false);
 
     return (
@@ -130,14 +148,18 @@ export default function PropertyDetail() {
                 <div className="mb-6 space-y-2">
                     <div className="flex items-center gap-2">
                         <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">
-                            Heritage Stay
+                            {t("badge.heritage")}
                         </span>
                         <span className="text-sm text-muted-foreground">{listing.locationLabel}, South Korea</span>
                     </div>
                     <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">{listing.title}</h1>
                     <div className="flex items-center gap-4 text-sm font-medium">
                         {listing.rating != null && <span className="flex items-center gap-1">★ {listing.rating}</span>}
-                        <span className="text-muted-foreground">{listing.reviews.length > 0 ? `${listing.reviews.length} reviews` : "아직 리뷰 없음"}</span>
+                        <span className="text-muted-foreground">
+                            {listing.reviews.length > 0
+                                ? t("rating.reviews", { count: listing.reviews.length })
+                                : t("rating.noReview")}
+                        </span>
                     </div>
                 </div>
 
@@ -170,15 +192,15 @@ export default function PropertyDetail() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
                                 </svg>
                                 {listing.images.length > 2
-                                    ? <span>+{listing.images.length - 2} Photos</span>
-                                    : <span>All Photos</span>
+                                    ? <span>{t("gallery.morePhotos", { count: listing.images.length - 2 })}</span>
+                                    : <span>{t("gallery.allPhotos")}</span>
                                 }
                             </button>
                         </div>
                         {/* Mobile View all button */}
                         <div className="md:hidden">
                             <Button variant="outline" className="w-full rounded-xl" onClick={() => setShowGallery(true)}>
-                                모든 사진 보기 ({listing.images.length})
+                                {t("gallery.viewAll", { count: listing.images.length })}
                             </Button>
                         </div>
                     </div>
@@ -190,7 +212,7 @@ export default function PropertyDetail() {
 
                         {/* About Section */}
                         <section className="space-y-4">
-                            <h2 className="text-2xl font-bold text-foreground">About This Home</h2>
+                            <h2 className="text-2xl font-bold text-foreground">{t("section.about")}</h2>
                             <p className="text-muted-foreground leading-relaxed whitespace-pre-line text-lg">
                                 {listing.about || listing.description}
                             </p>
@@ -198,7 +220,7 @@ export default function PropertyDetail() {
 
                         {/* Amenities Section */}
                         <section className="space-y-6 pt-8 border-t">
-                            <h2 className="text-2xl font-bold text-foreground">Amenities</h2>
+                            <h2 className="text-2xl font-bold text-foreground">{t("section.amenities")}</h2>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 {listing.amenities.map((amenity) => (
                                     <div
@@ -214,7 +236,7 @@ export default function PropertyDetail() {
 
                         {/* Host Section */}
                         <section className="space-y-6 pt-8 border-t">
-                            <h2 className="text-2xl font-bold text-foreground">마을 운영자</h2>
+                            <h2 className="text-2xl font-bold text-foreground">{t("section.operator")}</h2>
                             <div className="flex items-start gap-6 p-8 rounded-2xl bg-stone-50 border border-stone-100 shadow-sm transition-all hover:shadow-md">
                                 <img
                                     src={listing.hostImage}
@@ -225,7 +247,7 @@ export default function PropertyDetail() {
                                     <div className="flex items-center gap-3">
                                         <h3 className="text-xl font-bold text-stone-800">{listing.hostName}</h3>
                                         <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full border border-primary/20">
-                                            Superhost
+                                            {t("operator.superhost")}
                                         </span>
                                     </div>
                                     {listing.hostBio && <p className="text-stone-600 leading-relaxed italic">" {listing.hostBio} "</p>}
@@ -235,7 +257,7 @@ export default function PropertyDetail() {
 
                         {/* Location & Map Section */}
                         <section className="space-y-6 pt-8 border-t">
-                            <h2 className="text-2xl font-bold text-foreground">Location & Map</h2>
+                            <h2 className="text-2xl font-bold text-foreground">{t("section.location")}</h2>
 
                             <PropertyMap
                                 lat={listing.coordinates.lat}
@@ -267,7 +289,7 @@ export default function PropertyDetail() {
                         {/* Getting Here (Transport) Section */}
                         {listing.transportOptions.length > 0 && (
                             <section className="space-y-6 pt-8 border-t">
-                                <h2 className="text-2xl font-bold text-foreground">Getting Here</h2>
+                                <h2 className="text-2xl font-bold text-foreground">{t("section.transport")}</h2>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {listing.transportOptions.map((opt) => (
@@ -310,7 +332,7 @@ export default function PropertyDetail() {
                                                         "font-bold",
                                                         opt.estimatedCost === "무료" ? "text-primary" : "text-stone-700"
                                                     )}>
-                                                        {opt.estimatedCost}
+                                                        {opt.estimatedCost === "무료" ? t("transport.free") : opt.estimatedCost}
                                                     </span>
                                                 </div>
                                             </div>
@@ -326,7 +348,7 @@ export default function PropertyDetail() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                                             </svg>
-                                            Shuttle Pickup Points
+                                            {t("transport.pickupPoints")}
                                         </h3>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             {listing.pickupPoints.map((point) => (
@@ -343,7 +365,7 @@ export default function PropertyDetail() {
                                                         <p className="font-bold text-sm text-stone-800">{point.name}</p>
                                                         <p className="text-xs text-stone-500 mt-0.5">{point.description}</p>
                                                         <p className="text-xs text-primary font-semibold mt-1.5">
-                                                            숙소까지 {point.estimatedTimeToProperty}
+                                                            {t("transport.travelTime", { time: point.estimatedTimeToProperty })}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -358,7 +380,7 @@ export default function PropertyDetail() {
                         <section className="space-y-6 pt-8 border-t pb-12">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                                    Reviews <span className="text-lg font-medium text-stone-400">({listing.reviews.length})</span>
+                                    {t("section.reviews")} <span className="text-lg font-medium text-stone-400">({listing.reviews.length})</span>
                                 </h2>
                                 <div className="flex items-center gap-1 font-bold text-lg">★ {listing.rating}</div>
                             </div>
@@ -389,7 +411,7 @@ export default function PropertyDetail() {
                                 </div>
                             ) : (
                                 <div className="py-12 text-center bg-stone-50 rounded-2xl border border-dashed border-stone-200">
-                                    <p className="text-stone-400 font-medium">아직 리뷰가 없습니다. 첫 번째 게스트가 되어보세요.</p>
+                                    <p className="text-stone-400 font-medium">{t("reviews.empty")}</p>
                                 </div>
                             )}
                         </section>
@@ -404,7 +426,7 @@ export default function PropertyDetail() {
                                         <span className="text-3xl font-bold text-stone-900">
                                             ₩{listing.pricePerNight.toLocaleString()}
                                         </span>
-                                        <span className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-1">Per Night</span>
+                                        <span className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-1">{t("booking.perNight")}</span>
                                     </div>
                                     {listing.rating != null && (
                                         <div className="text-sm font-bold text-primary">★ {listing.rating}</div>
@@ -414,16 +436,16 @@ export default function PropertyDetail() {
                                 <div className="space-y-4 mb-8">
                                     <div className="grid grid-cols-2 gap-0 border border-stone-200 rounded-2xl overflow-hidden shadow-inner">
                                         <div className="p-4 border-r border-b bg-stone-50/50">
-                                            <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Check-in</label>
-                                            <div className="text-sm font-bold text-stone-700">Select date</div>
+                                            <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{t("booking.checkin")}</label>
+                                            <div className="text-sm font-bold text-stone-700">{t("booking.selectDates")}</div>
                                         </div>
                                         <div className="p-4 border-b bg-stone-50/50">
-                                            <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Check-out</label>
-                                            <div className="text-sm font-bold text-stone-700">Select date</div>
+                                            <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{t("booking.checkout")}</label>
+                                            <div className="text-sm font-bold text-stone-700">{t("booking.selectDates")}</div>
                                         </div>
                                         <div className="p-4 col-span-2 bg-stone-50/50 hover:bg-stone-100 transition-colors cursor-pointer">
-                                            <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Guests</label>
-                                            <div className="text-sm font-bold text-stone-700">Max {listing.maxGuests} guests</div>
+                                            <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{t("booking.guests")}</label>
+                                            <div className="text-sm font-bold text-stone-700">{t("booking.maxGuests", { count: listing.maxGuests })}</div>
                                         </div>
                                     </div>
 
@@ -433,16 +455,16 @@ export default function PropertyDetail() {
                                                 className="w-full h-14 text-xl font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                                                 onClick={() => navigate(`/book/${listing.id}`)}
                                             >
-                                                Reserve Now
+                                                {t("booking.reserve")}
                                             </Button>
                                             <p className="text-center text-[10px] text-stone-400 font-bold uppercase tracking-widest">
-                                                No charge until host approval
+                                                {t("booking.noCharge")}
                                             </p>
                                         </>
                                     ) : (
                                         <div className="w-full h-14 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center gap-0.5">
-                                            <span className="text-sm font-bold text-stone-400">펀딩 모집 중</span>
-                                            <span className="text-[10px] text-stone-300">펀딩 완료 후 예약이 오픈됩니다</span>
+                                            <span className="text-sm font-bold text-stone-400">{t("booking.fundingPending")}</span>
+                                            <span className="text-[10px] text-stone-300">{t("booking.fundingPendingNote")}</span>
                                         </div>
                                     )}
                                 </div>
@@ -454,18 +476,18 @@ export default function PropertyDetail() {
                                     </div>
                                     <div className="flex justify-between items-center text-stone-600">
                                         <div className="flex items-center gap-1">
-                                            <span>Transport Concierge</span>
+                                            <span>{t("booking.concierge")}</span>
                                             <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                             </svg>
                                         </div>
-                                        <span className="text-primary font-bold">Free</span>
+                                        <span className="text-primary font-bold">{t("booking.conciergePrice")}</span>
                                     </div>
                                     <div className="flex justify-between border-t border-stone-200 pt-4 text-base font-bold text-stone-900">
-                                        <span>Total</span>
+                                        <span>{t("booking.total")}</span>
                                         <span>₩{listing.pricePerNight.toLocaleString()}</span>
                                     </div>
-                                    <p className="text-xs text-stone-400 text-center">Select dates to see final price.</p>
+                                    <p className="text-xs text-stone-400 text-center">{t("booking.selectDates")}</p>
                                 </div>
 
                             </Card>
@@ -481,7 +503,7 @@ export default function PropertyDetail() {
                     <div className="sticky top-0 z-[110] flex justify-between items-center p-6 bg-black/40 backdrop-blur-md border-b border-white/10">
                         <div className="flex flex-col">
                             <h2 className="text-white text-xl font-bold">{listing.title}</h2>
-                            <p className="text-white/50 text-xs font-bold uppercase tracking-widest">Gallery Loop — {listing.images.length} Photos</p>
+                            <p className="text-white/50 text-xs font-bold uppercase tracking-widest">{t("gallery.loop", { count: listing.images.length })}</p>
                         </div>
                         <Button
                             variant="ghost"

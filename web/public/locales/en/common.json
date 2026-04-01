@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "findStay": "Find a Stay",
+    "hostHome": "Host your Home",
+    "invest": "Invest (RWA)",
+    "governance": "Governance",
+    "myPortfolio": "My Portfolio",
+    "login": "Login",
+    "logout": "Logout",
+    "logoutSuccess": "You have been logged out",
+    "logoutDesc": "See you next time!",
+    "admin": "Admin",
+    "verifyKyc": "Verify KYC",
+    "connectWallet": "Connect Wallet"
+  },
+  "footer": {
+    "tagline": "Empty homes, breathing again.",
+    "taglineSub": "We restore abandoned rural homes across Korea",
+    "taglineSub2": "and offer them as your own special retreat.",
+    "sections": {
+      "stays": "Stays",
+      "invest": "Invest",
+      "company": "Company",
+      "support": "Support"
+    },
+    "links": {
+      "findStay": "Find a Stay",
+      "hostHome": "Host your Home",
+      "featuredStays": "Featured Stays",
+      "investRwa": "RWA Investment",
+      "whitepaper": "Whitepaper",
+      "governance": "Governance",
+      "about": "About",
+      "blog": "Blog",
+      "press": "Press",
+      "careers": "Careers",
+      "helpCenter": "Help Center",
+      "safetyInfo": "Safety Info",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy"
+    },
+    "copyright": "Rural Rest Inc."
+  },
+  "error": {
+    "title": "An error occurred",
+    "details": "An unexpected error occurred. Please try again later.",
+    "404": "404 - Page not found",
+    "404Details": "The page you requested does not exist. Please check the URL.",
+    "403": "Access denied",
+    "403Details": "You do not have permission to access this page.",
+    "500": "Server error",
+    "500Details": "A server error occurred. Please try again later.",
+    "code": "Error {{code}}",
+    "devInfo": "View developer info"
+  },
+  "button": {
+    "backHome": "Back to Home",
+    "backPrev": "Previous page",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "close": "Close",
+    "loading": "Loading..."
+  }
+}

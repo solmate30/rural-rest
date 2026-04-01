@@ -4,6 +4,7 @@ import type { Route } from "./+types/governance.$id";
 import { fetchDaoConfig, fetchProposal, tryAutoFinalize, fetchActiveListingIds } from "~/lib/dao.onchain.server";
 import type { DaoConfigData, ProposalData } from "~/lib/dao.onchain.server";
 import ReactMarkdown from "react-markdown";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -209,6 +210,8 @@ export default function ProposalDetailPage() {
     const { daoConfig, proposal, activeListingIds, descriptionMarkdown } = useLoaderData<typeof loader>();
     const navigate = useNavigate();
     const revalidator = useRevalidator();
+    const { t, i18n } = useTranslation("governance");
+    const locale = i18n.language === "ko" ? "ko-KR" : "en-US";
     const isVoting = proposal.status === "voting";
     const now = Math.floor(Date.now() / 1000);
     const votingEnded = now > proposal.votingEndsAt;
@@ -226,7 +229,7 @@ export default function ProposalDetailPage() {
     const approvalPercent = votesCast > 0 ? Math.round((proposal.votesFor / votesCast) * 100) : 0;
 
     function formatDate(timestamp: number): string {
-        return new Date(timestamp * 1000).toLocaleDateString("ko-KR", {
+        return new Date(timestamp * 1000).toLocaleDateString(locale, {
             year: "numeric",
             month: "long",
             day: "numeric",
@@ -234,7 +237,7 @@ export default function ProposalDetailPage() {
     }
 
     function formatDateTime(timestamp: number): string {
-        return new Date(timestamp * 1000).toLocaleString("ko-KR", {
+        return new Date(timestamp * 1000).toLocaleString(locale, {
             month: "short",
             day: "numeric",
             hour: "2-digit",
@@ -256,7 +259,7 @@ export default function ProposalDetailPage() {
                     className="group flex items-center gap-1.5 text-[12px] font-bold tracking-widest uppercase text-[#A1887F] hover:text-[#8D6E63] transition-colors mb-6"
                 >
                     <span className="group-hover:-translate-x-1 transition-transform">&larr;</span>
-                    거버넌스 목록
+                    {t("detail.breadcrumb")}
                 </button>
 
                 <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
@@ -271,10 +274,10 @@ export default function ProposalDetailPage() {
                                 <Badge
                                     className={`text-[11px] px-3 py-1 rounded-sm font-bold uppercase tracking-wider ${STATUS_STYLES[proposal.status]}`}
                                 >
-                                    {STATUS_LABELS[proposal.status]}
+                                    {({ voting: t("card.statusVoting"), succeeded: t("card.statusSucceeded"), defeated: t("card.statusDefeated"), cancelled: t("card.statusCancelled") })[proposal.status]}
                                 </Badge>
                                 <span className="text-xs font-bold text-[#8D6E63] tracking-widest px-2 border-l border-[#D7CCC8]">
-                                    {CATEGORY_LABELS[proposal.category]}
+                                    {({ operations: t("card.catOperations"), guidelines: t("card.catGuidelines"), fundUsage: t("card.catFundUsage"), other: t("card.catOther") } as Record<string, string>)[proposal.category]}
                                 </span>
                             </div>
                             <h1 className="text-3xl sm:text-4xl font-bold text-[#3E2723] leading-tight tracking-tight">
@@ -285,26 +288,26 @@ export default function ProposalDetailPage() {
                         {/* 메타보드 */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-5 rounded-lg bg-white border border-[#D7CCC8]/50 shadow-sm">
                             <div>
-                                <p className="text-xs font-semibold text-[#8D6E63] mb-1">제안자</p>
+                                <p className="text-xs font-semibold text-[#8D6E63] mb-1">{t("detail.proposer")}</p>
                                 <p className="font-mono text-[13px] font-bold text-[#5D4037] bg-[#FAF9F6] px-2 py-0.5 rounded border border-[#D7CCC8]/30 inline-block">
                                     {truncateAddress(proposal.creator)}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-xs font-semibold text-[#8D6E63] mb-1">제안일</p>
+                                <p className="text-xs font-semibold text-[#8D6E63] mb-1">{t("detail.proposedAt")}</p>
                                 <p className="font-bold text-[14px] text-[#3E2723]">{formatDate(proposal.createdAt)}</p>
                             </div>
                             <div className="min-w-0">
-                                <p className="text-xs font-semibold text-[#8D6E63] mb-1">마감일</p>
+                                <p className="text-xs font-semibold text-[#8D6E63] mb-1">{t("detail.deadline")}</p>
                                 <p className="font-bold text-[13px] text-[#3E2723] truncate">{formatDateTime(proposal.votingEndsAt)}</p>
                             </div>
                             <div className="min-w-0">
                                 <p className={`text-xs font-semibold mb-1 ${isVoting ? 'text-[#FFAB91]' : 'text-[#8D6E63]'}`}>
-                                    {isVoting ? "남은 시간" : "종료"}
+                                    {isVoting ? t("detail.timeLeft") : t("detail.ended")}
                                 </p>
                                 <p className={`font-bold text-[13px] truncate ${isVoting ? "text-[#FFAB91]" : "text-[#3E2723]"}`}>
                                     {isVoting
-                                        ? formatTimeRemaining(proposal.votingEndsAt)
+                                        ? formatTimeRemaining(proposal.votingEndsAt, t as any)
                                         : formatDate(proposal.votingEndsAt)
                                     }
                                 </p>
@@ -315,7 +318,7 @@ export default function ProposalDetailPage() {
                         {(descriptionMarkdown || proposal.descriptionUri) && (
                             <div className="p-6 sm:p-8 rounded-lg bg-white border border-[#D7CCC8]/50 shadow-sm">
                                 <h3 className="text-[16px] font-bold text-[#3E2723] mb-5">
-                                    제안 상세 내용
+                                    {t("detail.body")}
                                 </h3>
 
                                 {descriptionMarkdown ? (
@@ -346,14 +349,14 @@ export default function ProposalDetailPage() {
                                                     rel="noopener noreferrer"
                                                     className="text-[12px] font-medium text-[#A1887F] hover:text-[#8D6E63] transition-colors underline underline-offset-2"
                                                 >
-                                                    원문 보기 &rarr;
+                                                    {t("detail.viewSource")} &rarr;
                                                 </a>
                                             </div>
                                         )}
                                     </>
                                 ) : proposal.descriptionUri ? (
                                     <div className="p-4 rounded-lg bg-[#FAF9F6] border border-[#D7CCC8]/40">
-                                        <p className="text-sm font-semibold text-[#8D6E63] mb-2">원문 링크 살펴보기:</p>
+                                        <p className="text-sm font-semibold text-[#8D6E63] mb-2">{t("detail.viewSourceLabel")}</p>
                                         <a
                                             href={proposal.descriptionUri}
                                             target="_blank"
@@ -370,7 +373,7 @@ export default function ProposalDetailPage() {
                         {/* 투표 현황 + 투표하기 (모바일) */}
                         <div className="lg:hidden rounded-lg bg-white border border-[#D7CCC8]/50 shadow-sm p-6">
                             <h3 className="text-[16px] font-bold text-[#3E2723] mb-5">
-                                투표 현황
+                                {t("detail.voteStatus")}
                             </h3>
                             <VotingProgressBar
                                 votesFor={proposal.votesFor}
@@ -382,18 +385,18 @@ export default function ProposalDetailPage() {
                             />
                             {votesCast > 0 && (
                                 <div className="mt-5 pt-4 border-t border-[#D7CCC8]/30 flex items-center justify-between text-sm">
-                                    <span className="font-semibold text-[#8D6E63]">현재 찬성률</span>
+                                    <span className="font-semibold text-[#8D6E63]">{t("detail.approvalRate")}</span>
                                     <div className="flex items-center gap-2 text-[13px] bg-[#FAF9F6] px-3 py-1.5 rounded border border-[#D7CCC8]/40">
                                         <span className="font-bold text-[#8D6E63] text-[15px]">{approvalPercent}%</span>
                                         <span className="text-[#D7CCC8]">/</span>
-                                        <span className="font-medium text-[#A1887F]">가결 기준 {daoConfig.approvalThresholdBps / 100}%</span>
+                                        <span className="font-medium text-[#A1887F]">{t("detail.approvalThreshold", { pct: daoConfig.approvalThresholdBps / 100 })}</span>
                                     </div>
                                 </div>
                             )}
                             {isVoting && !votingEnded && (
                                 <div className="mt-6 pt-6 border-t border-[#D7CCC8]/40">
                                     <h3 className="text-[16px] font-bold text-[#3E2723] mb-5">
-                                        투표하기
+                                        {t("detail.vote")}
                                     </h3>
                                     <VotePanel
                                         proposal={proposal}
@@ -412,7 +415,7 @@ export default function ProposalDetailPage() {
                             <div className="hidden lg:block rounded-lg bg-white border border-[#D7CCC8]/50 shadow-sm p-6">
                                 {/* 투표 현황 */}
                                 <h3 className="text-[16px] font-bold text-[#3E2723] mb-5">
-                                    투표 현황
+                                    {t("detail.voteStatus")}
                                 </h3>
                                 <VotingProgressBar
                                     votesFor={proposal.votesFor}
@@ -424,11 +427,11 @@ export default function ProposalDetailPage() {
                                 />
                                 {votesCast > 0 && (
                                     <div className="mt-5 pt-4 border-t border-[#D7CCC8]/30 flex items-center justify-between">
-                                        <span className="text-xs font-semibold text-[#8D6E63]">현재 찬성률</span>
+                                        <span className="text-xs font-semibold text-[#8D6E63]">{t("detail.approvalRate")}</span>
                                         <div className="flex items-center gap-2 text-xs bg-[#FAF9F6] px-2 py-1 rounded border border-[#D7CCC8]/40">
                                             <span className="font-bold text-[#8D6E63] text-[14px]">{approvalPercent}%</span>
                                             <span className="text-[#D7CCC8]">/</span>
-                                            <span className="text-[#A1887F]">가결 기준 {daoConfig.approvalThresholdBps / 100}%</span>
+                                            <span className="text-[#A1887F]">{t("detail.approvalThreshold", { pct: daoConfig.approvalThresholdBps / 100 })}</span>
                                         </div>
                                     </div>
                                 )}
@@ -437,7 +440,7 @@ export default function ProposalDetailPage() {
                                 {isVoting && !votingEnded && (
                                     <div className="mt-6 pt-6 border-t border-[#D7CCC8]/40">
                                         <h3 className="text-[16px] font-bold text-[#3E2723] mb-5">
-                                            투표하기
+                                            {t("detail.vote")}
                                         </h3>
                                         <VotePanel
                                             proposal={proposal}
