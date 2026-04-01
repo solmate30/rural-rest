@@ -10,6 +10,7 @@ import { DateTime } from "luxon";
 import type { Route } from "./+types/admin.dashboard";
 import { InitializePropertyButton } from "~/components/rwa/InitializePropertyButton";
 import { ReleaseFundsButton } from "~/components/rwa/ReleaseFundsButton";
+import { syncFundingStatuses } from "~/lib/rwa.server";
 
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -49,6 +50,11 @@ import { TOTAL_SUPPLY, KRW_PER_USDC } from "~/lib/constants";
 export async function loader({ request }: Route.LoaderArgs) {
     await requireUser(request, ["admin"]);
 
+    // 데드라인 지난 funding 매물 상태 동기화 (온체인 기준)
+    await syncFundingStatuses().catch((e) =>
+        console.warn("[admin.dashboard] syncFundingStatuses 실패:", e?.message)
+    );
+
     const allListings = await getHostListings("", "admin");
 
     const [investorCountRow] = await db
@@ -65,7 +71,7 @@ export async function loader({ request }: Route.LoaderArgs) {
         .select({ count: sql<number>`count(*)` })
         .from(userTable);
 
-    // 데드라인 경과 + 목표 미달 → 유효 상태를 "failed"로 보정
+    // 데드라인 경과 시 목표 달성 여부에 따라 표시 상태 보정 (DB 업데이트와 별개)
     const now = Date.now();
     for (const l of allListings) {
         if (l.tokenMint && l.tokenStatus === "funding" && l.fundingDeadline) {
@@ -76,6 +82,9 @@ export async function loader({ request }: Route.LoaderArgs) {
                     : 0;
                 if (progress < l.minFundingBps) {
                     l.tokenStatus = "failed";
+                } else {
+                    // 목표 달성 + 기간 종료 → funded로 표시 (DB sync는 syncFundingStatuses가 처리)
+                    l.tokenStatus = "funded";
                 }
             }
         }
@@ -290,6 +299,29 @@ function ListingSheet({
     onOpenChange: (open: boolean) => void;
     isUnsettled: boolean;
 }) {
+    const [forceFundStatus, setForceFundStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+    const [forceFundError, setForceFundError] = useState("");
+
+    async function handleForceFund() {
+        if (!listing?.rwaTokenId) return;
+        setForceFundStatus("loading");
+        setForceFundError("");
+        try {
+            const res = await fetch("/api/admin/force-fund", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rwaTokenId: listing.rwaTokenId }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? "전환 실패");
+            setForceFundStatus("done");
+            setTimeout(() => window.location.reload(), 800);
+        } catch (e: any) {
+            setForceFundError(e.message);
+            setForceFundStatus("error");
+        }
+    }
+
     const [minFundingPct, setMinFundingPct] = useState(60);
     const [deadlineStr, setDeadlineStr] = useState("");
 
@@ -457,11 +489,35 @@ function ListingSheet({
                             <Separator />
 
                             {/* Actions */}
+                            {listing.tokenStatus === "funding" && listing.rwaTokenId && (
+                                <div className="space-y-2">
+                                    <p className="text-xs text-stone-400 font-medium">관리자 수동 전환</p>
+                                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 leading-relaxed">
+                                        온체인 validator 없이 DB 상태만 강제로 <span className="font-bold">펀딩 완료</span>로 전환합니다.
+                                        이후 지갑 연결 후 "운영 시작" 버튼으로 on-chain 처리하세요.
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+                                        onClick={handleForceFund}
+                                        disabled={forceFundStatus === "loading" || forceFundStatus === "done"}
+                                    >
+                                        {forceFundStatus === "loading" ? "처리 중..." :
+                                         forceFundStatus === "done" ? "완료 — 새로고침 중..." :
+                                         "펀딩 완료로 수동 전환"}
+                                    </Button>
+                                    {forceFundStatus === "error" && (
+                                        <p className="text-xs text-red-500">{forceFundError}</p>
+                                    )}
+                                </div>
+                            )}
+
                             {listing.tokenStatus === "funded" && (
                                 <div>
-                                    <p className="text-sm font-semibold text-[#4a3b2c] mb-1">자금 인출 + 운영 시작</p>
+                                    <p className="text-sm font-semibold text-[#4a3b2c] mb-1">운영 전환</p>
                                     <p className="text-xs text-stone-400 mb-3">
-                                        펀딩 목표 달성. 자금 인출 시 예약이 오픈되고 배당이 시작됩니다.
+                                        펀딩이 완료된 매물입니다. 투자금을 수령하고 예약·배당을 시작하세요.
                                     </p>
                                     <ReleaseFundsButton
                                         listingId={listing.id}

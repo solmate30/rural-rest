@@ -101,6 +101,21 @@ export async function loader({ params }: Route.LoaderArgs) {
         row.tokensSold = onchain.tokensSold;
     }
 
+    // deadline 지난 + 목표 달성이면 on-chain releaseFunds 전이라도 "funded"로 표시
+    // (on-chain status는 releaseFunds 호출 전까지 "funding"으로 유지됨)
+    if (row.status === "funding" && row.fundingDeadline) {
+        const deadlineTs = row.fundingDeadline instanceof Date
+            ? row.fundingDeadline.getTime()
+            : Number(row.fundingDeadline) * 1000;
+        if (Date.now() > deadlineTs) {
+            const soldCount = onchain ? onchain.tokensSold : row.tokensSold;
+            const minRequired = Math.floor((row.totalSupply * row.minFundingBps) / 10000);
+            if (soldCount >= minRequired) {
+                row.status = "funded" as typeof row.status;
+            }
+        }
+    }
+
     const hostUser = await db
         .select({ name: user.name })
         .from(user)
