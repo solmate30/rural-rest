@@ -59,6 +59,8 @@ pub enum RwaError {
     DeadlineTooFar,                 // 6017
     #[msg("Funding period is still open. Wait until deadline passes.")]
     FundingStillOpen,               // 6018
+    #[msg("Invalid crank authority.")]
+    InvalidCrankAuthority,          // 6019
 }
 
 // =====================
@@ -104,6 +106,50 @@ pub struct InvestorPosition {
     pub amount: u64,
     pub reward_debt: u128,
     pub bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct RwaConfig {
+    pub authority: Pubkey,
+    pub crank_authority: Pubkey,  // Pubkey::default() = 비활성
+    pub bump: u8,
+}
+
+// =====================
+// initialize_config
+// =====================
+#[derive(Accounts)]
+pub struct InitializeConfig<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + RwaConfig::INIT_SPACE,
+        seeds = [b"rwa_config"],
+        bump,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
+
+    pub system_program: Program<'info, System>,
+}
+
+// =====================
+// set_crank_authority
+// =====================
+#[derive(Accounts)]
+pub struct SetCrankAuthority<'info> {
+    #[account(
+        mut,
+        seeds = [b"rwa_config"],
+        bump = rwa_config.bump,
+        has_one = authority,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
+
+    pub authority: Signer<'info>,
 }
 
 // =====================
@@ -267,12 +313,18 @@ pub struct ReleaseFunds<'info> {
         mut,
         seeds = [b"property", listing_id.as_bytes()],
         bump = property_token.bump,
-        has_one = authority,
     )]
     pub property_token: Account<'info, PropertyToken>,
 
+    /// authority 또는 crank_authority
     #[account(mut)]
-    pub authority: Signer<'info>,
+    pub operator: Signer<'info>,
+
+    #[account(
+        seeds = [b"rwa_config"],
+        bump = rwa_config.bump,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
 
     #[account(
         mut,
@@ -284,10 +336,11 @@ pub struct ReleaseFunds<'info> {
     )]
     pub funding_vault: InterfaceAccount<'info, TokenAccount>,
 
+    /// USDC 수신: 항상 property authority의 계좌 (signer와 무관)
     #[account(
         mut,
         token::mint = usdc_mint,
-        token::authority = authority,
+        token::authority = property_token.authority,
         token::token_program = usdc_token_program,
     )]
     pub authority_usdc_account: InterfaceAccount<'info, TokenAccount>,
@@ -422,11 +475,17 @@ pub struct ActivateProperty<'info> {
         mut,
         seeds = [b"property", listing_id.as_bytes()],
         bump = property_token.bump,
-        has_one = authority,
     )]
     pub property_token: Account<'info, PropertyToken>,
 
-    pub authority: Signer<'info>,
+    /// authority 또는 crank_authority
+    pub operator: Signer<'info>,
+
+    #[account(
+        seeds = [b"rwa_config"],
+        bump = rwa_config.bump,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
 
     #[account(mut, address = property_token.token_mint)]
     pub token_mint: InterfaceAccount<'info, Mint>,
@@ -527,6 +586,24 @@ pub struct ClaimDividend<'info> {
 #[program]
 pub mod rural_rest_rwa {
     use super::*;
+
+    /// RwaConfig 초기화 (1회성). authority 설정, crank은 비활성 상태로 시작.
+    pub fn initialize_config(ctx: Context<InitializeConfig>) -> Result<()> {
+        let config = &mut ctx.accounts.rwa_config;
+        config.authority = ctx.accounts.authority.key();
+        config.crank_authority = Pubkey::default();
+        config.bump = ctx.bumps.rwa_config;
+        Ok(())
+    }
+
+    /// crank_authority 설정/교체. authority만 호출 가능.
+    pub fn set_crank_authority(
+        ctx: Context<SetCrankAuthority>,
+        new_crank: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.rwa_config.crank_authority = new_crank;
+        Ok(())
+    }
 
     pub fn initialize_property(
         ctx: Context<InitializeProperty>,
@@ -717,12 +794,20 @@ pub mod rural_rest_rwa {
         Ok(())
     }
 
-    // 펀딩 성공 시 에스크로 해제 → 운영자 계좌로 송금 (운영자 전용)
+    // 펀딩 성공 시 에스크로 해제 → 운영자 계좌로 송금 (authority 또는 crank)
     // 조건: 완판(Funded) OR (deadline 경과 + 최소 판매율 달성)
     pub fn release_funds(
         ctx: Context<ReleaseFunds>,
         listing_id: String,
     ) -> Result<()> {
+        // operator 검증: authority 또는 crank_authority
+        let op = ctx.accounts.operator.key();
+        require!(
+            op == ctx.accounts.property_token.authority
+                || op == ctx.accounts.rwa_config.crank_authority,
+            RwaError::Unauthorized
+        );
+
         let property = &ctx.accounts.property_token;
 
         // 중복 호출 방지
@@ -900,6 +985,14 @@ pub mod rural_rest_rwa {
         ctx: Context<ActivateProperty>,
         listing_id: String,
     ) -> Result<()> {
+        // operator 검증: authority 또는 crank_authority
+        let op = ctx.accounts.operator.key();
+        require!(
+            op == ctx.accounts.property_token.authority
+                || op == ctx.accounts.rwa_config.crank_authority,
+            RwaError::Unauthorized
+        );
+
         let property = &mut ctx.accounts.property_token;
         require!(property.status == PropertyStatus::Funded, RwaError::InvalidStatus);
         property.status = PropertyStatus::Active;

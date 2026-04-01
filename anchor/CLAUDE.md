@@ -127,7 +127,7 @@ cp target/idl/rural_rest_dao.json web/app/anchor-idl/
 |-------------|--------|-----------|
 | `initialize_dao` | authority | DaoConfig 초기화 |
 | `create_proposal` | creator (Council Token) | Proposal 생성, total_eligible_weight 스냅샷 |
-| `cast_vote` | voter | VoteRecord 생성, 투표권 합산 + 10% 캡 |
+| `cast_vote` | voter | VoteRecord 생성, RWA+Council 투표권 합산, voter_count 증가 |
 | `finalize_proposal` | 누구나 | 정족수/가결 판정, status 변경 |
 | `cancel_proposal` | creator or authority | status → Cancelled |
 
@@ -135,7 +135,7 @@ cp target/idl/rural_rest_dao.json web/app/anchor-idl/
 
 - **NEVER** RWA 프로그램에 CPI 호출 — InvestorPosition/PropertyToken은 remaining accounts로 **읽기만**
 - **ALWAYS** remaining accounts의 각 account를 역직렬화 후 owner/status 검증
-- **ALWAYS** 투표권 계산에 `checked_*` 산술 사용, 캡 적용은 `min(raw, cap)`
+- **ALWAYS** 투표권 계산에 `checked_*` 산술 사용 (cap은 voting_cap_bps로 설정, MVP=10000 즉 cap 없음)
 - **ALWAYS** VoteRecord PDA로 중복 투표 방지 (init constraint)
 
 ### Remaining Accounts 패턴
@@ -143,13 +143,15 @@ cp target/idl/rural_rest_dao.json web/app/anchor-idl/
 `cast_vote`:
 ```
 remaining_accounts: [InvestorPosition_1, InvestorPosition_2, ...]
-→ 각 account: owner == voter 검증 + amount 합산 → 캡 적용
++ voter_council_ata (Optional) → Council Token 잔액 합산
+→ RWA amount + Council amount 합산 → voting_cap_bps 적용 (MVP: 10000 = cap 없음)
 ```
 
 `create_proposal`:
 ```
 remaining_accounts: [PropertyToken_1, PropertyToken_2, ...]
-→ 각 account: status == Active 검증 + tokens_sold 합산 → total_eligible_weight
++ council_mint (named account)
+→ tokens_sold 합산 + council_mint.supply → total_eligible_weight
 ```
 
 ### 판정 로직
@@ -172,6 +174,7 @@ approval = votes_for >= (votes_for + votes_against) * approval_threshold_bps / 1
 
 | 결정 | 내용 | 이유 |
 |------|------|------|
+| Council Token 투표권 | Council Token 보유자도 cast_vote로 투표 가능 (1:1 가중치) | 마을/지자체는 RWA 미보유, 운영 주체의 공식 의사 표현 필요 |
 | RWA 토큰 양도 불가 | `non_transferable` extension 적용 | 2차 시장 미지원, investor_position PDA 불일치 버그 방지 |
 | `open_position` 분리 | `init_if_needed` → `open_position` + `purchase_tokens` 분리 | 재초기화 공격 방지, 명시적 constraint |
 | `funds_released: bool` | `PropertyToken`에 필드 추가 | `release_funds` 중복 호출 방지 |
@@ -182,6 +185,8 @@ approval = votes_for >= (votes_for + votes_against) * approval_threshold_bps / 1
 | `authority` 신뢰 모델 | `net_revenue_usdc` 수동 입력 허용 | 오프체인 임대 수익 검증은 계약으로 처리, 온체인 oracle 미도입 |
 | 월별 중복 분배 허용 | `distribute_monthly_revenue` 호출 횟수 제한 없음 | authority 신뢰 + 운영 유연성 우선 |
 | mainnet: Squads multisig | authority → multisig 전환 필수 | single key 해킹/분실 시 자금 위험 |
+| voting_cap_bps MVP=10000 | 개인 투표 캡 제거, 완전 토큰 비례 투표 | MVP 단계에서 기관 투자자 없음; 향후 기관 cap 별도 도입 예정 |
+| voter_count 온체인 저장 | Proposal에 `voter_count: u32` 추가, cast_vote 시 +1 | UI에서 "X표 / 전체 Y표 (Z명 참여)" 표시 위해 RPC 추가 호출 없이 조회 |
 | mainnet: audit 필수 | Sec3 + OtterSec | 실제 투자금 보호 |
 
 ---
