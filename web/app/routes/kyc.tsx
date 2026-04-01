@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import { useKyc } from "../components/KycProvider";
 import { Button, Card, Header, Footer } from "../components/ui-mockup";
 import { authClient } from "~/lib/auth.client";
@@ -17,6 +18,7 @@ export default function KycRoute() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const returnUrl = searchParams.get("return") ?? "/invest";
+    const { t } = useTranslation("kyc");
 
     const { isKycCompleted, completeKyc } = useKyc();
     const sessionRes = authClient?.useSession();
@@ -113,14 +115,14 @@ export default function KycRoute() {
                     <div className={`flex-col space-y-8 animate-in fade-in slide-in-from-left-8 duration-700 pt-8 ${step === "intro" ? "hidden lg:flex" : "hidden"}`}>
                         <div>
                             <span className="inline-block px-3 py-1 mb-4 text-xs font-bold text-[#17cf54] bg-[#17cf54]/10 border border-[#17cf54]/20 rounded-full tracking-widest uppercase">
-                                Security First
+                                {t("badge")}
                             </span>
                             <h1 className="text-4xl md:text-5xl font-bold text-foreground leading-[1.2]">
-                                안전하고 투명한<br />
-                                <span className="text-[#8D6E63] font-['Gaegu'] text-5xl md:text-6xl mt-2 block">RWA 조각 투자</span>
+                                {t("heading1")}<br />
+                                <span className="text-[#8D6E63] font-['Gaegu'] text-5xl md:text-6xl mt-2 block">{t("heading2")}</span>
                             </h1>
                             <p className="mt-6 text-stone-500 text-lg max-w-md leading-relaxed">
-                                루럴 레스트는 관련 법령을 철저히 준수하며, 블록체인 기술을 통해 위변조 불가능하고 투명한 소유권 증명을 제공합니다.
+                                {t("desc")}
                             </p>
                         </div>
 
@@ -130,8 +132,8 @@ export default function KycRoute() {
                                     <span className="material-symbols-outlined text-[#17cf54] text-[24px]">verified_user</span>
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-stone-800">철저한 신원 확인</h3>
-                                    <p className="text-sm text-stone-500 mt-1">안전한 금융 거래를 위해 모든 투자자의 신원을 사전에 확인합니다.</p>
+                                    <h3 className="font-bold text-stone-800">{t("feature.identity.title")}</h3>
+                                    <p className="text-sm text-stone-500 mt-1">{t("feature.identity.desc")}</p>
                                 </div>
                             </div>
                             <div className="flex gap-4 group cursor-default">
@@ -139,8 +141,8 @@ export default function KycRoute() {
                                     <span className="material-symbols-outlined text-amber-500 text-[24px]">lock</span>
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-stone-800">개인정보 보호</h3>
-                                    <p className="text-sm text-stone-500 mt-1">수집된 정보는 암호화되어 분리 관리되며 다른 목적으로 사용되지 않습니다.</p>
+                                    <h3 className="font-bold text-stone-800">{t("feature.privacy.title")}</h3>
+                                    <p className="text-sm text-stone-500 mt-1">{t("feature.privacy.desc")}</p>
                                 </div>
                             </div>
                             <div className="flex gap-4 group cursor-default">
@@ -148,8 +150,8 @@ export default function KycRoute() {
                                     <span className="material-symbols-outlined text-[#ab9ff2] text-[24px]">account_balance_wallet</span>
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-stone-800">Web3 지갑 연동</h3>
-                                    <p className="text-sm text-stone-500 mt-1">KYC 완료 후 본인 소유의 디지털 지갑을 연결해 배당금을 직접 수령합니다.</p>
+                                    <h3 className="font-bold text-stone-800">{t("feature.wallet.title")}</h3>
+                                    <p className="text-sm text-stone-500 mt-1">{t("feature.wallet.desc")}</p>
                                 </div>
                             </div>
                         </div>
@@ -168,28 +170,28 @@ export default function KycRoute() {
                                             <span className="material-symbols-outlined text-[40px] text-stone-600">badge</span>
                                         </div>
                                         <div>
-                                            <h1 className="text-2xl font-bold text-foreground font-['Gaegu']">투자를 위한 실명 인증 (KYC)</h1>
+                                            <h1 className="text-2xl font-bold text-foreground font-['Gaegu']">{t("form.title")}</h1>
                                             <p className="text-stone-500 text-sm max-w-xs mx-auto mt-2">
-                                                부동산 조각 투자를 위해서는 관련 법률에 따라 본인 확인 및 신분증 제출이 필수적입니다.
+                                                {t("form.desc")}
                                             </p>
                                         </div>
                                         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 items-start text-left">
                                             <span className="material-symbols-outlined text-amber-600 mt-0.5 text-[18px]">lock</span>
                                             <p className="text-xs text-amber-800 leading-relaxed">
-                                                수집된 신분증 정보는 본인 확인 용도로만 사용됩니다.
+                                                {t("form.privacy")}
                                             </p>
                                         </div>
                                         <Button
                                             className="w-full h-12 text-md font-bold bg-[#8D6E63] hover:bg-[#7a5e55] text-white"
                                             onClick={handleStartScan}
                                         >
-                                            신분증 스캔 시작하기
+                                            {t("form.start")}
                                         </Button>
                                         <button
                                             className="text-xs font-bold text-stone-400 hover:text-stone-600 transition-colors"
                                             onClick={() => navigate("/")}
                                         >
-                                            나중에 하기 (홈으로)
+                                            {t("form.later")}
                                         </button>
                                     </div>
                                 )}
@@ -209,8 +211,8 @@ export default function KycRoute() {
                                             `}</style>
                                         </div>
                                         <div>
-                                            <h2 className="text-xl font-bold text-foreground">신분증 스캔 중...</h2>
-                                            <p className="text-sm text-stone-500 mt-1">카메라에 신분증을 맞춰주세요.</p>
+                                            <h2 className="text-xl font-bold text-foreground">{t("scan.title")}</h2>
+                                            <p className="text-sm text-stone-500 mt-1">{t("scan.instruction")}</p>
                                         </div>
                                     </div>
                                 )}
@@ -221,8 +223,8 @@ export default function KycRoute() {
                                             <span className="material-symbols-outlined text-[48px] text-[#17cf54]">check_circle</span>
                                         </div>
                                         <div>
-                                            <h2 className="text-2xl font-bold text-foreground">인증 완료!</h2>
-                                            <p className="text-sm text-stone-500 mt-1">잠시 후 지갑 준비 단계로 이동합니다...</p>
+                                            <h2 className="text-2xl font-bold text-foreground">{t("done.title")}</h2>
+                                            <p className="text-sm text-stone-500 mt-1">{t("done.message")}</p>
                                         </div>
                                     </div>
                                 )}
@@ -233,15 +235,15 @@ export default function KycRoute() {
                                             <span className="material-symbols-outlined text-[40px] text-[#ab9ff2]">account_balance_wallet</span>
                                         </div>
                                         <div>
-                                            <h2 className="text-2xl font-bold text-foreground">수익금을 받을 지갑 준비하기</h2>
+                                            <h2 className="text-2xl font-bold text-foreground">{t("wallet.title")}</h2>
                                         </div>
                                         <div className="text-stone-600 text-sm bg-stone-50 p-4 rounded-2xl text-left border border-stone-100 space-y-3">
                                             <p>
-                                                소유권과 매월 임대 수익금은 <b>개인 디지털 지갑</b>으로 직접 지급됩니다.
+                                                {t("wallet.message")}
                                             </p>
                                             <p className="text-xs text-stone-500 flex items-start gap-2 pt-2 border-t border-stone-200">
                                                 <span className="material-symbols-outlined text-[16px] shrink-0 mt-0.5 text-stone-400">info</span>
-                                                <span>솔라나(Solana) 네트워크를 지원하는 지갑(예: Solflare)이 필요합니다.</span>
+                                                <span>{t("wallet.info")}</span>
                                             </p>
                                         </div>
                                         <div className="space-y-2 w-full">
@@ -249,20 +251,20 @@ export default function KycRoute() {
                                                 className="w-full h-12 text-md font-bold bg-[#17cf54] hover:bg-[#14b847] text-white shadow-md"
                                                 onClick={() => setVisible(true)}
                                             >
-                                                지갑 연결하기
+                                                {t("wallet.connect")}
                                             </Button>
                                             <Button
                                                 variant="outline"
                                                 className="w-full h-12 text-md font-bold text-stone-600 border-stone-300 hover:bg-stone-50"
                                                 onClick={() => window.open("https://solflare.com/", "_blank")}
                                             >
-                                                지갑이 없다면?
+                                                {t("wallet.getWallet")}
                                             </Button>
                                             <button
                                                 className="text-xs font-bold text-stone-400 hover:text-stone-600 transition-colors underline underline-offset-4"
                                                 onClick={handleFinishKycOnly}
                                             >
-                                                지갑 연결은 나중에 할게요
+                                                {t("wallet.skip")}
                                             </button>
                                         </div>
                                     </div>

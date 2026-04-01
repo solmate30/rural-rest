@@ -1,0 +1,50 @@
+{
+  "badge": {
+    "heritage": "Heritage Stay"
+  },
+  "rating": {
+    "noReview": "No reviews yet",
+    "reviews": "{{count}} reviews"
+  },
+  "gallery": {
+    "morePhotos": "+{{count}} Photos",
+    "allPhotos": "All Photos",
+    "viewAll": "View all photos ({{count}})",
+    "loop": "Gallery — {{count}} Photos"
+  },
+  "section": {
+    "about": "About This Home",
+    "amenities": "Amenities",
+    "operator": "Village Operator",
+    "location": "Location & Map",
+    "transport": "Getting Here",
+    "reviews": "Reviews",
+    "booking": "Reserve"
+  },
+  "operator": {
+    "superhost": "Superhost"
+  },
+  "transport": {
+    "free": "Free",
+    "pickupPoints": "Shuttle Pickup Points",
+    "travelTime": "{{time}} to property"
+  },
+  "reviews": {
+    "empty": "No reviews yet. Be the first guest!"
+  },
+  "booking": {
+    "perNight": "/ night",
+    "checkin": "Check-in",
+    "checkout": "Check-out",
+    "guests": "Guests",
+    "maxGuests": "Max {{count}} guests",
+    "reserve": "Reserve Now",
+    "noCharge": "No charge until host approval",
+    "fundingPending": "Funding in Progress",
+    "fundingPendingNote": "Bookings open after funding is complete",
+    "concierge": "Transport Concierge",
+    "conciergePrice": "Free",
+    "total": "Total",
+    "selectDates": "Select dates to see final price."
+  }
+}

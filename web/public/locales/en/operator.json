@@ -1,0 +1,34 @@
+{
+  "title": "Operations Dashboard",
+  "subtitle": "{{count}} properties assigned",
+  "stats": {
+    "monthlyRevenue": "This Month's Revenue",
+    "pendingBookings": "Pending Bookings",
+    "todayCheckin": "Check-ins Today",
+    "occupancy30d": "Occupancy (30d)"
+  },
+  "status": {
+    "pending": "Pending",
+    "confirmed": "Confirmed",
+    "cancelled": "Cancelled",
+    "completed": "Completed",
+    "auto": "Auto-paid",
+    "processing": "Processing"
+  },
+  "section": {
+    "pending": "Pending Bookings",
+    "pendingCount": "{{count}} bookings",
+    "upcoming": "Upcoming Check-ins",
+    "settlementWallet": "Settlement Wallet",
+    "settlementHistory": "Settlement History",
+    "listings": "Assigned Properties",
+    "noListings": "No properties assigned yet."
+  },
+  "settlement": {
+    "detail": "{{month}} · Revenue {{revenue}} · Profit {{profit}}"
+  },
+  "listing": {
+    "perNight": "/ night",
+    "view": "View"
+  }
+}

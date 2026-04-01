@@ -85,6 +85,9 @@ describe("rural-rest-rwa", () => {
   let usdcVault2: PublicKey;
   let investorRwaAccount2: PublicKey;
 
+  // RwaConfig PDA (crank authority 관리)
+  let rwaConfig: PublicKey;
+
   // -------------------------------------------------------
   // 시나리오 C: gyeongju-003 (AuthorityCannotInvest)
   // 목표: 매물 등록자(authority)가 자기 매물에 투자할 수 없음을 검증
@@ -233,6 +236,23 @@ describe("rural-rest-rwa", () => {
     );
     usdcVault5 = getAssociatedTokenAddressSync(usdcMint, propertyToken5, true, TOKEN_PROGRAM_ID);
     tokenMintKeypair5 = Keypair.generate();
+
+    // RwaConfig PDA
+    [rwaConfig] = PublicKey.findProgramAddressSync(
+      [Buffer.from("rwa_config")],
+      program.programId
+    );
+
+    // RwaConfig 초기화
+    await program.methods
+      .initializeConfig()
+      .accounts({
+        authority: authority.publicKey,
+        rwaConfig,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([authority])
+      .rpc();
   });
 
   // -------------------------------------------------------
@@ -240,8 +260,8 @@ describe("rural-rest-rwa", () => {
   // -------------------------------------------------------
   it("1. initialize_property", async () => {
     // Date.now()는 밀리초 단위이므로 /1000으로 초로 변환 (Solana 타임스탬프는 Unix 초 단위)
-    // 60일 = 60 * 24 * 3600초
-    const deadline = new anchor.BN(Math.floor(Date.now() / 1000) + 60 * 24 * 3600);
+    // 8초: 완판 후 deadline 경과를 기다려 release_funds 테스트 가능
+    const deadline = new anchor.BN(Math.floor(Date.now() / 1000) + 8);
 
     await program.methods
       .initializeProperty(listingId, TOTAL_SUPPLY, VALUATION_KRW, PRICE_PER_TOKEN, deadline, MIN_FUNDING_BPS)
@@ -364,7 +384,8 @@ describe("rural-rest-rwa", () => {
         .activateProperty(listingId)
         .accounts({
           propertyToken,
-          authority: authority.publicKey,
+          operator: authority.publicKey,
+          rwaConfig,
           tokenMint: tokenMintKeypair.publicKey,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
@@ -434,14 +455,18 @@ describe("rural-rest-rwa", () => {
 
     const property = await program.account.propertyToken.fetch(propertyToken);
     assert.equal(property.tokensSold.toNumber(), 10);
-    assert.deepEqual(property.status, { funded: {} });
-    console.log("    tokens_sold = 10/10, status = Funded");
+    // 완판해도 deadline 경과 전까지 Funding 유지 (투자자 취소 보장)
+    assert.deepEqual(property.status, { funding: {} });
+    console.log("    tokens_sold = 10/10, status = Funding (deadline 대기 중)");
   });
 
   // -------------------------------------------------------
-  // 6. release_funds — 완판 후 에스크로 해제
+  // 6. release_funds — 완판 + deadline 경과 후 에스크로 해제
   // -------------------------------------------------------
   it("6. release_funds — 완판 후 운영자 계좌로 송금", async () => {
+    // deadline(8초) 경과 대기
+    await sleep(9000);
+
     // before/after 패턴: 호출 전후의 잔액 차이로 실제 이체 금액을 검증한다
     const before = await connection.getTokenAccountBalance(authorityUsdcAccount);
 
@@ -451,7 +476,8 @@ describe("rural-rest-rwa", () => {
       .releaseFunds(listingId)
       .accounts({
         propertyToken,
-        authority: authority.publicKey,
+        operator: authority.publicKey,
+        rwaConfig,
         fundingVault,            // 에스크로 볼트 (USDC 출처)
         authorityUsdcAccount,    // authority 수령 계좌
         usdcMint,
@@ -479,7 +505,8 @@ describe("rural-rest-rwa", () => {
       .activateProperty(listingId)
       .accounts({
         propertyToken,
-        authority: authority.publicKey,
+        operator: authority.publicKey,
+        rwaConfig,
         tokenMint: tokenMintKeypair.publicKey,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
@@ -842,7 +869,8 @@ describe("rural-rest-rwa", () => {
         .releaseFunds(listingId)
         .accounts({
           propertyToken,
-          authority: authority.publicKey,
+          operator: authority.publicKey,
+          rwaConfig,
           fundingVault,
           authorityUsdcAccount,
           usdcMint,
@@ -1281,14 +1309,16 @@ describe("rural-rest-rwa", () => {
     }
   });
 
-  it("30. release_funds — deadline 미경과 + 목표 미달 → ReleaseNotAvailable 에러", async () => {
+  it("30. release_funds — deadline 미경과 → FundingStillOpen 에러", async () => {
     // gyeongju-003: 30일 deadline, tokens_sold=0 (authority position만 있고 구매 없음)
+    // deadline 미경과 시 FundingStillOpen이 먼저 체크됨
     try {
       await program.methods
         .releaseFunds(listingId3)
         .accounts({
           propertyToken: propertyToken3,
-          authority: authority.publicKey,
+          operator: authority.publicKey,
+          rwaConfig,
           fundingVault: fundingVault3,
           authorityUsdcAccount,
           usdcMint,
@@ -1298,10 +1328,10 @@ describe("rural-rest-rwa", () => {
         })
         .signers([authority])
         .rpc();
-      assert.fail("ReleaseNotAvailable 에러가 발생해야 함");
+      assert.fail("FundingStillOpen 에러가 발생해야 함");
     } catch (e: any) {
-      assert.include(e.message, "ReleaseNotAvailable");
-      console.log("    ReleaseNotAvailable 에러 정상 발생");
+      assert.include(e.message, "FundingStillOpen");
+      console.log("    FundingStillOpen 에러 정상 발생 (deadline 미경과)");
     }
   });
 
@@ -1316,8 +1346,8 @@ describe("rural-rest-rwa", () => {
   //   34. deadline 경과 후 release_funds → 6 USDC 수령, status=Funded, fundsReleased=true
   // ================================================================
 
-  it("31. initialize_property (gyeongju-005, deadline = 3초 후)", async () => {
-    const deadline = new anchor.BN(Math.floor(Date.now() / 1000) + 3);
+  it("31. initialize_property (gyeongju-005, deadline = 15초 후)", async () => {
+    const deadline = new anchor.BN(Math.floor(Date.now() / 1000) + 15);
     await program.methods
       .initializeProperty(listingId5, TOTAL_SUPPLY, VALUATION_KRW, PRICE_PER_TOKEN, deadline, MIN_FUNDING_BPS)
       .accounts({
@@ -1337,7 +1367,7 @@ describe("rural-rest-rwa", () => {
 
     const account = await program.account.propertyToken.fetch(propertyToken5);
     assert.deepEqual(account.status, { funding: {} });
-    console.log("    gyeongju-005 initialized, deadline = 3초 후");
+    console.log("    gyeongju-005 initialized, deadline = 15초 후");
   });
 
   it("32. purchase_tokens (gyeongju-005) — 6토큰 판매 (60% 달성)", async () => {
@@ -1437,8 +1467,8 @@ describe("rural-rest-rwa", () => {
   });
 
   it("34. deadline 경과 + 60% 달성 → release_funds 성공 (Funding→Funded)", async () => {
-    // 3초 deadline이 지나도록 4초 대기
-    await sleep(4000); // deadline 대기
+    // 15초 deadline이 지나도록 16초 대기
+    await sleep(16000); // deadline 대기
 
     const before = await connection.getTokenAccountBalance(authorityUsdcAccount);
 
@@ -1450,7 +1480,8 @@ describe("rural-rest-rwa", () => {
       .releaseFunds(listingId5)
       .accounts({
         propertyToken: propertyToken5,
-        authority: authority.publicKey,
+        operator: authority.publicKey,
+        rwaConfig,
         fundingVault: fundingVault5,
         authorityUsdcAccount,
         usdcMint,
@@ -1472,5 +1503,290 @@ describe("rural-rest-rwa", () => {
     assert.deepEqual(property.status, { funded: {} });
     assert.isTrue(property.fundsReleased);
     console.log("    수령:", received / 1_000_000, "USDC, status = Funded, fundsReleased = true");
+  });
+
+  // ===============================================================
+  // Crank Authority 테스트
+  // ===============================================================
+
+  const crankKeypair = Keypair.generate();
+
+  it("36. set_crank_authority -- authority가 crank 등록 성공", async () => {
+    await fundAccount(crankKeypair.publicKey, 0.1 * LAMPORTS_PER_SOL);
+
+    await program.methods
+      .setCrankAuthority(crankKeypair.publicKey)
+      .accounts({
+        rwaConfig,
+        authority: authority.publicKey,
+      })
+      .signers([authority])
+      .rpc();
+
+    const config = await program.account.rwaConfig.fetch(rwaConfig);
+    assert.equal(config.crankAuthority.toBase58(), crankKeypair.publicKey.toBase58());
+    console.log("    crank_authority 등록:", crankKeypair.publicKey.toBase58().slice(0, 16) + "...");
+  });
+
+  it("37. set_crank_authority -- 비권한자 실패", async () => {
+    try {
+      await program.methods
+        .setCrankAuthority(investor.publicKey)
+        .accounts({
+          rwaConfig,
+          authority: investor.publicKey,
+        })
+        .signers([investor])
+        .rpc();
+      assert.fail("비권한자가 crank 설정에 성공하면 안 됨");
+    } catch (e: any) {
+      assert.ok(e.toString());
+      console.log("    비권한자 crank 설정 차단 확인");
+    }
+  });
+
+  it("38. crank으로 release_funds 성공 (시나리오 E 매물)", async () => {
+    // listingId5는 이미 release_funds 되었으므로, 새 매물을 생성하여 crank 테스트
+    const listingCrank = "crank-test-001";
+    const tokenMintCrank = Keypair.generate();
+    const deadline = new anchor.BN(Math.floor(Date.now() / 1000) + 3);
+
+    const [ptCrank] = PublicKey.findProgramAddressSync(
+      [Buffer.from("property"), Buffer.from(listingCrank)], program.programId
+    );
+    const [fvCrank] = PublicKey.findProgramAddressSync(
+      [Buffer.from("funding_vault"), Buffer.from(listingCrank)], program.programId
+    );
+    const uvCrank = getAssociatedTokenAddressSync(usdcMint, ptCrank, true, TOKEN_PROGRAM_ID);
+
+    await program.methods
+      .initializeProperty(listingCrank, new anchor.BN(10), VALUATION_KRW, PRICE_PER_TOKEN, deadline, 1000)
+      .accounts({
+        authority: authority.publicKey,
+        propertyToken: ptCrank,
+        tokenMint: tokenMintCrank.publicKey,
+        fundingVault: fvCrank,
+        usdcVault: uvCrank,
+        usdcMint,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([authority, tokenMintCrank])
+      .rpc();
+
+    // investor 2토큰 구매 (20% >= min 10%)
+    const [posCrank] = PublicKey.findProgramAddressSync(
+      [Buffer.from("investor"), ptCrank.toBuffer(), investor.publicKey.toBuffer()], program.programId
+    );
+    await program.methods.openPosition(listingCrank)
+      .accounts({ investor: investor.publicKey, propertyToken: ptCrank, investorPosition: posCrank, systemProgram: anchor.web3.SystemProgram.programId })
+      .signers([investor]).rpc();
+
+    const investorRwaCrank = getAssociatedTokenAddressSync(tokenMintCrank.publicKey, investor.publicKey, false, TOKEN_2022_PROGRAM_ID);
+    await program.methods.purchaseTokens(listingCrank, new anchor.BN(2))
+      .accounts({
+        investor: investor.publicKey, propertyToken: ptCrank, investorPosition: posCrank,
+        tokenMint: tokenMintCrank.publicKey, investorUsdcAccount, fundingVault: fvCrank,
+        investorRwaAccount: investorRwaCrank, usdcMint,
+        usdcTokenProgram: TOKEN_PROGRAM_ID, tokenProgram: TOKEN_2022_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID, systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([investor]).rpc();
+
+    // deadline 대기
+    await sleep(4000);
+
+    // crank이 release_funds 호출
+    await program.methods
+      .releaseFunds(listingCrank)
+      .accounts({
+        propertyToken: ptCrank,
+        operator: crankKeypair.publicKey,
+        rwaConfig,
+        fundingVault: fvCrank,
+        authorityUsdcAccount,
+        usdcMint,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([crankKeypair])
+      .rpc();
+
+    const property = await program.account.propertyToken.fetch(ptCrank);
+    assert.deepEqual(property.status, { funded: {} });
+    assert.isTrue(property.fundsReleased);
+    console.log("    crank release_funds 성공: status=Funded");
+  });
+
+  it("39. crank으로 activate_property 성공", async () => {
+    const listingCrank = "crank-test-001";
+    const [ptCrank] = PublicKey.findProgramAddressSync(
+      [Buffer.from("property"), Buffer.from(listingCrank)], program.programId
+    );
+    // tokenMint 주소를 온체인에서 가져옴
+    const ptData = await program.account.propertyToken.fetch(ptCrank);
+
+    await program.methods
+      .activateProperty(listingCrank)
+      .accounts({
+        propertyToken: ptCrank,
+        operator: crankKeypair.publicKey,
+        rwaConfig,
+        tokenMint: ptData.tokenMint,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .signers([crankKeypair])
+      .rpc();
+
+    const property = await program.account.propertyToken.fetch(ptCrank);
+    assert.deepEqual(property.status, { active: {} });
+    console.log("    crank activate_property 성공: status=Active");
+  });
+
+  it("40. 랜덤 키로 release_funds 실패 (Unauthorized)", async () => {
+    // 새 매물 생성
+    const listingUnauth = "unauth-test-001";
+    const tokenMintUnauth = Keypair.generate();
+    const deadline = new anchor.BN(Math.floor(Date.now() / 1000) + 3);
+    const randomKey = Keypair.generate();
+    await fundAccount(randomKey.publicKey, 0.1 * LAMPORTS_PER_SOL);
+
+    const [ptU] = PublicKey.findProgramAddressSync(
+      [Buffer.from("property"), Buffer.from(listingUnauth)], program.programId
+    );
+    const [fvU] = PublicKey.findProgramAddressSync(
+      [Buffer.from("funding_vault"), Buffer.from(listingUnauth)], program.programId
+    );
+    const uvU = getAssociatedTokenAddressSync(usdcMint, ptU, true, TOKEN_PROGRAM_ID);
+
+    await program.methods
+      .initializeProperty(listingUnauth, new anchor.BN(10), VALUATION_KRW, PRICE_PER_TOKEN, deadline, 1000)
+      .accounts({
+        authority: authority.publicKey, propertyToken: ptU, tokenMint: tokenMintUnauth.publicKey,
+        fundingVault: fvU, usdcVault: uvU, usdcMint,
+        tokenProgram: TOKEN_2022_PROGRAM_ID, usdcTokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID, systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([authority, tokenMintUnauth]).rpc();
+
+    // investor 2토큰 구매
+    const [posU] = PublicKey.findProgramAddressSync(
+      [Buffer.from("investor"), ptU.toBuffer(), investor.publicKey.toBuffer()], program.programId
+    );
+    await program.methods.openPosition(listingUnauth)
+      .accounts({ investor: investor.publicKey, propertyToken: ptU, investorPosition: posU, systemProgram: anchor.web3.SystemProgram.programId })
+      .signers([investor]).rpc();
+
+    const investorRwaU = getAssociatedTokenAddressSync(tokenMintUnauth.publicKey, investor.publicKey, false, TOKEN_2022_PROGRAM_ID);
+    await program.methods.purchaseTokens(listingUnauth, new anchor.BN(2))
+      .accounts({
+        investor: investor.publicKey, propertyToken: ptU, investorPosition: posU,
+        tokenMint: tokenMintUnauth.publicKey, investorUsdcAccount, fundingVault: fvU,
+        investorRwaAccount: investorRwaU, usdcMint,
+        usdcTokenProgram: TOKEN_PROGRAM_ID, tokenProgram: TOKEN_2022_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID, systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([investor]).rpc();
+
+    await sleep(4000);
+
+    try {
+      await program.methods
+        .releaseFunds(listingUnauth)
+        .accounts({
+          propertyToken: ptU,
+          operator: randomKey.publicKey,
+          rwaConfig,
+          fundingVault: fvU,
+          authorityUsdcAccount,
+          usdcMint,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([randomKey])
+        .rpc();
+      assert.fail("랜덤 키로 release_funds가 성공하면 안 됨");
+    } catch (e: any) {
+      assert.include(e.message, "Unauthorized");
+      console.log("    랜덤 키 release_funds 차단: Unauthorized");
+    }
+  });
+
+  it("41. crank으로 distribute_monthly_revenue 실패 (has_one = authority)", async () => {
+    // distribute_monthly_revenue는 authority만 가능
+    try {
+      await program.methods
+        .distributeMonthlyRevenue(listingId, new anchor.BN(1_000_000))
+        .accounts({
+          propertyToken,
+          authority: crankKeypair.publicKey,
+          authorityUsdcAccount,
+          usdcVault,
+          usdcMint,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([crankKeypair])
+        .rpc();
+      assert.fail("crank으로 distribute가 성공하면 안 됨");
+    } catch (e: any) {
+      // has_one = authority constraint 실패
+      assert.ok(e.toString());
+      console.log("    crank distribute_monthly_revenue 차단 확인");
+    }
+  });
+
+  // -------------------------------------------------------
+  // 35. NonTransferable — RWA 토큰 전송 차단 확인
+  // -------------------------------------------------------
+  it("35. NonTransferable — RWA 토큰 다른 지갑으로 전송 시도 → 실패", async () => {
+    // investor가 gyeongju-004에서 1토큰 보유 중 (테스트 27에서 구매)
+    // 새 지갑에 ATA를 만들고 전송 시도 → NonTransferable 에러 확인
+    const recipient = Keypair.generate();
+    await fundAccount(recipient.publicKey, 0.1 * LAMPORTS_PER_SOL);
+
+    const { createAssociatedTokenAccountInstruction } = await import("@solana/spl-token");
+    const recipientRwa = getAssociatedTokenAddressSync(
+      tokenMintKeypair4.publicKey, recipient.publicKey, false, TOKEN_2022_PROGRAM_ID
+    );
+
+    // 수신자 ATA 생성
+    const createAtaIx = createAssociatedTokenAccountInstruction(
+      investor.publicKey,
+      recipientRwa,
+      recipient.publicKey,
+      tokenMintKeypair4.publicKey,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const { createTransferCheckedInstruction } = await import("@solana/spl-token");
+    const investorRwa4 = getAssociatedTokenAddressSync(
+      tokenMintKeypair4.publicKey, investor.publicKey, false, TOKEN_2022_PROGRAM_ID
+    );
+    const transferIx = createTransferCheckedInstruction(
+      investorRwa4,
+      tokenMintKeypair4.publicKey,
+      recipientRwa,
+      investor.publicKey,
+      1,  // 1토큰
+      0,  // decimals
+      [],
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const tx = new anchor.web3.Transaction().add(createAtaIx, transferIx);
+    try {
+      await provider.sendAndConfirm(tx, [investor]);
+      assert.fail("NonTransferable 토큰 전송이 성공하면 안 됨");
+    } catch (err: any) {
+      // Token-2022 NonTransferable extension에 의해 전송 시뮬레이션 실패
+      assert.include(err.toString(), "Simulation failed");
+      console.log("    NonTransferable 전송 차단 정상 확인");
+    }
   });
 });

@@ -1,0 +1,50 @@
+{
+  "badge": {
+    "heritage": "헤리티지 스테이"
+  },
+  "rating": {
+    "noReview": "아직 리뷰 없음",
+    "reviews": "{{count}}개 리뷰"
+  },
+  "gallery": {
+    "morePhotos": "+{{count}}장 더 보기",
+    "allPhotos": "전체 사진",
+    "viewAll": "사진 전체 보기 ({{count}}장)",
+    "loop": "갤러리 — 사진 {{count}}장"
+  },
+  "section": {
+    "about": "이 공간 소개",
+    "amenities": "편의시설",
+    "operator": "마을 운영자",
+    "location": "위치 및 지도",
+    "transport": "교통 안내",
+    "reviews": "후기",
+    "booking": "예약"
+  },
+  "operator": {
+    "superhost": "슈퍼호스트"
+  },
+  "transport": {
+    "free": "무료",
+    "pickupPoints": "픽업 장소",
+    "travelTime": "숙소까지 {{time}}"
+  },
+  "reviews": {
+    "empty": "아직 후기가 없습니다. 첫 번째 게스트가 되어보세요!"
+  },
+  "booking": {
+    "perNight": "/ 박",
+    "checkin": "체크인",
+    "checkout": "체크아웃",
+    "guests": "인원",
+    "maxGuests": "최대 {{count}}명",
+    "reserve": "예약하기",
+    "noCharge": "호스트 승인 전 결제 없음",
+    "fundingPending": "펀딩 모집 중",
+    "fundingPendingNote": "펀딩 완료 후 예약이 오픈됩니다",
+    "concierge": "교통 컨시어지",
+    "conciergePrice": "무료",
+    "total": "합계",
+    "selectDates": "날짜를 선택하면 최종 금액을 확인할 수 있어요."
+  }
+}

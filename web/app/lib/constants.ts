@@ -2,6 +2,7 @@
 // 환경변수는 VITE_ prefix (브라우저에서 접근 가능)
 
 export const PROGRAM_ID = import.meta.env.VITE_RWA_PROGRAM_ID ?? "EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR";
+export const DAO_PROGRAM_ID = import.meta.env.VITE_DAO_PROGRAM_ID ?? "3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX";
 export const USDC_MINT = import.meta.env.VITE_USDC_MINT ?? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
 
 // TODO: Pyth oracle로 교체
