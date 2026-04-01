@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useTranslation } from "react-i18next";
 
 interface Props {
     currentWalletAddress: string | null;
@@ -9,6 +10,8 @@ interface Props {
 export function WalletConnectSection({ currentWalletAddress }: Props) {
     const { connected, publicKey, signMessage, disconnect } = useWallet();
     const { setVisible } = useWalletModal();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { t, i18n } = useTranslation("kyc") as any;
     const [status, setStatus] = useState<"idle" | "signing" | "done" | "error">("idle");
     const [errorMsg, setErrorMsg] = useState("");
     const [savedAddress, setSavedAddress] = useState(currentWalletAddress);
@@ -23,8 +26,8 @@ export function WalletConnectSection({ currentWalletAddress }: Props) {
 
         (async () => {
             try {
-                const nonceRes = await fetch("/api/user/wallet-nonce");
-                if (!nonceRes.ok) throw new Error("nonce 발급 실패");
+                const nonceRes = await fetch(`/api/user/wallet-nonce?lang=${i18n.language}`);
+                if (!nonceRes.ok) throw new Error("nonce error");
                 const { nonce } = await nonceRes.json() as { nonce: string };
 
                 const messageBytes = new TextEncoder().encode(nonce);
@@ -49,7 +52,7 @@ export function WalletConnectSection({ currentWalletAddress }: Props) {
                 setStatus("done");
             } catch (e: any) {
                 console.error("[WalletConnectSection] SIWS 실패:", e);
-                setErrorMsg(e.message?.slice(0, 80) ?? "서명 실패");
+                setErrorMsg(e.message?.slice(0, 80) ?? t("walletSection.signing"));
                 setStatus("error");
                 disconnect();
             }
@@ -59,8 +62,8 @@ export function WalletConnectSection({ currentWalletAddress }: Props) {
     return (
         <div className="bg-white rounded-2xl border border-stone-100 p-6 space-y-4">
             <div>
-                <h3 className="text-sm font-bold text-stone-800">정산 지갑 등록</h3>
-                <p className="text-xs text-stone-400 mt-0.5">수익금(USDC)을 수령할 Solana 지갑을 등록하세요.</p>
+                <h3 className="text-sm font-bold text-stone-800">{t("walletSection.heading")}</h3>
+                <p className="text-xs text-stone-400 mt-0.5">{t("walletSection.desc")}</p>
             </div>
 
             {savedAddress ? (
@@ -68,7 +71,7 @@ export function WalletConnectSection({ currentWalletAddress }: Props) {
                     <div className="flex items-center gap-2 bg-[#17cf54]/5 border border-[#17cf54]/20 rounded-xl px-4 py-3">
                         <span className="material-symbols-outlined text-[#17cf54] text-[18px]">check_circle</span>
                         <div className="min-w-0">
-                            <p className="text-xs font-bold text-[#17cf54]">등록됨</p>
+                            <p className="text-xs font-bold text-[#17cf54]">{t("walletSection.registered")}</p>
                             <p className="text-xs text-stone-500 font-mono truncate">{savedAddress}</p>
                         </div>
                     </div>
@@ -80,7 +83,7 @@ export function WalletConnectSection({ currentWalletAddress }: Props) {
                             disconnect();
                         }}
                     >
-                        다른 지갑으로 변경
+                        {t("walletSection.change")}
                     </button>
                 </div>
             ) : (
@@ -88,7 +91,7 @@ export function WalletConnectSection({ currentWalletAddress }: Props) {
                     {status === "signing" ? (
                         <div className="flex items-center gap-2 text-sm text-stone-500 py-2">
                             <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
-                            지갑에서 서명 요청 중...
+                            {t("walletSection.signing")}
                         </div>
                     ) : (
                         <button
@@ -96,13 +99,13 @@ export function WalletConnectSection({ currentWalletAddress }: Props) {
                             onClick={() => setVisible(true)}
                         >
                             <span className="material-symbols-outlined text-[18px]">account_balance_wallet</span>
-                            지갑 등록하기
+                            {t("walletSection.register")}
                         </button>
                     )}
                     {status === "error" && (
                         <p className="text-xs text-red-500">{errorMsg}</p>
                     )}
-                    <p className="text-xs text-stone-400">Solana 네트워크 지원 지갑 (Solflare 등)</p>
+                    <p className="text-xs text-stone-400">{t("walletSection.networkInfo")}</p>
                 </div>
             )}
         </div>

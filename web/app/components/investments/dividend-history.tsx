@@ -1,4 +1,5 @@
 import { ExternalLink, Download } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface DividendRecord {
     id: string;
@@ -14,13 +15,15 @@ interface DividendHistoryProps {
 }
 
 export function DividendHistory({ records }: DividendHistoryProps) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { t } = useTranslation("invest") as any;
     return (
         <div className="bg-white rounded-3xl shadow-sm border border-stone-100 overflow-hidden">
             <div className="p-6 border-b border-stone-100 flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-[#4a3b2c]">Dividend History</h2>
+                <h2 className="text-2xl font-bold text-[#4a3b2c]">{t("dividends.title")}</h2>
                 <button className="flex items-center gap-2 text-sm font-medium text-[#4a3b2c] hover:text-[#17cf54] px-3 py-1.5 rounded-lg hover:bg-stone-50 transition-colors">
                     <Download className="w-4 h-4" />
-                    Export CSV
+                    {t("dividends.export")}
                 </button>
             </div>
 
@@ -28,11 +31,11 @@ export function DividendHistory({ records }: DividendHistoryProps) {
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-stone-50/50 text-stone-500 text-sm font-medium border-b border-stone-100">
-                            <th className="py-4 px-6 font-normal">Date</th>
-                            <th className="py-4 px-6 font-normal">Property</th>
-                            <th className="py-4 px-6 font-normal text-right">Amount (USDC)</th>
-                            <th className="py-4 px-6 font-normal text-center">Status</th>
-                            <th className="py-4 px-6 font-normal">Transaction</th>
+                            <th className="py-4 px-6 font-normal">{t("dividends.colDate")}</th>
+                            <th className="py-4 px-6 font-normal">{t("dividends.colProperty")}</th>
+                            <th className="py-4 px-6 font-normal text-right">{t("dividends.colAmount")}</th>
+                            <th className="py-4 px-6 font-normal text-center">{t("dividends.colStatus")}</th>
+                            <th className="py-4 px-6 font-normal">{t("dividends.colTx")}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
@@ -50,7 +53,7 @@ export function DividendHistory({ records }: DividendHistoryProps) {
                                                 : "bg-amber-50 text-amber-700"
                                             }`}
                                     >
-                                        {record.status}
+                                        {record.status === "Completed" ? t("dividends.statusCompleted") : t("dividends.statusPending")}
                                     </span>
                                 </td>
                                 <td className="py-4 px-6">
@@ -73,7 +76,7 @@ export function DividendHistory({ records }: DividendHistoryProps) {
                         {records.length === 0 && (
                             <tr>
                                 <td colSpan={5} className="py-12 text-center text-stone-500">
-                                    No dividend records found.
+                                    {t("dividends.empty")}
                                 </td>
                             </tr>
                         )}

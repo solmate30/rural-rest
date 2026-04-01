@@ -1,0 +1,108 @@
+{
+  "tagline": "빈집의 재탄생에 함께하세요.",
+  "filter": {
+    "button": "필터",
+    "title": "검색 필터",
+    "sortBy": "정렬 기준",
+    "sort": {
+      "yield": "수익률순",
+      "latest": "최신순",
+      "price": "가격순"
+    },
+    "status": "상태",
+    "statusAll": "전체",
+    "statusFunding": "펀딩 중",
+    "statusFunded": "펀딩 완료",
+    "statusActive": "운영 중",
+    "statusClosed": "종료",
+    "minApy": "최소 APY",
+    "maxPrice": "최대 토큰 가격",
+    "theme": "테마",
+    "reset": "초기화",
+    "apply": "{{count}}개 매물 보기"
+  },
+  "region": {
+    "all": "전국",
+    "경기": "경기",
+    "강원": "강원",
+    "충청": "충청",
+    "전라": "전라",
+    "경상": "경상",
+    "제주": "제주"
+  },
+  "status": {
+    "funding": "펀딩 중",
+    "funded": "펀딩 완료",
+    "active": "운영 중",
+    "closed": "마감"
+  },
+  "card": {
+    "tokenPrice": "토큰 가격",
+    "valuation": "감정가",
+    "tokensSold": "판매된 토큰",
+    "sold": "{{count}}개 판매",
+    "raised": "{{amount}} 모집",
+    "remaining": "{{amount}} 남음",
+    "view": "자세히 보기",
+    "investNow": "투자하기",
+    "completeKyc": "KYC 인증 후 투자하기",
+    "connectWallet": "지갑 연결 후 투자하기"
+  },
+  "empty": {
+    "title": "곧 공개됩니다",
+    "desc": "새로운 투자 매물이 준비 중이에요."
+  },
+  "detail": {
+    "tokenInfo": "토큰 정보",
+    "aboutHome": "이 공간 소개",
+    "renovation": "리모델링 이력",
+    "maxGuests": "최대 인원",
+    "guestsCount": "{{count}}명",
+    "occupancy": "점유율 (90일)",
+    "amenities": "편의시설",
+    "operator": "마을 운영자",
+    "rating": "후기 평점",
+    "verified": "신원 인증 완료",
+    "revenueActive": "수익 분배 현황",
+    "revenueEst": "예상 수익",
+    "revenueNote": "최근 12개월 · 1,000토큰 기준",
+    "revenueNoteEst": "예상 · 1,000토큰 기준",
+    "location": "위치 및 지도",
+    "fundingClosed": "모집 종료",
+    "refundNotice": "모집 목표를 달성하지 못했습니다. 투자하신 금액을 환불받으실 수 있어요."
+  },
+  "portfolio": {
+    "title": "내 투자 현황",
+    "subtitle": "포트폴리오와 수익을 관리해보세요.",
+    "connectWallet": "지갑을 연결하면 포트폴리오를 확인할 수 있어요.",
+    "connectButton": "지갑 연결하기",
+    "holdings": "보유 자산",
+    "holdingsSubtitle": "보유 중인 부동산 토큰",
+    "assets": "{{count}}개 자산",
+    "totalInvested": "총 투자금",
+    "currentValue": "현재 가치",
+    "totalDividends": "총 배당금"
+  },
+  "holdings": {
+    "empty": "아직 보유 중인 토큰이 없습니다.",
+    "emptyLink": "투자 가능한 매물 보기",
+    "colProperty": "매물",
+    "colToken": "토큰",
+    "colHoldings": "보유량",
+    "colValue": "평가액",
+    "colDividend": "미수령 배당",
+    "tokens": "개"
+  },
+  "dividends": {
+    "title": "배당 이력",
+    "export": "CSV 내보내기",
+    "colDate": "날짜",
+    "colProperty": "매물",
+    "colAmount": "금액 (USDC)",
+    "colStatus": "상태",
+    "colTx": "트랜잭션",
+    "empty": "배당 내역이 없습니다.",
+    "statusCompleted": "완료",
+    "statusPending": "대기 중"
+  }
+}

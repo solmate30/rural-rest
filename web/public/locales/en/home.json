@@ -1,0 +1,37 @@
+{
+  "hero": {
+    "headline": "Empty Homes,",
+    "headlineSub": "Breathing Again",
+    "subtitle": "Discover the quietest rural stays near Korea's cities."
+  },
+  "search": {
+    "whereTo": "Where would you like to go?",
+    "priceCap": "Price Range",
+    "priceUnder": "Under {{price}}",
+    "priceMin": "₩50K",
+    "priceMax": "₩500K+",
+    "findStay": "Find Stays",
+    "available": "{{count}} stays found in {{region}}",
+    "availableAll": "{{count}} stays found across Korea",
+    "noResults": "No stays match your search",
+    "noResultsSub": "Try adjusting the region or price range to find your perfect retreat.",
+    "reset": "Reset filters",
+    "allRegions": "All Regions",
+    "loadMore": "Show more ({{count}} left)"
+  },
+  "featured": {
+    "title": "Featured Stays",
+    "viewAll": "View all",
+    "count": "{{count}} stays",
+    "perNight": "/ night",
+    "viewDetail": "Explore"
+  },
+  "regions": {
+    "경상도": "Gyeongsang",
+    "경기도": "Gyeonggi",
+    "강원도": "Gangwon",
+    "충청도": "Chungcheong",
+    "전라도": "Jeolla",
+    "제주도": "Jeju"
+  }
+}

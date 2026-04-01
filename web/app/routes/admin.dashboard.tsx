@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link, useLoaderData } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Header } from "../components/ui-mockup";
 import { requireUser } from "../lib/auth.server";
 import { getHostListings, type HostListingRow } from "../lib/admin-dashboard.server";
@@ -167,12 +168,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 /*  Status maps                                                        */
 /* ------------------------------------------------------------------ */
 
-const statusLabel: Record<string, string> = {
-    funding: "펀딩중",
-    funded: "펀딩 완료",
-    active: "운영중",
-    failed: "펀딩 실패",
-};
+// statusLabel replaced by t() calls in component
 
 const statusBadgeClass: Record<string, string> = {
     funding:
@@ -288,6 +284,17 @@ function PipelineStep({
 /*  Helper: ListingSheet (right slide panel)                           */
 /* ------------------------------------------------------------------ */
 
+function useStatusLabel() {
+    const { t } = useTranslation("admin");
+    return (status: string) =>
+        ({
+            funding: t("dashboard.status.funding"),
+            funded: t("dashboard.status.funded"),
+            active: t("dashboard.status.active"),
+            failed: t("dashboard.status.failed"),
+        }[status] ?? status);
+}
+
 function ListingSheet({
     listing,
     open,
@@ -299,6 +306,9 @@ function ListingSheet({
     onOpenChange: (open: boolean) => void;
     isUnsettled: boolean;
 }) {
+    const statusLabel = useStatusLabel();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { t, i18n } = useTranslation("admin") as any;
     const [forceFundStatus, setForceFundStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
     const [forceFundError, setForceFundError] = useState("");
 
@@ -313,7 +323,7 @@ function ListingSheet({
                 body: JSON.stringify({ rwaTokenId: listing.rwaTokenId }),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error ?? "전환 실패");
+            if (!res.ok) throw new Error(data.error ?? t("dashboard.sheet.forceFundError"));
             setForceFundStatus("done");
             setTimeout(() => window.location.reload(), 800);
         } catch (e: any) {
@@ -409,7 +419,7 @@ function ListingSheet({
                                         statusBadgeClass[listing.tokenStatus ?? ""] ?? "bg-stone-100 text-stone-500 border-stone-200"
                                     )}
                                 >
-                                    {statusLabel[listing.tokenStatus ?? ""] ?? listing.tokenStatus}
+                                    {statusLabel(listing.tokenStatus ?? "")}
                                 </Badge>
                             )}
                         </div>
@@ -425,7 +435,7 @@ function ListingSheet({
                             {(listing.tokenStatus === "funding" || listing.tokenStatus === "funded") && (
                                 <div>
                                     <div className="flex items-center justify-between text-xs text-stone-500 mb-2">
-                                        <span>판매 진행률</span>
+                                        <span>{t("tokenize.progress")}</span>
                                         <span className="font-semibold text-[#4a3b2c]">{soldPct.toFixed(1)}%</span>
                                     </div>
                                     <div className="h-2.5 bg-stone-100 rounded-full overflow-hidden">
@@ -435,8 +445,8 @@ function ListingSheet({
                                         />
                                     </div>
                                     <div className="flex items-center justify-between text-[11px] text-stone-400 mt-1.5">
-                                        <span>{listing.tokensSold.toLocaleString()} / {listing.totalSupply.toLocaleString()} 토큰</span>
-                                        <span>최소 목표 {minPct}%</span>
+                                        <span>{t("tokenize.tokenCount", { sold: listing.tokensSold.toLocaleString(), total: listing.totalSupply.toLocaleString() })}</span>
+                                        <span>{t("tokenize.minTarget", { pct: minPct })}</span>
                                     </div>
                                 </div>
                             )}
@@ -444,24 +454,24 @@ function ListingSheet({
                             {/* Stats */}
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-white rounded-xl p-3 text-center border border-stone-100">
-                                    <p className="text-[11px] text-stone-400 mb-1">감정가</p>
-                                    <p className="text-sm font-bold text-[#4a3b2c]">{formatKrwLabel(listing.valuationKrw)}</p>
+                                    <p className="text-[11px] text-stone-400 mb-1">{t("tokenize.valuation")}</p>
+                                    <p className="text-sm font-bold text-[#4a3b2c]">{formatKrwLabel(listing.valuationKrw, i18n.language as "ko" | "en")}</p>
                                 </div>
                                 <div className="bg-white rounded-xl p-3 text-center border border-stone-100">
-                                    <p className="text-[11px] text-stone-400 mb-1">1박 요금</p>
+                                    <p className="text-[11px] text-stone-400 mb-1">{t("dashboard.sheet.nightlyRate")}</p>
                                     <p className="text-sm font-bold text-[#4a3b2c]">{fmtKrw(listing.pricePerNight)}</p>
                                 </div>
                                 <div className="bg-white rounded-xl p-3 text-center border border-stone-100">
                                     <p className="text-[11px] text-stone-400 mb-1">
-                                        {listing.tokenStatus === "funding" ? "마감까지" : "마감일"}
+                                        {listing.tokenStatus === "funding" ? t("tokenize.deadline") : t("tokenize.deadlineDate")}
                                     </p>
                                     {daysLeft !== null && listing.tokenStatus === "funding" ? (
                                         <p className="text-sm font-bold text-[#4a3b2c]">
-                                            {daysLeft}<span className="text-[10px] font-normal text-stone-400 ml-0.5">일</span>
+                                            {t("tokenize.daysLeft", { days: daysLeft })}
                                         </p>
                                     ) : deadline ? (
                                         <p className="text-sm font-bold text-[#4a3b2c]">
-                                            {deadline.toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+                                            {deadline.toLocaleDateString(i18n.language === "ko" ? "ko-KR" : "en-US", { month: "short", day: "numeric" })}
                                         </p>
                                     ) : (
                                         <p className="text-sm text-stone-300">--</p>
@@ -481,7 +491,7 @@ function ListingSheet({
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1 text-xs text-[#17cf54] hover:underline mt-1.5"
                                 >
-                                    Explorer에서 보기
+                                    {t("tokenize.viewExplorer")}
                                     <span className="material-symbols-outlined text-[14px]">open_in_new</span>
                                 </a>
                             </div>
@@ -491,10 +501,9 @@ function ListingSheet({
                             {/* Actions */}
                             {listing.tokenStatus === "funding" && listing.rwaTokenId && (
                                 <div className="space-y-2">
-                                    <p className="text-xs text-stone-400 font-medium">관리자 수동 전환</p>
+                                    <p className="text-xs text-stone-400 font-medium">{t("dashboard.sheet.forceFundTitle")}</p>
                                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 leading-relaxed">
-                                        온체인 validator 없이 DB 상태만 강제로 <span className="font-bold">펀딩 완료</span>로 전환합니다.
-                                        이후 지갑 연결 후 "운영 시작" 버튼으로 on-chain 처리하세요.
+                                        {t("dashboard.sheet.forceFundDesc")}
                                     </div>
                                     <Button
                                         variant="outline"
@@ -503,9 +512,9 @@ function ListingSheet({
                                         onClick={handleForceFund}
                                         disabled={forceFundStatus === "loading" || forceFundStatus === "done"}
                                     >
-                                        {forceFundStatus === "loading" ? "처리 중..." :
-                                         forceFundStatus === "done" ? "완료 — 새로고침 중..." :
-                                         "펀딩 완료로 수동 전환"}
+                                        {forceFundStatus === "loading" ? t("dashboard.sheet.processing") :
+                                         forceFundStatus === "done" ? t("dashboard.sheet.doneRefreshing") :
+                                         t("dashboard.sheet.forceFundBtn")}
                                     </Button>
                                     {forceFundStatus === "error" && (
                                         <p className="text-xs text-red-500">{forceFundError}</p>
@@ -515,9 +524,9 @@ function ListingSheet({
 
                             {listing.tokenStatus === "funded" && (
                                 <div>
-                                    <p className="text-sm font-semibold text-[#4a3b2c] mb-1">운영 전환</p>
+                                    <p className="text-sm font-semibold text-[#4a3b2c] mb-1">{t("dashboard.sheet.goLiveTitle")}</p>
                                     <p className="text-xs text-stone-400 mb-3">
-                                        펀딩이 완료된 매물입니다. 투자금을 수령하고 예약·배당을 시작하세요.
+                                        {t("dashboard.sheet.goLiveDesc")}
                                     </p>
                                     <ReleaseFundsButton
                                         listingId={listing.id}
@@ -537,15 +546,15 @@ function ListingSheet({
                                 )}>
                                     <div>
                                         <p className="text-sm font-semibold text-[#4a3b2c]">
-                                            {isUnsettled ? "미정산 매출 있음" : "운영 중"}
+                                            {isUnsettled ? t("dashboard.sheet.unsettledStatus") : t("dashboard.sheet.activeStatus")}
                                         </p>
                                         <p className="text-xs text-stone-500 mt-0.5">
-                                            {isUnsettled ? "직전 월 정산이 필요합니다." : "월정산에서 수익을 분배하세요."}
+                                            {isUnsettled ? t("dashboard.sheet.unsettledDesc") : t("dashboard.sheet.activeDesc")}
                                         </p>
                                     </div>
                                     <Button variant={isUnsettled ? "destructive" : "success"} size="sm" asChild>
                                         <Link to={`/admin/settlements/${listing.id}`}>
-                                            {isUnsettled ? "정산하기" : "정산 관리"}
+                                            {isUnsettled ? t("dashboard.sheet.settle") : t("dashboard.sheet.manageSettlements")}
                                         </Link>
                                     </Button>
                                 </div>
@@ -554,7 +563,7 @@ function ListingSheet({
                             <Button variant="outline" size="sm" className="w-full" asChild>
                                 <Link to={`/invest/${listing.id}`}>
                                     <span className="material-symbols-outlined text-[14px]">open_in_new</span>
-                                    투자 페이지 보기
+                                    {t("dashboard.sheet.viewInvestPage")}
                                 </Link>
                             </Button>
                         </>
@@ -563,8 +572,8 @@ function ListingSheet({
                         <>
                             {/* Valuation */}
                             <div>
-                                <p className="text-xs text-stone-400 mb-1">매물 감정가</p>
-                                <p className="text-2xl font-bold text-[#4a3b2c]">{valuationKrw.toLocaleString()}원</p>
+                                <p className="text-xs text-stone-400 mb-1">{t("tokenize.valuationLabel")}</p>
+                                <p className="text-2xl font-bold text-[#4a3b2c]">{formatKrwLabel(valuationKrw, i18n.language as "ko" | "en")}</p>
                             </div>
 
                             <Separator />
@@ -572,7 +581,7 @@ function ListingSheet({
                             {/* Settings */}
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-xs text-stone-500 mb-1.5 block">최소 모집 비율</label>
+                                    <label className="text-xs text-stone-500 mb-1.5 block">{t("tokenize.minFundingPct")}</label>
                                     <div className="relative">
                                         <input
                                             type="number"
@@ -587,7 +596,7 @@ function ListingSheet({
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-xs text-stone-500 mb-1.5 block">모집 마감</label>
+                                    <label className="text-xs text-stone-500 mb-1.5 block">{t("tokenize.deadline2")}</label>
                                     <input
                                         type="datetime-local"
                                         value={deadlineStr}
@@ -604,12 +613,12 @@ function ListingSheet({
                                                 onClick={() => quickSet(h)}
                                                 className="text-[11px] px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors"
                                             >
-                                                {h}시간
+                                                {t("tokenize.quickSet", { hours: h })}
                                             </button>
                                         ))}
                                     </div>
                                     {!isDeadlineValid && deadlineStr && (
-                                        <p className="text-[11px] text-red-500 mt-1">10분 이후로 설정해주세요</p>
+                                        <p className="text-[11px] text-red-500 mt-1">{t("tokenize.deadlineError")}</p>
                                     )}
                                 </div>
                             </div>
@@ -618,21 +627,21 @@ function ListingSheet({
 
                             {/* Preview */}
                             <div className="space-y-2">
-                                <p className="text-xs font-medium text-stone-400 uppercase tracking-wider">발행 미리보기</p>
+                                <p className="text-xs font-medium text-stone-400 uppercase tracking-wider">{t("tokenize.preview")}</p>
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="bg-white rounded-xl p-3 border border-stone-100">
-                                        <p className="text-[11px] text-stone-400 mb-0.5">총 발행량</p>
-                                        <p className="text-sm font-bold text-[#4a3b2c]">1억 개</p>
+                                        <p className="text-[11px] text-stone-400 mb-0.5">{t("tokenize.totalSupply")}</p>
+                                        <p className="text-sm font-bold text-[#4a3b2c]">{t("dashboard.sheet.totalSupplyVal")}</p>
                                     </div>
                                     <div className="bg-white rounded-xl p-3 border border-stone-100">
-                                        <p className="text-[11px] text-stone-400 mb-0.5">토큰 1개</p>
+                                        <p className="text-[11px] text-stone-400 mb-0.5">{t("dashboard.sheet.tokenPriceLabel")}</p>
                                         <p className="text-sm font-bold text-[#4a3b2c]">
                                             ₩{tokenPriceKrw < 1 ? tokenPriceKrw.toFixed(4) : tokenPriceKrw.toFixed(1)}
                                         </p>
                                     </div>
                                     <div className="bg-white rounded-xl p-3 border border-stone-100">
-                                        <p className="text-[11px] text-stone-400 mb-0.5">목표 모집액</p>
-                                        <p className="text-sm font-bold text-[#4a3b2c]">{formatKrwLabel(targetKrw)}</p>
+                                        <p className="text-[11px] text-stone-400 mb-0.5">{t("tokenize.minFundingTarget", { pct: minFundingPct })}</p>
+                                        <p className="text-sm font-bold text-[#4a3b2c]">{formatKrwLabel(targetKrw, i18n.language as "ko" | "en")}</p>
                                     </div>
                                     <div className={cn(
                                         "rounded-xl p-3 border",
@@ -640,7 +649,7 @@ function ListingSheet({
                                         apyLevel === "high" ? "bg-amber-50 border-amber-200" :
                                         "bg-white border-stone-100"
                                     )}>
-                                        <p className="text-[11px] text-stone-400 mb-0.5">예상 APY</p>
+                                        <p className="text-[11px] text-stone-400 mb-0.5">{t("tokenize.estimatedApy")}</p>
                                         <p className={cn(
                                             "text-sm font-bold",
                                             apyLevel === "warn" ? "text-red-500" :
@@ -653,12 +662,12 @@ function ListingSheet({
                                 </div>
                                 {apyLevel === "warn" && (
                                     <p className="text-[11px] text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2 leading-relaxed">
-                                        감정가 대비 숙박가가 높아 APY가 비정상적입니다. 입력값을 확인하세요.
+                                        {t("tokenize.apyWarningCheck")}
                                     </p>
                                 )}
                                 {apyLevel === "high" && (
                                     <p className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 leading-relaxed">
-                                        일반 부동산 대비 높은 수익률입니다. 근거 자료 준비를 권장합니다.
+                                        {t("tokenize.apyWarningHigh")}
                                     </p>
                                 )}
                             </div>
@@ -668,7 +677,7 @@ function ListingSheet({
                             {/* Issue */}
                             <div>
                                 <p className="text-xs text-stone-400 mb-3">
-                                    지갑으로 서명하면 토큰이 발행되고 투자자 모집이 시작됩니다.
+                                    {t("tokenize.issueInstruction")}
                                 </p>
                                 <InitializePropertyButton
                                     listingId={listing.id}
@@ -694,6 +703,9 @@ function ListingSheet({
 
 export default function AdminDashboard() {
     const { allListings, unsettledIds, stats } = useLoaderData<typeof loader>();
+    const statusLabel = useStatusLabel();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { t } = useTranslation("admin") as any;
     const unsettledSet = useMemo(() => new Set(unsettledIds), [unsettledIds]);
 
     // --- client filter state ---
@@ -739,15 +751,15 @@ export default function AdminDashboard() {
                 <div className="flex items-end justify-between mb-8">
                     <div>
                         <h1 className="text-2xl font-bold text-[#4a3b2c]">
-                            관리자 대시보드
+                            {t("dashboard.title")}
                         </h1>
                         <p className="text-sm text-stone-400 mt-1">
-                            전체 매물과 투자 현황을 한눈에
+                            {t("dashboard.subtitle")}
                         </p>
                     </div>
                     <div className="flex gap-2">
                         <Button variant="outline" size="sm" asChild>
-                            <Link to="/host/edit/new">새 숙소 등록</Link>
+                            <Link to="/host/edit/new">{t("dashboard.newListing")}</Link>
                         </Button>
                     </div>
                 </div>
@@ -758,7 +770,7 @@ export default function AdminDashboard() {
                     <Card className="rounded-3xl border-stone-100 shadow-sm">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-stone-400 tracking-wider uppercase">
-                                매물 현황
+                                {t("dashboard.sections.propertyStatus")}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -766,7 +778,7 @@ export default function AdminDashboard() {
                                 large
                                 icon="home"
                                 iconBg="bg-[#17cf54]/10 text-[#17cf54]"
-                                label="전체 숙소"
+                                label={t("dashboard.stats.totalListings")}
                                 value={stats.totalListings}
                             />
                             <Separator className="my-4" />
@@ -774,19 +786,19 @@ export default function AdminDashboard() {
                                 <StatItem
                                     icon="verified"
                                     iconBg="bg-blue-500/10 text-blue-600"
-                                    label="토큰화 완료"
+                                    label={t("dashboard.stats.tokenized")}
                                     value={stats.tokenizedCount}
                                 />
                                 <StatItem
                                     icon="trending_up"
                                     iconBg="bg-amber-500/10 text-amber-600"
-                                    label="펀딩 진행중"
+                                    label={t("dashboard.stats.funding")}
                                     value={stats.fundingCount}
                                 />
                                 <StatItem
                                     icon="check_circle"
                                     iconBg="bg-emerald-500/10 text-emerald-600"
-                                    label="운영중"
+                                    label={t("dashboard.stats.active")}
                                     value={stats.activeCount}
                                 />
                             </div>
@@ -797,7 +809,7 @@ export default function AdminDashboard() {
                     <Card className="rounded-3xl border-stone-100 shadow-sm">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-stone-400 tracking-wider uppercase">
-                                투자 현황
+                                {t("dashboard.sections.investmentStatus")}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -805,7 +817,7 @@ export default function AdminDashboard() {
                                 large
                                 icon="attach_money"
                                 iconBg="bg-[#17cf54]/10 text-[#17cf54]"
-                                label="총 투자액"
+                                label={t("dashboard.stats.totalInvested")}
                                 value={fmtUsdc(stats.totalInvestedUsdc)}
                             />
                             <Separator className="my-4" />
@@ -813,13 +825,13 @@ export default function AdminDashboard() {
                                 <StatItem
                                     icon="group"
                                     iconBg="bg-stone-100 text-stone-500"
-                                    label="전체 가입자"
+                                    label={t("dashboard.stats.totalUsers")}
                                     value={stats.totalUsers}
                                 />
                                 <StatItem
                                     icon="person"
                                     iconBg="bg-blue-500/10 text-blue-600"
-                                    label="전체 투자자"
+                                    label={t("dashboard.stats.totalInvestors")}
                                     value={stats.totalInvestors}
                                 />
                             </div>
@@ -831,31 +843,31 @@ export default function AdminDashboard() {
                 <Card className="rounded-3xl border-stone-100 shadow-sm mb-8">
                     <CardHeader>
                         <CardTitle className="text-base font-bold text-[#4a3b2c]">
-                            토큰화 파이프라인
+                            {t("dashboard.sections.pipeline")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center justify-between px-4">
                             <PipelineStep
-                                label="미등록"
+                                label={t("dashboard.pipeline.notTokenized")}
                                 count={notTokenizedCount}
                                 color="stone"
                             />
                             <div className="flex-1 h-0.5 bg-stone-200 mx-3" />
                             <PipelineStep
-                                label="펀딩중"
+                                label={t("dashboard.pipeline.funding")}
                                 count={stats.fundingCount}
                                 color="amber"
                             />
                             <div className="flex-1 h-0.5 bg-stone-200 mx-3" />
                             <PipelineStep
-                                label="펀딩 완료"
+                                label={t("dashboard.pipeline.funded")}
                                 count={fundedCount}
                                 color="blue"
                             />
                             <div className="flex-1 h-0.5 bg-stone-200 mx-3" />
                             <PipelineStep
-                                label="운영중"
+                                label={t("dashboard.pipeline.active")}
                                 count={stats.activeCount}
                                 color="emerald"
                             />
@@ -868,7 +880,7 @@ export default function AdminDashboard() {
                     <CardHeader>
                         <div className="flex items-center justify-between flex-wrap gap-3">
                             <CardTitle className="text-base font-bold text-[#4a3b2c]">
-                                전체 매물
+                                {t("dashboard.sections.allListings")}
                             </CardTitle>
                             <div className="flex items-center gap-3">
                                 {/* Search */}
@@ -877,7 +889,7 @@ export default function AdminDashboard() {
                                         search
                                     </span>
                                     <Input
-                                        placeholder="숙소명 또는 위치 검색..."
+                                        placeholder={t("dashboard.table.search")}
                                         value={searchQuery}
                                         onChange={(e) =>
                                             setSearchQuery(e.target.value)
@@ -895,25 +907,25 @@ export default function AdminDashboard() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">
-                                            전체
+                                            {t("dashboard.table.filterAll")}
                                         </SelectItem>
                                         <SelectItem value="none">
-                                            미등록
+                                            {t("dashboard.table.filterNone")}
                                         </SelectItem>
                                         <SelectItem value="funding">
-                                            펀딩중
+                                            {t("dashboard.table.filterFunding")}
                                         </SelectItem>
                                         <SelectItem value="funded">
-                                            펀딩 완료
+                                            {t("dashboard.table.filterFunded")}
                                         </SelectItem>
                                         <SelectItem value="active">
-                                            운영중
+                                            {t("dashboard.table.filterActive")}
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                                 {/* Count */}
                                 <span className="text-sm text-stone-400 whitespace-nowrap">
-                                    {filteredListings.length}개 매물
+                                    {t("dashboard.table.count", { count: filteredListings.length })}
                                 </span>
                             </div>
                         </div>
@@ -923,14 +935,14 @@ export default function AdminDashboard() {
                             <TableHeader>
                                 <TableRow className="border-stone-100">
                                     <TableHead className="pl-6 w-[320px]">
-                                        숙소
+                                        {t("dashboard.table.colProperty")}
                                     </TableHead>
                                     <TableHead className="text-right">
-                                        1박 요금
+                                        {t("dashboard.table.colPrice")}
                                     </TableHead>
-                                    <TableHead>상태</TableHead>
+                                    <TableHead>{t("dashboard.table.colStatus")}</TableHead>
                                     <TableHead className="text-right pr-6">
-                                        관리
+                                        {t("dashboard.table.colActions")}
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -946,7 +958,7 @@ export default function AdminDashboard() {
                                                     search_off
                                                 </span>
                                                 <span className="text-sm">
-                                                    검색 결과가 없습니다
+                                                    {t("dashboard.table.noResults")}
                                                 </span>
                                             </div>
                                         </TableCell>
@@ -1006,13 +1018,11 @@ export default function AdminDashboard() {
                                                                     "bg-stone-100 text-stone-500 border-stone-200"
                                                             )}
                                                         >
-                                                            {statusLabel[
-                                                                listing.tokenStatus ?? ""
-                                                            ] ?? listing.tokenStatus}
+                                                            {statusLabel(listing.tokenStatus ?? "")}
                                                         </Badge>
                                                     ) : (
                                                         <span className="text-xs text-stone-300 font-medium">
-                                                            미등록
+                                                            {t("dashboard.badge.notTokenized")}
                                                         </span>
                                                     )}
                                                     {unsettledSet.has(listing.id) && (
@@ -1020,7 +1030,7 @@ export default function AdminDashboard() {
                                                             variant="outline"
                                                             className="text-[10px] font-bold rounded-full bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/10"
                                                         >
-                                                            미정산
+                                                            {t("dashboard.badge.unsettled")}
                                                         </Badge>
                                                     )}
                                                 </div>
@@ -1038,7 +1048,7 @@ export default function AdminDashboard() {
                                                                 openSheet(listing);
                                                             }}
                                                         >
-                                                            토큰 관리
+                                                            {t("dashboard.btn.manage")}
                                                         </Button>
                                                     ) : (
                                                         <Button
@@ -1049,7 +1059,7 @@ export default function AdminDashboard() {
                                                                 openSheet(listing);
                                                             }}
                                                         >
-                                                            토큰 발행
+                                                            {t("dashboard.btn.tokenize")}
                                                         </Button>
                                                     )}
                                                 </div>

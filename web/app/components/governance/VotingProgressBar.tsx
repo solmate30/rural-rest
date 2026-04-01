@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 interface VotingProgressBarProps {
     votesFor: number;
     votesAgainst: number;
@@ -15,6 +17,7 @@ export function VotingProgressBar({
     quorumBps,
     voterCount = 0,
 }: VotingProgressBarProps) {
+    const { t } = useTranslation("governance");
     const totalVoted = votesFor + votesAgainst + votesAbstain;
     const quorumThreshold = Math.ceil((totalEligibleWeight * quorumBps) / 10000);
     const quorumPercent = totalEligibleWeight > 0 ? Math.min((totalVoted / totalEligibleWeight) * 100, 100) : 0;
@@ -52,35 +55,35 @@ export function VotingProgressBar({
             <div className="flex justify-between text-[13px] font-bold">
                 <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-sm bg-[#5E6E5A]" />
-                    <span className="text-[#5E6E5A]">찬성 {votesFor}</span>
+                    <span className="text-[#5E6E5A]">{t("vote.for")} {votesFor}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-sm bg-[#A94438]" />
-                    <span className="text-[#A94438]">반대 {votesAgainst}</span>
+                    <span className="text-[#A94438]">{t("vote.against")} {votesAgainst}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-sm bg-[#D7CCC8]" />
-                    <span className="text-[#8D6E63]">기권 {votesAbstain}</span>
+                    <span className="text-[#8D6E63]">{t("vote.abstain")} {votesAbstain}</span>
                 </div>
             </div>
 
-            {/* 집계 요약: 총 의결권 / 참여자 수 */}
+            {/* 집계 요약 */}
             <div className="flex items-center justify-between text-xs text-[#A1887F] pt-0.5">
-                <span>총 집계</span>
+                <span>{t("vote.total")}</span>
                 <span className="font-medium">
                     <span className="text-[#5D4037] font-bold">{totalVoted}</span>
-                    {" / 전체 "}
-                    <span className="text-[#5D4037] font-bold">{totalEligibleWeight} 의결권</span>
-                    <span className="text-[#A1887F]"> ({voterCount}명 참여)</span>
+                    {" / "}
+                    <span className="text-[#5D4037] font-bold">{totalEligibleWeight} {t("vote.votes")}</span>
+                    <span className="text-[#A1887F]"> ({voterCount}{t("vote.participants")})</span>
                 </span>
             </div>
 
-            {/* 최소 참여율 (Quorum) */}
+            {/* 정족수 */}
             <div className="space-y-1">
                 <div className="flex justify-between text-xs text-[#8D6E63]">
-                    <span>정족수 ({quorumBps / 100}%)</span>
+                    <span>{t("vote.quorum")} ({quorumBps / 100}%)</span>
                     <span className={quorumMet ? "text-[#8D6E63] font-bold" : "text-[#A1887F]"}>
-                        {quorumMet ? "충족" : `${totalVoted} / ${quorumThreshold} (미달)`}
+                        {quorumMet ? t("vote.quorumMet") : `${totalVoted} / ${quorumThreshold} (${t("vote.quorumShort")})`}
                     </span>
                 </div>
                 <div className="h-1.5 rounded-full bg-[#EFEBE9] overflow-hidden">

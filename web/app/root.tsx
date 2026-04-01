@@ -1,17 +1,83 @@
 import {
+  data,
   isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
+  useRouteLoaderData,
 } from "react-router";
+import { I18nextProvider } from "react-i18next";
+import i18next from "i18next";
 
 import type { Route } from "./+types/root";
 import "./app.css";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { Toaster } from "./components/ui/toaster";
 import { Header, Button, Card } from "./components/ui-mockup";
+import { detectLocale } from "./lib/i18n.server";
+import { initReactI18next } from "react-i18next";
+import { i18nConfig } from "./lib/i18n";
+
+// 번역 파일 정적 import (서버사이드 SSR용, 빌드 타임 번들링)
+import koCommon from "../public/locales/ko/common.json";
+import enCommon from "../public/locales/en/common.json";
+import koHome from "../public/locales/ko/home.json";
+import enHome from "../public/locales/en/home.json";
+import koAuth from "../public/locales/ko/auth.json";
+import enAuth from "../public/locales/en/auth.json";
+import koProperty from "../public/locales/ko/property.json";
+import enProperty from "../public/locales/en/property.json";
+import koBook from "../public/locales/ko/book.json";
+import enBook from "../public/locales/en/book.json";
+import koInvest from "../public/locales/ko/invest.json";
+import enInvest from "../public/locales/en/invest.json";
+import koKyc from "../public/locales/ko/kyc.json";
+import enKyc from "../public/locales/en/kyc.json";
+import koGovernance from "../public/locales/ko/governance.json";
+import enGovernance from "../public/locales/en/governance.json";
+import koOperator from "../public/locales/ko/operator.json";
+import enOperator from "../public/locales/en/operator.json";
+import koAdmin from "../public/locales/ko/admin.json";
+import enAdmin from "../public/locales/en/admin.json";
+
+const allTranslations = {
+  ko: {
+    common: koCommon, home: koHome, auth: koAuth, property: koProperty,
+    book: koBook, invest: koInvest, kyc: koKyc, governance: koGovernance,
+    operator: koOperator, admin: koAdmin,
+  },
+  en: {
+    common: enCommon, home: enHome, auth: enAuth, property: enProperty,
+    book: enBook, invest: enInvest, kyc: enKyc, governance: enGovernance,
+    operator: enOperator, admin: enAdmin,
+  },
+};
+
+// --- Loader ---
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const locale = await detectLocale(request);
+  const initialI18nStore = allTranslations;
+
+  // 쿠키가 현재 감지된 언어와 다를 경우만 Set-Cookie
+  const cookie = request.headers.get("cookie") ?? "";
+  const currentCookie = cookie.match(/rr_lang=([^;]+)/)?.[1];
+  const headers = new Headers();
+  if (currentCookie !== locale) {
+    headers.set(
+      "Set-Cookie",
+      `rr_lang=${locale}; Path=/; Max-Age=31536000; SameSite=Lax`
+    );
+  }
+
+  // React Router 7: data() 유틸리티로 헤더 설정 + 타입 추론 동시 처리
+  return data({ locale, initialI18nStore }, { headers });
+}
+
+// --- Links ---
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -30,9 +96,13 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+// --- Layout (HTML shell) ---
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const data = useRouteLoaderData<typeof loader>("root");
+  const locale = data?.locale ?? "en";
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -48,42 +118,88 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+// --- App ---
+
 import { AiConcierge } from "./components/AiConcierge";
 import RwaWalletProvider from "./components/RwaWalletProvider";
 import { KycProvider } from "./components/KycProvider";
+
 export default function App() {
+  const { locale, initialI18nStore } = useLoaderData<typeof loader>();
+
+  // SSR 및 클라이언트 첫 렌더 전 동기 초기화
+  if (!i18next.isInitialized) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    i18next.use(initReactI18next).init({
+      ...i18nConfig,
+      lng: locale,
+      initImmediate: false,
+      resources: initialI18nStore,
+    } as any);
+  } else {
+    // 이미 초기화된 경우: 리소스 보충 + 언어 동기화
+    const store = initialI18nStore as Record<string, Record<string, unknown>>;
+    Object.entries(store).forEach(([lang, namespaces]) => {
+      Object.entries(namespaces as Record<string, unknown>).forEach(([ns, data]) => {
+        if (!i18next.hasResourceBundle(lang, ns)) {
+          i18next.addResourceBundle(lang, ns, data);
+        }
+      });
+    });
+    if (i18next.language !== locale) {
+      i18next.changeLanguage(locale);
+    }
+  }
+
   return (
-    <KycProvider>
-      <RwaWalletProvider>
-        <Outlet />
-        <Toaster />
-        <AiConcierge />
-      </RwaWalletProvider>
-    </KycProvider>
+    <I18nextProvider i18n={i18next}>
+      <KycProvider>
+        <RwaWalletProvider>
+          <Outlet />
+          <Toaster />
+          <AiConcierge />
+        </RwaWalletProvider>
+      </KycProvider>
+    </I18nextProvider>
   );
 }
 
+// --- ErrorBoundary ---
+// I18nextProvider 외부이므로 번역 파일을 직접 참조
+
+function getErrorMessages(
+  status: number,
+  locale: string,
+  statusText?: string
+): { message: string; details: string } {
+  const t = locale === "ko" ? koCommon : enCommon;
+  if (status === 404) return { message: t.error["404"], details: t.error["404Details"] };
+  if (status === 403) return { message: t.error["403"], details: t.error["403Details"] };
+  if (status === 500) return { message: t.error["500"], details: t.error["500Details"] };
+  return {
+    message: t.error.code.replace("{{code}}", String(status)),
+    details: statusText || t.error.details,
+  };
+}
+
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  // 쿠키에서 locale 읽기 (Provider 없으므로 직접 파싱)
+  const locale =
+    typeof document !== "undefined"
+      ? (document.cookie.match(/rr_lang=([^;]+)/)?.[1] ?? "en")
+      : "en";
+  const t = locale === "ko" ? koCommon : enCommon;
+
   let status = 500;
-  let message = "오류가 발생했습니다";
-  let details = "예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+  let message = t.error.title;
+  let details = t.error.details;
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
     status = error.status;
-    if (error.status === 404) {
-      message = "404 - 페이지를 찾을 수 없습니다";
-      details = "요청하신 페이지가 존재하지 않습니다. URL을 확인해주세요.";
-    } else if (error.status === 403) {
-      message = "접근 권한이 없습니다";
-      details = "이 페이지에 접근할 권한이 없습니다.";
-    } else if (error.status === 500) {
-      message = "서버 오류";
-      details = "서버에서 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
-    } else {
-      message = `오류 ${error.status}`;
-      details = error.statusText || details;
-    }
+    const msgs = getErrorMessages(status, locale, error.statusText);
+    message = msgs.message;
+    details = msgs.details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
     stack = error.stack;
@@ -106,20 +222,20 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
                   variant="primary"
                   onClick={() => (window.location.href = "/")}
                 >
-                  홈으로 돌아가기
+                  {t.button.backHome}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => window.history.back()}
                 >
-                  이전 페이지로
+                  {t.button.backPrev}
                 </Button>
               </div>
               {stack && import.meta.env.DEV && (
                 <div className="mt-8 text-left">
                   <details className="text-xs">
                     <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                      개발자 정보 보기
+                      {t.error.devInfo}
                     </summary>
                     <pre className="mt-4 p-4 bg-muted rounded-md overflow-x-auto">
                       <code>{stack}</code>

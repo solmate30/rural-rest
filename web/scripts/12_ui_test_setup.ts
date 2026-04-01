@@ -229,7 +229,7 @@ async function main() {
     if (!(await connection.getAccountInfo(daoConfig))) {
         await (daoProgram.methods as any)
             .initializeDao(
-                new BN(20),       // voting_period: 20초 (테스트용)
+                new BN(604800),   // voting_period: 7일 (604800초)
                 2000,             // quorum_bps: 20%
                 6000,             // approval_threshold_bps: 60%
                 10000,            // voting_cap_bps: 100% = cap 없음 (MVP — 토큰 비례 1:1)
@@ -244,7 +244,7 @@ async function main() {
             })
             .signers([authority])
             .rpc();
-        ok("DaoConfig 초기화 (voting_period=10초)");
+        ok("DaoConfig 초기화 (voting_period=7일)");
     } else {
         ok("DaoConfig 이미 존재");
     }

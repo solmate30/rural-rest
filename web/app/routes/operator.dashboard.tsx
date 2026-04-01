@@ -1,4 +1,5 @@
 import { Link, useLoaderData } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Header } from "../components/ui-mockup";
 import { requireUser } from "../lib/auth.server";
 import { WalletConnectSection } from "../components/WalletConnectSection";
@@ -35,13 +36,6 @@ function formatDate(date: Date): string {
     return new Date(date).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
 }
 
-const statusLabel: Record<string, string> = {
-    pending: "대기 중",
-    confirmed: "확정",
-    cancelled: "취소",
-    completed: "완료",
-};
-
 const statusColor: Record<string, string> = {
     pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
     confirmed: "bg-[#17cf54]/10 text-[#17cf54] border-[#17cf54]/20",
@@ -50,6 +44,7 @@ const statusColor: Record<string, string> = {
 };
 
 export default function OperatorDashboard() {
+    const { t } = useTranslation("operator");
     const { user, stats, listings, bookings, settlements } = useLoaderData() as {
         user: { walletAddress: string | null };
         stats: DashboardStats;
@@ -59,10 +54,10 @@ export default function OperatorDashboard() {
     };
 
     const statItems = [
-        { label: "이번 달 매출", value: formatRevenue(stats.totalRevenueThisMonth) },
-        { label: "대기 예약", value: stats.pendingBookings },
-        { label: "오늘 체크인", value: stats.todayCheckIns },
-        { label: "점유율 (30일)", value: `${stats.occupancyRatePercent}%` },
+        { label: t("stats.monthlyRevenue"), value: formatRevenue(stats.totalRevenueThisMonth) },
+        { label: t("stats.pendingBookings"), value: stats.pendingBookings },
+        { label: t("stats.todayCheckin"), value: stats.todayCheckIns },
+        { label: t("stats.occupancy30d"), value: `${stats.occupancyRatePercent}%` },
     ];
 
     const pendingBookings = bookings.filter((b) => b.status === "pending");
@@ -75,8 +70,8 @@ export default function OperatorDashboard() {
 
                 {/* Page header */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-[#4a3b2c]">운영 대시보드</h1>
-                    <p className="text-sm text-stone-500 mt-1">담당 매물 {listings.length}채</p>
+                    <h1 className="text-3xl font-bold text-[#4a3b2c]">{t("title")}</h1>
+                    <p className="text-sm text-stone-500 mt-1">{t("subtitle", { count: listings.length })}</p>
                 </div>
 
                 {/* Stats strip */}
@@ -93,9 +88,9 @@ export default function OperatorDashboard() {
                 {pendingBookings.length > 0 && (
                     <section className="mb-8">
                         <h2 className="text-lg font-bold text-[#4a3b2c] mb-3">
-                            대기 중 예약
+                            {t("section.pending")}
                             <span className="ml-2 text-sm font-normal text-yellow-600 bg-yellow-50 border border-yellow-200 px-2 py-0.5 rounded-full">
-                                {pendingBookings.length}건
+                                {t("section.pendingCount", { count: pendingBookings.length })}
                             </span>
                         </h2>
                         <div className="space-y-2">
@@ -108,7 +103,7 @@ export default function OperatorDashboard() {
                                         </p>
                                     </div>
                                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${statusColor.pending}`}>
-                                        {statusLabel.pending}
+                                        {t("status.pending")}
                                     </span>
                                 </div>
                             ))}
@@ -119,7 +114,7 @@ export default function OperatorDashboard() {
                 {/* 확정 예약 (다가오는) */}
                 {upcomingBookings.length > 0 && (
                     <section className="mb-8">
-                        <h2 className="text-lg font-bold text-[#4a3b2c] mb-3">다가오는 체크인</h2>
+                        <h2 className="text-lg font-bold text-[#4a3b2c] mb-3">{t("section.upcoming")}</h2>
                         <div className="space-y-2">
                             {upcomingBookings.map((b) => (
                                 <div key={b.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 flex items-center gap-4">
@@ -130,7 +125,7 @@ export default function OperatorDashboard() {
                                         </p>
                                     </div>
                                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${statusColor.confirmed}`}>
-                                        {statusLabel.confirmed}
+                                        {t("status.confirmed")}
                                     </span>
                                 </div>
                             ))}
@@ -140,21 +135,25 @@ export default function OperatorDashboard() {
 
                 {/* 정산 지갑 등록 */}
                 <section className="mb-8">
-                    <h2 className="text-lg font-bold text-[#4a3b2c] mb-3">정산 지갑</h2>
+                    <h2 className="text-lg font-bold text-[#4a3b2c] mb-3">{t("section.settlementWallet")}</h2>
                     <WalletConnectSection currentWalletAddress={user.walletAddress} />
                 </section>
 
                 {/* 정산 내역 */}
                 {settlements.length > 0 && (
                     <section className="mb-8">
-                        <h2 className="text-lg font-bold text-[#4a3b2c] mb-3">정산 내역</h2>
+                        <h2 className="text-lg font-bold text-[#4a3b2c] mb-3">{t("section.settlementHistory")}</h2>
                         <div className="space-y-2">
                             {settlements.map((s) => (
                                 <div key={s.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 flex items-center gap-4">
                                     <div className="flex-1 min-w-0">
                                         <p className="font-bold text-[#4a3b2c] text-sm truncate">{s.listingTitle}</p>
                                         <p className="text-xs text-stone-500 mt-0.5">
-                                            {s.month} &middot; 매출 {s.grossRevenueKrw.toLocaleString()}원 &middot; 영업이익 {s.operatingProfitKrw.toLocaleString()}원
+                                            {t("settlement.detail", {
+                                                month: s.month,
+                                                revenue: s.grossRevenueKrw.toLocaleString(),
+                                                profit: s.operatingProfitKrw.toLocaleString(),
+                                            })}
                                         </p>
                                     </div>
                                     {s.payoutTx ? (
@@ -162,10 +161,10 @@ export default function OperatorDashboard() {
                                             <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                                             </svg>
-                                            자동 지급
+                                            {t("status.auto")}
                                         </span>
                                     ) : (
-                                        <span className="text-xs text-stone-400 font-medium">처리 중</span>
+                                        <span className="text-xs text-stone-400 font-medium">{t("status.processing")}</span>
                                     )}
                                 </div>
                             ))}
@@ -175,11 +174,11 @@ export default function OperatorDashboard() {
 
                 {/* 담당 매물 목록 */}
                 <section>
-                    <h2 className="text-lg font-bold text-[#4a3b2c] mb-3">담당 매물</h2>
+                    <h2 className="text-lg font-bold text-[#4a3b2c] mb-3">{t("section.listings")}</h2>
                     {listings.length === 0 ? (
                         <div className="bg-white rounded-2xl border border-dashed border-stone-200 p-16 text-center">
                             <span className="material-symbols-outlined text-[48px] text-stone-300">home_work</span>
-                            <p className="text-stone-400 mt-4">배정된 매물이 없습니다.</p>
+                            <p className="text-stone-400 mt-4">{t("section.noListings")}</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -201,7 +200,7 @@ export default function OperatorDashboard() {
                                         <div className="flex-1 min-w-0">
                                             <h3 className="font-bold text-[#4a3b2c] text-base truncate">{listing.title}</h3>
                                             <p className="text-sm text-stone-400 mt-0.5">
-                                                {listing.location} &middot; {formatRevenue(listing.pricePerNight)} / 박
+                                                {listing.location} &middot; {formatRevenue(listing.pricePerNight)} {t("listing.perNight")}
                                             </p>
                                         </div>
                                         <Link
@@ -209,7 +208,7 @@ export default function OperatorDashboard() {
                                             className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800 font-medium px-3 py-2 rounded-xl hover:bg-stone-100 transition-colors shrink-0"
                                         >
                                             <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-                                            보기
+                                            {t("listing.view")}
                                         </Link>
                                     </div>
                                 </div>

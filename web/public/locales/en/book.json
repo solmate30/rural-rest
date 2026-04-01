@@ -1,0 +1,45 @@
+{
+  "title": "Confirm your booking",
+  "error": {
+    "required": "Please fill in all fields.",
+    "checkoutBeforeCheckin": "Check-out must be after check-in.",
+    "pastDate": "You can't select a past date.",
+    "guestLimit": "Max {{max}} guests allowed."
+  },
+  "confirm": {
+    "title": "Booking received!",
+    "message": "Your host will confirm within 24 hours.",
+    "bookingId": "Booking ID",
+    "checkin": "Check-in",
+    "checkout": "Check-out",
+    "guests": "Guests",
+    "guestsCount": "{{count}} guests",
+    "total": "Total",
+    "backHome": "Back to Home",
+    "viewProperty": "View property again"
+  },
+  "section": {
+    "trip": "Your Trip",
+    "transport": "Transport Concierge",
+    "summary": "Price Summary"
+  },
+  "field": {
+    "checkin": "Check-in",
+    "checkout": "Check-out",
+    "guests": "Guests",
+    "maxGuests": "Max {{max}} guests",
+    "shuttleFree": "Free shuttle",
+    "shuttleDesc": "We'll arrange your shuttle after booking is confirmed.",
+    "travelTime": "{{time}} to property"
+  },
+  "price": {
+    "perNight": "{{price}} x {{nights}} night",
+    "perNightSuffix": "night",
+    "concierge": "Transport Concierge",
+    "conciergePrice": "Free",
+    "total": "Total"
+  },
+  "submit": "Confirm and Pay",
+  "submitting": "Processing...",
+  "noCharge": "No charge until host approval"
+}

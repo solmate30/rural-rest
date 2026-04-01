@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
 import {
     Select,
@@ -42,6 +43,8 @@ export function CreateProposalForm({
 }: CreateProposalFormProps) {
     const wallet = useWallet();
     const { connection } = useConnection();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { t } = useTranslation("governance") as any;
 
     const [title, setTitle] = useState("");
     const [markdownContent, setMarkdownContent] = useState("");
@@ -74,7 +77,7 @@ export function CreateProposalForm({
         if (!wallet.publicKey || !wallet.signTransaction) return;
 
         if (!title.trim()) {
-            setError("제목을 입력하세요");
+            setError(t("form.errorTitle"));
             return;
         }
 
@@ -83,7 +86,7 @@ export function CreateProposalForm({
             const { PublicKey } = await import("@solana/web3.js");
             new PublicKey(daoConfig.councilMint);
         } catch {
-            setError("DAO가 온체인에 초기화되지 않았습니다. 로컬 validator를 실행한 후 새로고침하세요.");
+            setError(t("form.errorDaoNotInit"));
             return;
         }
 
@@ -175,26 +178,26 @@ export function CreateProposalForm({
     };
 
     const buttonLabel = issueLoading
-        ? "Issue 등록 중..."
+        ? t("form.uploadingIssue")
         : loading
-            ? "트랜잭션 처리 중..."
-            : "제안 등록하기";
+            ? t("form.submitting")
+            : t("form.submit");
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             {/* 분류 */}
             <div className="space-y-2">
                 <label className="text-sm font-semibold text-[#5D4037]">
-                    분류
+                    {t("form.category")}
                 </label>
                 <Select value={categoryValue} onValueChange={handleCategoryChange}>
                     <SelectTrigger className="w-full rounded-lg bg-[#FAF9F6] border-[#D7CCC8] text-[#3E2723] focus:ring-[#8D6E63]/30 py-3.5 text-[15px] shadow-sm">
-                        <SelectValue placeholder="분류 선택" />
+                        <SelectValue placeholder={t("form.categoryPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-[#D7CCC8]/60 text-[#3E2723] rounded-lg shadow-md">
                         {CATEGORIES.map((cat) => (
                             <SelectItem key={cat.value} value={cat.value}>
-                                {cat.label}
+                                {t(`card.cat${cat.value.charAt(0).toUpperCase()}${cat.value.slice(1)}`)}
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -204,7 +207,7 @@ export function CreateProposalForm({
             {/* 투표 마감일 */}
             <div className="space-y-2">
                 <label className="text-sm font-semibold text-[#5D4037]">
-                    투표 마감일
+                    {t("form.deadline")}
                 </label>
                 <input
                     type="datetime-local"
@@ -218,21 +221,21 @@ export function CreateProposalForm({
                     className="w-full rounded-lg border border-[#D7CCC8] bg-[#FAF9F6] px-4 py-3.5 text-[15px] text-[#3E2723] focus:outline-none focus:ring-2 focus:ring-[#8D6E63]/30 focus:border-[#8D6E63] transition-all duration-300"
                 />
                 <p className="text-[11px] text-[#A1887F]">
-                    최소 1일 ~ 최대 30일. 기본값: 7일 후
+                    {t("form.deadlineHint")}
                 </p>
             </div>
 
             {/* 제목 */}
             <div className="space-y-2 relative group">
                 <label className="text-sm font-semibold text-[#5D4037]">
-                    안건 제목
+                    {t("form.agendaTitle")}
                 </label>
                 <div className="relative">
                     <input
                         type="text"
                         value={title}
                         onChange={(e) => handleTitleChange(e.target.value)}
-                        placeholder="이곳에 제안할 안건의 제목을 입력하세요."
+                        placeholder={t("form.titlePlaceholder")}
                         maxLength={128}
                         className="w-full rounded-lg border border-[#D7CCC8] bg-[#FAF9F6] px-4 py-3.5 text-[15px] text-[#3E2723] placeholder:text-[#A1887F] focus:outline-none focus:ring-2 focus:ring-[#8D6E63]/30 focus:border-[#8D6E63] transition-all duration-300"
                     />
@@ -245,17 +248,17 @@ export function CreateProposalForm({
             {/* 상세 설명 */}
             <div className="space-y-2">
                 <label className="text-sm font-semibold text-[#5D4037]">
-                    상세 설명 <span className="text-[#A1887F] font-normal ml-1">(선택)</span>
+                    {t("form.description")} <span className="text-[#A1887F] font-normal ml-1">{t("form.descriptionOptional")}</span>
                 </label>
                 <textarea
                     value={markdownContent}
                     onChange={(e) => handleMarkdownChange(e.target.value)}
-                    placeholder={"마크다운으로 제안 내용을 작성하세요.\n\n## 배경\n현재 상황 설명...\n\n## 제안 내용\n- 항목 1\n- 항목 2\n\n## 예상 효과\n기대되는 결과..."}
+                    placeholder={t("form.descriptionPlaceholder")}
                     rows={16}
                     className="w-full rounded-lg border border-[#D7CCC8] bg-[#FAF9F6] px-4 py-3.5 text-[14px] text-[#3E2723] placeholder:text-[#A1887F]/60 focus:outline-none focus:ring-2 focus:ring-[#8D6E63]/30 focus:border-[#8D6E63] transition-all duration-300 resize-none font-mono leading-relaxed"
                 />
                 <p className="text-[11px] text-[#A1887F]">
-                    마크다운 문법을 지원합니다 (제목, 목록, 볼드 등).
+                    {t("form.descriptionHint")}
                 </p>
             </div>
 
@@ -275,7 +278,7 @@ export function CreateProposalForm({
                         onClick={onClose}
                         className="flex-1 py-6 rounded-lg hover:bg-[#FAF9F6] text-[15px] border-[#D7CCC8] text-[#5D4037]"
                     >
-                        취소
+                        {t("form.cancel")}
                     </Button>
                 )}
                 <Button
@@ -290,7 +293,7 @@ export function CreateProposalForm({
                             {buttonLabel}
                         </div>
                     ) : (
-                        "제안 등록하기"
+                        t("form.submit")
                     )}
                 </Button>
             </div>

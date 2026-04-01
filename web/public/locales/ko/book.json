@@ -1,0 +1,45 @@
+{
+  "title": "예약 확인",
+  "error": {
+    "required": "모든 항목을 입력해주세요.",
+    "checkoutBeforeCheckin": "체크아웃은 체크인 이후 날짜여야 합니다.",
+    "pastDate": "지난 날짜는 선택할 수 없어요.",
+    "guestLimit": "최대 {{max}}명까지 예약 가능합니다."
+  },
+  "confirm": {
+    "title": "예약이 접수되었어요!",
+    "message": "호스트가 24시간 내에 예약을 확인해드립니다.",
+    "bookingId": "예약 번호",
+    "checkin": "체크인",
+    "checkout": "체크아웃",
+    "guests": "인원",
+    "guestsCount": "{{count}}명",
+    "total": "총 금액",
+    "backHome": "홈으로 돌아가기",
+    "viewProperty": "숙소 다시 보기"
+  },
+  "section": {
+    "trip": "여행 정보",
+    "transport": "교통 컨시어지",
+    "summary": "예약 요약"
+  },
+  "field": {
+    "checkin": "체크인",
+    "checkout": "체크아웃",
+    "guests": "인원",
+    "maxGuests": "최대 {{max}}명",
+    "shuttleFree": "무료 셔틀",
+    "shuttleDesc": "예약 확정 후 셔틀 일정을 안내드려요.",
+    "travelTime": "숙소까지 {{time}}"
+  },
+  "price": {
+    "perNight": "{{price}} x {{nights}}박",
+    "perNightSuffix": "박",
+    "concierge": "교통 컨시어지",
+    "conciergePrice": "무료",
+    "total": "합계"
+  },
+  "submit": "예약 확정하기",
+  "submitting": "처리 중...",
+  "noCharge": "호스트 승인 전 결제 없음"
+}
