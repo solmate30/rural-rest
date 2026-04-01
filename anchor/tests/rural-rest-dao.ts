@@ -46,6 +46,9 @@ describe("rural-rest-dao", () => {
   let usdcMint: PublicKey;
   let councilMint: PublicKey; // Token-2022 NonTransferable (테스트에서는 일반 Token-2022 mint 사용)
 
+  // -- RwaConfig PDA --
+  let rwaConfig: PublicKey;
+
   // -- RWA 매물 (Active 상태 2개) --
   const listingA = "dao-test-001";
   const listingB = "dao-test-002";
@@ -104,6 +107,20 @@ describe("rural-rest-dao", () => {
       const ata = await createAssociatedTokenAccount(connection, authority, usdcMint, wallet.publicKey);
       await mintTo(connection, authority, usdcMint, ata, authority, 100_000_000); // 100 USDC
     }
+
+    // -- RwaConfig 초기화 --
+    [rwaConfig] = PublicKey.findProgramAddressSync(
+      [Buffer.from("rwa_config")], rwaProgram.programId
+    );
+    await rwaProgram.methods
+      .initializeConfig()
+      .accounts({
+        authority: authority.publicKey,
+        rwaConfig,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([authority])
+      .rpc();
 
     // -- RWA 매물 초기화 헬퍼 --
     const initProperty = async (lid: string, mintKp: Keypair, deadline: anchor.BN) => {
@@ -220,8 +237,9 @@ describe("rural-rest-dao", () => {
       await rwaProgram.methods
         .releaseFunds(lid)
         .accounts({
-          authority: authority.publicKey,
+          operator: authority.publicKey,
           propertyToken: pt,
+          rwaConfig,
           fundingVault: fv,
           authorityUsdcAccount: authUsdc,
           usdcMint: usdcMint,
@@ -236,7 +254,8 @@ describe("rural-rest-dao", () => {
         .activateProperty(lid)
         .accounts({
           propertyToken: pt,
-          authority: authority.publicKey,
+          operator: authority.publicKey,
+          rwaConfig,
           tokenMint: tm.publicKey,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
@@ -318,7 +337,7 @@ describe("rural-rest-dao", () => {
       );
 
       await daoProgram.methods
-        .createProposal("테스트 제안", "https://example.com", { operations: {} })
+        .createProposal("테스트 제안", "https://example.com", { operations: {} }, new anchor.BN(0))
         .accounts({
           creator: investor1.publicKey,
           daoConfig: daoConfig,
@@ -352,12 +371,14 @@ describe("rural-rest-dao", () => {
         "전체 숙소 운영 규칙 개정",
         "https://arweave.net/abc123",
         { operations: {} },
+        new anchor.BN(0),
       )
       .accounts({
         creator: councilMember.publicKey,
         daoConfig: daoConfig,
         proposal: proposalPda,
         creatorCouncilAta: councilAta,
+        councilMint: councilMint,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -372,8 +393,8 @@ describe("rural-rest-dao", () => {
     assert.equal(proposal.id.toNumber(), 0);
     assert.equal(proposal.title, "전체 숙소 운영 규칙 개정");
     assert.deepEqual(proposal.status, { voting: {} });
-    // total_eligible_weight: 매물A tokens_sold(45) + 매물B tokens_sold(20) = 65
-    assert.equal(proposal.totalEligibleWeight.toNumber(), 65);
+    // total_eligible_weight: 매물A tokens_sold(45) + 매물B tokens_sold(20) + council_supply(1) = 66
+    assert.equal(proposal.totalEligibleWeight.toNumber(), 66);
     assert.isTrue(proposal.votingEndsAt.toNumber() > proposal.votingStartsAt.toNumber());
 
     const config = await daoProgram.account.daoConfig.fetch(daoConfig);
@@ -398,9 +419,12 @@ describe("rural-rest-dao", () => {
         daoConfig: daoConfig,
         proposal: proposalPda,
         voteRecord: voteRecordPda,
+        voterCouncilAta: null,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .remainingAccounts([
+        { pubkey: propertyTokenA, isWritable: false, isSigner: false },
         { pubkey: inv1PositionA, isWritable: false, isSigner: false },
       ])
       .signers([investor1])
@@ -408,7 +432,7 @@ describe("rural-rest-dao", () => {
 
     const record = await daoProgram.account.voteRecord.fetch(voteRecordPda);
     assert.equal(record.rawWeight.toNumber(), 10);
-    assert.equal(record.weight.toNumber(), 6); // cap = 65 * 10% = 6 (floor)
+    assert.equal(record.weight.toNumber(), 6); // cap = 66 * 10% = 6 (floor)
     assert.deepEqual(record.voteType, { for: {} });
 
     const proposal = await daoProgram.account.proposal.fetch(proposalPda);
@@ -429,9 +453,12 @@ describe("rural-rest-dao", () => {
         daoConfig: daoConfig,
         proposal: proposalPda,
         voteRecord: voteRecordPda,
+        voterCouncilAta: null,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .remainingAccounts([
+        { pubkey: propertyTokenA, isWritable: false, isSigner: false },
         { pubkey: inv2PositionA, isWritable: false, isSigner: false },
       ])
       .signers([investor2])
@@ -457,10 +484,14 @@ describe("rural-rest-dao", () => {
         daoConfig: daoConfig,
         proposal: proposalPda,
         voteRecord: voteRecordPda,
+        voterCouncilAta: null,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .remainingAccounts([
+        { pubkey: propertyTokenA, isWritable: false, isSigner: false },
         { pubkey: whalePositionA, isWritable: false, isSigner: false },
+        { pubkey: propertyTokenB, isWritable: false, isSigner: false },
         { pubkey: whalePositionB, isWritable: false, isSigner: false },
       ])
       .signers([whale])
@@ -468,7 +499,7 @@ describe("rural-rest-dao", () => {
 
     const record = await daoProgram.account.voteRecord.fetch(voteRecordPda);
     assert.equal(record.rawWeight.toNumber(), 50); // 30 + 20
-    assert.equal(record.weight.toNumber(), 6); // cap = 65 * 10% = 6
+    assert.equal(record.weight.toNumber(), 6); // cap = 66 * 10% = 6
     console.log("    whale 투표: raw=50, capped=6 (10% 캡 적용)");
   });
 
@@ -486,9 +517,12 @@ describe("rural-rest-dao", () => {
           daoConfig: daoConfig,
           proposal: proposalPda,
           voteRecord: voteRecordPda,
+          voterCouncilAta: null,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
         .remainingAccounts([
+          { pubkey: propertyTokenA, isWritable: false, isSigner: false },
           { pubkey: inv1PositionA, isWritable: false, isSigner: false },
         ])
         .signers([investor1])
@@ -514,6 +548,8 @@ describe("rural-rest-dao", () => {
           daoConfig: daoConfig,
           proposal: proposalPda,
           voteRecord: voteRecordPda,
+          voterCouncilAta: null,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
         .remainingAccounts([]) // 빈 배열: InvestorPosition 없음
@@ -541,9 +577,12 @@ describe("rural-rest-dao", () => {
           daoConfig: daoConfig,
           proposal: proposalPda,
           voteRecord: voteRecordPda,
+          voterCouncilAta: null,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
         .remainingAccounts([
+          { pubkey: propertyTokenA, isWritable: false, isSigner: false },
           { pubkey: inv1PositionA, isWritable: false, isSigner: false },
         ])
         .signers([outsider])
@@ -627,12 +666,13 @@ describe("rural-rest-dao", () => {
     );
 
     await daoProgram.methods
-      .createProposal("긴급 안건", "https://arweave.net/xyz", { fundUsage: {} })
+      .createProposal("긴급 안건", "https://arweave.net/xyz", { fundUsage: {} }, new anchor.BN(0))
       .accounts({
         creator: councilMember.publicKey,
         daoConfig: daoConfig,
         proposal: proposal2Pda,
         creatorCouncilAta: councilAta,
+        councilMint: councilMint,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -675,12 +715,13 @@ describe("rural-rest-dao", () => {
       councilMint, councilMember.publicKey, false, TOKEN_2022_PROGRAM_ID
     );
     await daoProgram.methods
-      .createProposal(title, "https://arweave.net/test", category)
+      .createProposal(title, "https://arweave.net/test", category, new anchor.BN(0))
       .accounts({
         creator: councilMember.publicKey,
         daoConfig: daoConfig,
         proposal: pda,
         creatorCouncilAta: councilAta,
+        councilMint: councilMint,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -693,13 +734,13 @@ describe("rural-rest-dao", () => {
     return pda;
   };
 
-  // 헬퍼: 투표
+  // 헬퍼: 투표 (remaining_accounts: [PropertyToken, InvestorPosition] 쌍의 flat 배열)
   const castVoteHelper = async (
     voter: Keypair,
     proposalPda: PublicKey,
     proposalId: number,
     voteType: any,
-    positions: PublicKey[],
+    pairedAccounts: PublicKey[],
   ) => {
     const [vr] = PublicKey.findProgramAddressSync(
       [Buffer.from("vote"), new anchor.BN(proposalId).toArrayLike(Buffer, "le", 8), voter.publicKey.toBuffer()],
@@ -712,9 +753,11 @@ describe("rural-rest-dao", () => {
         daoConfig: daoConfig,
         proposal: proposalPda,
         voteRecord: vr,
+        voterCouncilAta: null,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
-      .remainingAccounts(positions.map(p => ({ pubkey: p, isWritable: false, isSigner: false })))
+      .remainingAccounts(pairedAccounts.map(p => ({ pubkey: p, isWritable: false, isSigner: false })))
       .signers([voter])
       .rpc();
   };
@@ -736,12 +779,12 @@ describe("rural-rest-dao", () => {
   });
 
   it("16. finalize -- 정족수 미달 → Defeated", async () => {
-    // total_eligible_weight=65, quorum=10%(6.5→7). investor2만 투표(5) → 정족수 미달
+    // total_eligible_weight=66, quorum=10%(6.6→6 floor). investor2만 투표(5) → 정족수 미달
     const pda = await createProposalHelper("정족수 미달 테스트", { operations: {} });
     const config = await daoProgram.account.daoConfig.fetch(daoConfig);
     const pid = config.proposalCount.toNumber() - 1;
 
-    await castVoteHelper(investor2, pda, pid, { for: {} }, [inv2PositionA]);
+    await castVoteHelper(investor2, pda, pid, { for: {} }, [propertyTokenA, inv2PositionA]);
 
     // 2초 대기 (투표 기간 종료)
     await sleep(11000);
@@ -753,7 +796,7 @@ describe("rural-rest-dao", () => {
 
     const proposal = await daoProgram.account.proposal.fetch(pda);
     assert.deepEqual(proposal.status, { defeated: {} });
-    // votes_for=5, total_eligible=65, quorum=65*10%=6 → 5 < 6 → 정족수 미달 → Defeated
+    // votes_for=5, total_eligible=66, quorum=66*10%=6 → 5 < 6 → 정족수 미달 → Defeated
     console.log("    정족수 미달 부결 확인 (votes=5, quorum=6)");
   });
 
@@ -763,8 +806,8 @@ describe("rural-rest-dao", () => {
     const config = await daoProgram.account.daoConfig.fetch(daoConfig);
     const pid = config.proposalCount.toNumber() - 1;
 
-    await castVoteHelper(investor1, pda, pid, { for: {} }, [inv1PositionA]);
-    await castVoteHelper(investor2, pda, pid, { for: {} }, [inv2PositionA]);
+    await castVoteHelper(investor1, pda, pid, { for: {} }, [propertyTokenA, inv1PositionA]);
+    await castVoteHelper(investor2, pda, pid, { for: {} }, [propertyTokenA, inv2PositionA]);
 
     await sleep(11000);
 
@@ -786,9 +829,9 @@ describe("rural-rest-dao", () => {
     const config = await daoProgram.account.daoConfig.fetch(daoConfig);
     const pid = config.proposalCount.toNumber() - 1;
 
-    await castVoteHelper(whale, pda, pid, { for: {} }, [whalePositionA, whalePositionB]);
-    await castVoteHelper(investor1, pda, pid, { against: {} }, [inv1PositionA]);
-    await castVoteHelper(investor2, pda, pid, { against: {} }, [inv2PositionA]);
+    await castVoteHelper(whale, pda, pid, { for: {} }, [propertyTokenA, whalePositionA, propertyTokenB, whalePositionB]);
+    await castVoteHelper(investor1, pda, pid, { against: {} }, [propertyTokenA, inv1PositionA]);
+    await castVoteHelper(investor2, pda, pid, { against: {} }, [propertyTokenA, inv2PositionA]);
 
     await sleep(11000);
 
@@ -824,9 +867,14 @@ describe("rural-rest-dao", () => {
           daoConfig: daoConfig,
           proposal: pda,
           voteRecord: vr,
+          voterCouncilAta: null,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
-        .remainingAccounts([{ pubkey: inv1PositionA, isWritable: false, isSigner: false }])
+        .remainingAccounts([
+          { pubkey: propertyTokenA, isWritable: false, isSigner: false },
+          { pubkey: inv1PositionA, isWritable: false, isSigner: false },
+        ])
         .signers([investor1])
         .rpc();
       assert.fail("투표 기간 만료 후 투표가 성공하면 안 됨");

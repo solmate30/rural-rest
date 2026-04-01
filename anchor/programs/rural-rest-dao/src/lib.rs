@@ -12,6 +12,8 @@ declare_id!("3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX");
 const MAX_TITLE_LEN: usize = 128;
 const MAX_URI_LEN: usize = 256;
 const BPS_DENOMINATOR: u64 = 10_000;
+const MIN_VOTING_PERIOD: i64 = 86_400;      // 1일
+const MAX_VOTING_PERIOD: i64 = 2_592_000;    // 30일
 
 #[program]
 pub mod rural_rest_dao {
@@ -28,12 +30,12 @@ pub mod rural_rest_dao {
     ) -> Result<()> {
         // 파라미터 범위 검증
         require!(voting_period > 0, DaoError::InvalidVotingPeriod);
-        require!(quorum_bps <= 10_000, DaoError::InvalidQuorum);
+        require!(quorum_bps > 0 && quorum_bps <= 10_000, DaoError::InvalidQuorum);
         require!(
-            approval_threshold_bps <= 10_000,
+            approval_threshold_bps > 0 && approval_threshold_bps <= 10_000,
             DaoError::InvalidThreshold
         );
-        require!(voting_cap_bps <= 10_000, DaoError::InvalidVotingCap);
+        require!(voting_cap_bps > 0 && voting_cap_bps <= 10_000, DaoError::InvalidVotingCap);
 
         let config = &mut ctx.accounts.dao_config;
         config.authority = ctx.accounts.authority.key();
@@ -56,6 +58,7 @@ pub mod rural_rest_dao {
         title: String,
         description_uri: String,
         category: ProposalCategory,
+        custom_voting_period: i64,
     ) -> Result<()> {
         // 파라미터 검증
         require!(title.len() <= MAX_TITLE_LEN, DaoError::TitleTooLong);
@@ -106,6 +109,11 @@ pub mod rural_rest_dao {
                 .ok_or(DaoError::MathOverflow)?;
         }
 
+        // Council Token 총 공급량도 total_eligible_weight에 포함
+        total_eligible_weight = total_eligible_weight
+            .checked_add(ctx.accounts.council_mint.supply)
+            .ok_or(DaoError::MathOverflow)?;
+
         let config = &mut ctx.accounts.dao_config;
         let proposal_id = config.proposal_count;
         config.proposal_count = config
@@ -114,8 +122,22 @@ pub mod rural_rest_dao {
             .ok_or(DaoError::MathOverflow)?;
 
         let now = Clock::get()?.unix_timestamp;
+        // custom_voting_period > 0이면 커스텀 기간 사용, 아니면 기본값
+        let effective_period = if custom_voting_period > 0 {
+            require!(
+                custom_voting_period >= MIN_VOTING_PERIOD,
+                DaoError::VotingPeriodTooShort
+            );
+            require!(
+                custom_voting_period <= MAX_VOTING_PERIOD,
+                DaoError::VotingPeriodTooLong
+            );
+            custom_voting_period
+        } else {
+            config.voting_period
+        };
         let voting_ends_at = now
-            .checked_add(config.voting_period)
+            .checked_add(effective_period)
             .ok_or(DaoError::MathOverflow)?;
 
         let proposal = &mut ctx.accounts.proposal;
@@ -128,6 +150,7 @@ pub mod rural_rest_dao {
         proposal.votes_for = 0;
         proposal.votes_against = 0;
         proposal.votes_abstain = 0;
+        proposal.voter_count = 0;
         proposal.total_eligible_weight = total_eligible_weight;
         proposal.voting_starts_at = now;
         proposal.voting_ends_at = voting_ends_at;
@@ -137,8 +160,9 @@ pub mod rural_rest_dao {
         Ok(())
     }
 
-    /// 투표. RWA 보유량 합산으로 가중치 계산, 10% 캡 적용.
-    /// remaining_accounts: voter의 InvestorPosition PDA들 (readonly)
+    /// 투표. RWA 보유량 + Council Token 잔액 합산으로 가중치 계산, 10% 캡 적용.
+    /// remaining_accounts: [PropertyToken_1, InvestorPosition_1, PropertyToken_2, InvestorPosition_2, ...]
+    /// 각 쌍에서 PropertyToken.status == Active 검증 + token_mint 일치 검증
     pub fn cast_vote(ctx: Context<CastVote>, vote_type: VoteType) -> Result<()> {
         let proposal = &ctx.accounts.proposal;
 
@@ -154,34 +178,69 @@ pub mod rural_rest_dao {
             DaoError::InvalidProposalStatus
         );
 
-        // remaining accounts에서 voter의 InvestorPosition amount 합산
+        // remaining accounts: [PropertyToken, InvestorPosition] 쌍으로 전달
+        require!(
+            ctx.remaining_accounts.len() % 2 == 0,
+            DaoError::InvalidRemainingAccounts
+        );
+
         let rwa_program_id = ctx.accounts.dao_config.rwa_program;
         let voter_key = ctx.accounts.voter.key();
         let mut raw_weight: u64 = 0;
 
-        // 중복 InvestorPosition 전달 방지
-        let mut seen_keys: Vec<Pubkey> = Vec::with_capacity(ctx.remaining_accounts.len());
+        // 중복 방지
+        let pair_count = ctx.remaining_accounts.len() / 2;
+        let mut seen_property_keys: Vec<Pubkey> = Vec::with_capacity(pair_count);
+        let mut seen_position_keys: Vec<Pubkey> = Vec::with_capacity(pair_count);
 
-        for account_info in ctx.remaining_accounts.iter() {
-            // 동일 계정 중복 전달 차단
+        for chunk in ctx.remaining_accounts.chunks(2) {
+            let pt_info = &chunk[0];
+            let ip_info = &chunk[1];
+
+            // PropertyToken 중복 방지
             require!(
-                !seen_keys.contains(&account_info.key()),
+                !seen_property_keys.contains(&pt_info.key()),
+                DaoError::DuplicatePropertyAccount
+            );
+            seen_property_keys.push(pt_info.key());
+
+            // InvestorPosition 중복 방지
+            require!(
+                !seen_position_keys.contains(&ip_info.key()),
                 DaoError::DuplicatePositionAccount
             );
-            seen_keys.push(account_info.key());
+            seen_position_keys.push(ip_info.key());
 
+            // PropertyToken 검증: owner, status
             require!(
-                account_info.owner == &rwa_program_id,
-                DaoError::InvalidPositionAccount
+                pt_info.owner == &rwa_program_id,
+                DaoError::InvalidPropertyAccount
+            );
+            let pt_data = pt_info.try_borrow_data()?;
+            let property_token =
+                PropertyToken::try_deserialize(&mut &pt_data[..])?;
+            require!(
+                property_token.status == PropertyStatus::Active,
+                DaoError::InvalidPropertyStatus
             );
 
-            let data = account_info.try_borrow_data()?;
+            // InvestorPosition 검증: owner (program), owner (voter)
+            require!(
+                ip_info.owner == &rwa_program_id,
+                DaoError::InvalidPositionAccount
+            );
+            let ip_data = ip_info.try_borrow_data()?;
             let position =
-                InvestorPosition::try_deserialize(&mut &data[..])?;
-
+                InvestorPosition::try_deserialize(&mut &ip_data[..])?;
             require!(
                 position.owner == voter_key,
                 DaoError::InvalidPositionOwner
+            );
+
+            // PropertyToken ↔ InvestorPosition 연결 검증 (동일 매물인지)
+            require!(
+                position.token_mint == property_token.token_mint,
+                DaoError::PositionPropertyMismatch
             );
 
             raw_weight = raw_weight
@@ -189,15 +248,31 @@ pub mod rural_rest_dao {
                 .ok_or(DaoError::MathOverflow)?;
         }
 
+        // Council Token 잔액 합산 (Optional — council member가 아니면 None)
+        if let Some(ref council_ata) = ctx.accounts.voter_council_ata {
+            require!(
+                council_ata.mint == ctx.accounts.dao_config.council_mint,
+                DaoError::InvalidCouncilAta
+            );
+            require!(
+                council_ata.owner == voter_key,
+                DaoError::InvalidCouncilAtaOwner
+            );
+            raw_weight = raw_weight
+                .checked_add(council_ata.amount)
+                .ok_or(DaoError::MathOverflow)?;
+        }
+
         require!(raw_weight > 0, DaoError::NoVotingPower);
 
-        // 10% 캡 적용
-        let cap = (proposal.total_eligible_weight as u128)
+        // 10% 캡 적용 (최소 1 보장: 소규모 풀에서 정수 나눗셈으로 0이 되는 것 방지)
+        let cap_raw = (proposal.total_eligible_weight as u128)
             .checked_mul(ctx.accounts.dao_config.voting_cap_bps as u128)
             .ok_or(DaoError::MathOverflow)?
             .checked_div(BPS_DENOMINATOR as u128)
             .ok_or(DaoError::MathOverflow)? as u64;
 
+        let cap = cap_raw.max(1);
         let weight = raw_weight.min(cap);
 
         // Proposal 투표수 업데이트
@@ -231,6 +306,12 @@ pub mod rural_rest_dao {
         vote_record.weight = weight;
         vote_record.raw_weight = raw_weight;
         vote_record.bump = ctx.bumps.vote_record;
+
+        // 고유 투표자 수 증가
+        proposal.voter_count = proposal
+            .voter_count
+            .checked_add(1)
+            .ok_or(DaoError::MathOverflow)?;
 
         Ok(())
     }
@@ -318,6 +399,41 @@ pub mod rural_rest_dao {
 
         Ok(())
     }
+
+    /// DaoConfig 파라미터 업데이트. authority(Squads multisig)만 호출 가능.
+    /// 변경하지 않을 필드는 현재값 그대로 전달.
+    pub fn update_dao_config(
+        ctx: Context<UpdateDaoConfig>,
+        voting_period: i64,
+        quorum_bps: u16,
+        approval_threshold_bps: u16,
+        voting_cap_bps: u16,
+    ) -> Result<()> {
+        require!(voting_period > 0, DaoError::InvalidVotingPeriod);
+        require!(quorum_bps > 0 && quorum_bps <= 10_000, DaoError::InvalidQuorum);
+        require!(
+            approval_threshold_bps > 0 && approval_threshold_bps <= 10_000,
+            DaoError::InvalidThreshold
+        );
+        require!(voting_cap_bps > 0 && voting_cap_bps <= 10_000, DaoError::InvalidVotingCap);
+
+        let config = &mut ctx.accounts.dao_config;
+        config.voting_period = voting_period;
+        config.quorum_bps = quorum_bps;
+        config.approval_threshold_bps = approval_threshold_bps;
+        config.voting_cap_bps = voting_cap_bps;
+
+        Ok(())
+    }
+
+    /// Authority 이전. 현재 authority만 호출 가능.
+    pub fn transfer_authority(
+        ctx: Context<UpdateDaoConfig>,
+        new_authority: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.dao_config.authority = new_authority;
+        Ok(())
+    }
 }
 
 // =====================
@@ -378,6 +494,7 @@ pub struct Proposal {
     pub votes_against: u64,
     pub votes_abstain: u64,
     pub total_eligible_weight: u64,
+    pub voter_count: u32,
     pub voting_starts_at: i64,
     pub voting_ends_at: i64,
     pub created_at: i64,
@@ -448,6 +565,10 @@ pub struct CreateProposal<'info> {
     )]
     pub creator_council_ata: InterfaceAccount<'info, TokenAccount>,
 
+    /// Council Token Mint (supply → total_eligible_weight 포함)
+    #[account(address = dao_config.council_mint)]
+    pub council_mint: InterfaceAccount<'info, Mint>,
+
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
@@ -480,6 +601,10 @@ pub struct CastVote<'info> {
     )]
     pub vote_record: Account<'info, VoteRecord>,
 
+    /// Voter의 Council Token ATA (Optional — Council member가 아니면 None)
+    pub voter_council_ata: Option<InterfaceAccount<'info, TokenAccount>>,
+
+    pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
 
@@ -517,6 +642,21 @@ pub struct CancelProposal<'info> {
     pub proposal: Account<'info, Proposal>,
 }
 
+#[derive(Accounts)]
+pub struct UpdateDaoConfig<'info> {
+    #[account(
+        constraint = authority.key() == dao_config.authority @ DaoError::Unauthorized,
+    )]
+    pub authority: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"dao_config"],
+        bump = dao_config.bump,
+    )]
+    pub dao_config: Account<'info, DaoConfig>,
+}
+
 // =====================
 // Errors
 // =====================
@@ -544,7 +684,7 @@ pub enum DaoError {
     VotingNotEnded, // 6009
     #[msg("Proposal is not in the expected status.")]
     InvalidProposalStatus, // 6010
-    #[msg("Voter has no voting power (0 RWA tokens).")]
+    #[msg("Voter has no voting power (0 RWA tokens and 0 Council tokens).")]
     NoVotingPower, // 6011
     #[msg("InvestorPosition owner does not match voter.")]
     InvalidPositionOwner, // 6012
@@ -562,4 +702,16 @@ pub enum DaoError {
     DuplicatePropertyAccount, // 6018
     #[msg("Duplicate InvestorPosition account in remaining accounts.")]
     DuplicatePositionAccount, // 6019
+    #[msg("Council Token ATA mint does not match dao_config.council_mint.")]
+    InvalidCouncilAta, // 6020
+    #[msg("Council Token ATA owner does not match voter.")]
+    InvalidCouncilAtaOwner, // 6021
+    #[msg("Voting period must be at least 1 day (86400 seconds).")]
+    VotingPeriodTooShort, // 6022
+    #[msg("Voting period must be at most 30 days (2592000 seconds).")]
+    VotingPeriodTooLong, // 6023
+    #[msg("Remaining accounts must be [PropertyToken, InvestorPosition] pairs (even count).")]
+    InvalidRemainingAccounts, // 6024
+    #[msg("InvestorPosition.token_mint does not match PropertyToken.token_mint.")]
+    PositionPropertyMismatch, // 6025
 }
