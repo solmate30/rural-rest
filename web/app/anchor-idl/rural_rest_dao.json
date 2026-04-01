@@ -1,0 +1,1024 @@
+{
+  "address": "3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX",
+  "metadata": {
+    "name": "rural_rest_dao",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Rural Rest DAO Governance Program"
+  },
+  "instructions": [
+    {
+      "name": "cancel_proposal",
+      "docs": [
+        "\uc81c\uc548 \ucde8\uc18c. creator \ub610\ub294 authority\ub9cc \ud638\ucd9c \uac00\ub2a5."
+      ],
+      "discriminator": [
+        106,
+        74,
+        128,
+        146,
+        19,
+        65,
+        39,
+        23
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "dao_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  111,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "proposal",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  112,
+                  111,
+                  115,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "proposal.id",
+                "account": "Proposal"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "cast_vote",
+      "docs": [
+        "\ud22c\ud45c. RWA \ubcf4\uc720\ub7c9 + Council Token \uc794\uc561 \ud569\uc0b0\uc73c\ub85c \uac00\uc911\uce58 \uacc4\uc0b0, 10% \ucea1 \uc801\uc6a9.",
+        "remaining_accounts: [PropertyToken_1, InvestorPosition_1, PropertyToken_2, InvestorPosition_2, ...]",
+        "\uac01 \uc30d\uc5d0\uc11c PropertyToken.status == Active \uac80\uc99d + token_mint \uc77c\uce58 \uac80\uc99d"
+      ],
+      "discriminator": [
+        20,
+        212,
+        15,
+        189,
+        69,
+        180,
+        69,
+        151
+      ],
+      "accounts": [
+        {
+          "name": "voter",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "dao_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  111,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "proposal",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  112,
+                  111,
+                  115,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "proposal.id",
+                "account": "Proposal"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vote_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "proposal.id",
+                "account": "Proposal"
+              },
+              {
+                "kind": "account",
+                "path": "voter"
+              }
+            ]
+          }
+        },
+        {
+          "name": "voter_council_ata",
+          "docs": [
+            "Voter\uc758 Council Token ATA (Optional \u2014 Council member\uac00 \uc544\ub2c8\uba74 None)"
+          ],
+          "optional": true
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "vote_type",
+          "type": {
+            "defined": {
+              "name": "VoteType"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "create_proposal",
+      "docs": [
+        "\uc81c\uc548 \uc0dd\uc131. Council Token \ubcf4\uc720\uc790\ub9cc \ud638\ucd9c \uac00\ub2a5.",
+        "remaining_accounts: Active \uc0c1\ud0dc PropertyToken \uacc4\uc815\ub4e4 (total_eligible_weight \uc2a4\ub0c5\uc0f7)"
+      ],
+      "discriminator": [
+        132,
+        116,
+        68,
+        174,
+        216,
+        160,
+        198,
+        22
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "dao_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  111,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "proposal",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  112,
+                  111,
+                  115,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "dao_config.proposal_count",
+                "account": "DaoConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator_council_ata",
+          "docs": [
+            "creator\uc758 Council Token ATA (\uc794\uc561 >= 1 \uac80\uc99d)"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "dao_config.council_mint",
+                "account": "DaoConfig"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "council_mint",
+          "docs": [
+            "Council Token Mint (supply \u2192 total_eligible_weight \ud3ec\ud568)"
+          ]
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "description_uri",
+          "type": "string"
+        },
+        {
+          "name": "category",
+          "type": {
+            "defined": {
+              "name": "ProposalCategory"
+            }
+          }
+        },
+        {
+          "name": "custom_voting_period",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "finalize_proposal",
+      "docs": [
+        "\ud22c\ud45c \uc885\ub8cc \ud6c4 \uacb0\uacfc \ud310\uc815. \ub204\uad6c\ub098 \ud638\ucd9c \uac00\ub2a5 (permissionless)."
+      ],
+      "discriminator": [
+        23,
+        68,
+        51,
+        167,
+        109,
+        173,
+        187,
+        164
+      ],
+      "accounts": [
+        {
+          "name": "dao_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  111,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "proposal",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  112,
+                  111,
+                  115,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "proposal.id",
+                "account": "Proposal"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_dao",
+      "docs": [
+        "DAO \ucd08\uae30\ud654. DaoConfig PDA \uc0dd\uc131 \ubc0f \ud30c\ub77c\ubbf8\ud130 \uc124\uc815."
+      ],
+      "discriminator": [
+        128,
+        226,
+        96,
+        90,
+        39,
+        56,
+        24,
+        196
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "dao_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  111,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "council_mint",
+          "docs": [
+            "Council Token Mint (Token-2022)"
+          ]
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "voting_period",
+          "type": "i64"
+        },
+        {
+          "name": "quorum_bps",
+          "type": "u16"
+        },
+        {
+          "name": "approval_threshold_bps",
+          "type": "u16"
+        },
+        {
+          "name": "voting_cap_bps",
+          "type": "u16"
+        },
+        {
+          "name": "rwa_program",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "transfer_authority",
+      "docs": [
+        "Authority \uc774\uc804. \ud604\uc7ac authority\ub9cc \ud638\ucd9c \uac00\ub2a5."
+      ],
+      "discriminator": [
+        48,
+        169,
+        76,
+        72,
+        229,
+        180,
+        55,
+        161
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "dao_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  111,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_authority",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "update_dao_config",
+      "docs": [
+        "DaoConfig \ud30c\ub77c\ubbf8\ud130 \uc5c5\ub370\uc774\ud2b8. authority(Squads multisig)\ub9cc \ud638\ucd9c \uac00\ub2a5.",
+        "\ubcc0\uacbd\ud558\uc9c0 \uc54a\uc744 \ud544\ub4dc\ub294 \ud604\uc7ac\uac12 \uadf8\ub300\ub85c \uc804\ub2ec."
+      ],
+      "discriminator": [
+        23,
+        231,
+        45,
+        34,
+        236,
+        138,
+        109,
+        102
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "dao_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  111,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "voting_period",
+          "type": "i64"
+        },
+        {
+          "name": "quorum_bps",
+          "type": "u16"
+        },
+        {
+          "name": "approval_threshold_bps",
+          "type": "u16"
+        },
+        {
+          "name": "voting_cap_bps",
+          "type": "u16"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "DaoConfig",
+      "discriminator": [
+        55,
+        209,
+        87,
+        224,
+        30,
+        202,
+        192,
+        246
+      ]
+    },
+    {
+      "name": "Proposal",
+      "discriminator": [
+        26,
+        94,
+        189,
+        187,
+        116,
+        136,
+        53,
+        33
+      ]
+    },
+    {
+      "name": "VoteRecord",
+      "discriminator": [
+        112,
+        9,
+        123,
+        165,
+        234,
+        9,
+        157,
+        167
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidVotingPeriod",
+      "msg": "Voting period must be positive."
+    },
+    {
+      "code": 6001,
+      "name": "InvalidQuorum",
+      "msg": "Quorum BPS must be <= 10000."
+    },
+    {
+      "code": 6002,
+      "name": "InvalidThreshold",
+      "msg": "Approval threshold BPS must be <= 10000."
+    },
+    {
+      "code": 6003,
+      "name": "InvalidVotingCap",
+      "msg": "Voting cap BPS must be <= 10000."
+    },
+    {
+      "code": 6004,
+      "name": "TitleTooLong",
+      "msg": "Title exceeds 128 bytes."
+    },
+    {
+      "code": 6005,
+      "name": "DescriptionUriTooLong",
+      "msg": "Description URI exceeds 256 bytes."
+    },
+    {
+      "code": 6006,
+      "name": "InsufficientCouncilTokens",
+      "msg": "Creator must hold at least 1 Council Token."
+    },
+    {
+      "code": 6007,
+      "name": "VotingNotStarted",
+      "msg": "Voting has not started yet."
+    },
+    {
+      "code": 6008,
+      "name": "VotingEnded",
+      "msg": "Voting period has ended."
+    },
+    {
+      "code": 6009,
+      "name": "VotingNotEnded",
+      "msg": "Voting period has not ended yet."
+    },
+    {
+      "code": 6010,
+      "name": "InvalidProposalStatus",
+      "msg": "Proposal is not in the expected status."
+    },
+    {
+      "code": 6011,
+      "name": "NoVotingPower",
+      "msg": "Voter has no voting power (0 RWA tokens and 0 Council tokens)."
+    },
+    {
+      "code": 6012,
+      "name": "InvalidPositionOwner",
+      "msg": "InvestorPosition owner does not match voter."
+    },
+    {
+      "code": 6013,
+      "name": "InvalidPropertyStatus",
+      "msg": "PropertyToken is not in Active status."
+    },
+    {
+      "code": 6014,
+      "name": "MathOverflow",
+      "msg": "Arithmetic overflow."
+    },
+    {
+      "code": 6015,
+      "name": "Unauthorized",
+      "msg": "Only creator or authority can cancel."
+    },
+    {
+      "code": 6016,
+      "name": "InvalidPropertyAccount",
+      "msg": "Account is not owned by the RWA program."
+    },
+    {
+      "code": 6017,
+      "name": "InvalidPositionAccount",
+      "msg": "Position account is not owned by the RWA program."
+    },
+    {
+      "code": 6018,
+      "name": "DuplicatePropertyAccount",
+      "msg": "Duplicate PropertyToken account in remaining accounts."
+    },
+    {
+      "code": 6019,
+      "name": "DuplicatePositionAccount",
+      "msg": "Duplicate InvestorPosition account in remaining accounts."
+    },
+    {
+      "code": 6020,
+      "name": "InvalidCouncilAta",
+      "msg": "Council Token ATA mint does not match dao_config.council_mint."
+    },
+    {
+      "code": 6021,
+      "name": "InvalidCouncilAtaOwner",
+      "msg": "Council Token ATA owner does not match voter."
+    },
+    {
+      "code": 6022,
+      "name": "VotingPeriodTooShort",
+      "msg": "Voting period must be at least 1 day (86400 seconds)."
+    },
+    {
+      "code": 6023,
+      "name": "VotingPeriodTooLong",
+      "msg": "Voting period must be at most 30 days (2592000 seconds)."
+    },
+    {
+      "code": 6024,
+      "name": "InvalidRemainingAccounts",
+      "msg": "Remaining accounts must be [PropertyToken, InvestorPosition] pairs (even count)."
+    },
+    {
+      "code": 6025,
+      "name": "PositionPropertyMismatch",
+      "msg": "InvestorPosition.token_mint does not match PropertyToken.token_mint."
+    }
+  ],
+  "types": [
+    {
+      "name": "DaoConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "council_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "voting_period",
+            "type": "i64"
+          },
+          {
+            "name": "quorum_bps",
+            "type": "u16"
+          },
+          {
+            "name": "approval_threshold_bps",
+            "type": "u16"
+          },
+          {
+            "name": "voting_cap_bps",
+            "type": "u16"
+          },
+          {
+            "name": "proposal_count",
+            "type": "u64"
+          },
+          {
+            "name": "rwa_program",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Proposal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "u64"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "description_uri",
+            "type": "string"
+          },
+          {
+            "name": "category",
+            "type": {
+              "defined": {
+                "name": "ProposalCategory"
+              }
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "ProposalStatus"
+              }
+            }
+          },
+          {
+            "name": "votes_for",
+            "type": "u64"
+          },
+          {
+            "name": "votes_against",
+            "type": "u64"
+          },
+          {
+            "name": "votes_abstain",
+            "type": "u64"
+          },
+          {
+            "name": "total_eligible_weight",
+            "type": "u64"
+          },
+          {
+            "name": "voter_count",
+            "type": "u32"
+          },
+          {
+            "name": "voting_starts_at",
+            "type": "i64"
+          },
+          {
+            "name": "voting_ends_at",
+            "type": "i64"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalCategory",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Operations"
+          },
+          {
+            "name": "Guidelines"
+          },
+          {
+            "name": "FundUsage"
+          },
+          {
+            "name": "Other"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProposalStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Voting"
+          },
+          {
+            "name": "Succeeded"
+          },
+          {
+            "name": "Defeated"
+          },
+          {
+            "name": "Cancelled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VoteRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proposal",
+            "type": "pubkey"
+          },
+          {
+            "name": "voter",
+            "type": "pubkey"
+          },
+          {
+            "name": "vote_type",
+            "type": {
+              "defined": {
+                "name": "VoteType"
+              }
+            }
+          },
+          {
+            "name": "weight",
+            "type": "u64"
+          },
+          {
+            "name": "raw_weight",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VoteType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "For"
+          },
+          {
+            "name": "Against"
+          },
+          {
+            "name": "Abstain"
+          }
+        ]
+      }
+    }
+  ]
+}

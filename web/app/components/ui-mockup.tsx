@@ -118,7 +118,7 @@ export function Header() {
     const navigate = useNavigate();
     const { isKycCompleted } = useKyc();
     const { disconnect } = useWallet();
-    const isInvestRoute = location.pathname.startsWith('/invest') || location.pathname.startsWith('/my-investments');
+    const isInvestRoute = location.pathname.startsWith('/invest') || location.pathname.startsWith('/my-investments') || location.pathname.startsWith('/governance');
 
     const handleSignOut = async () => {
         await disconnect().catch(() => {});
@@ -147,6 +147,7 @@ export function Header() {
                     <a href="/" className="text-sm font-medium hover:text-primary transition-colors">Find a Stay</a>
                     <a href="/operator" className="text-sm font-medium hover:text-primary transition-colors">Host your Home</a>
                     <a href="/invest" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">Invest (RWA)</a>
+                    <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">Governance</a>
                     {isInvestRoute && (
                         <a href="/my-investments" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">My Portfolio</a>
                     )}
@@ -154,14 +155,28 @@ export function Header() {
                     {/* Conditional Auth Rendering */}
                     {isInvestRoute ? (
                         mounted && (
-                            <div className="ml-2 pl-6 border-l border-border h-10 flex items-center">
+                            <div className="ml-2 pl-6 border-l border-border h-10 flex items-center gap-3">
+                                {/* 로그인 상태 표시 (invest 구간에서도) */}
+                                {session && (
+                                    <button
+                                        onClick={handleSignOut}
+                                        className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 transition-colors"
+                                    >
+                                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                            <span className="text-[10px] font-bold text-primary">
+                                                {session.user.name?.charAt(0).toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <span className="hidden sm:inline">{session.user.name}</span>
+                                    </button>
+                                )}
                                 {!session ? (
                                     <Button
                                         variant="outline"
-                                        className="ml-4"
+                                        className="h-9 text-sm"
                                         onClick={() => navigate(`/auth?return=${location.pathname}`)}
                                     >
-                                        Login
+                                        로그인
                                     </Button>
                                 ) : !isKycCompleted ? (
                                     <Button
@@ -190,13 +205,15 @@ export function Header() {
                                                 />
                                             </div>
                                         ) : (
-                                            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center border-2 border-white ring-1 ring-primary/20 shadow-sm">
-                                                <span className="text-xs font-bold text-primary">
-                                                    {session.user.name?.charAt(0).toUpperCase()}
+                                            <div className={`h-9 w-9 rounded-full flex items-center justify-center border-2 border-white ring-1 shadow-sm ${(session.user as any).role === "admin" ? "bg-amber-500/10 ring-amber-400/30" : "bg-primary/10 ring-primary/20"}`}>
+                                                <span className={`text-xs font-bold ${(session.user as any).role === "admin" ? "text-amber-600" : "text-primary"}`}>
+                                                    {(session.user as any).role === "admin" ? "A" : session.user.name?.charAt(0).toUpperCase()}
                                                 </span>
                                             </div>
                                         )}
-                                        <span className="text-sm font-semibold text-foreground/80">{session.user.name}님</span>
+                                        <span className="text-sm font-semibold text-foreground/80">
+                                            {(session.user as any).role === "admin" ? "관리자" : `${session.user.name}님`}
+                                        </span>
                                     </div>
                                     <Button variant="outline" onClick={handleSignOut} className="h-9 px-4 text-xs font-bold">Logout</Button>
                                 </div>

@@ -1,7 +1,7 @@
 # 08. DAO 구현 명세서 (Technical Specification)
 
 > Created: 2026-02-18 12:00
-> Last Updated: 2026-03-30 16:00
+> Last Updated: 2026-04-01 03:30
 > Migration: Realms → Custom Anchor (2026-03-30). 이전 Realms 버전은 `docs/00_ARCHIVE/08_DAO_IMPLEMENTATION_SPEC_REALMS.md`에 보존.
 
 본 문서는 [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md) 기획서를 바탕으로 Rural Rest DAO의 1단계 기술 구현을 정의한다. RWA 1차 발행 직후 투표 기능만을 온체인으로 구현하는 범위를 기술한다.
@@ -201,10 +201,11 @@ pub enum VoteType {
   - `title` 길이 <= 128 bytes
   - `description_uri` 길이 <= 256 bytes
 - **Remaining Accounts**: 모든 Active 상태 PropertyToken 계정 (readonly)
+- **추가 Account**: `council_mint` — Council Token Mint (supply 조회)
   ```
-  total_eligible_weight = sum(property_token.tokens_sold for each active property)
+  total_eligible_weight = sum(property_token.tokens_sold for each active property) + council_mint.supply
   ```
-- **스냅샷**: 생성 시점의 `total_eligible_weight` 기록 → 정족수/캡 계산 기준
+- **스냅샷**: 생성 시점의 `total_eligible_weight` 기록 → 정족수/캡 계산 기준 (RWA + Council 합산)
 
 ### 4.3. `cast_vote`
 
@@ -212,17 +213,22 @@ pub enum VoteType {
 - **동작**: VoteRecord PDA 생성, Proposal 투표수 업데이트
 - **투표권 계산**:
   ```
-  raw_weight = sum(investor_position.amount for each property where owner == voter)
+  rwa_weight = sum(investor_position.amount for each property where owner == voter)
+  council_weight = voter_council_ata.amount (Optional, Council Token 보유 시)
+  raw_weight = rwa_weight + council_weight
   cap = total_eligible_weight * voting_cap_bps / 10000
   weight = min(raw_weight, cap)
   ```
 - **Remaining Accounts**: voter의 모든 InvestorPosition PDA (readonly)
   - 각 position의 `owner == voter.key()` 검증
+- **Optional Account**: `voter_council_ata` — Council Token ATA (Council member가 아니면 None)
+  - `mint == dao_config.council_mint` 검증
+  - `owner == voter.key()` 검증
 - **검증**:
   - `voting_starts_at <= now <= voting_ends_at`
   - `status == Voting`
   - VoteRecord PDA 미존재 (중복 투표 방지)
-  - `raw_weight > 0` (투표권 없는 사용자 차단)
+  - `raw_weight > 0` (RWA + Council 합산 투표권 없는 사용자 차단)
 
 ### 4.4. `finalize_proposal`
 
@@ -270,20 +276,25 @@ pub enum VoteType {
 
 ### 6.1. 규칙
 
-- **투표권 = 전체 매물 RWA 보유량 합산** (InvestorPosition.amount across all properties)
+- **투표권 = RWA 보유량 + Council Token 잔액 합산**
+  - RWA: InvestorPosition.amount across all properties
+  - Council: voter_council_ata.amount (Council Token 보유 시)
 - **10% 하드 캡**: 온체인 네이티브 적용. `min(raw_weight, total_eligible_weight * 10%)`
-- **스냅샷**: `total_eligible_weight`는 제안 생성 시점에 기록 (PropertyToken.tokens_sold 합산)
-- **개인 투표권**: cast_vote 시점의 InvestorPosition 잔액 조회
+- **스냅샷**: `total_eligible_weight`는 제안 생성 시점에 기록 (PropertyToken.tokens_sold 합산 + Council Token supply)
+- **개인 투표권**: cast_vote 시점의 InvestorPosition 잔액 + Council Token 잔액 조회
 
-### 6.2. 토큰 이중 구조 (권한 분리)
+### 6.2. 토큰 이중 구조 (권한 분리 + 공동 투표)
 
 | 토큰 | 대상 | 역할 | 표준 |
 |------|------|------|------|
-| **RWA Token** | 투자자 전체 | 투표권 (보유량 비례) | Token-2022 NonTransferable |
-| **Council Token** | 마을 대표/지방정부 | 제안 생성 권한 | Token-2022 NonTransferable |
+| **RWA Token** | 투자자 전체 | 투표권 (보유량 비례, 1:1) | Token-2022 NonTransferable |
+| **Council Token** | 마을 대표/지방정부 | 제안 생성 권한 + 투표권 (1:1) | Token-2022 NonTransferable |
 
 - Council Token은 Squads multisig만 발급 가능 (Mint Authority → multisig)
 - 투자자는 RWA Token으로 투표만 가능, 제안 생성 불가
+- **마을/지자체도 Council Token으로 투표 참여** — 투표 가중치 = Council Token 수량 (1:1)
+- Council Token은 소수(1~5개)만 발행되므로, 투자자 다수의 의결을 뒤집을 수준은 아님
+- 운영 주체가 안건에 대해 공식적으로 찬반 의사를 표현할 수 있도록 하는 것이 목적
 
 ### 6.3. Remaining Accounts 패턴
 
@@ -294,8 +305,10 @@ remaining_accounts: [
   investor_position_property_2 (readonly),
   ...
 ]
++ voter_council_ata (Optional account)
 ```
-각 account를 역직렬화 → `owner == voter` 검증 → `amount` 합산 → 캡 적용.
+각 InvestorPosition 역직렬화 → `owner == voter` 검증 → `amount` 합산.
+Council Token ATA 있으면 → `mint/owner` 검증 → `amount` 추가 합산 → 캡 적용.
 
 **`create_proposal`에서 전체 유통량 스냅샷:**
 ```
@@ -304,8 +317,9 @@ remaining_accounts: [
   property_token_2 (readonly),
   ...
 ]
++ council_mint (named account)
 ```
-각 account의 `tokens_sold` 합산 → `total_eligible_weight`.
+각 account의 `tokens_sold` 합산 + `council_mint.supply` → `total_eligible_weight`.
 
 ---
 
@@ -353,9 +367,11 @@ remaining_accounts: [
 ### 9.1. 웹 앱 요구사항
 
 - **지갑 연결**: 기존 Solana Wallet Adapter 재사용
-- **진입점**: 투자 상세 페이지(`/invest/:id`) 내 [거버넌스] 탭
-  - RWA 보유자 전용 기능이므로 일반 방문자 노출 최소화
-- **라우트**: `/invest/:listingId/governance`
+- **진입점**: 독립 거버넌스 섹션 (전체 DAO 범위, 매물별 아님)
+- **라우트**:
+  - `/governance` — 제안 목록 (탭: 투표중/완료/전체, 카테고리 필터)
+  - `/governance/new` — 제안 생성 (폼 + 실시간 미리보기)
+  - `/governance/:id` — 제안 상세 (투표 현황, 마크다운 설명, 투표 패널)
 
 ### 9.2. 의존성
 
@@ -393,9 +409,10 @@ CREATE TABLE dao_proposals (
 | 상태 | 표시 |
 |------|------|
 | 지갑 미연결 | "지갑을 연결하세요" + 연결 버튼 |
-| RWA 미보유 | "투표권이 없습니다. 투자하여 거버넌스에 참여하세요." |
+| RWA/Council 미보유 | "투표권이 없습니다 (RWA / Council 토큰 미보유)" |
 | RWA 보유 | 제안 목록 + 투표 가능 + 투표권 표시 |
-| Council Token 보유 | 위 + "제안 생성" 버튼 활성화 |
+| Council Token 보유 | 제안 생성 버튼 활성화 + 투표 가능 (Council Token 가중치 포함) |
+| RWA + Council 모두 보유 | 제안 생성 + 투표 (RWA + Council 합산 가중치) |
 
 ---
 
@@ -419,7 +436,7 @@ CREATE TABLE dao_proposals (
 | 1 | Anchor DAO 프로그램 작성 + localnet 테스트 | 5개 instruction, 테스트 전체 통과 |
 | 2 | Council Token + Squads Multisig 셋업 | 스크립트 실행 + 권한 이전 확인 |
 | 3 | Devnet 배포 + E2E | initialize_dao → create_proposal → cast_vote → finalize 전체 플로우 |
-| 4 | 웹 UI | `/invest/:id/governance` 제안 조회/투표/생성 |
+| 4 | 웹 UI | `/governance` 제안 목록/상세/생성 |
 | 5 | QA 시나리오 전체 검증 | `07_DAO_TEST_SCENARIOS.md` 기준 통과 |
 
 ---
@@ -456,15 +473,201 @@ CREATE TABLE dao_proposals (
 | 6008 | `VotingEnded` | now > voting_ends_at |
 | 6009 | `VotingNotEnded` | finalize 시 now <= voting_ends_at |
 | 6010 | `InvalidProposalStatus` | 예상 status와 불일치 |
-| 6011 | `NoVotingPower` | raw_weight == 0 |
+| 6011 | `NoVotingPower` | raw_weight == 0 (RWA + Council 합산) |
 | 6012 | `InvalidPositionOwner` | InvestorPosition.owner != voter |
 | 6013 | `InvalidPropertyStatus` | PropertyToken.status != Active |
 | 6014 | `MathOverflow` | checked_* 산술 실패 |
 | 6015 | `Unauthorized` | cancel 시 creator/authority 아닌 서명자 |
+| 6020 | `InvalidCouncilAta` | Council Token ATA mint != dao_config.council_mint |
+| 6021 | `InvalidCouncilAtaOwner` | Council Token ATA owner != voter |
 
 ---
 
-## 14. Related Documents
+## 14. 제안 설명 오프체인 저장 (GitHub Gist)
+
+### 14.1. 배경
+
+온체인 Proposal 계정의 `description_uri`(max 256 bytes)에는 URL만 저장한다. 실제 제안 설명 본문은 오프체인에 저장하고 URL로 참조한다.
+
+Solana Realms의 방식을 참고하여 **GitHub Gist**를 사용한다.
+
+| 항목 | 내용 |
+|------|------|
+| **저장소** | GitHub Gist (public) |
+| **인증** | 서버 측 GitHub PAT (`GITHUB_GIST_TOKEN`, gist scope) |
+| **사용자 요구사항** | GitHub 계정 불필요 (서버가 대신 생성) |
+| **파일명** | `proposal.md` |
+| **형식** | Markdown |
+
+### 14.2. 흐름
+
+```
+1. 사용자가 /governance/new에서 마크다운으로 설명 작성
+2. "제안 등록하기" 클릭
+3. 프론트엔드 → POST /api/governance/gist { title, content }
+4. 서버 → GitHub API (POST https://api.github.com/gists)
+   - Authorization: Bearer GITHUB_GIST_TOKEN
+   - Body: { public: true, files: { "proposal.md": { content } } }
+5. 서버 → 프론트엔드에 raw_url 반환
+6. 프론트엔드 → 온체인 create_proposal(title, raw_url, category)
+7. description_uri에 Gist raw URL 저장
+```
+
+### 14.3. 상세 페이지 렌더링
+
+- `governance.$id.tsx` loader에서 `description_uri`가 `gist.githubusercontent.com`을 포함하면 서버에서 fetch → 마크다운 텍스트 획득
+- `react-markdown` 컴포넌트로 렌더링 (커스텀 컴포넌트 스타일링, `@tailwindcss/typography` 미사용)
+- Gist URL이 아닌 경우 외부 링크로만 표시
+
+### 14.4. 대체 모드
+
+사용자는 "직접 작성" 대신 "URL 입력" 모드를 선택하여 기존 문서(Arweave, IPFS, 외부 URL 등)를 직접 입력할 수 있다.
+
+### 14.5. 환경 변수
+
+| 변수 | 용도 | 비고 |
+|------|------|------|
+| `GITHUB_GIST_TOKEN` | GitHub PAT (gist scope) | 서버 전용, `VITE_` 접두사 없음 |
+
+토큰 미설정 시 `/api/governance/gist`는 503 응답 → 사용자에게 "URL 입력" 모드 안내.
+
+---
+
+## 15. 설계 결정 근거 (Design Decision Records)
+
+> Updated: 2026-04-01
+
+### 15.1. Council Token 투표권 부여 여부
+
+**결정: Council Token 보유자도 투표 가능 (1:1 가중치, 10% 캡 동일 적용)**
+
+검토 당시 두 가지 선택지를 비교함:
+
+| 논점 | RWA만 투표 | Council도 투표 (채택) |
+|------|-----------|---------------------|
+| 돈 넣은 사람이 결정 | 맞음 | Council이 투자자 이익에 반하는 투표 가능 |
+| 마을 운영 현실 | 마을 협조 없으면 사업 자체가 안 됨 | 마을 목소리 직접 반영 |
+| 이해충돌 | 없음 | 있음 |
+| 운영 정보 비대칭 | 투자자는 현장을 모름 | 마을 사람이 현장 상황 알려줌 |
+
+**Council도 투표를 채택한 이유:**
+
+1. **사업 특성**: 부동산 투자가 아니라 마을 운영. 숙소 운영 규칙, 체험 프로그램, 난방비 등 현장 기반 안건이 대부분
+2. **비중 자연 희석**: Council supply는 authority가 통제하며, 투자자 증가에 따라 자연 희석 (E2E 기준 4.4%, 실서비스 예상 1% 이하)
+3. **10% 캡 방어**: Council 멤버 개인이 아무리 많은 토큰을 보유해도 1인당 10% 캡 적용
+4. **제안권만 부여 시 문제**: 제안만 하고 결과에 영향력 0이면 참여 동기 없음. 마을 협조 저하 우려
+
+**기각된 대안: 가산 가중치 (Council 투표 시 x2 배율)**
+- 기각 이유: "같은 1표인데 왜 Council은 2배인가" → 투자자 불만, 구조 복잡성 증가. 가중치 조절보다 supply 조절이 더 투명
+
+**레퍼런스 모델: RWA 특화 거버넌스**
+
+DeFi DAO(Compound, Uniswap)는 토큰 홀더만 투표하는 단순 구조. 하지만 실물 자산 기반 프로토콜은 오프체인 운영 주체가 반드시 존재하므로 다르게 설계:
+
+| 프로토콜 | 구조 |
+|---------|------|
+| Centrifuge | 투자자(LP) + 자산 발행자(Issuer) 모두 투표권 |
+| RealT | 토큰 홀더 투표 + 운영사 의견 반영 |
+| **Rural Rest** | **RWA 투자자 + Council(지자체/마을) 모두 투표권** |
+
+Rural Rest는 Centrifuge/RealT 모델을 따름. 실물 자산 거버넌스에서 운영 주체(마을)의 온체인 참여는 필수.
+
+### 15.2. Council Token과 RWA Token 역할 분리
+
+**결정: Council Token = 제안 + 투표, RWA Token = 투표만**
+
+| 토큰 | 제안 생성 | 투표 | 발행 방식 |
+|------|---------|------|----------|
+| Council Token | O (1개 이상 필수) | O (1:1) | authority가 무료 발급 |
+| RWA Token | X | O (보유량 기반) | USDC로 구매 |
+
+- 제안은 마을/지자체만 가능: 현장 상황을 아는 주체가 안건을 올리는 구조
+- 투표는 양쪽 모두: 제안에 대해 투자자 + 마을 모두 의사 표현
+
+### 15.3. Quorum 10% 유지 근거
+
+**결정: 단일 quorum 10% (1000 BPS), 카테고리별 차등 미적용**
+
+- 카테고리별 quorum 차등은 대부분 DAO에서 채택하지 않음 (Compound, Nouns, Uniswap 등 단일 quorum)
+- MVP 단계에서 온체인 복잡성 추가는 부적절
+- 10%는 초기 소규모 커뮤니티에서 정족수 미달 방지와 최소 합의 사이 균형점
+- 프로덕션 전환 시 카테고리별 차등 검토 (특히 `fundUsage` 강화)
+
+---
+
+## 16. MVP 현황 및 향후 개선 로드맵
+
+
+> Updated: 2026-04-01
+
+### 16.1. MVP 현재 구현 상태
+
+| 항목 | 현재 (MVP) | 비고 |
+|------|-----------|------|
+| Authority | Rural Rest 단독 Keypair | 단일 서명자 |
+| Quorum (정족수) | 10% (1000 BPS) | 전 카테고리 동일 |
+| Approval Threshold | 60% (6000 BPS) | |
+| Voting Cap | 10% (1000 BPS) | 고래 방지 |
+| Voting Period | 7일 (604800초) | 범위: 1~30일 |
+| Finalize | 서버 자동 (permissionless) | loader에서 투표 기간 만료 시 자동 호출 |
+| Council 참여 요건 | 없음 | Council Token 보유자 투표 강제 아님 |
+| 투자자 참여 요건 | 없음 | RWA 보유자 투표 강제 아님 |
+| Squads Multisig | 미적용 | |
+
+### 16.2. 프로덕션 전환 시 필수 개선 사항
+
+아래 항목은 실서비스 전에 반드시 구현해야 한다. 우선순위 순.
+
+#### A. Authority Multisig 전환 (P0)
+
+- 현재: Rural Rest 단독 keypair이 authority
+- 목표: **Squads Protocol v4 Multisig (2-of-3)**
+  - 서명자: Rural Rest 운영팀 + 지자체 담당자 + 마을 대표
+- 범위: `initialize_dao`, `release_funds`, `activate_property`, Council Token mint authority
+- 이유: 단일 서명자는 single point of failure. 실물 자산 운영에서는 다자 합의 필수
+
+#### B. 카테고리별 Quorum 차등 적용 (P1)
+
+- 현재: 단일 `quorum_bps` (10%)
+- 목표: 카테고리별 별도 quorum
+
+| 카테고리 | 현재 | 프로덕션 목표 | 이유 |
+|----------|------|-------------|------|
+| `operations` (운영) | 10% | **20%** (2000 BPS) | 숙소 운영 규칙 변경 -- 적당한 합의 필요 |
+| `guidelines` (가이드라인) | 10% | **15%** (1500 BPS) | 비교적 가벼운 안건 |
+| `fundUsage` (자금 사용) | 10% | **30%** (3000 BPS) | 실제 자금 이동 -- 충분한 참여 필수 |
+| `other` (기타) | 10% | **15%** (1500 BPS) | 일반 안건 |
+
+- 구현: `DaoConfig`에 `quorum_bps`를 카테고리별 4개 필드로 분리하거나, 별도 `CategoryConfig` PDA 도입
+- 이유: 자금 사용 안건과 가이드라인 안건의 중요도가 다름
+
+#### C. RWA 투자 기간 만료 자동 Status 전환 (P1)
+
+- 현재: authority가 수동으로 `release_funds` + `activate_property` 호출
+- 목표: 투자 deadline 만료 시 서버에서 자동 트리거
+  - 모집률 >= `min_funding_bps` → `release_funds` → `activate_property`
+  - 모집률 < `min_funding_bps` → 투자자에게 `refund` 안내
+- 구현 방법: 서버 loader 또는 cron job에서 deadline 체크 후 permissionless instruction 호출
+- 전제: `release_funds`를 permissionless로 변경하거나, 서버가 authority keypair 보유
+
+#### D. 투표 위임 (Delegation) (P2)
+
+- 현재: 직접 투표만 가능
+- 목표: 투자자가 다른 주소에 투표권 위임 가능
+- 이유: 모든 투자자가 매번 투표에 참여하기 어려움. 신뢰하는 대표에게 위임
+
+### 16.3. 온체인 프로그램 수정 필요 항목
+
+| 개선 사항 | 프로그램 수정 | 마이그레이션 |
+|-----------|-------------|-------------|
+| A. Multisig 전환 | 불필요 (authority 변경만) | `update_authority` ix 추가 필요 |
+| B. 카테고리별 Quorum | `DaoConfig` 또는 별도 PDA | DaoConfig account 크기 변경 → 마이그레이션 필요 |
+| C. RWA 자동 전환 | `release_funds` 권한 변경 검토 | 없음 (서버 로직) |
+| D. 투표 위임 | 새 instruction + DelegationRecord PDA | 없음 |
+
+---
+
+## 17. Related Documents
 
 - **기획서**: [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md) — DAO 기획 (본 명세의 기반)
 - **투표 방어 로직**: [16_DAO_VOTING_DEFENSE_LOGIC.md](../01_Concept_Design/16_DAO_VOTING_DEFENSE_LOGIC.md) — 10% 캡, KYC, Sybil 방어

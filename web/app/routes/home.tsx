@@ -27,7 +27,7 @@ export async function loader() {
         .from(listings)
         .innerJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
         .where(and(
-            inArray(rwaTokens.status, ["funding", "funded"]),
+            inArray(rwaTokens.status, ["funding", "funded", "active"]),
             isNotNull(rwaTokens.tokenMint),
         ));
 
