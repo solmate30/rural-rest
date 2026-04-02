@@ -1,13 +1,24 @@
 import { useState } from "react";
-import { Form, useNavigation, Link } from "react-router";
+import { Form, useNavigation, Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import type { Route } from "./+types/book";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
-import { listings, rwaTokens } from "~/db/schema";
-import { eq } from "drizzle-orm";
+import { listings, rwaTokens, bookings } from "~/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
-
+import { PYTH_USD_KRW_FEED, KRW_PER_USDC_FALLBACK } from "~/lib/constants";
+import { Header, Footer, Button, Card } from "~/components/ui-mockup";
+import { useKyc } from "~/components/KycProvider";
+import { usePythRate } from "~/hooks/usePythRate";
+import { Calendar } from "~/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { ko as koLocale, enUS } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
+import { cn } from "~/lib/utils";
 
 function toCityLabel(location: string): string {
     const m = location.match(/([가-힣]+)시/);
@@ -33,7 +44,6 @@ async function getListingById(id: string | undefined) {
 
     if (!row) return null;
 
-    // 온체인 상태가 진실 — DB는 fallback
     if (row.tokenStatus) {
         const onchain = await fetchPropertyOnchain(id);
         if (onchain) {
@@ -41,7 +51,6 @@ async function getListingById(id: string | undefined) {
         }
     }
 
-    // RWA 토큰이 있으면 active 상태일 때만 예약 가능
     if (row.tokenStatus && row.tokenStatus !== "active") return null;
     const images = row.images as string[];
     return {
@@ -56,17 +65,16 @@ async function getListingById(id: string | undefined) {
         pickupPoints: [] as { id: string; name: string; description: string; estimatedTimeToProperty: string }[],
     };
 }
-import { Header, Footer, Button, Card } from "~/components/ui-mockup";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const user = await requireUser(request);
   const listing = await getListingById(params.id);
   if (!listing) throw new Response("Not Found", { status: 404 });
-  return { listing, user: { name: user.name, email: user.email } };
+  return { listing, user: { id: user.id, name: user.name, email: user.email } };
 }
 
 export async function action({ params, request }: Route.ActionArgs) {
-  await requireUser(request);
+  const user = await requireUser(request);
   const listing = await getListingById(params.id);
   if (!listing) throw new Response("Not Found", { status: 404 });
 
@@ -88,36 +96,406 @@ export async function action({ params, request }: Route.ActionArgs) {
     return { success: false as const, error: "error.guestLimit", max: listing.maxGuests };
   }
 
+  // 날짜 중복 예약 체크 (pending/confirmed 상태의 예약과 겹치는지 확인)
+  // DB는 Unix timestamp(초) 저장 — ms → sec 변환 필수
+  const checkInSec = Math.floor(new Date(checkIn).getTime() / 1000);
+  const checkOutSec = Math.floor(new Date(checkOut).getTime() / 1000);
+  const overlapping = await db
+    .select({ id: bookings.id })
+    .from(bookings)
+    .where(
+      and(
+        eq(bookings.listingId, listing.id),
+        sql`${bookings.status} IN ('pending', 'confirmed')`,
+        sql`${bookings.checkIn} < ${checkOutSec}`,
+        sql`${bookings.checkOut} > ${checkInSec}`,
+      )
+    );
+  if (overlapping.length > 0) {
+    return { success: false as const, error: "error.dateConflict" };
+  }
+
   const nights = Math.ceil(
     (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)
   );
   const totalPrice = listing.pricePerNight * nights;
+  // 미리보기용 USDC 환산 (fallback rate, 실제 온체인 금액은 Pyth로 계산)
+  const previewUsdc = Math.round((totalPrice / KRW_PER_USDC_FALLBACK) * 1_000_000);
+
+  const bookingId = crypto.randomUUID();
+
+  // DB에 booking 저장 (status: pending)
+  await db.insert(bookings).values({
+    id: bookingId,
+    listingId: listing.id,
+    guestId: user.id,
+    checkIn: new Date(checkIn),
+    checkOut: new Date(checkOut),
+    totalPrice,
+    status: "pending",
+  });
 
   return {
     success: true as const,
     booking: {
-      id: crypto.randomUUID(),
+      id: bookingId,
       checkIn,
       checkOut,
       guests,
       nights,
       totalPrice,
+      previewUsdc,
       listingTitle: listing.title,
+      listingId: listing.id,
       status: "pending" as const,
     },
   };
 }
 
+// ──────────────────────────────────────────────
+// 결제 단계 컴포넌트
+// ──────────────────────────────────────────────
+type BookingPayload = {
+  id: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  nights: number;
+  totalPrice: number;
+  previewUsdc: number;
+  listingTitle: string;
+  listingId: string;
+};
+
+// ──────────────────────────────────────────────
+// PayPal 카드 결제 단계
+// ──────────────────────────────────────────────
+function CardPayStep({ booking }: { booking: BookingPayload }) {
+  const { t, i18n } = useTranslation("book");
+  const [err, setErr] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID ?? "";
+  const locale = i18n.language === "ko" ? "ko_KR" : "en_US";
+
+  return (
+    <div className="space-y-3">
+      {err && <div className="bg-red-50 text-red-600 rounded-xl p-3 text-sm">{err}</div>}
+      {processing && (
+        <p className="text-center text-sm text-stone-500">{t("submitting")}</p>
+      )}
+      <PayPalScriptProvider
+        options={{ clientId, intent: "authorize", currency: "USD", locale }}
+      >
+        <PayPalButtons
+          style={{ layout: "vertical", color: "gold", shape: "rect", label: "pay" }}
+          disabled={processing}
+          createOrder={async () => {
+            const res = await fetch("/api/paypal/create-order", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ bookingId: booking.id }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? t("payment.error"));
+            return data.orderID;
+          }}
+          onApprove={async (data) => {
+            setProcessing(true);
+            setErr("");
+            const res = await fetch("/api/paypal/capture-auth", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ bookingId: booking.id, orderID: data.orderID }),
+            });
+            if (!res.ok) {
+              const errData = await res.json();
+              setErr(errData.error ?? t("payment.error"));
+              setProcessing(false);
+              return;
+            }
+            window.location.href = `/book/success?booking_id=${booking.id}`;
+          }}
+          onError={(paypalErr) => {
+            setErr(String(paypalErr));
+          }}
+        />
+      </PayPalScriptProvider>
+    </div>
+  );
+}
+
+function PaymentStep({ booking, listingId }: { booking: BookingPayload; listingId: string }) {
+  const { t } = useTranslation("book");
+  const { connection } = useConnection();
+  const wallet = useWallet();
+  const { setVisible } = useWalletModal();
+  const { isKycCompleted } = useKyc();
+  const [payMethod, setPayMethod] = useState<"card" | "usdc">("card");
+  const [txState, setTxState] = useState<"idle" | "paying" | "done" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+  const { rate: pythRate, loading: rateLoading } = usePythRate();
+
+  async function handlePay() {
+    if (!wallet.publicKey || !wallet.connected) {
+      setVisible(true);
+      return;
+    }
+    setTxState("paying");
+    setErrorMsg("");
+    try {
+      const { getProgram, deriveBookingEscrowPda, getUsdcMint, deriveBookingEscrowVault } = await import("~/lib/anchor-client");
+      const { PublicKey } = await import("@solana/web3.js");
+      const { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } = await import("@solana/spl-token");
+      const { BN } = await import("@coral-xyz/anchor");
+
+      const program = await getProgram(connection, wallet);
+      const usdcMint = await getUsdcMint();
+      const { pda: escrowPda } = await deriveBookingEscrowPda(booking.id);
+      const escrowVault = await deriveBookingEscrowVault(escrowPda, usdcMint);
+      const guestUsdc = getAssociatedTokenAddressSync(usdcMint, wallet.publicKey);
+      const pythPriceFeed = new PublicKey(PYTH_USD_KRW_FEED);
+
+      const checkInTs = Math.floor(new Date(booking.checkIn).getTime() / 1000);
+      const checkOutTs = Math.floor(new Date(booking.checkOut).getTime() / 1000);
+
+      // UUID 하이픈 제거 (36 → 32 bytes) — Solana seed 최대 길이 32 bytes 제한
+      const bookingIdSeed = booking.id.replace(/-/g, "");
+      const tx = await program.methods
+        .createBookingEscrow(
+          listingId,
+          bookingIdSeed,
+          new BN(booking.totalPrice),
+          new BN(checkInTs),
+          new BN(checkOutTs),
+        )
+        .accounts({
+          guest: wallet.publicKey,
+          bookingEscrow: escrowPda,
+          escrowVault,
+          guestUsdc,
+          usdcMint,
+          pythPriceFeed,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        })
+        .rpc();
+
+      await fetch("/api/booking/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          escrowPda: escrowPda.toBase58(),
+          txSignature: tx,
+          amountUsdc: booking.previewUsdc,
+        }),
+      });
+
+      setTxState("done");
+    } catch (err: any) {
+      const { parseAnchorError } = await import("~/lib/anchor-client");
+      setErrorMsg(parseAnchorError(err));
+      setTxState("error");
+    }
+  }
+
+  if (txState === "done") {
+    return (
+      <div className="min-h-screen bg-background font-sans">
+        <Header />
+        <main className="container mx-auto py-12 px-4 max-w-2xl">
+          <div className="bg-primary/5 rounded-3xl p-8 md:p-12 text-center space-y-6">
+            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("confirm.title")}</h1>
+            <p className="text-muted-foreground">{t("confirm.message")}</p>
+            <Card className="p-6 text-left space-y-3 mx-auto max-w-md text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("confirm.bookingId")}</span>
+                <span className="font-mono text-xs">{booking.id.slice(0, 8).toUpperCase()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("confirm.checkin")}</span>
+                <span className="font-medium">{booking.checkIn}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t("confirm.checkout")}</span>
+                <span className="font-medium">{booking.checkOut}</span>
+              </div>
+              <div className="flex justify-between border-t pt-3">
+                <span className="font-bold">{t("confirm.total")}</span>
+                <span className="font-bold">₩{booking.totalPrice.toLocaleString()}</span>
+              </div>
+            </Card>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/"><Button className="w-full sm:w-auto px-8">{t("confirm.backHome")}</Button></Link>
+              <Link to={`/property/${listingId}`}>
+                <Button variant="outline" className="w-full sm:w-auto px-8">{t("confirm.viewProperty")}</Button>
+              </Link>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const usdcDisplay = rateLoading
+    ? "..."
+    : (booking.totalPrice / pythRate).toFixed(2);
+
+  return (
+    <div className="min-h-screen bg-background font-sans">
+      <Header />
+      <main className="container mx-auto py-12 px-4 max-w-2xl">
+        <div className="space-y-6">
+          <h1 className="text-2xl font-bold text-foreground">{t("payment.title")}</h1>
+
+          <Card className="p-6 space-y-4">
+            <h2 className="font-bold text-lg">{booking.listingTitle}</h2>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between text-muted-foreground">
+                <span>{booking.checkIn} ~ {booking.checkOut}</span>
+                <span>{t("payment.nightsGuests", { nights: booking.nights, guests: booking.guests })}</span>
+              </div>
+              <div className="flex justify-between border-t pt-3">
+                <span className="font-bold">{t("payment.amount")}</span>
+                <div className="text-right">
+                  <p className="font-bold text-lg">₩{booking.totalPrice.toLocaleString()}</p>
+                  {payMethod === "usdc" && (
+                    <>
+                      <p className="text-sm text-primary font-semibold">≈ {usdcDisplay} USDC</p>
+                      <p className="text-xs text-muted-foreground">{t("payment.pythNote")}</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* 결제 방법 선택 */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setPayMethod("card")}
+              className={cn(
+                "p-4 rounded-2xl border-2 text-left transition-all",
+                payMethod === "card"
+                  ? "border-primary bg-primary/5"
+                  : "border-stone-200 hover:border-stone-300"
+              )}
+            >
+              <p className="font-bold text-sm text-foreground">{t("payment.methodCard")}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("payment.methodCardDesc")}</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPayMethod("usdc")}
+              className={cn(
+                "p-4 rounded-2xl border-2 text-left transition-all",
+                payMethod === "usdc"
+                  ? "border-primary bg-primary/5"
+                  : "border-stone-200 hover:border-stone-300"
+              )}
+            >
+              <p className="font-bold text-sm text-foreground">{t("payment.methodUsdc")}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("payment.methodUsdcDesc")}</p>
+            </button>
+          </div>
+
+          {errorMsg && (
+            <div className="bg-red-50 text-red-600 rounded-xl p-3 text-sm">{errorMsg}</div>
+          )}
+
+          {/* 카드 결제 (Stripe) */}
+          {payMethod === "card" && <CardPayStep booking={booking} />}
+
+          {/* USDC 결제 */}
+          {payMethod === "usdc" && (
+            !isKycCompleted ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground text-center">{t("payment.kycRequired")}</p>
+                <Button
+                  onClick={() => window.location.href = `/kyc?return=/property/${listingId}`}
+                  className="w-full h-14 text-lg font-bold rounded-2xl"
+                >
+                  {t("payment.kycButton")}
+                </Button>
+              </div>
+            ) : !wallet.connected ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground text-center">{t("payment.walletRequired")}</p>
+                <Button
+                  onClick={() => setVisible(true)}
+                  className="w-full h-14 text-lg font-bold rounded-2xl"
+                >
+                  {t("payment.connectWallet")}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm bg-green-50 rounded-xl p-3">
+                  <span className="text-green-700 font-medium">{t("payment.walletConnected")}</span>
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {wallet.publicKey?.toBase58().slice(0, 6)}...{wallet.publicKey?.toBase58().slice(-4)}
+                  </span>
+                </div>
+                <Button
+                  onClick={handlePay}
+                  disabled={txState === "paying"}
+                  className="w-full h-14 text-xl font-bold rounded-2xl shadow-xl shadow-primary/20"
+                >
+                  {txState === "paying" ? t("submitting") : t("payment.payButton", { usdc: usdcDisplay })}
+                </Button>
+              </div>
+            )
+          )}
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 export default function Book({ loaderData, actionData }: Route.ComponentProps) {
-  const { listing, user } = loaderData;
+  const { listing } = loaderData;
   const { t } = useTranslation("book");
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const { rate: pythRate, loading: rateLoading } = usePythRate();
 
-  const today = new Date().toISOString().split("T")[0];
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
-  const [guests, setGuests] = useState(1);
+  const [searchParams] = useSearchParams();
+  const { i18n } = useTranslation();
+  const calLocale = i18n.language === "ko" ? koLocale : enUS;
+  const [calOpen, setCalOpen] = useState(false);
+
+  // URL 파라미터에서 초기 날짜 파싱 (YYYY-MM-DD 로컬 문자열)
+  function parseDateParam(s: string | null): Date | undefined {
+    if (!s) return undefined;
+    const [y, m, d] = s.split("-").map(Number);
+    if (!y || !m || !d) return undefined;
+    return new Date(y, m - 1, d); // 로컬 시간 기준 생성 (UTC 파싱 버그 방지)
+  }
+  function toLocalDateStr(d: Date) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    const from = parseDateParam(searchParams.get("checkIn"));
+    const to = parseDateParam(searchParams.get("checkOut"));
+    return from ? { from, to } : undefined;
+  });
+  const [guests, setGuests] = useState(Number(searchParams.get("guests") ?? "1"));
+
+  const checkIn = dateRange?.from ? toLocalDateStr(dateRange.from) : "";
+  const checkOut = dateRange?.to ? toLocalDateStr(dateRange.to) : "";
+
+  function formatDateLabel(d: Date) {
+    return d.toLocaleDateString(i18n.language === "ko" ? "ko-KR" : "en-US", { month: "short", day: "numeric" });
+  }
 
   const nights =
     checkIn && checkOut
@@ -131,72 +509,11 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
       : 0;
   const subtotal = listing.pricePerNight * nights;
 
-  // Confirmation UI
+  // 결제 단계: booking 생성 완료 후 USDC 결제 UI
   if (actionData?.success === true) {
-    const { booking } = actionData;
-    return (
-      <div className="min-h-screen bg-background font-sans">
-        <Header />
-        <main className="container mx-auto py-12 px-4 max-w-2xl">
-          <div className="bg-primary/5 rounded-3xl p-8 md:p-12 text-center space-y-6">
-            {/* Check icon */}
-            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-              {t("confirm.title")}
-            </h1>
-            <p className="text-muted-foreground">
-              {t("confirm.message")}
-            </p>
-
-            {/* Booking details */}
-            <Card className="p-6 text-left space-y-4 mx-auto max-w-md">
-              <h3 className="font-bold text-lg">{booking.listingTitle}</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("confirm.bookingId")}</span>
-                  <span className="font-mono text-xs">{booking.id.slice(0, 8).toUpperCase()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("confirm.checkin")}</span>
-                  <span className="font-medium">{booking.checkIn}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("confirm.checkout")}</span>
-                  <span className="font-medium">{booking.checkOut}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("confirm.guests")}</span>
-                  <span className="font-medium">{t("confirm.guestsCount", { count: booking.guests })}</span>
-                </div>
-                <div className="flex justify-between border-t pt-3">
-                  <span className="font-bold">{t("confirm.total")}</span>
-                  <span className="font-bold">₩{booking.totalPrice.toLocaleString()}</span>
-                </div>
-              </div>
-            </Card>
-
-            {/* Action buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-              <Link to="/">
-                <Button className="w-full sm:w-auto px-8">{t("confirm.backHome")}</Button>
-              </Link>
-              <Link to={`/property/${listing.id}`}>
-                <Button variant="outline" className="w-full sm:w-auto px-8">{t("confirm.viewProperty")}</Button>
-              </Link>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
+    return <PaymentStep booking={{ ...actionData.booking, listingId: listing.id }} listingId={listing.id} />;
   }
 
-  // Booking Form UI
   return (
     <div className="min-h-screen bg-background font-sans">
       <Header />
@@ -204,9 +521,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
         <h1 className="text-2xl md:text-3xl font-bold mb-8 text-foreground">{t("title")}</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
-          {/* Left Column: Form */}
           <div className="lg:col-span-3 space-y-8">
-            {/* Error message */}
             {actionData?.success === false && (
               <div className="bg-red-50 text-red-600 rounded-xl p-3 text-sm font-medium">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -215,43 +530,61 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
             )}
 
             <Form method="post">
-              {/* Your Trip Section */}
               <section className="space-y-6 mb-8">
                 <h2 className="text-xl font-bold text-foreground">{t("section.trip")}</h2>
                 <Card className="p-6 space-y-5">
+                  {/* hidden inputs for form submission */}
+                  <input type="hidden" name="checkIn" value={checkIn} />
+                  <input type="hidden" name="checkOut" value={checkOut} />
+
                   <div className="space-y-2">
-                    <label htmlFor="checkIn" className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">
-                      {t("field.checkin")}
-                    </label>
-                    <input
-                      type="date"
-                      id="checkIn"
-                      name="checkIn"
-                      min={today}
-                      value={checkIn}
-                      onChange={(e) => {
-                        setCheckIn(e.target.value);
-                        if (checkOut && e.target.value >= checkOut) setCheckOut("");
-                      }}
-                      className="w-full h-11 px-4 rounded-xl border border-stone-200 bg-background text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                      required
-                    />
+                    <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{t("field.checkin")} / {t("field.checkout")}</p>
+                    <Popover open={calOpen} onOpenChange={setCalOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="w-full border border-stone-200 rounded-2xl overflow-hidden hover:border-primary/50 transition-colors"
+                        >
+                          <div className="grid grid-cols-2 divide-x divide-stone-200">
+                            <div className={cn("p-4 text-left", calOpen && "bg-primary/5")}>
+                              <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-1">{t("field.checkin")}</p>
+                              <p className={cn("text-sm font-semibold", dateRange?.from ? "text-stone-800" : "text-stone-400")}>
+                                {dateRange?.from ? formatDateLabel(dateRange.from) : t("field.selectDate")}
+                              </p>
+                            </div>
+                            <div className={cn("p-4 text-left", calOpen && "bg-primary/5")}>
+                              <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-1">{t("field.checkout")}</p>
+                              <p className={cn("text-sm font-semibold", dateRange?.to ? "text-stone-800" : "text-stone-400")}>
+                                {dateRange?.to ? formatDateLabel(dateRange.to) : t("field.selectDate")}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 shadow-2xl" align="start">
+                        <Calendar
+                          mode="range"
+                          selected={dateRange}
+                          onSelect={(range) => {
+                            if (range?.from && range?.to) {
+                              // checkout은 최소 checkin +1일
+                              if (range.to <= range.from) {
+                                const minOut = new Date(range.from);
+                                minOut.setDate(minOut.getDate() + 1);
+                                range = { from: range.from, to: minOut };
+                              }
+                              setCalOpen(false);
+                            }
+                            setDateRange(range);
+                          }}
+                          disabled={{ before: new Date() }}
+                          locale={calLocale}
+                          numberOfMonths={1}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="checkOut" className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">
-                      {t("field.checkout")}
-                    </label>
-                    <input
-                      type="date"
-                      id="checkOut"
-                      name="checkOut"
-                      min={checkIn || today}
-                      value={checkOut}
-                      onChange={(e) => setCheckOut(e.target.value)}
-                      className="w-full h-11 px-4 rounded-xl border border-stone-200 bg-background text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                      required
-                    />
-                  </div>
+
                   <div className="space-y-2">
                     <label htmlFor="guests" className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">
                       {t("field.guests")}
@@ -266,7 +599,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                     >
                       {Array.from({ length: listing.maxGuests }, (_, i) => (
                         <option key={i + 1} value={i + 1}>
-                          {i + 1}명
+                          {t("guestOption", { n: i + 1 })}
                         </option>
                       ))}
                     </select>
@@ -275,12 +608,9 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                 </Card>
               </section>
 
-              {/* Transport Concierge Section */}
               {listing.pickupPoints.length > 0 && (
                 <section className="space-y-4 mb-8">
                   <h2 className="text-xl font-bold text-foreground">{t("section.transport")}</h2>
-
-                  {/* Free shuttle banner */}
                   <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/5 border border-primary/10">
                     <svg className="w-5 h-5 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 17h.01M16 17h.01M3 11l1-6h16l1 6M3 11h18M3 11v6a1 1 0 001 1h1m14-7v6a1 1 0 01-1 1h-1m-10 0h8" />
@@ -289,14 +619,9 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                       <span className="font-bold text-primary">{t("field.shuttleFree")}</span> &mdash; {t("field.shuttleDesc")}
                     </p>
                   </div>
-
-                  {/* Pickup points */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {listing.pickupPoints.map((point) => (
-                      <div
-                        key={point.id}
-                        className="flex items-start gap-3 p-4 rounded-xl bg-stone-50 border border-stone-100"
-                      >
+                      <div key={point.id} className="flex items-start gap-3 p-4 rounded-xl bg-stone-50 border border-stone-100">
                         <div className="mt-0.5 p-1.5 bg-primary/10 rounded-lg flex-shrink-0">
                           <svg className="w-4 h-4 text-primary" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
@@ -315,7 +640,6 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                 </section>
               )}
 
-              {/* Submit button */}
               <Button
                 type="submit"
                 disabled={isSubmitting}
@@ -323,55 +647,39 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
               >
                 {isSubmitting ? t("submitting") : t("submit")}
               </Button>
-              <p className="text-center text-[10px] text-stone-400 font-bold uppercase tracking-widest mt-3">
-                {t("noCharge")}
-              </p>
             </Form>
           </div>
 
-          {/* Right Column: Booking Summary */}
           <div className="lg:col-span-2">
             <div className="sticky top-24 space-y-6">
-                <Card className="p-6 md:p-8 shadow-2xl border-none bg-white rounded-3xl">
-              {/* Listing info */}
-              <div className="flex gap-4 mb-6">
-                <div className="h-20 w-20 rounded-xl overflow-hidden shadow-sm flex-shrink-0">
-                  <img src={listing.image} className="w-full h-full object-cover" alt={listing.title} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">{listing.locationLabel}</p>
-                  <p className="font-bold text-foreground truncate">{listing.title}</p>
-                  <p className="text-xs font-medium mt-1">
-                    ★ {listing.rating} ({listing.reviews.length} reviews)
-                  </p>
-                </div>
-              </div>
-
-              {/* Price breakdown */}
-              <div className="border-t pt-6 space-y-4 text-sm font-medium">
-                <div className="flex justify-between text-stone-600">
-                  <span>
-                    ₩{listing.pricePerNight.toLocaleString()} x {nights > 0 ? nights : "—"} night{nights !== 1 ? "s" : ""}
-                  </span>
-                  <span className="font-bold">
-                    {nights > 0 ? `₩${subtotal.toLocaleString()}` : "—"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-stone-600">
-                  <div className="flex items-center gap-1">
-                    <span>{t("price.concierge")}</span>
-                    <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
+              <Card className="p-6 md:p-8 shadow-2xl border-none bg-white rounded-3xl">
+                <div className="flex gap-4 mb-6">
+                  <div className="h-20 w-20 rounded-xl overflow-hidden shadow-sm flex-shrink-0">
+                    <img src={listing.image} className="w-full h-full object-cover" alt={listing.title} />
                   </div>
-                  <span className="text-primary font-bold">{t("price.conciergePrice")}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground">{listing.locationLabel}</p>
+                    <p className="font-bold text-foreground truncate">{listing.title}</p>
+                  </div>
                 </div>
-                <div className="flex justify-between border-t border-stone-200 pt-5 text-xl font-bold text-stone-900">
-                  <span>{t("price.total")}</span>
-                  <span>{nights > 0 ? `₩${subtotal.toLocaleString()}` : "—"}</span>
+                <div className="border-t pt-6 space-y-4 text-sm font-medium">
+                  <div className="flex justify-between text-stone-600">
+                    <span>{t("price.perNight", { price: `₩${listing.pricePerNight.toLocaleString()}`, nights: nights > 0 ? nights : "—" })}</span>
+                    <span className="font-bold">{nights > 0 ? `₩${subtotal.toLocaleString()}` : "—"}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-stone-200 pt-5 text-xl font-bold text-stone-900">
+                    <span>{t("price.total")}</span>
+                    <div className="text-right">
+                      <p>{nights > 0 ? `₩${subtotal.toLocaleString()}` : "—"}</p>
+                      {nights > 0 && (
+                        <p className="text-sm font-medium text-primary">
+                          ≈ {rateLoading ? "..." : (subtotal / pythRate).toFixed(2)} USDC
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
             </div>
           </div>
         </div>

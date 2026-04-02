@@ -4,11 +4,14 @@
     "required": "Please fill in all fields.",
     "checkoutBeforeCheckin": "Check-out must be after check-in.",
     "pastDate": "You can't select a past date.",
-    "guestLimit": "Max {{max}} guests allowed."
+    "guestLimit": "Max {{max}} guests allowed.",
+    "dateConflict": "Those dates are already booked. Please choose different dates."
   },
   "confirm": {
-    "title": "Booking received!",
-    "message": "Your host will confirm within 24 hours.",
+    "title": "Booking confirmed!",
+    "message": "Have a great trip.",
+    "pendingTitle": "Payment received — Awaiting approval",
+    "pendingMessage": "Your host will approve within 24 hours. You'll receive a full refund if declined.",
     "bookingId": "Booking ID",
     "checkin": "Check-in",
     "checkout": "Check-out",
@@ -16,6 +19,7 @@
     "guestsCount": "{{count}} guests",
     "total": "Total",
     "backHome": "Back to Home",
+    "myBookings": "My Bookings",
     "viewProperty": "View property again"
   },
   "section": {
@@ -26,6 +30,7 @@
   "field": {
     "checkin": "Check-in",
     "checkout": "Check-out",
+    "selectDate": "Select date",
     "guests": "Guests",
     "maxGuests": "Max {{max}} guests",
     "shuttleFree": "Free shuttle",
@@ -41,5 +46,26 @@
   },
   "submit": "Confirm and Pay",
   "submitting": "Processing...",
-  "noCharge": "No charge until host approval"
+  "noCharge": "No charge until host approval",
+  "payment": {
+    "methodCard": "Card / PayPal",
+    "methodCardDesc": "Credit card, debit card, PayPal",
+    "methodUsdc": "USDC (Crypto)",
+    "methodUsdcDesc": "Pay with Solana wallet",
+    "cardPayButton": "Pay ₩{{amount}}",
+    "preparingCard": "Preparing card payment...",
+    "failTitle": "Payment Failed",
+    "error": "An error occurred during payment",
+    "title": "Pay with USDC",
+    "nightsGuests": "{{nights}} night · {{guests}} guest",
+    "amount": "Amount due",
+    "pythNote": "* Final USDC amount determined by Pyth oracle rate",
+    "kycRequired": "Identity verification required before payment",
+    "kycButton": "Verify identity",
+    "walletRequired": "Connect a Solana wallet to pay",
+    "connectWallet": "Connect wallet",
+    "walletConnected": "Wallet connected",
+    "payButton": "Pay {{usdc}} USDC"
+  },
+  "guestOption": "{{n}} guest"
 }

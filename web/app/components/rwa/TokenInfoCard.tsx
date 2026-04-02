@@ -1,4 +1,5 @@
-import { formatKrwLabel } from "~/lib/formatters";
+import { useTranslation } from "react-i18next";
+import { formatKrwLabel, fmtNumber } from "~/lib/formatters";
 
 interface Props {
     tokenName: string;
@@ -18,8 +19,11 @@ export function TokenInfoCard({
     valuationKrw, valuationUsdc,
     holders, soldTokens, fundingProgress, apy,
 }: Props) {
+    const { i18n } = useTranslation();
+    const locale = i18n.language;
+
     const priceKrwStr = tokenPrice >= 1
-        ? `₩${Math.round(tokenPrice).toLocaleString()}`
+        ? `₩${fmtNumber(Math.round(tokenPrice), locale)}`
         : tokenPrice >= 0.01 ? `₩${tokenPrice.toFixed(2)}`
         : tokenPrice >= 0.0001 ? `₩${tokenPrice.toFixed(4)}`
         : `₩${tokenPrice.toFixed(6)}`;
@@ -27,8 +31,8 @@ export function TokenInfoCard({
         : usdcPrice >= 0.0001 ? `${usdcPrice.toFixed(4)} USDC`
             : `${usdcPrice.toFixed(6)} USDC`;
 
-    const valuationKrwStr = formatKrwLabel(valuationKrw);
-    const valuationUsdStr = `$${Math.round(valuationUsdc).toLocaleString()}`;
+    const valuationKrwStr = formatKrwLabel(valuationKrw, locale === "en" ? "en" : "ko");
+    const valuationUsdStr = `$${fmtNumber(Math.round(valuationUsdc), locale)}`;
 
     const soldPct = Math.min(fundingProgress, 100);
     const barWidth = soldPct < 1 && soldTokens > 0 ? 2 : soldPct;
@@ -65,7 +69,7 @@ export function TokenInfoCard({
                 <div className="flex items-baseline justify-between mb-3">
                     <span className="text-xs font-bold uppercase tracking-wider text-stone-400">Funding Progress</span>
                     <span className="text-sm font-bold text-[#4a3b2c]">
-                        {soldTokens.toLocaleString()} / {totalSupply.toLocaleString()} tokens
+                        {fmtNumber(soldTokens, locale)} / {fmtNumber(totalSupply, locale)} tokens
                     </span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-stone-100 overflow-hidden">
@@ -76,10 +80,10 @@ export function TokenInfoCard({
                 </div>
                 <div className="flex justify-between mt-2">
                     <span className="text-xs text-stone-400">
-                        {soldPct < 1 && soldTokens > 0 ? `${soldTokens.toLocaleString()} sold` : `${soldPct}% sold`}
+                        {soldPct < 1 && soldTokens > 0 ? `${fmtNumber(soldTokens, locale)} sold` : `${soldPct}% sold`}
                     </span>
                     <span className="text-xs font-semibold text-[#17cf54]">
-                        {(totalSupply - soldTokens).toLocaleString()} remaining
+                        {fmtNumber(totalSupply - soldTokens, locale)} remaining
                     </span>
                 </div>
             </div>

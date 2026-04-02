@@ -10,6 +10,10 @@
     "logoutSuccess": "로그아웃되었습니다",
     "logoutDesc": "다음에 또 만나요!",
     "admin": "관리자",
+    "adminDashboard": "관리자 대시보드",
+    "hostBookings": "예약 관리",
+    "operatorDashboard": "운영 대시보드",
+    "myBookings": "내 예약",
     "verifyKyc": "KYC 인증",
     "connectWallet": "지갑 연결"
   },

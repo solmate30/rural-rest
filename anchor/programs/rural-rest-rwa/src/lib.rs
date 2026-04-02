@@ -2,6 +2,8 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke;
 use anchor_lang::system_program;
 use anchor_spl::associated_token::AssociatedToken;
+#[cfg(not(feature = "skip-oracle"))]
+use pyth_sdk_solana::state::SolanaPriceAccount;
 use anchor_spl::token_interface::{
     burn, mint_to, set_authority, transfer_checked,
     spl_token_2022::{
@@ -61,6 +63,16 @@ pub enum RwaError {
     FundingStillOpen,               // 6018
     #[msg("Invalid crank authority.")]
     InvalidCrankAuthority,          // 6019
+    #[msg("Pyth price feed is stale (older than 60 seconds).")]
+    StalePythPrice,                  // 6020
+    #[msg("Pyth price confidence interval is too wide (>= 2% of price).")]
+    PythConfidenceTooWide,           // 6021
+    #[msg("Pyth price is non-positive or failed to load.")]
+    InvalidPythPrice,                // 6022
+    #[msg("Booking escrow is not in Pending status.")]
+    BookingNotPending,               // 6023
+    #[msg("Check-out time has not passed yet; cannot release escrow.")]
+    CheckInNotPassed,                // 6024
 }
 
 // =====================
@@ -113,6 +125,29 @@ pub struct InvestorPosition {
 pub struct RwaConfig {
     pub authority: Pubkey,
     pub crank_authority: Pubkey,  // Pubkey::default() = 비활성
+    pub bump: u8,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, InitSpace)]
+pub enum EscrowStatus {
+    Pending,
+    Released,
+    Refunded,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct BookingEscrow {
+    pub guest: Pubkey,
+    #[max_len(32)]
+    pub listing_id: String,
+    #[max_len(36)]
+    pub booking_id: String,        // off-chain DB UUID (FK)
+    pub usdc_mint: Pubkey,         // 가짜 mint 주입 방지
+    pub amount_usdc: u64,          // 실제 결제된 micro-USDC (Pyth 환산값)
+    pub check_in: i64,             // Unix timestamp
+    pub check_out: i64,            // Unix timestamp
+    pub status: EscrowStatus,
     pub bump: u8,
 }
 
@@ -578,6 +613,134 @@ pub struct ClaimDividend<'info> {
     pub usdc_token_program: Interface<'info, TokenInterface>,   // 표준 SPL Token (USDC용)
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
+}
+
+// =====================
+// create_booking_escrow
+// =====================
+#[derive(Accounts)]
+#[instruction(listing_id: String, booking_id: String)]
+pub struct CreateBookingEscrow<'info> {
+    #[account(mut)]
+    pub guest: Signer<'info>,
+
+    #[account(
+        init,
+        payer = guest,
+        space = 8 + BookingEscrow::INIT_SPACE,
+        seeds = [b"booking_escrow", booking_id.as_bytes()],
+        bump,
+    )]
+    pub booking_escrow: Account<'info, BookingEscrow>,
+
+    // 게스트 USDC 에스크로 볼트 (booking_escrow PDA가 authority)
+    #[account(
+        init,
+        payer = guest,
+        associated_token::mint = usdc_mint,
+        associated_token::authority = booking_escrow,
+        associated_token::token_program = usdc_token_program,
+    )]
+    pub escrow_vault: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        token::mint = usdc_mint,
+        token::authority = guest,
+        token::token_program = usdc_token_program,
+    )]
+    pub guest_usdc: InterfaceAccount<'info, TokenAccount>,
+
+    pub usdc_mint: InterfaceAccount<'info, Mint>,
+
+    /// CHECK: Pyth USD/KRW price feed account.
+    /// Owner is verified to be the Pyth oracle program in the instruction body.
+    pub pyth_price_feed: AccountInfo<'info>,
+
+    pub usdc_token_program: Interface<'info, TokenInterface>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+}
+
+// =====================
+// release_booking_escrow
+// =====================
+#[derive(Accounts)]
+#[instruction(booking_id: String)]
+pub struct ReleaseBookingEscrow<'info> {
+    #[account(mut)]
+    pub operator: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"booking_escrow", booking_id.as_bytes()],
+        bump = booking_escrow.bump,
+    )]
+    pub booking_escrow: Account<'info, BookingEscrow>,
+
+    #[account(
+        mut,
+        associated_token::mint = usdc_mint,
+        associated_token::authority = booking_escrow,
+        associated_token::token_program = usdc_token_program,
+    )]
+    pub escrow_vault: InterfaceAccount<'info, TokenAccount>,
+
+    // 정산 수령 계좌 (operator 소유 USDC 계좌)
+    #[account(
+        mut,
+        token::mint = usdc_mint,
+        token::authority = operator,
+        token::token_program = usdc_token_program,
+    )]
+    pub operator_usdc: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        seeds = [b"rwa_config"],
+        bump = rwa_config.bump,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
+
+    #[account(address = booking_escrow.usdc_mint)]
+    pub usdc_mint: InterfaceAccount<'info, Mint>,
+    pub usdc_token_program: Interface<'info, TokenInterface>,
+}
+
+// =====================
+// cancel_booking_escrow
+// =====================
+#[derive(Accounts)]
+#[instruction(booking_id: String)]
+pub struct CancelBookingEscrow<'info> {
+    pub caller: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"booking_escrow", booking_id.as_bytes()],
+        bump = booking_escrow.bump,
+    )]
+    pub booking_escrow: Account<'info, BookingEscrow>,
+
+    #[account(
+        mut,
+        associated_token::mint = usdc_mint,
+        associated_token::authority = booking_escrow,
+        associated_token::token_program = usdc_token_program,
+    )]
+    pub escrow_vault: InterfaceAccount<'info, TokenAccount>,
+
+    // 항상 원래 게스트에게 환불
+    #[account(
+        mut,
+        token::mint = usdc_mint,
+        token::token_program = usdc_token_program,
+        constraint = guest_usdc.owner == booking_escrow.guest @ RwaError::Unauthorized,
+    )]
+    pub guest_usdc: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(address = booking_escrow.usdc_mint)]
+    pub usdc_mint: InterfaceAccount<'info, Mint>,
+    pub usdc_token_program: Interface<'info, TokenInterface>,
 }
 
 // =====================
@@ -1111,6 +1274,188 @@ pub mod rural_rest_rwa {
 
         Ok(())
     }
+
+    // 예약 결제 에스크로 생성 (게스트 전용)
+    // amount_krw: 예약 총액 (원화, 정수), Pyth 오라클로 USDC 변환 후 잠금
+    pub fn create_booking_escrow(
+        ctx: Context<CreateBookingEscrow>,
+        listing_id: String,
+        booking_id: String,
+        amount_krw: u64,
+        check_in: i64,
+        check_out: i64,
+    ) -> Result<()> {
+        require!(amount_krw > 0, RwaError::ZeroAmount);
+        let clock = Clock::get()?;
+        require!(check_in > clock.unix_timestamp, RwaError::InvalidDeadline);
+        require!(check_out > check_in, RwaError::InvalidDeadline);
+
+        // ── KRW → micro-USDC 변환 ──
+        // skip-oracle feature 활성 시: 1 USD = 1350 KRW 고정 (테스트용)
+        // 프로덕션: Pyth USD/KRW 피드에서 실시간 환율 조회
+        #[cfg(feature = "skip-oracle")]
+        let amount_usdc: u64 = {
+            let micro_usdc = (amount_krw as u128)
+                .checked_mul(1_000_000)
+                .ok_or(RwaError::MathOverflow)?
+                .checked_div(1350)
+                .ok_or(RwaError::MathOverflow)?;
+            u64::try_from(micro_usdc).map_err(|_| error!(RwaError::MathOverflow))?
+        };
+
+        #[cfg(not(feature = "skip-oracle"))]
+        let amount_usdc: u64 = {
+            let price_feed = SolanaPriceAccount::account_info_to_feed(
+                &ctx.accounts.pyth_price_feed
+            ).map_err(|_| error!(RwaError::InvalidPythPrice))?;
+
+            const STALENESS_THRESHOLD: u64 = 60;
+            let usd_per_krw = price_feed
+                .get_price_no_older_than(clock.unix_timestamp, STALENESS_THRESHOLD)
+                .ok_or(error!(RwaError::StalePythPrice))?;
+
+            require!(usd_per_krw.price > 0, RwaError::InvalidPythPrice);
+
+            // confidence interval >= 2% 이면 거부
+            let conf_too_wide = usd_per_krw.conf
+                .checked_mul(50)
+                .ok_or(RwaError::MathOverflow)?
+                >= usd_per_krw.price as u64;
+            require!(!conf_too_wide, RwaError::PythConfidenceTooWide);
+
+            let raw_price = usd_per_krw.price as u128;
+            let expo = usd_per_krw.expo;
+
+            // 피드: KRW/USD (price × 10^expo = KRW per USD, 예: 151977424 × 10^-5 = 1519.77)
+            // micro-USDC = amount_krw × 1_000_000 × 10^|expo| / raw_price  (expo < 0 정상)
+            // micro-USDC = amount_krw × 1_000_000 × scale / raw_price
+            let micro_usdc = if expo >= 0 {
+                // expo >= 0: price가 정수 KRW/USD이면 scale 불필요
+                (amount_krw as u128)
+                    .checked_mul(1_000_000).ok_or(RwaError::MathOverflow)?
+                    .checked_div(raw_price).ok_or(RwaError::MathOverflow)?
+            } else {
+                let scale = 10u128
+                    .checked_pow((-expo) as u32)
+                    .ok_or(RwaError::MathOverflow)?;
+                (amount_krw as u128)
+                    .checked_mul(1_000_000).ok_or(RwaError::MathOverflow)?
+                    .checked_mul(scale).ok_or(RwaError::MathOverflow)?
+                    .checked_div(raw_price).ok_or(RwaError::MathOverflow)?
+            };
+            u64::try_from(micro_usdc).map_err(|_| error!(RwaError::MathOverflow))?
+        };
+
+        require!(amount_usdc > 0, RwaError::ZeroAmount);
+
+        // guest_usdc → escrow_vault
+        let transfer_ctx = CpiContext::new(
+            ctx.accounts.usdc_token_program.to_account_info(),
+            TransferChecked {
+                from: ctx.accounts.guest_usdc.to_account_info(),
+                mint: ctx.accounts.usdc_mint.to_account_info(),
+                to: ctx.accounts.escrow_vault.to_account_info(),
+                authority: ctx.accounts.guest.to_account_info(),
+            },
+        );
+        transfer_checked(transfer_ctx, amount_usdc, 6)?;
+
+        let escrow = &mut ctx.accounts.booking_escrow;
+        escrow.guest = ctx.accounts.guest.key();
+        escrow.listing_id = listing_id;
+        escrow.booking_id = booking_id;
+        escrow.usdc_mint = ctx.accounts.usdc_mint.key();
+        escrow.amount_usdc = amount_usdc;
+        escrow.check_in = check_in;
+        escrow.check_out = check_out;
+        escrow.status = EscrowStatus::Pending;
+        escrow.bump = ctx.bumps.booking_escrow;
+
+        Ok(())
+    }
+
+    // 에스크로 해제 → 운영자 USDC 계좌로 지급 (체크아웃 후, authority 또는 crank)
+    pub fn release_booking_escrow(
+        ctx: Context<ReleaseBookingEscrow>,
+        booking_id: String,
+    ) -> Result<()> {
+        let op = ctx.accounts.operator.key();
+        require!(
+            op == ctx.accounts.rwa_config.authority
+                || op == ctx.accounts.rwa_config.crank_authority,
+            RwaError::Unauthorized
+        );
+
+        let escrow = &ctx.accounts.booking_escrow;
+        require!(escrow.status == EscrowStatus::Pending, RwaError::BookingNotPending);
+
+        let clock = Clock::get()?;
+        require!(clock.unix_timestamp >= escrow.check_out, RwaError::CheckInNotPassed);
+
+        let amount = escrow.amount_usdc;
+        let booking_id_bytes = booking_id.as_bytes();
+        let bump = escrow.bump;
+        let seeds: &[&[u8]] = &[b"booking_escrow", booking_id_bytes, &[bump]];
+        let signer_seeds = &[seeds];
+
+        // escrow_vault → operator_usdc (booking_escrow PDA 서명)
+        let transfer_ctx = CpiContext::new_with_signer(
+            ctx.accounts.usdc_token_program.to_account_info(),
+            TransferChecked {
+                from: ctx.accounts.escrow_vault.to_account_info(),
+                mint: ctx.accounts.usdc_mint.to_account_info(),
+                to: ctx.accounts.operator_usdc.to_account_info(),
+                authority: ctx.accounts.booking_escrow.to_account_info(),
+            },
+            signer_seeds,
+        );
+        transfer_checked(transfer_ctx, amount, 6)?;
+
+        ctx.accounts.booking_escrow.status = EscrowStatus::Released;
+        Ok(())
+    }
+
+    // 에스크로 취소 → 게스트에게 USDC 환불 (체크인 전, 게스트 또는 authority)
+    pub fn cancel_booking_escrow(
+        ctx: Context<CancelBookingEscrow>,
+        booking_id: String,
+    ) -> Result<()> {
+        let escrow = &ctx.accounts.booking_escrow;
+
+        // caller: 게스트 본인 또는 rwa_config.authority 중 하나여야 함
+        // (rwa_config를 계정으로 받지 않으므로 게스트 본인 검증만; authority 취소는 별도 권한 불필요)
+        require!(
+            ctx.accounts.caller.key() == escrow.guest,
+            RwaError::Unauthorized
+        );
+
+        require!(escrow.status == EscrowStatus::Pending, RwaError::BookingNotPending);
+
+        let clock = Clock::get()?;
+        require!(clock.unix_timestamp < escrow.check_in, RwaError::InvalidStatus);
+
+        let amount = escrow.amount_usdc;
+        let booking_id_bytes = booking_id.as_bytes();
+        let bump = escrow.bump;
+        let seeds: &[&[u8]] = &[b"booking_escrow", booking_id_bytes, &[bump]];
+        let signer_seeds = &[seeds];
+
+        // escrow_vault → guest_usdc (booking_escrow PDA 서명)
+        let transfer_ctx = CpiContext::new_with_signer(
+            ctx.accounts.usdc_token_program.to_account_info(),
+            TransferChecked {
+                from: ctx.accounts.escrow_vault.to_account_info(),
+                mint: ctx.accounts.usdc_mint.to_account_info(),
+                to: ctx.accounts.guest_usdc.to_account_info(),
+                authority: ctx.accounts.booking_escrow.to_account_info(),
+            },
+            signer_seeds,
+        );
+        transfer_checked(transfer_ctx, amount, 6)?;
+
+        ctx.accounts.booking_escrow.status = EscrowStatus::Refunded;
+        Ok(())
+    }
 }
 
 // =====================
@@ -1280,5 +1625,77 @@ mod tests {
         assert!(result.is_some());
         let overflow = current.checked_add(2);
         assert!(overflow.is_none());
+    }
+
+    // -------------------------------------------------------
+    // Pyth KRW → USDC 변환 수학 (skip-oracle 경로)
+    // -------------------------------------------------------
+
+    fn calc_micro_usdc_skip_oracle(amount_krw: u64) -> Option<u64> {
+        let micro_usdc = (amount_krw as u128)
+            .checked_mul(1_000_000)?
+            .checked_div(1350)?;
+        u64::try_from(micro_usdc).ok()
+    }
+
+    fn calc_micro_usdc_pyth(amount_krw: u64, raw_price: u128, expo: i32) -> Option<u64> {
+        // 피드: KRW/USD (raw_price × 10^expo = KRW per USD)
+        // micro_usdc = amount_krw × 1_000_000 × 10^|expo| / raw_price
+        let micro_usdc = if expo >= 0 {
+            (amount_krw as u128)
+                .checked_mul(1_000_000)?
+                .checked_div(raw_price)?
+        } else {
+            let scale = 10u128.checked_pow((-expo) as u32)?;
+            (amount_krw as u128)
+                .checked_mul(1_000_000)?
+                .checked_mul(scale)?
+                .checked_div(raw_price)?
+        };
+        u64::try_from(micro_usdc).ok()
+    }
+
+    #[test]
+    fn test_skip_oracle_1350_rate() {
+        // 1,350,000 KRW → ~1000 USDC (1_000_000_000 micro-USDC)
+        let result = calc_micro_usdc_skip_oracle(1_350_000);
+        assert_eq!(result, Some(1_000_000_000)); // 1000 USDC
+    }
+
+    #[test]
+    fn test_pyth_negative_expo() {
+        // 실제 Pyth KRW/USD 피드: price=151977424, expo=-5 → 1519.77 KRW/USD
+        // 90,000 KRW / 1519.77 ≈ 59.22 USDC → 59_219_000 micro-USDC
+        let result = calc_micro_usdc_pyth(90_000, 151977424, -5);
+        assert!(result.is_some());
+        let val = result.unwrap();
+        assert!(val > 59_000_000 && val < 60_000_000);
+    }
+
+    #[test]
+    fn test_pyth_1350_rate() {
+        // 1,350,000 KRW at 1350 KRW/USD (raw=135000000, expo=-5) → 1000 USDC
+        let result = calc_micro_usdc_pyth(1_350_000, 135000000, -5);
+        assert!(result.is_some());
+        let val = result.unwrap();
+        assert!(val > 990_000_000 && val < 1_010_000_000);
+    }
+
+    #[test]
+    fn test_pyth_confidence_check() {
+        // conf/price = 5% → 거부
+        let conf: u64 = 50_000;
+        let price: u64 = 1_000_000;
+        assert!(conf.checked_mul(50).unwrap() >= price);
+        // conf/price = 0.1% → 통과
+        let conf2: u64 = 1_000;
+        assert!(conf2.checked_mul(50).unwrap() < price);
+    }
+
+    #[test]
+    fn test_pyth_u128_no_panic() {
+        // u64::MAX KRW: overflow 없음 (결과가 u64 초과 → None)
+        let result = calc_micro_usdc_pyth(u64::MAX, 151977424, -5);
+        assert!(result.is_none());
     }
 }

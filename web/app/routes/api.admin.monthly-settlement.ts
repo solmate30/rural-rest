@@ -5,12 +5,8 @@ import { eq, and, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { v4 as uuidv4 } from "uuid";
 
-import { KRW_PER_USDC } from "~/lib/constants";
-
-// 지자체 고정 수령 지갑 (환경변수 미설정 시 빈 문자열)
-const LOCAL_GOV_WALLET = process.env.LOCAL_GOV_WALLET ?? process.env.VITE_LOCAL_GOV_WALLET ?? "";
-// 마을 운영자 고정 수령 지갑 (MVP: 환경변수로 관리, 운영자 DB 지갑 미등록 시 fallback)
-const OPERATOR_WALLET = process.env.OPERATOR_WALLET ?? process.env.VITE_OPERATOR_WALLET ?? "";
+import { KRW_PER_USDC_FALLBACK } from "~/lib/constants";
+import { LOCAL_GOV_WALLET, OPERATOR_WALLET } from "~/lib/constants.server";
 
 // base58 솔라나 tx 서명 형식 검증 (87-90자, base58 문자셋)
 function isValidSolanaTx(sig: unknown): sig is string {
@@ -84,7 +80,8 @@ export async function action({ request }: { request: Request }) {
 
     const [revenueRow] = await db
         .select({
-            sum: sql<number>`coalesce(sum(${bookings.totalPrice}), 0)`,
+            sumKrw: sql<number>`coalesce(sum(${bookings.totalPrice}), 0)`,
+            sumUsdc: sql<number>`coalesce(sum(${bookings.totalPriceUsdc}), 0)`,
             count: sql<number>`count(*)`,
         })
         .from(bookings)
@@ -97,15 +94,24 @@ export async function action({ request }: { request: Request }) {
             )
         );
 
-    const grossRevenueKrw = Number(revenueRow?.sum ?? 0);
+    const grossRevenueKrw = Number(revenueRow?.sumKrw ?? 0);
+    // USDC 직접 집계 (온체인 결제분). 미결제분은 fallback 환율로 추정
+    const grossRevenueUsdcOnchain = Number(revenueRow?.sumUsdc ?? 0);
+    const grossRevenueUsdcFallback = Math.floor((grossRevenueKrw / KRW_PER_USDC_FALLBACK) * 1_000_000);
+    const grossRevenueUsdc = grossRevenueUsdcOnchain > 0 ? grossRevenueUsdcOnchain : grossRevenueUsdcFallback;
+
     const bookingCount = Number(revenueRow?.count ?? 0);
     const cost = operatingCostKrw ?? 0;
     const operatingProfitKrw = Math.max(0, grossRevenueKrw - cost);
 
-    // 분배 계산 (지자체 40% push, 운영자 30% push, 투자자 30% pull/claim)
-    const localGovUsdc = Math.floor((operatingProfitKrw * 0.4 / KRW_PER_USDC) * 1_000_000);
-    const operatorUsdc = Math.floor((operatingProfitKrw * 0.3 / KRW_PER_USDC) * 1_000_000);
-    const investorUsdc = Math.floor((operatingProfitKrw * 0.3 / KRW_PER_USDC) * 1_000_000);
+    // 운영비를 USDC로 환산 (fallback 환율)
+    const operatingCostUsdc = Math.floor((cost / KRW_PER_USDC_FALLBACK) * 1_000_000);
+    const operatingProfitUsdc = Math.max(0, grossRevenueUsdc - operatingCostUsdc);
+
+    // 분배 계산 (USDC 기준: 지자체 40%, 운영자 30%, 투자자 30%)
+    const localGovUsdc = Math.floor(operatingProfitUsdc * 0.4);
+    const operatorUsdc = Math.floor(operatingProfitUsdc * 0.3);
+    const investorUsdc = Math.floor(operatingProfitUsdc * 0.3);
 
     // 투자자 수 조회
     let investorCount = 0;

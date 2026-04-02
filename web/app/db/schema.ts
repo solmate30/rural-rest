@@ -7,13 +7,14 @@ export const user = sqliteTable("user", {
     email: text("email").notNull().unique(),
     emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
     image: text("image"),
-    role: text("role", { enum: ["guest", "host", "operator", "admin"] }).notNull().default("guest"),
+    role: text("role", { enum: ["guest", "spv", "operator", "admin"] }).notNull().default("guest"),
     preferredLang: text("preferred_lang").notNull().default("en"),
     walletAddress: text("wallet_address"), // Solana 지갑 주소
     walletConnectedAt: text("wallet_connected_at"), // 지갑 연결 시간
     kycVerified: integer("kyc_verified", { mode: "boolean" }).notNull().default(false),
     kycVerifiedAt: text("kyc_verified_at"),
-    walletNonce: text("wallet_nonce"), // SIWS 서명 챌린지용 일회성 nonce
+    walletNonce: text("wallet_nonce"),               // SIWS 서명 챌린지용 일회성 nonce
+    walletNonceIssuedAt: text("wallet_nonce_issued_at"), // nonce 발급 시각 (5분 TTL)
     createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
@@ -82,8 +83,12 @@ export const bookings = sqliteTable("bookings", {
     checkIn: integer("check_in", { mode: "timestamp" }).notNull(), // Unix timestamp
     checkOut: integer("check_out", { mode: "timestamp" }).notNull(), // Unix timestamp
     totalPrice: integer("total_price").notNull(),
+    totalPriceUsdc: integer("total_price_usdc"),       // micro-USDC (결제 후 저장)
+    escrowPda: text("escrow_pda"),                      // BookingEscrow PDA pubkey
+    onchainPayTx: text("onchain_pay_tx"),               // 결제 tx 서명
     status: text("status", { enum: ["pending", "confirmed", "cancelled", "completed"] }).notNull().default("pending"),
-    paymentIntentId: text("payment_intent_id"),
+    paymentIntentId: text("payment_intent_id"),             // PayPal Order ID
+    paypalAuthorizationId: text("paypal_authorization_id"), // PayPal Authorization ID (capture/void용)
     qrCodeToken: text("qr_code_token"),
     qrCodeExpiresAt: integer("qr_code_expires_at", { mode: "timestamp" }),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),

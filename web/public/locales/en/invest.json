@@ -68,6 +68,7 @@
     "revenueNote": "Last 12 months · per 1,000 tokens",
     "revenueNoteEst": "Projected · per 1,000 tokens",
     "location": "Location & Map",
+    "reviews": "{{count}} reviews",
     "fundingClosed": "Funding Closed",
     "refundNotice": "This property did not reach its funding goal. You can claim a refund for your investment."
   },
@@ -92,6 +93,10 @@
     "colValue": "Value",
     "colDividend": "Pending Dividend",
     "tokens": "tokens"
+  },
+  "upsell": {
+    "title": "Become a co-owner of\nthis warm retreat",
+    "button": "Own a piece of this home"
   },
   "dividends": {
     "title": "Dividend History",

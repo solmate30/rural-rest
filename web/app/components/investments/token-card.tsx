@@ -1,4 +1,5 @@
 import { CheckCircle2, Wallet, Sparkles } from "lucide-react";
+import { usePythRate } from "~/hooks/usePythRate";
 
 interface TokenCardProps {
     id: string;
@@ -19,7 +20,7 @@ export function TokenCard({
     dividendStatus,
     dividendAmount,
 }: TokenCardProps) {
-    const exchangeRate = 1350;
+    const { rate: exchangeRate } = usePythRate();
     const totalValueKrw = totalValue * exchangeRate;
     const dividendAmountKrw = dividendAmount * exchangeRate;
 

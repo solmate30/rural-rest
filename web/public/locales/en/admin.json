@@ -73,6 +73,23 @@
       "tokenPriceLabel": "Per Token"
     }
   },
+  "pending": {
+    "title": "Pending Bookings",
+    "subtitle": "Payment is held until the host approves",
+    "empty": "No bookings awaiting approval",
+    "colGuest": "Guest",
+    "colProperty": "Property",
+    "colDates": "Dates",
+    "colAmount": "Amount",
+    "colMethod": "Payment",
+    "colActions": "Action",
+    "methodCard": "Card",
+    "methodUsdc": "USDC",
+    "approve": "Approve",
+    "reject": "Reject & Refund",
+    "processing": "Processing...",
+    "actionError": "Action failed"
+  },
   "edit": {
     "title": "Edit Listing",
     "desc": "Manage your property details and availability.",

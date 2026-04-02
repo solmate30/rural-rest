@@ -14,8 +14,11 @@ import { RefundButton } from "~/components/rwa/RefundButton";
 import { PropertyGallery } from "~/components/rwa/PropertyGallery";
 import { useTranslation } from "react-i18next";
 
-import { KRW_PER_USDC } from "~/lib/constants";
+import { KRW_PER_USDC_FALLBACK } from "~/lib/constants";
+import { fetchPythKrwRate } from "~/lib/pyth";
 import { formatKrwLabel } from "~/lib/formatters";
+import { detectLocale } from "~/lib/i18n.server";
+import { applyListingLocale, translateAmenities } from "~/data/listing-translations";
 
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -61,8 +64,10 @@ function statusToLabel(status: string, fundingProgress: number): string {
     }
 }
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
     const listingId = params.listingId;
+    const locale = detectLocale(request);
+    const krwPerUsdc = await fetchPythKrwRate();
 
     const row = await db
         .select({
@@ -162,13 +167,22 @@ export async function loader({ params }: Route.LoaderArgs) {
         : null;
 
     const images = row.images as string[];
-    const amenities = row.amenities as string[];
+    const rawAmenities = row.amenities as string[];
+    const amenities = translateAmenities(rawAmenities, locale);
+
+    // Apply locale to title/description
+    const localized = applyListingLocale(
+        { id: row.id, title: row.title, description: row.description ?? "" },
+        locale,
+    );
+    const about = localized.description;
     const usdcPrice = row.pricePerTokenUsdc / 1_000_000;
-    const tokenPriceKrw = usdcPrice * KRW_PER_USDC;
+    const tokenPriceKrw = usdcPrice * krwPerUsdc;
     const fundingProgress = row.totalSupply > 0
-        ? Math.round((row.tokensSold / row.totalSupply) * 100) : 0;
-    const raisedUsdc = row.tokensSold * usdcPrice;
-    const remainingUsdc = (row.totalSupply - row.tokensSold) * usdcPrice;
+        ? Math.min(100, Math.round((row.tokensSold / row.totalSupply) * 100)) : 0;
+    // raised/remaining based on valuation × progress to avoid unit mismatch
+    const raisedKrw = Math.round(row.valuationKrw * fundingProgress / 100);
+    const remainingKrw = row.valuationKrw - raisedKrw;
 
     return {
         id: row.id,
@@ -183,17 +197,17 @@ export async function loader({ params }: Route.LoaderArgs) {
         totalSupply: row.totalSupply,
         availableTokens: row.totalSupply - row.tokensSold,
         valuationKrw: row.valuationKrw,
-        valuationUsdc: row.valuationKrw / KRW_PER_USDC,
+        valuationUsdc: row.valuationKrw / krwPerUsdc,
         holders: holdersRow?.count ?? 0,
         soldTokens: row.tokensSold,
         fundingProgress,
-        raised: formatKrwLabel(raisedUsdc * KRW_PER_USDC),
-        remaining: formatKrwLabel(remainingUsdc * KRW_PER_USDC),
-        raisedUsdc,
-        remainingUsdc,
+        raised: formatKrwLabel(raisedKrw),
+        remaining: formatKrwLabel(remainingKrw),
+        raisedUsdc: raisedKrw / krwPerUsdc,
+        remainingUsdc: remainingKrw / krwPerUsdc,
         status: statusToLabel(row.status, fundingProgress),
         rawStatus: row.status,
-        about: row.description,
+        about,
         amenities,
         maxGuests: row.maxGuests,
         tokenMint: row.tokenMint,
@@ -210,7 +224,10 @@ export async function loader({ params }: Route.LoaderArgs) {
         dividendChartData: buildDividendChartData(dividendHistoryAgg, row.pricePerTokenUsdc, row.estimatedApyBps),
         lastDividend: lastDividendMonth,
         occupancyRate,
-        host: {
+        host: locale === "en" ? {
+            name: `${row.location.split(" ").at(-1)} Village Host`,
+            bio: "We breathe new life into empty rural homes, giving travelers an authentic local experience. We manage the property together with village residents, sharing the culture and nature of our community.",
+        } : {
             name: `${row.location.split(" ").at(-1)} 마을지기`,
             bio: "우리 마을의 빈집을 되살려 여행자에게 특별한 경험을 제공하고 있습니다. 마을 주민들과 함께 숙소를 운영하며, 지역 문화와 자연을 나누는 일을 하고 있습니다.",
         },
@@ -249,7 +266,7 @@ export default function InvestDetail() {
                     </h1>
                     <div className="flex items-center gap-4 text-sm font-medium">
                         <span className="flex items-center gap-1">★ {property.rating}</span>
-                        <span className="text-muted-foreground">{property.reviewCount}개 리뷰</span>
+                        <span className="text-muted-foreground">{t("detail.reviews", { count: property.reviewCount })}</span>
                         <span className="text-muted-foreground">· {property.location}</span>
                     </div>
                 </div>

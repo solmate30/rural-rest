@@ -13,9 +13,25 @@ export function fmtUsdc(v: number): string {
  * KRW 표시 — ₩ 접두사 (테이블/카드용)
  * 1500 → "₩1,500", 0.5 → "₩0.50"
  */
-export function fmtKrw(v: number): string {
-    if (v >= 1) return `₩${Math.floor(v).toLocaleString()}`;
+export function fmtKrw(v: number, locale = "ko"): string {
+    if (v >= 1) return `₩${new Intl.NumberFormat(locale).format(Math.floor(v))}`;
     return `₩${v.toFixed(2)}`;
+}
+
+/**
+ * 숫자 포맷 (천 단위 구분자, locale 지원)
+ */
+export function fmtNumber(v: number, locale = "ko"): string {
+    return new Intl.NumberFormat(locale).format(v);
+}
+
+/**
+ * 날짜 포맷 (locale 지원)
+ * ko: 2026. 4. 2. / en: Apr 2, 2026
+ */
+export function fmtDate(date: Date | string | number, locale = "ko"): string {
+    const d = date instanceof Date ? date : new Date(date);
+    return new Intl.DateTimeFormat(locale, { year: "numeric", month: "short", day: "numeric" }).format(d);
 }
 
 /**

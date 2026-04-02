@@ -1,11 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useLoaderData } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Header } from "../components/ui-mockup";
 import { requireUser } from "../lib/auth.server";
 import { getHostListings, type HostListingRow } from "../lib/admin-dashboard.server";
 import { db } from "../db/index.server";
-import { rwaInvestments, user as userTable, bookings, operatorSettlements } from "../db/schema";
+import { rwaInvestments, user as userTable, bookings, listings, operatorSettlements } from "../db/schema";
 import { sql, eq, and, inArray } from "drizzle-orm";
 import { DateTime } from "luxon";
 import type { Route } from "./+types/admin.dashboard";
@@ -42,7 +42,8 @@ import {
 } from "~/components/ui/sheet";
 import { fmtKrw, fmtUsdc, formatKrwLabel } from "~/lib/formatters";
 import { cn } from "~/lib/utils";
-import { TOTAL_SUPPLY, KRW_PER_USDC } from "~/lib/constants";
+import { TOTAL_SUPPLY } from "~/lib/constants";
+import { usePythRate } from "~/hooks/usePythRate";
 
 /* ------------------------------------------------------------------ */
 /*  Loader                                                             */
@@ -149,9 +150,31 @@ export async function loader({ request }: Route.LoaderArgs) {
         }
     }
 
+    // 승인 대기 중인 예약 목록
+    const pendingBookings = await db
+        .select({
+            id: bookings.id,
+            listingTitle: listings.title,
+            listingId: bookings.listingId,
+            checkIn: bookings.checkIn,
+            checkOut: bookings.checkOut,
+            totalPrice: bookings.totalPrice,
+            paymentIntentId: bookings.paymentIntentId,
+            onchainPayTx: bookings.onchainPayTx,
+            createdAt: bookings.createdAt,
+            guestName: userTable.name,
+            guestEmail: userTable.email,
+        })
+        .from(bookings)
+        .innerJoin(listings, eq(bookings.listingId, listings.id))
+        .innerJoin(userTable, eq(bookings.guestId, userTable.id))
+        .where(eq(bookings.status, "pending"))
+        .orderBy(bookings.createdAt);
+
     return {
         allListings,
         unsettledIds: Array.from(unsettledSet),
+        pendingBookings,
         stats: {
             totalListings: allListings.length,
             tokenizedCount,
@@ -309,6 +332,7 @@ function ListingSheet({
     const statusLabel = useStatusLabel();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { t, i18n } = useTranslation("admin") as any;
+    const { rate: krwPerUsdc } = usePythRate();
     const [forceFundStatus, setForceFundStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
     const [forceFundError, setForceFundError] = useState("");
 
@@ -343,9 +367,9 @@ function ListingSheet({
 
     // Initialize deadline when sheet opens with a new listing
     const listingId = listing?.id ?? "";
-    useState(() => {
+    useEffect(() => {
         setDeadlineStr(toDatetimeLocal(new Date(Date.now() + 24 * 60 * 60 * 1000)));
-    });
+    }, [listingId]);
 
     if (!listing) return null;
 
@@ -354,7 +378,7 @@ function ListingSheet({
 
     // Pre-tokenization calculations
     const tokenPriceKrw = valuationKrw > 0 ? valuationKrw / TOTAL_SUPPLY : 0;
-    const tokenPriceUsdc = tokenPriceKrw / KRW_PER_USDC;
+    const tokenPriceUsdc = tokenPriceKrw / krwPerUsdc;
     const targetKrw = valuationKrw * (minFundingPct / 100);
     const previewApyBps = valuationKrw > 0
         ? Math.round((listing.pricePerNight * 365 * 0.55 * 0.55 * 0.30) / valuationKrw * 10000)
@@ -698,11 +722,181 @@ function ListingSheet({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Helper: PendingBookingsSection                                     */
+/* ------------------------------------------------------------------ */
+
+type PendingBooking = {
+    id: string;
+    listingTitle: string;
+    listingId: string;
+    checkIn: Date | null;
+    checkOut: Date | null;
+    totalPrice: number;
+    paymentIntentId: string | null;
+    onchainPayTx: string | null;
+    createdAt: Date | null;
+    guestName: string;
+    guestEmail: string;
+};
+
+function PendingBookingsSection({ pendingBookings }: { pendingBookings: PendingBooking[] }) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { t, i18n } = useTranslation("admin") as any;
+    const locale = i18n.language as "ko" | "en";
+    const [actionStates, setActionStates] = useState<Record<string, "idle" | "loading" | "done" | "error">>({});
+    const [localList, setLocalList] = useState(pendingBookings);
+
+    async function handleApprove(bookingId: string) {
+        setActionStates((s) => ({ ...s, [bookingId]: "loading" }));
+        const res = await fetch("/api/booking/approve", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ bookingId }),
+        });
+        if (res.ok) {
+            setLocalList((l) => l.filter((b) => b.id !== bookingId));
+        } else {
+            setActionStates((s) => ({ ...s, [bookingId]: "error" }));
+        }
+    }
+
+    async function handleReject(bookingId: string) {
+        setActionStates((s) => ({ ...s, [bookingId]: "loading" }));
+        const res = await fetch("/api/booking/reject", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ bookingId }),
+        });
+        if (res.ok) {
+            setLocalList((l) => l.filter((b) => b.id !== bookingId));
+        } else {
+            setActionStates((s) => ({ ...s, [bookingId]: "error" }));
+        }
+    }
+
+    function fmtDay(d: Date | null) {
+        if (!d) return "—";
+        return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }).format(new Date(d));
+    }
+
+    return (
+        <Card className="rounded-3xl border-stone-100 shadow-sm mb-8">
+            <CardHeader>
+                <div className="flex items-center justify-between">
+                    <CardTitle className="text-base font-bold text-[#4a3b2c] flex items-center gap-2">
+                        {t("pending.title")}
+                        {localList.length > 0 && (
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-[11px] font-bold">
+                                {localList.length}
+                            </span>
+                        )}
+                    </CardTitle>
+                    <p className="text-xs text-stone-400">{t("pending.subtitle")}</p>
+                </div>
+            </CardHeader>
+            <CardContent className="p-0">
+                {localList.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 text-stone-300 py-10">
+                        <span className="material-symbols-outlined text-[32px]">check_circle</span>
+                        <span className="text-sm">{t("pending.empty")}</span>
+                    </div>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="border-stone-100">
+                                <TableHead className="pl-6">{t("pending.colGuest")}</TableHead>
+                                <TableHead>{t("pending.colProperty")}</TableHead>
+                                <TableHead>{t("pending.colDates")}</TableHead>
+                                <TableHead className="text-right">{t("pending.colAmount")}</TableHead>
+                                <TableHead>{t("pending.colMethod")}</TableHead>
+                                <TableHead className="text-right pr-6">{t("pending.colActions")}</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {localList.map((b) => {
+                                const state = actionStates[b.id] ?? "idle";
+                                const isLoading = state === "loading";
+                                const payMethod = b.paymentIntentId ? "card" : "usdc";
+                                return (
+                                    <TableRow key={b.id} className="border-stone-100">
+                                        <TableCell className="pl-6">
+                                            <p className="text-sm font-semibold text-[#4a3b2c]">{b.guestName}</p>
+                                            <p className="text-xs text-stone-400">{b.guestEmail}</p>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Link
+                                                to={`/property/${b.listingId}`}
+                                                className="text-sm text-[#4a3b2c] hover:underline font-medium"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {b.listingTitle}
+                                            </Link>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="text-sm text-stone-600">
+                                                {fmtDay(b.checkIn)} — {fmtDay(b.checkOut)}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <span className="text-sm font-semibold text-[#4a3b2c]">
+                                                {fmtKrw(b.totalPrice)}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge
+                                                variant="outline"
+                                                className={cn(
+                                                    "text-xs rounded-full",
+                                                    payMethod === "card"
+                                                        ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                                                        : "bg-violet-500/10 text-violet-600 border-violet-500/20"
+                                                )}
+                                            >
+                                                {payMethod === "card" ? t("pending.methodCard") : t("pending.methodUsdc")}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right pr-6">
+                                            {state === "error" ? (
+                                                <span className="text-xs text-red-500">{t("pending.actionError")}</span>
+                                            ) : (
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="success"
+                                                        disabled={isLoading}
+                                                        onClick={() => handleApprove(b.id)}
+                                                    >
+                                                        {isLoading ? t("pending.processing") : t("pending.approve")}
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="border-red-200 text-red-600 hover:bg-red-50"
+                                                        disabled={isLoading}
+                                                        onClick={() => handleReject(b.id)}
+                                                    >
+                                                        {t("pending.reject")}
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Page component                                                     */
 /* ------------------------------------------------------------------ */
 
 export default function AdminDashboard() {
-    const { allListings, unsettledIds, stats } = useLoaderData<typeof loader>();
+    const { allListings, unsettledIds, pendingBookings, stats } = useLoaderData<typeof loader>();
     const statusLabel = useStatusLabel();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { t } = useTranslation("admin") as any;
@@ -875,7 +1069,10 @@ export default function AdminDashboard() {
                     </CardContent>
                 </Card>
 
-                {/* ====== Section 4: Listings table with search/filter ====== */}
+                {/* ====== Section 4: Pending bookings ====== */}
+                <PendingBookingsSection pendingBookings={pendingBookings} />
+
+                {/* ====== Section 5: Listings table with search/filter ====== */}
                 <Card className="rounded-3xl border-stone-100 shadow-sm">
                     <CardHeader>
                         <div className="flex items-center justify-between flex-wrap gap-3">

@@ -4,7 +4,7 @@ import { user } from "../db/schema";
 import { eq } from "drizzle-orm";
 
 // GET /api/user/wallet-nonce
-// 지갑 연결 서명 챌린지용 nonce 발급
+// 지갑 연결 서명 챌린지용 nonce 발급 (5분 TTL)
 export async function loader({ request }: { request: Request }) {
     const session = await requireUser(request);
 
@@ -19,7 +19,10 @@ export async function loader({ request }: { request: Request }) {
 
     await db
         .update(user)
-        .set({ walletNonce: nonce })
+        .set({
+            walletNonce: nonce,
+            walletNonceIssuedAt: new Date().toISOString(),
+        })
         .where(eq(user.id, session.id));
 
     return Response.json({ nonce });

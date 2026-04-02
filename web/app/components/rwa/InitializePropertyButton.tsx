@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 
-import { PROGRAM_ID, USDC_MINT, TOTAL_SUPPLY, KRW_PER_USDC } from "~/lib/constants";
+import { PROGRAM_ID, USDC_MINT, TOTAL_SUPPLY, KRW_PER_USDC_FALLBACK } from "~/lib/constants";
 import { getProgram, derivePdas, parseAnchorError } from "~/lib/anchor-client";
 import { Button } from "~/components/ui/button";
 
@@ -51,7 +51,7 @@ export function InitializePropertyButton({ listingId, values, disabled }: Props)
             );
 
             const pricePerTokenUsdc = Math.round(
-                (values.valuationKrw / TOTAL_SUPPLY) / KRW_PER_USDC * 1_000_000
+                (values.valuationKrw / TOTAL_SUPPLY) / KRW_PER_USDC_FALLBACK * 1_000_000
             );
 
             const sig = await program.methods

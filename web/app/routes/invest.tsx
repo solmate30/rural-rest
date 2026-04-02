@@ -11,7 +11,7 @@ import { syncFundingStatuses } from "~/lib/rwa.server";
 import { fetchPropertiesOnchain } from "~/lib/rwa.onchain.server";
 import { useTranslation } from "react-i18next";
 
-import { KRW_PER_USDC } from "~/lib/constants";
+import { fetchPythKrwRate } from "~/lib/pyth";
 import { formatKrwLabel, fmtKrw, fmtUsdc } from "~/lib/formatters";
 
 function statusToEnglish(status: string): string {
@@ -26,6 +26,7 @@ function statusToEnglish(status: string): string {
 
 export async function loader() {
     await syncFundingStatuses();
+    const krwPerUsdc = await fetchPythKrwRate();
 
     const rows = await db
         .select({
@@ -75,14 +76,17 @@ export async function loader() {
         const images = row.images as string[];
 
         const usdcPrice = row.pricePerTokenUsdc! / 1_000_000;
-        const tokenPriceKrw = usdcPrice * KRW_PER_USDC;
+        const tokenPriceKrw = usdcPrice * krwPerUsdc;
         const totalSupply = row.totalSupply!;
         const tokensSold = row.tokensSold!;
+        // cap at 100: on-chain tokensSold can exceed totalSupply due to test data
         const fundingProgress = totalSupply > 0
-            ? Math.round((tokensSold / totalSupply) * 100)
+            ? Math.min(100, Math.round((tokensSold / totalSupply) * 100))
             : 0;
-        const raisedUsdc = tokensSold * usdcPrice;
-        const remainingUsdc = (totalSupply - tokensSold) * usdcPrice;
+        // raised/remaining derived from valuation × progress ratio
+        // (avoids unit mismatch when totalSupply × pricePerToken ≠ valuationKrw)
+        const raisedKrw = Math.round(row.valuationKrw! * fundingProgress / 100);
+        const remainingKrw = row.valuationKrw! - raisedKrw;
         return {
             id: row.id,
             title: row.title,
@@ -93,14 +97,14 @@ export async function loader() {
             tokenPrice: tokenPriceKrw,
             usdcPrice,
             valuationKrw: row.valuationKrw!,
-            valuationUsdc: row.valuationKrw! / KRW_PER_USDC,
+            valuationUsdc: row.valuationKrw! / krwPerUsdc,
             fundingProgress,
             tokensSold,
             totalSupply,
-            raised: formatKrwLabel(raisedUsdc * KRW_PER_USDC),
-            remaining: formatKrwLabel(remainingUsdc * KRW_PER_USDC),
-            raisedUsdc,
-            remainingUsdc,
+            raised: formatKrwLabel(raisedKrw),
+            remaining: formatKrwLabel(remainingKrw),
+            raisedUsdc: raisedKrw / krwPerUsdc,
+            remainingUsdc: remainingKrw / krwPerUsdc,
             status: statusToEnglish(row.status!),
             themes: [] as string[],
         };

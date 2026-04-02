@@ -10,6 +10,10 @@
     "logoutSuccess": "You have been logged out",
     "logoutDesc": "See you next time!",
     "admin": "Admin",
+    "adminDashboard": "Admin Dashboard",
+    "hostBookings": "Booking Management",
+    "operatorDashboard": "Operator Dashboard",
+    "myBookings": "My Bookings",
     "verifyKyc": "Verify KYC",
     "connectWallet": "Connect Wallet"
   },
