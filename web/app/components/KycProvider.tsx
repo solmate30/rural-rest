@@ -13,7 +13,6 @@ const KycContext = createContext<KycContextType | undefined>(undefined);
 export function KycProvider({ children }: { children: React.ReactNode }) {
     const [isKycCompleted, setIsKycCompleted] = useState<boolean>(false);
     const [registeredWallet, setRegisteredWallet] = useState<string | null>(null);
-    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
         // localStorage에서 낙관적으로 먼저 읽기 (깜빡임 방지)
@@ -43,8 +42,7 @@ export function KycProvider({ children }: { children: React.ReactNode }) {
             })
             .catch(() => {
                 // 네트워크 오류 시 localStorage 값 유지
-            })
-            .finally(() => setIsLoaded(true));
+            });
     }, []);
 
     const completeKyc = () => {
@@ -57,8 +55,6 @@ export function KycProvider({ children }: { children: React.ReactNode }) {
         setRegisteredWallet(null);
         localStorage.removeItem("ruralrest_kyc");
     };
-
-    if (!isLoaded) return null;
 
     return (
         <KycContext.Provider value={{ isKycCompleted, registeredWallet, completeKyc, resetKyc }}>

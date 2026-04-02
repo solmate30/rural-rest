@@ -14,7 +14,9 @@ export async function getProgram(connection: Connection, wallet: WalletContextSt
     const { default: IDL } = await import("~/anchor-idl/rural_rest_rwa.json");
 
     const provider = new AnchorProvider(connection, wallet as any, { commitment: "confirmed" });
-    return new Program(IDL as any, provider);
+    // IDL에 address가 없을 수 있으므로 PROGRAM_ID로 주입
+    const idl = { ...IDL, address: PROGRAM_ID };
+    return new Program(idl as any, provider);
 }
 
 /**

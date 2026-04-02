@@ -70,11 +70,12 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [ ] **RWA Entry Hooks**: 숙소 상세에서 RWA 투자 배너/버튼
 
 ### DAO (커스텀 Anchor -- Realms 대체, 08_DAO_IMPLEMENTATION_SPEC)
-*   [ ] **Anchor DAO 프로그램**: `rural-rest-dao` 5개 instruction 구현 (initialize_dao, create_proposal, cast_vote, finalize_proposal, cancel_proposal) + localnet 테스트
-*   [ ] **Council Token**: Token-2022 NonTransferable Mint 생성 스크립트 (`setup-council-mint.ts`)
-*   [ ] **Squads Multisig**: M-of-N 생성 + Council Mint Authority 이전
-*   [ ] **Devnet 배포**: DAO 프로그램 + `initialize_dao` + E2E 테스트
-*   [ ] **웹 UI**: `/invest/:listingId/governance` 투표 UI (제안 목록/투표/생성)
+*   [x] **Anchor DAO 프로그램**: `rural-rest-dao` 5개 instruction 구현 완료 (Program ID: `3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX`)
+*   [x] **Council Token**: Token-2022 NonTransferable Mint 생성 완료 (`FEDWxrjgozxhXFN8N8fy4XhrAJEbdQQb9xRJpNwYbtKq`), Admin 발급 UI 추가 (header 버튼 → Sheet)
+*   [ ] **Squads Multisig**: M-of-N 생성 + Council Mint Authority 이전 (mainnet 전환 시)
+*   [x] **Devnet 배포**: DAO 프로그램 + `initialize_dao` + RwaConfig 초기화 완료 (DaoConfig PDA: `C7ovfgZkJLbDAn5bs4gQtVT2dENosmfi58DmFvufBWiH`)
+*   [x] **웹 UI**: `/governance/:id` 투표 UI 완료 (제안 목록/투표/생성)
+*   [x] **Governance Blinks**: `/api/actions/governance/:proposalId` 구현 완료 — Phantom/Dialect에서 직접 투표 가능. 투자자 보유 포지션을 서버사이드 조회해 `remaining_accounts`로 전달, KYC 게이트 포함
 
 ## 3. Completed (History)
 **(Archived to `docs/04_Logic_Progress/00_ARCHIVE/`)**
