@@ -7,6 +7,13 @@
     "todayCheckin": "Check-ins Today",
     "occupancy30d": "Occupancy (30d)"
   },
+  "tab": {
+    "pending": "Awaiting Approval",
+    "confirmed": "Confirmed",
+    "settlements": "Settlements",
+    "listings": "Properties",
+    "wallet": "Settlement Wallet"
+  },
   "status": {
     "pending": "Pending",
     "confirmed": "Confirmed",
@@ -16,13 +23,23 @@
     "processing": "Processing"
   },
   "section": {
-    "pending": "Pending Bookings",
+    "pending": "Awaiting Approval",
     "pendingCount": "{{count}} bookings",
-    "upcoming": "Upcoming Check-ins",
-    "settlementWallet": "Settlement Wallet",
+    "noPending": "No bookings awaiting approval.",
+    "upcoming": "Confirmed Bookings",
+    "noConfirmed": "No confirmed bookings.",
     "settlementHistory": "Settlement History",
+    "noSettlements": "No settlement records yet.",
+    "settlementWallet": "Settlement Wallet",
+    "walletDesc": "Connect your Solana wallet to receive dividends and settlements.",
     "listings": "Assigned Properties",
     "noListings": "No properties assigned yet."
+  },
+  "action": {
+    "approve": "Approve",
+    "reject": "Reject & Refund",
+    "processing": "Processing...",
+    "error": "Action failed"
   },
   "settlement": {
     "detail": "{{month}} · Revenue {{revenue}} · Profit {{profit}}"

@@ -47,7 +47,7 @@ export const auth = betterAuth({
  * requireUser Helper
  * Ensures the user is authenticated and has the required role.
  */
-export async function requireUser(request: Request, allowedRoles: string[] = ["guest", "host", "admin"]) {
+export async function requireUser(request: Request, allowedRoles: string[] = ["guest", "spv", "admin"]) {
     const session = await auth.api.getSession({ headers: request.headers });
 
     if (!session) {
