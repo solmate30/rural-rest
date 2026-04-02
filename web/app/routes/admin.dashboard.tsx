@@ -892,6 +892,94 @@ function PendingBookingsSection({ pendingBookings }: { pendingBookings: PendingB
 }
 
 /* ------------------------------------------------------------------ */
+/*  Helper: CouncilTokenSheet                                          */
+/* ------------------------------------------------------------------ */
+
+function CouncilTokenSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+    const [wallet, setWallet] = useState("");
+    const [amount, setAmount] = useState("1");
+    const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+    const [resultMsg, setResultMsg] = useState("");
+
+    async function handleIssue() {
+        const parsed = parseInt(amount, 10);
+        if (!wallet.trim() || isNaN(parsed) || parsed < 1) return;
+        setStatus("loading");
+        setResultMsg("");
+        try {
+            const res = await fetch("/api/admin/issue-council-token", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ walletAddress: wallet.trim(), amount: parsed }),
+            });
+            const text = await res.text();
+            let data: any = {};
+            try { data = JSON.parse(text); } catch { throw new Error(text.slice(0, 200)); }
+            if (!res.ok) throw new Error(data.error ?? "발급 실패");
+            setStatus("done");
+            setResultMsg(`발급 완료 — tx: ${data.signature}`);
+            setWallet("");
+            setAmount("1");
+        } catch (e: any) {
+            setStatus("error");
+            setResultMsg(e.message);
+        }
+    }
+
+    return (
+        <Sheet open={open} onOpenChange={onOpenChange}>
+            <SheetContent side="right" className="w-full sm:max-w-md bg-[#fcfaf7]">
+                <SheetHeader className="mb-6">
+                    <SheetTitle className="text-base font-bold text-[#4a3b2c] flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px] text-violet-500">token</span>
+                        Council Token 발급
+                    </SheetTitle>
+                    <SheetDescription>
+                        지자체·마을지기에게 거버넌스 의결권 토큰을 발급합니다.
+                    </SheetDescription>
+                </SheetHeader>
+                <div className="flex flex-col gap-4">
+                    <div>
+                        <label className="text-xs text-stone-400 font-medium mb-1.5 block">수령 지갑 주소</label>
+                        <Input
+                            placeholder="솔라나 지갑 주소 (base58)"
+                            value={wallet}
+                            onChange={(e) => setWallet(e.target.value)}
+                            className="rounded-xl font-mono text-sm"
+                            disabled={status === "loading"}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs text-stone-400 font-medium mb-1.5 block">수량</label>
+                        <Input
+                            type="number"
+                            min="1"
+                            max="100"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="rounded-xl text-sm w-32"
+                            disabled={status === "loading"}
+                        />
+                    </div>
+                    <Button
+                        onClick={handleIssue}
+                        disabled={status === "loading" || !wallet.trim()}
+                        className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white"
+                    >
+                        {status === "loading" ? "발급 중..." : "발급하기"}
+                    </Button>
+                    {resultMsg && (
+                        <p className={`text-xs font-mono break-all ${status === "done" ? "text-emerald-600" : "text-red-500"}`}>
+                            {resultMsg}
+                        </p>
+                    )}
+                </div>
+            </SheetContent>
+        </Sheet>
+    );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Page component                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -909,6 +997,7 @@ export default function AdminDashboard() {
     // --- sheet state ---
     const [sheetOpen, setSheetOpen] = useState(false);
     const [selectedListing, setSelectedListing] = useState<HostListingRow | null>(null);
+    const [councilSheetOpen, setCouncilSheetOpen] = useState(false);
 
     const openSheet = (listing: HostListingRow) => {
         setSelectedListing(listing);
@@ -952,6 +1041,14 @@ export default function AdminDashboard() {
                         </p>
                     </div>
                     <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCouncilSheetOpen(true)}
+                            className="border-violet-200 text-violet-600 hover:bg-violet-50"
+                        >
+                            Council Token 발급
+                        </Button>
                         <Button variant="outline" size="sm" asChild>
                             <Link to="/host/edit/new">{t("dashboard.newListing")}</Link>
                         </Button>
@@ -1270,13 +1367,16 @@ export default function AdminDashboard() {
                 </Card>
             </main>
 
-            {/* Right slide sheet */}
+            {/* Right slide sheet — listing detail */}
             <ListingSheet
                 listing={selectedListing}
                 open={sheetOpen}
                 onOpenChange={setSheetOpen}
                 isUnsettled={selectedListing ? unsettledSet.has(selectedListing.id) : false}
             />
+
+            {/* Right slide sheet — Council Token 발급 */}
+            <CouncilTokenSheet open={councilSheetOpen} onOpenChange={setCouncilSheetOpen} />
         </div>
     );
 }

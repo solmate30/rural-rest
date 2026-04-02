@@ -12,6 +12,7 @@ import { TokenInfoCard } from "~/components/rwa/TokenInfoCard";
 import { PurchaseCard } from "~/components/rwa/PurchaseCard";
 import { RefundButton } from "~/components/rwa/RefundButton";
 import { PropertyGallery } from "~/components/rwa/PropertyGallery";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { KRW_PER_USDC_FALLBACK } from "~/lib/constants";
@@ -20,6 +21,30 @@ import { formatKrwLabel } from "~/lib/formatters";
 import { detectLocale } from "~/lib/i18n.server";
 import { applyListingLocale, translateAmenities } from "~/data/listing-translations";
 
+function ShareBlinksButton({ listingId }: { listingId: string }) {
+    const [copied, setCopied] = useState(false);
+
+    function handleShare() {
+        const actionUrl = `${window.location.origin}/api/actions/invest/${listingId}`;
+        const blinksUrl = `https://dial.to/?action=solana-action:${encodeURIComponent(actionUrl)}`;
+        navigator.clipboard.writeText(blinksUrl).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    }
+
+    return (
+        <button
+            onClick={handleShare}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-colors shrink-0"
+        >
+            <span className="material-symbols-outlined text-[16px]">
+                {copied ? "check_circle" : "share"}
+            </span>
+            {copied ? "복사됨!" : "공유"}
+        </button>
+    );
+}
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -66,42 +91,70 @@ function statusToLabel(status: string, fundingProgress: number): string {
 
 export async function loader({ params, request }: Route.LoaderArgs) {
     const listingId = params.listingId;
-    const locale = detectLocale(request);
-    const krwPerUsdc = await fetchPythKrwRate();
+    const locale = await detectLocale(request);
 
-    const row = await db
-        .select({
-            id: listings.id,
-            title: listings.title,
-            description: listings.description,
-            location: listings.location,
-            images: listings.images,
-            maxGuests: listings.maxGuests,
-            amenities: listings.amenities,
-            hostId: listings.hostId,
-            lat: listings.lat,
-            lng: listings.lng,
-            renovationHistory: listings.renovationHistory,
-            tokenId: rwaTokens.id,
-            tokenMint: rwaTokens.tokenMint,
-            totalSupply: rwaTokens.totalSupply,
-            tokensSold: rwaTokens.tokensSold,
-            valuationKrw: rwaTokens.valuationKrw,
-            pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc,
-            estimatedApyBps: rwaTokens.estimatedApyBps,
-            status: rwaTokens.status,
-            fundingDeadline: rwaTokens.fundingDeadline,
-            minFundingBps: rwaTokens.minFundingBps,
-        })
-        .from(listings)
-        .innerJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
-        .where(eq(listings.id, listingId!))
-        .then(rows => rows[0] ?? null);
+    // DB 메인 쿼리 + Pyth 환율 병렬 실행
+    const [row, krwPerUsdc] = await Promise.all([
+        db
+            .select({
+                id: listings.id,
+                title: listings.title,
+                description: listings.description,
+                location: listings.location,
+                images: listings.images,
+                maxGuests: listings.maxGuests,
+                amenities: listings.amenities,
+                hostId: listings.hostId,
+                lat: listings.lat,
+                lng: listings.lng,
+                renovationHistory: listings.renovationHistory,
+                tokenId: rwaTokens.id,
+                tokenMint: rwaTokens.tokenMint,
+                totalSupply: rwaTokens.totalSupply,
+                tokensSold: rwaTokens.tokensSold,
+                valuationKrw: rwaTokens.valuationKrw,
+                pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc,
+                estimatedApyBps: rwaTokens.estimatedApyBps,
+                status: rwaTokens.status,
+                fundingDeadline: rwaTokens.fundingDeadline,
+                minFundingBps: rwaTokens.minFundingBps,
+            })
+            .from(listings)
+            .innerJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
+            .where(eq(listings.id, listingId!))
+            .then(rows => rows[0] ?? null),
+        fetchPythKrwRate(),
+    ]);
 
     if (!row) throw new Response("Not Found", { status: 404 });
 
-    // On-chain state (authoritative for status + tokensSold)
-    const onchain = await fetchPropertyOnchain(listingId!);
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000);
+
+    // 온체인 조회 + 나머지 DB 쿼리 병렬 실행 (온체인은 3초 타임아웃)
+    const [onchain, holdersRow, bookingRows, dividendHistory] = await Promise.all([
+        Promise.race([
+            fetchPropertyOnchain(listingId!),
+            new Promise<null>(resolve => setTimeout(() => resolve(null), 3000)),
+        ]),
+        db
+            .select({ count: sql<number>`COUNT(DISTINCT ${rwaInvestments.walletAddress})` })
+            .from(rwaInvestments)
+            .where(eq(rwaInvestments.rwaTokenId, row.tokenId))
+            .then(rows => rows[0]),
+        db
+            .select({ checkIn: bookings.checkIn, checkOut: bookings.checkOut })
+            .from(bookings)
+            .where(and(
+                eq(bookings.listingId, row.id),
+                gte(bookings.checkIn, ninetyDaysAgo),
+                sql`${bookings.status} IN ('confirmed', 'completed')`
+            )),
+        db
+            .select({ month: rwaDividends.month, dividendUsdc: rwaDividends.dividendUsdc })
+            .from(rwaDividends)
+            .where(eq(rwaDividends.rwaTokenId, row.tokenId)),
+    ]);
+
     if (onchain) {
         row.status = onchain.status as typeof row.status;
         row.tokensSold = onchain.tokensSold;
@@ -122,40 +175,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         }
     }
 
-    const hostUser = await db
-        .select({ name: user.name })
-        .from(user)
-        .where(eq(user.id, row.hostId))
-        .then(rows => rows[0]);
-
-    const holdersRow = await db
-        .select({ count: sql<number>`COUNT(DISTINCT ${rwaInvestments.walletAddress})` })
-        .from(rwaInvestments)
-        .where(eq(rwaInvestments.rwaTokenId, row.tokenId))
-        .then(rows => rows[0]);
-
-    // 최근 90일 예약률 계산
-    const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000);
-    const bookingRows = await db
-        .select({ checkIn: bookings.checkIn, checkOut: bookings.checkOut })
-        .from(bookings)
-        .where(and(
-            eq(bookings.listingId, row.id),
-            gte(bookings.checkIn, ninetyDaysAgo),
-            sql`${bookings.status} IN ('confirmed', 'completed')`
-        ));
-
     const bookedNights = bookingRows.reduce((sum, b) => {
         const nights = Math.round((b.checkOut.getTime() - b.checkIn.getTime()) / 86400000);
         return sum + nights;
     }, 0);
     const occupancyRate = Math.round((bookedNights / 90) * 100);
-
-    // 월별 배당 집계 (실제 지급 내역)
-    const dividendHistory = await db
-        .select({ month: rwaDividends.month, dividendUsdc: rwaDividends.dividendUsdc })
-        .from(rwaDividends)
-        .where(eq(rwaDividends.rwaTokenId, row.tokenId));
 
     const dividendByMonth = new Map<string, number>();
     for (const d of dividendHistory) {
@@ -166,23 +190,39 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         ? dividendHistoryAgg.sort((a, b) => b.month.localeCompare(a.month))[0].month
         : null;
 
+    // 실제 배당 이력 기반 APY 추정 (최근 12개월 합산 / valuation)
+    // 배당 이력 없으면 DB의 estimated_apy_bps 사용
+    let estimatedApyBps = row.estimatedApyBps;
+    if (dividendHistoryAgg.length > 0) {
+        const valuationUsdc = row.valuationKrw / krwPerUsdc;
+        const recentMonths = dividendHistoryAgg
+            .sort((a, b) => b.month.localeCompare(a.month))
+            .slice(0, 12);
+        const annualDividendUsdc = recentMonths.length < 12
+            ? (recentMonths.reduce((s, d) => s + d.totalUsdc, 0) / recentMonths.length) * 12
+            : recentMonths.reduce((s, d) => s + d.totalUsdc, 0);
+        estimatedApyBps = Math.round((annualDividendUsdc / valuationUsdc) * 10000);
+    }
+
     const images = row.images as string[];
     const rawAmenities = row.amenities as string[];
-    const amenities = translateAmenities(rawAmenities, locale);
 
-    // Apply locale to title/description
-    const localized = applyListingLocale(
+    const localizedKo = applyListingLocale(
         { id: row.id, title: row.title, description: row.description ?? "" },
-        locale,
+        "ko",
     );
-    const about = localized.description;
+    const localizedEn = applyListingLocale(
+        { id: row.id, title: row.title, description: row.description ?? "" },
+        "en",
+    );
+
     const usdcPrice = row.pricePerTokenUsdc / 1_000_000;
     const tokenPriceKrw = usdcPrice * krwPerUsdc;
     const fundingProgress = row.totalSupply > 0
         ? Math.min(100, Math.round((row.tokensSold / row.totalSupply) * 100)) : 0;
-    // raised/remaining based on valuation × progress to avoid unit mismatch
     const raisedKrw = Math.round(row.valuationKrw * fundingProgress / 100);
     const remainingKrw = row.valuationKrw - raisedKrw;
+    const villageName = row.location.split(" ").at(-1);
 
     return {
         id: row.id,
@@ -190,7 +230,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         title: row.title,
         location: row.location,
         images,
-        apy: row.estimatedApyBps / 100,
+        apy: estimatedApyBps / 100,
         tokenName: `RWA-${row.id.slice(-4).toUpperCase()}`,
         tokenPrice: tokenPriceKrw,
         usdcPrice,
@@ -207,8 +247,26 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         remainingUsdc: remainingKrw / krwPerUsdc,
         status: statusToLabel(row.status, fundingProgress),
         rawStatus: row.status,
-        about,
-        amenities,
+        i18n: {
+            ko: {
+                title: localizedKo.title,
+                about: localizedKo.description,
+                amenities: translateAmenities(rawAmenities, "ko"),
+                host: {
+                    name: `${villageName} 마을지기`,
+                    bio: "우리 마을의 빈집을 되살려 여행자에게 특별한 경험을 제공하고 있습니다. 마을 주민들과 함께 숙소를 운영하며, 지역 문화와 자연을 나누는 일을 하고 있습니다.",
+                },
+            },
+            en: {
+                title: localizedEn.title,
+                about: localizedEn.description,
+                amenities: translateAmenities(rawAmenities, "en"),
+                host: {
+                    name: `${villageName} Village Host`,
+                    bio: "We breathe new life into empty rural homes, giving travelers an authentic local experience. We manage the property together with village residents, sharing the culture and nature of our community.",
+                },
+            },
+        },
         maxGuests: row.maxGuests,
         tokenMint: row.tokenMint,
         coordinates: (row.lat && row.lng)
@@ -224,19 +282,14 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         dividendChartData: buildDividendChartData(dividendHistoryAgg, row.pricePerTokenUsdc, row.estimatedApyBps),
         lastDividend: lastDividendMonth,
         occupancyRate,
-        host: locale === "en" ? {
-            name: `${row.location.split(" ").at(-1)} Village Host`,
-            bio: "We breathe new life into empty rural homes, giving travelers an authentic local experience. We manage the property together with village residents, sharing the culture and nature of our community.",
-        } : {
-            name: `${row.location.split(" ").at(-1)} 마을지기`,
-            bio: "우리 마을의 빈집을 되살려 여행자에게 특별한 경험을 제공하고 있습니다. 마을 주민들과 함께 숙소를 운영하며, 지역 문화와 자연을 나누는 일을 하고 있습니다.",
-        },
     };
 }
 
 export default function InvestDetail() {
     const property = useLoaderData<typeof loader>();
     const { t, i18n } = useTranslation("invest");
+    const lang = (i18n.language === "en" ? "en" : "ko") as "en" | "ko";
+    const loc = property.i18n[lang];
 
     return (
         <div className="min-h-screen bg-background font-sans">
@@ -246,23 +299,26 @@ export default function InvestDetail() {
 
                 {/* Title & Badges */}
                 <div className="mb-6 space-y-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        {property.rawStatus === "funding" && (
-                            <span className="bg-card text-foreground text-xs font-bold px-3 py-1 rounded-full border border-border">
-                                {t("status.funding")}
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {property.rawStatus === "funding" && (
+                                <span className="bg-card text-foreground text-xs font-bold px-3 py-1 rounded-full border border-border">
+                                    {t("status.funding")}
+                                </span>
+                            )}
+                            {(property.rawStatus === "funded" || property.rawStatus === "active") && (
+                                <span className="bg-[#17cf54] text-white text-xs font-bold px-3 py-1 rounded-full">
+                                    {t("status.funded")}
+                                </span>
+                            )}
+                            <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">
+                                {property.tokenName}
                             </span>
-                        )}
-                        {(property.rawStatus === "funded" || property.rawStatus === "active") && (
-                            <span className="bg-[#17cf54] text-white text-xs font-bold px-3 py-1 rounded-full">
-                                {t("status.funded")}
-                            </span>
-                        )}
-                        <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">
-                            {property.tokenName}
-                        </span>
+                        </div>
+                        <ShareBlinksButton listingId={property.id} />
                     </div>
                     <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-                        {property.title}
+                        {loc.title}
                     </h1>
                     <div className="flex items-center gap-4 text-sm font-medium">
                         <span className="flex items-center gap-1">★ {property.rating}</span>
@@ -272,7 +328,7 @@ export default function InvestDetail() {
                 </div>
 
                 {/* Gallery */}
-                <PropertyGallery images={property.images} title={property.title} />
+                <PropertyGallery images={property.images} title={loc.title} />
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
@@ -299,7 +355,7 @@ export default function InvestDetail() {
                         {/* About */}
                         <section className="space-y-4 pt-8 border-t">
                             <h2 className="text-2xl font-bold text-foreground">{t("detail.aboutHome")}</h2>
-                            <p className="text-muted-foreground leading-relaxed text-lg">{property.about}</p>
+                            <p className="text-muted-foreground leading-relaxed text-lg">{loc.about}</p>
                         </section>
 
                         {/* Renovation History */}
@@ -341,7 +397,7 @@ export default function InvestDetail() {
                         <section className="space-y-6 pt-8 border-t">
                             <h2 className="text-2xl font-bold text-foreground">{t("detail.amenities")}</h2>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                {property.amenities.map((amenity) => (
+                                {loc.amenities.map((amenity) => (
                                     <div
                                         key={amenity}
                                         className="flex items-center gap-3 p-4 rounded-xl bg-stone-50 border border-stone-100 shadow-sm text-sm font-semibold text-stone-700"
@@ -361,8 +417,8 @@ export default function InvestDetail() {
                                     <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=e2e8f0" alt="Host Profile" className="w-full h-full object-cover" />
                                 </div>
                                 <div className="space-y-3">
-                                    <h3 className="text-xl font-bold text-stone-900">{property.host.name}</h3>
-                                    <p className="text-stone-700 leading-relaxed text-sm">{property.host.bio}</p>
+                                    <h3 className="text-xl font-bold text-stone-900">{loc.host.name}</h3>
+                                    <p className="text-stone-700 leading-relaxed text-sm">{loc.host.bio}</p>
                                     <div className="flex gap-4 pt-2">
                                         <div className="flex items-center gap-1.5 text-xs font-bold text-stone-600">
                                             <span className="material-symbols-outlined text-[16px]">star</span>
@@ -403,7 +459,7 @@ export default function InvestDetail() {
                             <PropertyMap
                                 lat={property.coordinates.lat}
                                 lng={property.coordinates.lng}
-                                locationLabel={property.title}
+                                locationLabel={loc.title}
                                 height={280}
                                 className="shadow-md"
                             />

@@ -15,7 +15,8 @@
     "operatorDashboard": "Operator Dashboard",
     "myBookings": "My Bookings",
     "verifyKyc": "Verify KYC",
-    "connectWallet": "Connect Wallet"
+    "connectWallet": "Connect Wallet",
+    "disconnectWallet": "Disconnect"
   },
   "footer": {
     "tagline": "Empty homes, breathing again.",

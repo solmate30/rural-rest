@@ -7,8 +7,8 @@ import type { Route } from "./+types/property";
 import { cn } from "~/lib/utils";
 import { PropertyMap } from "~/components/PropertyMap";
 import { db } from "~/db/index.server";
-import { listings, user, rwaTokens } from "~/db/schema";
-import { eq } from "drizzle-orm";
+import { listings, user, rwaTokens, bookings } from "~/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { detectLocale } from "~/lib/i18n.server";
 import { applyListingLocale, translateAmenities } from "~/data/listing-translations";
 import { InvestmentUpsellCard } from "~/components/InvestmentUpsellCard";
@@ -135,15 +135,26 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         pickupPoints: [] as { id: string; name: string; description: string; estimatedTimeToProperty: string }[],
     };
 
-    return { listing, bookingAllowed };
+    const bookedRanges = await db
+        .select({ checkIn: bookings.checkIn, checkOut: bookings.checkOut })
+        .from(bookings)
+        .where(
+            and(
+                eq(bookings.listingId, params.id!),
+                eq(bookings.status, "confirmed"),
+            )
+        );
+
+    return { listing, bookingAllowed, bookedRanges };
 }
 
 export default function PropertyDetail() {
-    const { listing, bookingAllowed } = useLoaderData<typeof loader>();
+    const { listing, bookingAllowed, bookedRanges } = useLoaderData<typeof loader>();
     const navigate = useNavigate();
     const { t } = useTranslation("property");
     const [showGallery, setShowGallery] = useState(false);
-    const [calOpen, setCalOpen] = useState(false);
+    const [calCheckInOpen, setCalCheckInOpen] = useState(false);
+    const [calCheckOutOpen, setCalCheckOutOpen] = useState(false);
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [guests, setGuests] = useState(1);
     const { rate: pythRate, loading: rateLoading } = usePythRate();
@@ -468,48 +479,68 @@ export default function PropertyDetail() {
                                 </div>
 
                                 <div className="space-y-4 mb-6">
-                                    <Popover open={calOpen} onOpenChange={setCalOpen}>
-                                        <PopoverTrigger asChild>
-                                            <div className="border border-stone-200 rounded-2xl overflow-hidden cursor-pointer hover:border-primary/50 transition-colors">
-                                                <div className="grid grid-cols-2 divide-x divide-stone-200">
-                                                    <div className={cn("p-4", calOpen && "bg-primary/5")}>
+                                    <div className="border border-stone-200 rounded-2xl overflow-hidden">
+                                        <div className="grid grid-cols-2 divide-x divide-stone-200">
+                                            {/* 체크인 */}
+                                            <Popover open={calCheckInOpen} onOpenChange={setCalCheckInOpen}>
+                                                <PopoverTrigger asChild>
+                                                    <button type="button" className={cn("p-4 text-left hover:bg-primary/5 transition-colors w-full", calCheckInOpen && "bg-primary/5")}>
                                                         <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-1">{t("booking.checkin")}</p>
                                                         <p className={cn("text-sm font-semibold", dateRange?.from ? "text-stone-800" : "text-stone-400")}>
                                                             {dateRange?.from ? formatDate(dateRange.from) : t("booking.selectDates")}
                                                         </p>
-                                                    </div>
-                                                    <div className={cn("p-4", calOpen && "bg-primary/5")}>
+                                                    </button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0 shadow-2xl" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={dateRange?.from}
+                                                        onSelect={(day) => {
+                                                            if (!day) return;
+                                                            const newTo = dateRange?.to && dateRange.to > day ? dateRange.to : undefined;
+                                                            setDateRange({ from: day, to: newTo });
+                                                            setCalCheckInOpen(false);
+                                                            if (!newTo) setCalCheckOutOpen(true);
+                                                        }}
+                                                        disabled={[
+                                                            { before: today },
+                                                            ...bookedRanges.map((r) => ({ from: r.checkIn, to: r.checkOut })),
+                                                        ]}
+                                                        locale={calLocale}
+                                                        className="rounded-2xl"
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                            {/* 체크아웃 */}
+                                            <Popover open={calCheckOutOpen} onOpenChange={setCalCheckOutOpen}>
+                                                <PopoverTrigger asChild>
+                                                    <button type="button" className={cn("p-4 text-left hover:bg-primary/5 transition-colors w-full", calCheckOutOpen && "bg-primary/5")}>
                                                         <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-1">{t("booking.checkout")}</p>
                                                         <p className={cn("text-sm font-semibold", dateRange?.to ? "text-stone-800" : "text-stone-400")}>
                                                             {dateRange?.to ? formatDate(dateRange.to) : t("booking.selectDates")}
                                                         </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0 shadow-2xl" align="center">
-                                            <Calendar
-                                                mode="range"
-                                                selected={dateRange}
-                                                onSelect={(range) => {
-                                                    // checkout은 최소 checkin +1일
-                                                    if (range?.from && range?.to) {
-                                                        const minOut = new Date(range.from);
-                                                        minOut.setDate(minOut.getDate() + 1);
-                                                        if (range.to <= range.from) {
-                                                            range = { from: range.from, to: minOut };
-                                                        }
-                                                        setCalOpen(false);
-                                                    }
-                                                    setDateRange(range);
-                                                }}
-                                                disabled={{ before: today }}
-                                                locale={calLocale}
-                                                numberOfMonths={2}
-                                                className="rounded-2xl"
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                                    </button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0 shadow-2xl" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={dateRange?.to}
+                                                        onSelect={(day) => {
+                                                            if (!day) return;
+                                                            setDateRange((prev) => ({ from: prev?.from, to: day }));
+                                                            setCalCheckOutOpen(false);
+                                                        }}
+                                                        disabled={[
+                                                            { before: dateRange?.from ? new Date(dateRange.from.getTime() + 86400000) : today },
+                                                            ...bookedRanges.map((r) => ({ from: r.checkIn, to: r.checkOut })),
+                                                        ]}
+                                                        locale={calLocale}
+                                                        className="rounded-2xl"
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+                                    </div>
 
                                     <div className="border border-stone-200 rounded-2xl p-4">
                                         <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-1.5">{t("booking.guests")}</p>

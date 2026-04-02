@@ -71,7 +71,7 @@ pub enum RwaError {
     InvalidPythPrice,                // 6022
     #[msg("Booking escrow is not in Pending status.")]
     BookingNotPending,               // 6023
-    #[msg("Check-out time has not passed yet; cannot release escrow.")]
+    #[msg("Check-in time has not passed yet; cannot release escrow.")]
     CheckInNotPassed,                // 6024
 }
 
@@ -125,6 +125,7 @@ pub struct InvestorPosition {
 pub struct RwaConfig {
     pub authority: Pubkey,
     pub crank_authority: Pubkey,  // Pubkey::default() = 비활성
+    pub treasury: Pubkey,         // 플랫폼 수수료 수취 계좌. Pubkey::default() = 미설정
     pub bump: u8,
 }
 
@@ -135,10 +136,12 @@ pub enum EscrowStatus {
     Refunded,
 }
 
+// =====================
 #[account]
 #[derive(InitSpace)]
 pub struct BookingEscrow {
     pub guest: Pubkey,
+    pub host: Pubkey,              // PropertyToken.authority (정산 대상 호스트)
     #[max_len(32)]
     pub listing_id: String,
     #[max_len(36)]
@@ -176,6 +179,22 @@ pub struct InitializeConfig<'info> {
 // =====================
 #[derive(Accounts)]
 pub struct SetCrankAuthority<'info> {
+    #[account(
+        mut,
+        seeds = [b"rwa_config"],
+        bump = rwa_config.bump,
+        has_one = authority,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
+
+    pub authority: Signer<'info>,
+}
+
+// =====================
+// set_treasury
+// =====================
+#[derive(Accounts)]
+pub struct SetTreasury<'info> {
     #[account(
         mut,
         seeds = [b"rwa_config"],
@@ -624,6 +643,13 @@ pub struct CreateBookingEscrow<'info> {
     #[account(mut)]
     pub guest: Signer<'info>,
 
+    // 호스트(PropertyToken.authority) 확인용 — host 필드 초기화에 사용
+    #[account(
+        seeds = [b"property", listing_id.as_bytes()],
+        bump = property_token.bump,
+    )]
+    pub property_token: Account<'info, PropertyToken>,
+
     #[account(
         init,
         payer = guest,
@@ -686,14 +712,23 @@ pub struct ReleaseBookingEscrow<'info> {
     )]
     pub escrow_vault: InterfaceAccount<'info, TokenAccount>,
 
-    // 정산 수령 계좌 (operator 소유 USDC 계좌)
+    // 호스트 정산 수령 계좌 (90%)
     #[account(
         mut,
         token::mint = usdc_mint,
-        token::authority = operator,
+        token::authority = booking_escrow.host,
         token::token_program = usdc_token_program,
     )]
-    pub operator_usdc: InterfaceAccount<'info, TokenAccount>,
+    pub host_usdc: InterfaceAccount<'info, TokenAccount>,
+
+    // 플랫폼 수수료 수령 계좌 (10%)
+    #[account(
+        mut,
+        token::mint = usdc_mint,
+        token::authority = rwa_config.treasury,
+        token::token_program = usdc_token_program,
+    )]
+    pub treasury_usdc: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         seeds = [b"rwa_config"],
@@ -738,6 +773,13 @@ pub struct CancelBookingEscrow<'info> {
     )]
     pub guest_usdc: InterfaceAccount<'info, TokenAccount>,
 
+    // authority/crank 취소(호스트 거절) 검증용
+    #[account(
+        seeds = [b"rwa_config"],
+        bump = rwa_config.bump,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
+
     #[account(address = booking_escrow.usdc_mint)]
     pub usdc_mint: InterfaceAccount<'info, Mint>,
     pub usdc_token_program: Interface<'info, TokenInterface>,
@@ -755,6 +797,7 @@ pub mod rural_rest_rwa {
         let config = &mut ctx.accounts.rwa_config;
         config.authority = ctx.accounts.authority.key();
         config.crank_authority = Pubkey::default();
+        config.treasury = Pubkey::default();
         config.bump = ctx.bumps.rwa_config;
         Ok(())
     }
@@ -765,6 +808,15 @@ pub mod rural_rest_rwa {
         new_crank: Pubkey,
     ) -> Result<()> {
         ctx.accounts.rwa_config.crank_authority = new_crank;
+        Ok(())
+    }
+
+    /// treasury 설정/교체. authority만 호출 가능.
+    pub fn set_treasury(
+        ctx: Context<SetTreasury>,
+        new_treasury: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.rwa_config.treasury = new_treasury;
         Ok(())
     }
 
@@ -888,7 +940,7 @@ pub mod rural_rest_rwa {
         );
 
         // 구매 상한: 총발행량의 30% (의결권 캡 10%는 DAO 구현 시 별도 처리)
-        let max_per_investor = property.total_supply * 3 / 10;
+        let max_per_investor = (property.total_supply as u128 * 3 / 10) as u64;
         let current_amount = ctx.accounts.investor_position.amount;
         require!(
             current_amount.checked_add(amount).ok_or(RwaError::MathOverflow)?
@@ -1362,6 +1414,7 @@ pub mod rural_rest_rwa {
 
         let escrow = &mut ctx.accounts.booking_escrow;
         escrow.guest = ctx.accounts.guest.key();
+        escrow.host = ctx.accounts.property_token.authority;
         escrow.listing_id = listing_id;
         escrow.booking_id = booking_id;
         escrow.usdc_mint = ctx.accounts.usdc_mint.key();
@@ -1374,7 +1427,7 @@ pub mod rural_rest_rwa {
         Ok(())
     }
 
-    // 에스크로 해제 → 운영자 USDC 계좌로 지급 (체크아웃 후, authority 또는 crank)
+    // 에스크로 해제 → 호스트 90% + treasury 10% 분배 (체크인 후, authority 또는 crank)
     pub fn release_booking_escrow(
         ctx: Context<ReleaseBookingEscrow>,
         booking_id: String,
@@ -1390,26 +1443,47 @@ pub mod rural_rest_rwa {
         require!(escrow.status == EscrowStatus::Pending, RwaError::BookingNotPending);
 
         let clock = Clock::get()?;
-        require!(clock.unix_timestamp >= escrow.check_out, RwaError::CheckInNotPassed);
+        // 체크인 시점 이후에만 정산 가능
+        require!(clock.unix_timestamp >= escrow.check_in, RwaError::CheckInNotPassed);
 
         let amount = escrow.amount_usdc;
+
+        // 수수료 분배: treasury 10%, host 90%
+        let treasury_amount = amount / 10;
+        let host_amount = amount
+            .checked_sub(treasury_amount)
+            .ok_or(RwaError::MathOverflow)?;
+
         let booking_id_bytes = booking_id.as_bytes();
         let bump = escrow.bump;
         let seeds: &[&[u8]] = &[b"booking_escrow", booking_id_bytes, &[bump]];
         let signer_seeds = &[seeds];
 
-        // escrow_vault → operator_usdc (booking_escrow PDA 서명)
-        let transfer_ctx = CpiContext::new_with_signer(
+        // escrow_vault → host_usdc 90% (booking_escrow PDA 서명)
+        let host_transfer_ctx = CpiContext::new_with_signer(
             ctx.accounts.usdc_token_program.to_account_info(),
             TransferChecked {
                 from: ctx.accounts.escrow_vault.to_account_info(),
                 mint: ctx.accounts.usdc_mint.to_account_info(),
-                to: ctx.accounts.operator_usdc.to_account_info(),
+                to: ctx.accounts.host_usdc.to_account_info(),
                 authority: ctx.accounts.booking_escrow.to_account_info(),
             },
             signer_seeds,
         );
-        transfer_checked(transfer_ctx, amount, 6)?;
+        transfer_checked(host_transfer_ctx, host_amount, 6)?;
+
+        // escrow_vault → treasury_usdc 10% (booking_escrow PDA 서명)
+        let treasury_transfer_ctx = CpiContext::new_with_signer(
+            ctx.accounts.usdc_token_program.to_account_info(),
+            TransferChecked {
+                from: ctx.accounts.escrow_vault.to_account_info(),
+                mint: ctx.accounts.usdc_mint.to_account_info(),
+                to: ctx.accounts.treasury_usdc.to_account_info(),
+                authority: ctx.accounts.booking_escrow.to_account_info(),
+            },
+            signer_seeds,
+        );
+        transfer_checked(treasury_transfer_ctx, treasury_amount, 6)?;
 
         ctx.accounts.booking_escrow.status = EscrowStatus::Released;
         Ok(())
@@ -1421,18 +1495,23 @@ pub mod rural_rest_rwa {
         booking_id: String,
     ) -> Result<()> {
         let escrow = &ctx.accounts.booking_escrow;
+        let caller = ctx.accounts.caller.key();
 
-        // caller: 게스트 본인 또는 rwa_config.authority 중 하나여야 함
-        // (rwa_config를 계정으로 받지 않으므로 게스트 본인 검증만; authority 취소는 별도 권한 불필요)
+        // caller: 게스트 본인, authority, 또는 crank_authority (호스트 거절 등)
         require!(
-            ctx.accounts.caller.key() == escrow.guest,
+            caller == escrow.guest
+                || caller == ctx.accounts.rwa_config.authority
+                || caller == ctx.accounts.rwa_config.crank_authority,
             RwaError::Unauthorized
         );
 
         require!(escrow.status == EscrowStatus::Pending, RwaError::BookingNotPending);
 
         let clock = Clock::get()?;
-        require!(clock.unix_timestamp < escrow.check_in, RwaError::InvalidStatus);
+        // 게스트 본인 취소는 체크인 전까지만; authority/crank는 시간 제한 없음
+        if caller == escrow.guest {
+            require!(clock.unix_timestamp < escrow.check_in, RwaError::InvalidStatus);
+        }
 
         let amount = escrow.amount_usdc;
         let booking_id_bytes = booking_id.as_bytes();

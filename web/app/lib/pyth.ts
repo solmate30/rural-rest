@@ -9,7 +9,7 @@ const PYTH_HERMES_URL = `https://hermes.pyth.network/v2/updates/price/latest?ids
  */
 export async function fetchPythKrwRate(): Promise<number> {
     try {
-        const res = await fetch(PYTH_HERMES_URL);
+        const res = await fetch(PYTH_HERMES_URL, { signal: AbortSignal.timeout(3000) });
         if (!res.ok) return KRW_PER_USDC_FALLBACK;
         const data = await res.json();
         const p = data?.parsed?.[0]?.price;

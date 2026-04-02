@@ -167,7 +167,13 @@ export function Header() {
                 {/* 우측: 네비 + 유저 */}
                 <div className="flex items-center gap-5">
                     <nav className="hidden md:flex items-center gap-5">
-                        {isOperator || isHost ? (
+                        {isAdmin ? (
+                            <>
+                                <a href="/operator" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.operatorDashboard")}</a>
+                                <a href="/admin" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.adminDashboard")}</a>
+                                <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
+                            </>
+                        ) : isOperator || isHost ? (
                             <>
                                 <a href="/operator" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.operatorDashboard")}</a>
                                 <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
@@ -227,24 +233,37 @@ export function Header() {
                                         <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    {/* 역할별 관리 메뉴 */}
-                                    {isAdmin && (
-                                        <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/admin")}>
-                                            <span className="material-symbols-outlined text-[16px] mr-2 text-amber-600">admin_panel_settings</span>
-                                            {t("nav.adminDashboard")}
+                                    {/* 지갑 */}
+                                    {connected && publicKey ? (
+                                        <DropdownMenuItem
+                                            className="cursor-pointer justify-between"
+                                            onClick={() => disconnect()}
+                                        >
+                                            <span className="font-mono text-xs text-stone-600">
+                                                {publicKey.toBase58().slice(0, 6)}...{publicKey.toBase58().slice(-4)}
+                                            </span>
+                                            <span className="text-[11px] text-stone-400 ml-2">{t("nav.disconnectWallet")}</span>
+                                        </DropdownMenuItem>
+                                    ) : (
+                                        <DropdownMenuItem
+                                            className="cursor-pointer text-stone-500"
+                                            onClick={() => setWalletVisible(true)}
+                                        >
+                                            {t("nav.connectWallet")}
                                         </DropdownMenuItem>
                                     )}
+                                    <DropdownMenuSeparator />
+                                    {/* 역할별 메뉴 */}
                                     {(isOperator || isAdmin) && (
                                         <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/operator")}>
                                             {t("nav.operatorDashboard")}
                                         </DropdownMenuItem>
                                     )}
-                                    {(isAdmin) && (
+                                    {isAdmin && (
                                         <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/admin")}>
                                             {t("nav.adminDashboard")}
                                         </DropdownMenuItem>
                                     )}
-                                    {(isOperator || isAdmin) && <DropdownMenuSeparator />}
                                     {!isOperator && !isKycCompleted && (
                                         <DropdownMenuItem
                                             className="text-amber-600 focus:text-amber-600 focus:bg-amber-50 cursor-pointer"
@@ -253,25 +272,7 @@ export function Header() {
                                             {t("nav.verifyKyc")}
                                         </DropdownMenuItem>
                                     )}
-                                    {isOperator && connected && publicKey ? (
-                                        <DropdownMenuItem
-                                            className="cursor-pointer text-muted-foreground focus:text-foreground justify-between"
-                                            onClick={() => disconnect()}
-                                        >
-                                            <span className="font-mono text-xs">
-                                                {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
-                                            </span>
-                                            <span className="text-[11px] text-stone-400 ml-2">연결 해제</span>
-                                        </DropdownMenuItem>
-                                    ) : isOperator && (
-                                        <DropdownMenuItem
-                                            className="cursor-pointer"
-                                            onClick={() => setWalletVisible(true)}
-                                        >
-                                            {t("nav.connectWallet")}
-                                        </DropdownMenuItem>
-                                    )}
-                                    {!isOperator && (
+                                    {!isOperator && !isAdmin && (
                                         <>
                                             <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/my-bookings")}>
                                                 {t("nav.myBookings")}

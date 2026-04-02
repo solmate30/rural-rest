@@ -70,7 +70,18 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const user = await requireUser(request);
   const listing = await getListingById(params.id);
   if (!listing) throw new Response("Not Found", { status: 404 });
-  return { listing, user: { id: user.id, name: user.name, email: user.email } };
+
+  const bookedRanges = await db
+    .select({ checkIn: bookings.checkIn, checkOut: bookings.checkOut })
+    .from(bookings)
+    .where(
+      and(
+        eq(bookings.listingId, listing.id),
+        eq(bookings.status, "confirmed"),
+      )
+    );
+
+  return { listing, user: { id: user.id, name: user.name, email: user.email }, bookedRanges };
 }
 
 export async function action({ params, request }: Route.ActionArgs) {
@@ -124,17 +135,7 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   const bookingId = crypto.randomUUID();
 
-  // DB에 booking 저장 (status: pending)
-  await db.insert(bookings).values({
-    id: bookingId,
-    listingId: listing.id,
-    guestId: user.id,
-    checkIn: new Date(checkIn),
-    checkOut: new Date(checkOut),
-    totalPrice,
-    status: "pending",
-  });
-
+  // DB insert 없이 booking 데이터만 반환 — 실제 저장은 결제 완료 후 confirm 엔드포인트에서 처리
   return {
     success: true as const,
     booking: {
@@ -147,6 +148,7 @@ export async function action({ params, request }: Route.ActionArgs) {
       previewUsdc,
       listingTitle: listing.title,
       listingId: listing.id,
+      guestId: user.id,
       status: "pending" as const,
     },
   };
@@ -165,6 +167,7 @@ type BookingPayload = {
   previewUsdc: number;
   listingTitle: string;
   listingId: string;
+  guestId: string;
 };
 
 // ──────────────────────────────────────────────
@@ -193,7 +196,7 @@ function CardPayStep({ booking }: { booking: BookingPayload }) {
             const res = await fetch("/api/paypal/create-order", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ bookingId: booking.id }),
+              body: JSON.stringify({ bookingId: booking.id, totalPrice: booking.totalPrice }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error ?? t("payment.error"));
@@ -205,7 +208,15 @@ function CardPayStep({ booking }: { booking: BookingPayload }) {
             const res = await fetch("/api/paypal/capture-auth", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ bookingId: booking.id, orderID: data.orderID }),
+              body: JSON.stringify({
+                bookingId: booking.id,
+                orderID: data.orderID,
+                listingId: booking.listingId,
+                checkIn: booking.checkIn,
+                checkOut: booking.checkOut,
+                guests: booking.guests,
+                totalPrice: booking.totalPrice,
+              }),
             });
             if (!res.ok) {
               const errData = await res.json();
@@ -244,7 +255,7 @@ function PaymentStep({ booking, listingId }: { booking: BookingPayload; listingI
     setErrorMsg("");
     try {
       const { getProgram, deriveBookingEscrowPda, getUsdcMint, deriveBookingEscrowVault } = await import("~/lib/anchor-client");
-      const { PublicKey } = await import("@solana/web3.js");
+      const { PublicKey, SystemProgram } = await import("@solana/web3.js");
       const { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } = await import("@solana/spl-token");
       const { BN } = await import("@coral-xyz/anchor");
 
@@ -277,6 +288,7 @@ function PaymentStep({ booking, listingId }: { booking: BookingPayload; listingI
           pythPriceFeed,
           usdcTokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
         })
         .rpc();
 
@@ -288,6 +300,11 @@ function PaymentStep({ booking, listingId }: { booking: BookingPayload; listingI
           escrowPda: escrowPda.toBase58(),
           txSignature: tx,
           amountUsdc: booking.previewUsdc,
+          listingId: booking.listingId,
+          checkIn: booking.checkIn,
+          checkOut: booking.checkOut,
+          guests: booking.guests,
+          totalPrice: booking.totalPrice,
         }),
       });
 
@@ -461,7 +478,7 @@ function PaymentStep({ booking, listingId }: { booking: BookingPayload; listingI
 }
 
 export default function Book({ loaderData, actionData }: Route.ComponentProps) {
-  const { listing } = loaderData;
+  const { listing, bookedRanges } = loaderData;
   const { t } = useTranslation("book");
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
@@ -470,7 +487,8 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const { i18n } = useTranslation();
   const calLocale = i18n.language === "ko" ? koLocale : enUS;
-  const [calOpen, setCalOpen] = useState(false);
+  const [calCheckInOpen, setCalCheckInOpen] = useState(false);
+  const [calCheckOutOpen, setCalCheckOutOpen] = useState(false);
 
   // URL 파라미터에서 초기 날짜 파싱 (YYYY-MM-DD 로컬 문자열)
   function parseDateParam(s: string | null): Date | undefined {
@@ -539,50 +557,71 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
 
                   <div className="space-y-2">
                     <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{t("field.checkin")} / {t("field.checkout")}</p>
-                    <Popover open={calOpen} onOpenChange={setCalOpen}>
-                      <PopoverTrigger asChild>
-                        <button
-                          type="button"
-                          className="w-full border border-stone-200 rounded-2xl overflow-hidden hover:border-primary/50 transition-colors"
-                        >
-                          <div className="grid grid-cols-2 divide-x divide-stone-200">
-                            <div className={cn("p-4 text-left", calOpen && "bg-primary/5")}>
-                              <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-1">{t("field.checkin")}</p>
-                              <p className={cn("text-sm font-semibold", dateRange?.from ? "text-stone-800" : "text-stone-400")}>
-                                {dateRange?.from ? formatDateLabel(dateRange.from) : t("field.selectDate")}
-                              </p>
-                            </div>
-                            <div className={cn("p-4 text-left", calOpen && "bg-primary/5")}>
-                              <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-1">{t("field.checkout")}</p>
-                              <p className={cn("text-sm font-semibold", dateRange?.to ? "text-stone-800" : "text-stone-400")}>
-                                {dateRange?.to ? formatDateLabel(dateRange.to) : t("field.selectDate")}
-                              </p>
-                            </div>
-                          </div>
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 shadow-2xl" align="start">
-                        <Calendar
-                          mode="range"
-                          selected={dateRange}
-                          onSelect={(range) => {
-                            if (range?.from && range?.to) {
-                              // checkout은 최소 checkin +1일
-                              if (range.to <= range.from) {
-                                const minOut = new Date(range.from);
-                                minOut.setDate(minOut.getDate() + 1);
-                                range = { from: range.from, to: minOut };
-                              }
-                              setCalOpen(false);
-                            }
-                            setDateRange(range);
-                          }}
-                          disabled={{ before: new Date() }}
-                          locale={calLocale}
-                          numberOfMonths={1}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <div className="grid grid-cols-2 divide-x divide-stone-200 border border-stone-200 rounded-2xl overflow-hidden">
+                      {/* 체크인 */}
+                      <Popover open={calCheckInOpen} onOpenChange={setCalCheckInOpen}>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className={cn("p-4 text-left hover:bg-primary/5 transition-colors", calCheckInOpen && "bg-primary/5")}
+                          >
+                            <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-1">{t("field.checkin")}</p>
+                            <p className={cn("text-sm font-semibold", dateRange?.from ? "text-stone-800" : "text-stone-400")}>
+                              {dateRange?.from ? formatDateLabel(dateRange.from) : t("field.selectDate")}
+                            </p>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 shadow-2xl" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange?.from}
+                            onSelect={(day) => {
+                              if (!day) return;
+                              const newFrom = day;
+                              const newTo = dateRange?.to && dateRange.to > day ? dateRange.to : undefined;
+                              setDateRange({ from: newFrom, to: newTo });
+                              setCalCheckInOpen(false);
+                              if (!newTo) setCalCheckOutOpen(true);
+                            }}
+                            disabled={[
+                              { before: new Date() },
+                              ...bookedRanges.map((r) => ({ from: r.checkIn, to: r.checkOut })),
+                            ]}
+                            locale={calLocale}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {/* 체크아웃 */}
+                      <Popover open={calCheckOutOpen} onOpenChange={setCalCheckOutOpen}>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className={cn("p-4 text-left hover:bg-primary/5 transition-colors", calCheckOutOpen && "bg-primary/5")}
+                          >
+                            <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-1">{t("field.checkout")}</p>
+                            <p className={cn("text-sm font-semibold", dateRange?.to ? "text-stone-800" : "text-stone-400")}>
+                              {dateRange?.to ? formatDateLabel(dateRange.to) : t("field.selectDate")}
+                            </p>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 shadow-2xl" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange?.to}
+                            onSelect={(day) => {
+                              if (!day) return;
+                              setDateRange((prev) => ({ from: prev?.from, to: day }));
+                              setCalCheckOutOpen(false);
+                            }}
+                            disabled={[
+                              { before: dateRange?.from ? new Date(dateRange.from.getTime() + 86400000) : new Date() },
+                              ...bookedRanges.map((r) => ({ from: r.checkIn, to: r.checkOut })),
+                            ]}
+                            locale={calLocale}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
 
                   <div className="space-y-2">

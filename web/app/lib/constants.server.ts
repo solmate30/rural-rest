@@ -5,6 +5,8 @@ export const SERVER_PROGRAM_ID = process.env.RWA_PROGRAM_ID ?? "EmtyjF4cDpTN6gZY
 export const SERVER_DAO_PROGRAM_ID = process.env.DAO_PROGRAM_ID ?? "3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX";
 // USDC Mint: 서버에서 crank 자동화 시 ATA 계산에 사용
 export const SERVER_USDC_MINT = process.env.USDC_MINT ?? process.env.VITE_USDC_MINT ?? "";
+// Council Token Mint (DAO 제안 권한 — 지자체·마을지기 발급용)
+export const COUNCIL_MINT = process.env.COUNCIL_MINT ?? "FEDWxrjgozxhXFN8N8fy4XhrAJEbdQQb9xRJpNwYbtKq";
 // Crank 자동화 키 (base58 인코딩 private key)
 // set_crank_authority 로 RwaConfig에 등록된 키와 일치해야 함
 export const CRANK_SECRET_KEY = process.env.CRANK_SECRET_KEY ?? "";

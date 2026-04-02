@@ -199,6 +199,28 @@
           "writable": true
         },
         {
+          "name": "rwa_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  119,
+                  97,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
           "name": "usdc_mint"
         },
         {
@@ -519,6 +541,30 @@
           "name": "guest",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "property_token",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  112,
+                  101,
+                  114,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "listing_id"
+              }
+            ]
+          }
         },
         {
           "name": "booking_escrow",
@@ -1534,7 +1580,11 @@
           }
         },
         {
-          "name": "operator_usdc",
+          "name": "host_usdc",
+          "writable": true
+        },
+        {
+          "name": "treasury_usdc",
           "writable": true
         },
         {
@@ -1753,6 +1803,60 @@
           "type": "pubkey"
         }
       ]
+    },
+    {
+      "name": "set_treasury",
+      "docs": [
+        "treasury 설정/교체. authority만 호출 가능."
+      ],
+      "discriminator": [
+        57,
+        97,
+        196,
+        95,
+        195,
+        206,
+        106,
+        136
+      ],
+      "accounts": [
+        {
+          "name": "rwa_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  119,
+                  97,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "rwa_config"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "new_treasury",
+          "type": "pubkey"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -1933,7 +2037,7 @@
     {
       "code": 6024,
       "name": "CheckInNotPassed",
-      "msg": "Check-out time has not passed yet; cannot release escrow."
+      "msg": "Check-in time has not passed yet; cannot release escrow."
     }
   ],
   "types": [
@@ -1944,6 +2048,10 @@
         "fields": [
           {
             "name": "guest",
+            "type": "pubkey"
+          },
+          {
+            "name": "host",
             "type": "pubkey"
           },
           {
@@ -2133,6 +2241,10 @@
           },
           {
             "name": "crank_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
             "type": "pubkey"
           },
           {
