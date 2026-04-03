@@ -1,13 +1,12 @@
 import { Header, Footer, Card } from "~/components/ui-mockup";
 import { useNavigate, useLoaderData } from "react-router";
 import { useState } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { usePrivyPublicKey } from "~/lib/privy-wallet";
 import { useKyc } from "~/components/KycProvider";
 import { db } from "~/db/index.server";
 import { listings, rwaTokens } from "~/db/schema";
 import { eq } from "drizzle-orm";
-import { syncFundingStatuses } from "~/lib/rwa.server";
+import { throttledSync } from "~/lib/rwa.server";
 import { fetchPropertiesOnchain } from "~/lib/rwa.onchain.server";
 import { useTranslation } from "react-i18next";
 
@@ -25,7 +24,7 @@ function statusToEnglish(status: string): string {
 }
 
 export async function loader() {
-    await syncFundingStatuses();
+    await throttledSync();
     const krwPerUsdc = await fetchPythKrwRate();
 
     const rows = await db
@@ -58,7 +57,7 @@ export async function loader() {
             row.status = onchain.status as typeof row.status;
             row.tokensSold = onchain.tokensSold;
         }
-        // 데드라인 경과 + 목표 미달 → failed 보정
+        // 데드라인 경과 보정 (온체인 미반영 대비 방어 로직)
         if (row.status === "funding" && row.fundingDeadline) {
             const deadlineMs = new Date(row.fundingDeadline).getTime();
             if (now > deadlineMs) {
@@ -66,7 +65,9 @@ export async function loader() {
                 const tokensSold = row.tokensSold ?? 0;
                 const progressBps = totalSupply > 0 ? (tokensSold / totalSupply) * 10000 : 0;
                 if (progressBps < (row.minFundingBps ?? 6000)) {
-                    row.status = "failed";
+                    row.status = "failed";  // 목표 미달
+                } else {
+                    row.status = "funded";  // 목표 달성 → release_funds 전이라도 funded 표시
                 }
             }
         }
@@ -114,8 +115,7 @@ export async function loader() {
 export default function InvestDashboard() {
     const allProperties = useLoaderData<typeof loader>();
     const navigate = useNavigate();
-    const { connected } = useWallet();
-    const { setVisible } = useWalletModal();
+    const walletAddress = usePrivyPublicKey();
     const [showFilter, setShowFilter] = useState(false);
     const { t, i18n } = useTranslation("invest");
 
@@ -127,7 +127,7 @@ export default function InvestDashboard() {
     const [maxPrice, setMaxPrice] = useState(100000);
     const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
 
-    const { isKycCompleted } = useKyc();
+    const { isKycCompleted, isKycLoading } = useKyc();
 
     // Filter Logic
     let filteredProperties = allProperties.filter(p => {
@@ -431,37 +431,15 @@ export default function InvestDashboard() {
                                                     >
                                                         {t("card.view")}
                                                     </button>
-                                                ) : connected ? (
-                                                    isKycCompleted ? (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                navigate(`/invest/${property.id}`);
-                                                            }}
-                                                            className="mt-5 w-full rounded-lg bg-[#17cf54] hover:bg-[#14b847] py-2.5 text-sm font-semibold text-white transition-colors shadow-sm flex items-center justify-center gap-1"
-                                                        >
-                                                            {t("card.investNow")}
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                navigate("/kyc");
-                                                            }}
-                                                            className="mt-5 w-full rounded-lg bg-[#17cf54] hover:bg-[#14b847] py-2.5 text-sm font-semibold text-white transition-colors shadow-sm"
-                                                        >
-                                                            {t("card.completeKyc")}
-                                                        </button>
-                                                    )
                                                 ) : (
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setVisible(true);
+                                                            navigate(`/invest/${property.id}`);
                                                         }}
-                                                        className="mt-5 w-full rounded-lg bg-[#17cf54] hover:bg-[#14b847] py-2.5 text-sm font-semibold text-white transition-colors shadow-sm"
+                                                        className="mt-5 w-full rounded-lg bg-[#17cf54] hover:bg-[#14b847] py-2.5 text-sm font-semibold text-white transition-colors shadow-sm flex items-center justify-center gap-1"
                                                     >
-                                                        {t("card.connectWallet")}
+                                                        {t("card.investNow")}
                                                     </button>
                                                 )}
                                             </>

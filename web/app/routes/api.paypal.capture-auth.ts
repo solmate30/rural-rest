@@ -3,6 +3,7 @@ import { db } from "~/db/index.server";
 import { bookings } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import { authorizePayPalOrder } from "~/lib/paypal.server";
+import { parseLocalDate } from "~/lib/date-utils";
 
 /**
  * POST /api/paypal/capture-auth
@@ -46,8 +47,8 @@ export async function action({ request }: { request: Request }) {
             id: bookingId,
             listingId,
             guestId: user.id,
-            checkIn: new Date(checkIn),
-            checkOut: new Date(checkOut),
+            checkIn: parseLocalDate(checkIn),
+            checkOut: parseLocalDate(checkOut),
             totalPrice: totalPrice ?? 0,
             paypalAuthorizationId: authorizationId,
             status: "pending",

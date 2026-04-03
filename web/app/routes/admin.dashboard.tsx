@@ -11,7 +11,7 @@ import { DateTime } from "luxon";
 import type { Route } from "./+types/admin.dashboard";
 import { InitializePropertyButton } from "~/components/rwa/InitializePropertyButton";
 import { ReleaseFundsButton } from "~/components/rwa/ReleaseFundsButton";
-import { syncFundingStatuses } from "~/lib/rwa.server";
+import { throttledSyncAndCrank } from "~/lib/rwa.server";
 
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -52,9 +52,9 @@ import { usePythRate } from "~/hooks/usePythRate";
 export async function loader({ request }: Route.LoaderArgs) {
     await requireUser(request, ["admin"]);
 
-    // 데드라인 지난 funding 매물 상태 동기화 (온체인 기준)
-    await syncFundingStatuses().catch((e) =>
-        console.warn("[admin.dashboard] syncFundingStatuses 실패:", e?.message)
+    // 데드라인 지난 funding 매물 상태 동기화 + 조건 충족 매물 자동 활성화
+    await throttledSyncAndCrank().catch((e) =>
+        console.warn("[admin.dashboard] syncAndCrank 실패:", e?.message)
     );
 
     const allListings = await getHostListings("", "admin");
@@ -150,7 +150,7 @@ export async function loader({ request }: Route.LoaderArgs) {
         }
     }
 
-    // 승인 대기 중인 예약 목록
+    // 승인 대기 중인 예약 목록 (PayPal)
     const pendingBookings = await db
         .select({
             id: bookings.id,
@@ -356,6 +356,7 @@ function ListingSheet({
         }
     }
 
+    const [initStatus, setInitStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
     const [minFundingPct, setMinFundingPct] = useState(60);
     const [deadlineStr, setDeadlineStr] = useState("");
 
@@ -409,7 +410,10 @@ function ListingSheet({
         : null;
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
+        <Sheet open={open} onOpenChange={(v) => {
+            if (!v && initStatus === "loading") return;
+            onOpenChange(v);
+        }}>
             <SheetContent
                 side="right"
                 className="w-full sm:max-w-lg overflow-y-auto bg-[#fcfaf7] p-0"
@@ -523,7 +527,9 @@ function ListingSheet({
                             <Separator />
 
                             {/* Actions */}
-                            {listing.tokenStatus === "funding" && listing.rwaTokenId && (
+                            {listing.tokenStatus === "funding" && listing.rwaTokenId &&
+                             deadline && Date.now() > deadline.getTime() &&
+                             fundingProgress >= minPct && (
                                 <div className="space-y-2">
                                     <p className="text-xs text-stone-400 font-medium">{t("dashboard.sheet.forceFundTitle")}</p>
                                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 leading-relaxed">
@@ -711,6 +717,7 @@ function ListingSheet({
                                         fundingDeadlineTs: deadlineTs,
                                     }}
                                     disabled={!isDeadlineValid || valuationKrw <= 0}
+                                    onStatusChange={setInitStatus}
                                 />
                             </div>
                         </>

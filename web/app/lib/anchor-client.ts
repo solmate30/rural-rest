@@ -3,13 +3,13 @@
  * dynamic import 사용 — 번들 사이즈 최적화.
  */
 import type { Connection } from "@solana/web3.js";
-import type { WalletContextState } from "@solana/wallet-adapter-react";
 import { PROGRAM_ID, USDC_MINT } from "~/lib/constants";
+import type { PrivyAnchorWallet } from "~/lib/privy-wallet";
 
 /**
  * Anchor Program 인스턴스 생성 (클라이언트 전용)
  */
-export async function getProgram(connection: Connection, wallet: WalletContextState) {
+export async function getProgram(connection: Connection, wallet: PrivyAnchorWallet) {
     const { Program, AnchorProvider } = await import("@coral-xyz/anchor");
     const { default: IDL } = await import("~/anchor-idl/rural_rest_rwa.json");
 
@@ -118,6 +118,7 @@ const COMMON_ERRORS: Record<string, string> = {
     "InvalidPythPrice": "환율 오라클 오류. 잠시 후 다시 시도하세요.",
     "BookingNotPending": "이미 처리된 예약입니다",
     "CheckInNotPassed": "체크아웃 후 정산이 가능합니다",
+    "VotingPeriodTooShort": "투표 마감일은 최소 1일 이후로 설정해야 합니다",
 };
 
 export function parseAnchorError(err: any, componentErrors?: Record<string, string>): string {

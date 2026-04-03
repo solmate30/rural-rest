@@ -6,6 +6,7 @@ import { listings, rwaTokens, rwaInvestments, rwaDividends, user, bookings } fro
 import { and, gte } from "drizzle-orm";
 import { eq, sql } from "drizzle-orm";
 import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
+import { throttledSync } from "~/lib/rwa.server";
 import { PropertyMap } from "~/components/PropertyMap";
 import { RevenueChart } from "~/components/rwa/RevenueChart";
 import { TokenInfoCard } from "~/components/rwa/TokenInfoCard";
@@ -92,6 +93,8 @@ function statusToLabel(status: string, fundingProgress: number): string {
 export async function loader({ params, request }: Route.LoaderArgs) {
     const listingId = params.listingId;
     const locale = await detectLocale(request);
+
+    await throttledSync().catch(() => {});
 
     // DB 메인 쿼리 + Pyth 환율 병렬 실행
     const [row, krwPerUsdc] = await Promise.all([
@@ -272,7 +275,14 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         coordinates: (row.lat && row.lng)
             ? { lat: row.lat, lng: row.lng }
             : { lat: 35.8394, lng: 129.2917 },
-        renovationHistory: (row.renovationHistory as { date: string; desc: string }[]) ?? [],
+        renovationHistory: (() => {
+            const rh = row.renovationHistory;
+            if (Array.isArray(rh)) return rh as { date: string; desc: string }[];
+            if (typeof rh === "string") {
+                try { return JSON.parse(rh) as { date: string; desc: string }[]; } catch { return []; }
+            }
+            return [];
+        })(),
         rating: null as number | null,
         reviewCount: 0,
         fundingDeadline: row.fundingDeadline instanceof Date
