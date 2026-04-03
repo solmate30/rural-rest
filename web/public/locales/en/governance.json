@@ -25,7 +25,8 @@
     "approval": "Approval Threshold",
     "approvalDesc": "After quorum is met, a {{threshold}}% approval rate is required to pass.",
     "limit": "Vote Limit per Person",
-    "limitDesc": "Each voter may cast up to {{cap}} votes."
+    "limitDesc": "Each voter may cast up to {{cap}}% of total voting power.",
+    "limitNone": "No per-voter cap (full voting power applies)"
   },
   "empty": {
     "active": "No active proposals right now.",
@@ -64,7 +65,8 @@
     "votingPeriod": "Voting Period",
     "quorum": "Quorum",
     "approval": "Approval",
-    "votingCap": "Voting Cap"
+    "votingCap": "Voting Cap",
+    "votingCapNone": "No limit"
   },
   "vote": {
     "for": "For",
@@ -75,7 +77,9 @@
     "participants": " voters",
     "quorum": "Quorum",
     "quorumMet": "Met",
-    "quorumShort": "Not met"
+    "quorumShort": "Not met",
+    "votedAs": "You voted {{type}}",
+    "checkingStatus": "Checking vote status..."
   },
   "form": {
     "author": "Author",

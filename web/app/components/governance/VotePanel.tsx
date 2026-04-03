@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
+import { useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
 import {
     getDaoProgram,
@@ -14,11 +15,6 @@ import {
 } from "~/lib/dao-client";
 import type { ProposalData } from "~/lib/dao.onchain.server";
 
-const VOTE_TYPE_LABELS: Record<string, string> = {
-    for: "찬성",
-    against: "반대",
-    abstain: "기권",
-};
 
 interface VotePanelProps {
     proposal: ProposalData;
@@ -30,6 +26,8 @@ interface VotePanelProps {
 export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: VotePanelProps) {
     const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { t } = useTranslation("governance") as any;
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -153,7 +151,7 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
         return (
             <div className="rounded-xl bg-[#FAF9F6] border border-[#D7CCC8]/50 p-5 text-center shadow-sm">
                 <p className="text-sm font-bold text-[#3E2723]">
-                    {VOTE_TYPE_LABELS[existingVote.voteType]}으로 투표했습니다
+                    {t("vote.votedAs", { type: t(`vote.${existingVote.voteType}`) })}
                 </p>
             </div>
         );
@@ -163,7 +161,7 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
     if (checkingVote) {
         return (
             <div className="text-center py-6 text-[#A1887F] text-sm font-medium">
-                투표 상태 확인 중...
+                {t("vote.checkingStatus")}
             </div>
         );
     }
@@ -190,7 +188,7 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
                     disabled={loading}
                     className="flex flex-col items-center justify-center gap-1.5 h-auto py-4 rounded-xl bg-[#5E6E5A] hover:bg-[#4A5746] text-white shadow-sm transition-transform active:scale-95"
                 >
-                    <span className="text-xs font-bold">찬성</span>
+                    <span className="text-xs font-bold">{t("vote.for")}</span>
                 </Button>
                 <Button
                     variant="destructive"
@@ -199,7 +197,7 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
                     disabled={loading}
                     className="flex flex-col items-center justify-center gap-1.5 h-auto py-4 rounded-xl bg-[#A94438] hover:bg-[#8F372C] text-white shadow-sm transition-transform active:scale-95"
                 >
-                    <span className="text-xs font-bold">반대</span>
+                    <span className="text-xs font-bold">{t("vote.against")}</span>
                 </Button>
                 <Button
                     variant="outline"
@@ -208,7 +206,7 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
                     disabled={loading}
                     className="flex flex-col items-center justify-center gap-1.5 h-auto py-4 rounded-xl border-[#D7CCC8] text-[#5D4037] hover:bg-[#FAF9F6] hover:border-[#8D6E63] shadow-sm transition-all active:scale-95"
                 >
-                    <span className="text-xs font-bold">기권</span>
+                    <span className="text-xs font-bold">{t("vote.abstain")}</span>
                 </Button>
             </div>
 
