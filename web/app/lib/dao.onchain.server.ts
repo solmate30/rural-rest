@@ -1,5 +1,5 @@
 import { Connection, PublicKey, Keypair } from "@solana/web3.js";
-import { AnchorProvider, Program, BN } from "@coral-xyz/anchor";
+import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import IDL from "~/anchor-idl/rural_rest_dao.json";
 import RWA_IDL from "~/anchor-idl/rural_rest_rwa.json";
 
