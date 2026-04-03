@@ -14,7 +14,7 @@ use anchor_spl::token_interface::{
     Burn, Mint, MintTo, SetAuthority, TokenAccount, TokenInterface, TransferChecked,
 };
 
-declare_id!("EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR");
+declare_id!("BAJ2fSZGZMkt6dFs4Rn5u8CCSsaVtgKbr5Jfca659iZr");
 
 const PRECISION: u128 = 1_000_000_000_000; // 1e12 (u64 overflow 방지, USDC 6자리 정밀도)
 
