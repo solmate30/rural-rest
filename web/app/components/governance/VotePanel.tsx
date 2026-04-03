@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 import { Button } from "~/components/ui/button";
 import {
     getDaoProgram,
@@ -28,7 +28,7 @@ interface VotePanelProps {
 }
 
 export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: VotePanelProps) {
-    const wallet = useWallet();
+    const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
 
     const [loading, setLoading] = useState(false);
@@ -45,17 +45,17 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
 
     // 기존 투표 확인 + 투표권 조회
     const checkStatus = useCallback(async () => {
-        if (!wallet.publicKey || !connection) return;
+        if (!wallet?.publicKey || !connection) return;
         setCheckingVote(true);
         try {
             // VoteRecord 확인
-            const record = await fetchVoteRecord(connection, wallet, proposal.id, wallet.publicKey);
+            const record = await fetchVoteRecord(connection, wallet, proposal.id, wallet?.publicKey);
             setExistingVote(record);
 
             // 투표권 조회 (RWA positions + council token)
             if (!record) {
-                const positions = await fetchVoterPositions(connection, wallet.publicKey, activeListingIds);
-                const councilBalance = await checkCouncilTokenBalance(connection, councilMint, wallet.publicKey);
+                const positions = await fetchVoterPositions(connection, wallet?.publicKey, activeListingIds);
+                const councilBalance = await checkCouncilTokenBalance(connection, councilMint, wallet?.publicKey);
                 setRwaCount(positions.length);
                 setHasCouncilToken(councilBalance > 0);
                 setVotingPower(positions.length + (councilBalance > 0 ? 1 : 0));
@@ -65,14 +65,14 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
         } finally {
             setCheckingVote(false);
         }
-    }, [wallet.publicKey, connection, proposal.id, activeListingIds]);
+    }, [wallet?.publicKey, connection, proposal.id, activeListingIds]);
 
     useEffect(() => {
         checkStatus();
     }, [checkStatus]);
 
     const handleVote = async (voteType: "for" | "against" | "abstain") => {
-        if (!wallet.publicKey || !wallet.signTransaction) return;
+        if (!wallet || !wallet.publicKey) return;
         setLoading(true);
         setError(null);
 
@@ -132,11 +132,12 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
         }
     };
 
-    // 지갑 미연결
-    if (!wallet.publicKey) {
+    // 지갑 미준비
+    if (!wallet?.publicKey) {
         return (
             <div className="text-center py-6 text-[#A1887F]">
-                <p className="mt-2 text-sm font-medium">투표하려면 지갑을 연결하세요</p>
+                <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                <p className="mt-2 text-sm font-medium">지갑 준비 중...</p>
             </div>
         );
     }

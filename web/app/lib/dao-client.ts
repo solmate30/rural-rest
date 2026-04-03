@@ -3,14 +3,14 @@
  * anchor-client.ts (RWA)와 동일한 패턴.
  */
 import type { Connection } from "@solana/web3.js";
-import type { WalletContextState } from "@solana/wallet-adapter-react";
 import { DAO_PROGRAM_ID, PROGRAM_ID } from "~/lib/constants";
 import { parseAnchorError } from "~/lib/anchor-client";
+import type { PrivyAnchorWallet } from "~/lib/privy-wallet";
 
 /**
  * DAO Program 인스턴스 생성
  */
-export async function getDaoProgram(connection: Connection, wallet: WalletContextState) {
+export async function getDaoProgram(connection: Connection, wallet: PrivyAnchorWallet) {
     const { Program, AnchorProvider } = await import("@coral-xyz/anchor");
     const { default: IDL } = await import("~/anchor-idl/rural_rest_dao.json");
 
@@ -112,7 +112,7 @@ export async function checkCouncilTokenBalance(
  */
 export async function fetchVoteRecord(
     connection: Connection,
-    wallet: WalletContextState,
+    wallet: PrivyAnchorWallet,
     proposalId: number,
     voter: import("@solana/web3.js").PublicKey,
 ): Promise<{ voteType: string; weight: number; rawWeight: number } | null> {

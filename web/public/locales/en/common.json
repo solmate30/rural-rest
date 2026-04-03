@@ -3,7 +3,7 @@
     "findStay": "Find a Stay",
     "hostHome": "Host your Home",
     "invest": "Invest (RWA)",
-    "governance": "Governance",
+    "governance": "Community",
     "myPortfolio": "My Portfolio",
     "login": "Login",
     "logout": "Logout",
@@ -15,8 +15,12 @@
     "operatorDashboard": "Operator Dashboard",
     "myBookings": "My Bookings",
     "verifyKyc": "Verify KYC",
+    "myWallet": "My Wallet",
+    "walletCopied": "Wallet address copied",
+    "walletCreating": "Creating wallet...",
     "connectWallet": "Connect Wallet",
-    "disconnectWallet": "Disconnect"
+    "disconnectWallet": "Disconnect",
+    "exportWallet": "Export Private Key"
   },
   "footer": {
     "tagline": "Empty homes, breathing again.",
@@ -34,7 +38,7 @@
       "featuredStays": "Featured Stays",
       "investRwa": "RWA Investment",
       "whitepaper": "Whitepaper",
-      "governance": "Governance",
+      "governance": "Community",
       "about": "About",
       "blog": "Blog",
       "press": "Press",

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 
 import { PROGRAM_ID, USDC_MINT, TOTAL_SUPPLY, KRW_PER_USDC_FALLBACK } from "~/lib/constants";
 import { getProgram, derivePdas, parseAnchorError } from "~/lib/anchor-client";
@@ -16,24 +16,22 @@ interface Props {
     listingId: string;
     values: TokenFormValues;
     disabled?: boolean;
+    onStatusChange?: (status: Status) => void;
 }
 
 type Status = "idle" | "loading" | "done" | "error";
 
-export function InitializePropertyButton({ listingId, values, disabled }: Props) {
+export function InitializePropertyButton({ listingId, values, disabled, onStatusChange }: Props) {
     const { connection } = useConnection();
-    const wallet = useWallet();
-    const { setVisible } = useWalletModal();
+    const wallet = usePrivyAnchorWallet();
     const [status, setStatus] = useState<Status>("idle");
     const [errorMsg, setErrorMsg] = useState("");
 
     const handleInitialize = async () => {
-        if (!wallet.connected || !wallet.publicKey) {
-            setVisible(true);
-            return;
-        }
+        if (!wallet || !wallet.publicKey) return;
 
         setStatus("loading");
+        onStatusChange?.("loading");
         setErrorMsg("");
 
         try {
@@ -41,7 +39,7 @@ export function InitializePropertyButton({ listingId, values, disabled }: Props)
             const { Keypair, PublicKey } = await import("@solana/web3.js");
             const { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } = await import("@solana/spl-token");
 
-            const program = await getProgram(connection, wallet);
+            const program = await getProgram(connection, wallet!);
             const { propertyToken, fundingVault } = await derivePdas(listingId);
 
             const usdcMint = new PublicKey(USDC_MINT);
@@ -90,10 +88,12 @@ export function InitializePropertyButton({ listingId, values, disabled }: Props)
             });
 
             setStatus("done");
+            onStatusChange?.("done");
             setTimeout(() => window.location.reload(), 1200);
         } catch (e: unknown) {
             setErrorMsg(parseAnchorError(e));
             setStatus("error");
+            onStatusChange?.("error");
         }
     };
 
@@ -111,22 +111,17 @@ export function InitializePropertyButton({ listingId, values, disabled }: Props)
             )}
             <Button
                 onClick={handleInitialize}
-                disabled={disabled || status === "loading" || status === "done"}
+                disabled={disabled || !wallet || status === "loading" || status === "done"}
                 variant="success"
                 size="xl"
                 className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
             >
                 {status === "loading"
                     ? "트랜잭션 전송 중..."
-                    : !wallet.connected
-                    ? "지갑 연결 후 발행하기"
+                    : !wallet
+                    ? "지갑 준비 중..."
                     : "발행하기 →"}
             </Button>
-            {!wallet.connected && (
-                <p className="text-xs text-center text-muted-foreground">
-                    Solflare 지갑을 연결하면 Devnet에서 발행할 수 있습니다
-                </p>
-            )}
         </div>
     );
 }

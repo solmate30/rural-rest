@@ -1,10 +1,8 @@
-import { Header, Button, Input, Card, Footer } from "../components/ui-mockup";
-import { signIn, signUp } from "../lib/auth.client";
+import { Header, Button, Card, Footer } from "../components/ui-mockup";
+import { usePrivy } from "@privy-io/react-auth";
 import { getSession } from "../lib/auth.server";
 import { redirect } from "react-router";
 import type { Route } from "./+types/auth";
-import { useState } from "react";
-import { useToast } from "../hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -16,107 +14,10 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export default function Auth() {
-    const [isLogin, setIsLogin] = useState(true);
-    const [email, setEmail] = useState("");
-    const [name, setName] = useState("");
-    const [password, setPassword] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
+    const { ready, login } = usePrivy();
     const { t } = useTranslation("auth");
-
-    const handleGoogleSignIn = async () => {
-        try {
-            await signIn.social({
-                provider: "google",
-                callbackURL: "/",
-            });
-        } catch (error) {
-            toast({
-                title: t("toast.socialError"),
-                description: t("toast.socialErrorDesc"),
-                variant: "destructive",
-            });
-        }
-    };
-
-    const handleKakaoSignIn = async () => {
-        try {
-            await signIn.social({
-                provider: "kakao",
-                callbackURL: "/",
-            });
-        } catch (error) {
-            toast({
-                title: t("toast.socialError"),
-                description: t("toast.socialErrorDesc"),
-                variant: "destructive",
-            });
-        }
-    };
-
-    const handleAuthSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-
-        try {
-            if (isLogin) {
-                const { data, error: signInError } = await signIn.email({
-                    email,
-                    password,
-                    callbackURL: "/",
-                });
-                if (signInError) {
-                    toast({
-                        title: t("toast.loginError"),
-                        description: signInError.message || t("toast.loginErrorDesc"),
-                        variant: "destructive",
-                    });
-                } else if (data?.user) {
-                    toast({
-                        title: t("toast.loginSuccess"),
-                        description: t("toast.loginSuccessDesc", { name: data.user.name }),
-                        variant: "success",
-                    });
-                    // Toast가 표시된 후 리다이렉트
-                    setTimeout(() => {
-                        window.location.href = "/";
-                    }, 500);
-                }
-            } else {
-                const { data, error: signUpError } = await signUp.email({
-                    email,
-                    password,
-                    name,
-                    callbackURL: "/",
-                });
-                if (signUpError) {
-                    toast({
-                        title: t("toast.signupError"),
-                        description: signUpError.message || t("toast.signupErrorDesc"),
-                        variant: "destructive",
-                    });
-                } else if (data?.user) {
-                    toast({
-                        title: t("toast.signupSuccess"),
-                        description: t("toast.signupSuccessDesc"),
-                        variant: "success",
-                    });
-                    // Toast가 표시된 후 리다이렉트
-                    setTimeout(() => {
-                        window.location.href = "/";
-                    }, 500);
-                }
-            }
-        } catch (err) {
-            toast({
-                title: t("toast.unknownError"),
-                description: t("toast.unknownErrorDesc"),
-                variant: "destructive",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    // 세션 생성은 root.tsx의 SessionCreator(useLogin onComplete)가 처리
+    // 카카오는 root.tsx loginMethods에 "custom:kakao" 추가 → Privy 모달 내에 자동 표시
 
     return (
         <div className="min-h-screen bg-background font-sans">
@@ -143,97 +44,17 @@ export default function Auth() {
 
                 <Card className="w-full max-w-md p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border-none bg-white">
                     <div className="text-center space-y-2 mb-8">
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">{isLogin ? t("loginTitle") : t("signupTitle")}</h1>
-                        <p className="text-muted-foreground">
-                            {isLogin ? t("loginDesc") : t("signupDesc")}
-                        </p>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("loginTitle")}</h1>
+                        <p className="text-muted-foreground">{t("loginDesc")}</p>
                     </div>
 
-                    <div className="space-y-4">
-                        {/* Social Logins */}
-                        <Button
-                            className="w-full h-14 bg-[#FEE500] hover:bg-[#FEE500]/90 text-black border-none rounded-xl text-md font-bold transition-all active:scale-95 flex items-center justify-center gap-3"
-                            onClick={handleKakaoSignIn}
-                            disabled={isLoading}
-                        >
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e3/KakaoTalk_logo.svg" alt="Kakao" className="w-6 h-6" />
-                            {t("kakaoLogin")}
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="w-full h-14 rounded-xl text-md font-semibold transition-all active:scale-95 flex items-center justify-center gap-3"
-                            onClick={handleGoogleSignIn}
-                            disabled={isLoading}
-                        >
-                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
-                            {t("googleLogin")}
-                        </Button>
-                    </div>
-
-                    <div className="relative my-10">
-                        <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-muted" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-white px-4 text-muted-foreground font-medium tracking-widest">{t("or")}</span>
-                        </div>
-                    </div>
-
-                    <form className="space-y-4" onSubmit={handleAuthSubmit}>
-                        {!isLogin && (
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-foreground/70 uppercase tracking-widest ml-1">{t("name")}</label>
-                                <Input
-                                    type="text"
-                                    placeholder={t("namePlaceholder")}
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    required
-                                    className="h-12 border-muted hover:border-primary focus:border-primary transition-all rounded-xl"
-                                />
-                            </div>
-                        )}
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-foreground/70 uppercase tracking-widest ml-1">{t("email")}</label>
-                            <Input
-                                type="email"
-                                placeholder={t("emailPlaceholder")}
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="h-12 border-muted hover:border-primary focus:border-primary transition-all rounded-xl"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-foreground/70 uppercase tracking-widest ml-1">{t("password")}</label>
-                            <Input
-                                type="password"
-                                placeholder={t("passwordPlaceholder")}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                className="h-12 border-muted hover:border-primary focus:border-primary transition-all rounded-xl"
-                            />
-                        </div>
-                        <Button
-                            type="submit"
-                            className="w-full h-14 text-lg font-bold mt-4 shadow-lg shadow-primary/20 rounded-xl"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? t("submitting") : (isLogin ? t("submitLogin") : t("submitSignup"))}
-                        </Button>
-                    </form>
-
-                    <p className="text-center text-sm text-muted-foreground mt-8">
-                        {isLogin ? t("toggleToSignup") : t("toggleToLogin")}
-                        <button
-                            type="button"
-                            onClick={() => setIsLogin(!isLogin)}
-                            className="text-primary font-bold hover:underline ml-2"
-                        >
-                            {isLogin ? t("switchToSignup") : t("switchToLogin")}
-                        </button>
-                    </p>
+                    <Button
+                        className="w-full h-14 text-lg font-bold shadow-lg shadow-primary/20 rounded-xl"
+                        onClick={login}
+                        disabled={!ready}
+                    >
+                        {t("submitLogin")}
+                    </Button>
                 </Card>
             </main>
             <Footer />

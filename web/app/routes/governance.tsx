@@ -3,10 +3,11 @@ import { useLoaderData, useNavigate, useRevalidator } from "react-router";
 import type { Route } from "./+types/governance";
 import { fetchDaoConfig, fetchAllProposals, fetchActiveListingIds } from "~/lib/dao.onchain.server";
 import type { DaoConfigData, ProposalData } from "~/lib/dao.onchain.server";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 import { checkCouncilTokenBalance } from "~/lib/dao-client";
 import { useTranslation } from "react-i18next";
+import { useSession } from "~/lib/privy-hooks";
 
 import { Button } from "~/components/ui/button";
 
@@ -110,17 +111,19 @@ export async function loader({ request }: Route.LoaderArgs) {
         return { daoConfig, proposals, activeListingIds, isMock: false };
     }
 
-    const mock = getMockData();
-    return { daoConfig: mock.daoConfig, proposals: mock.proposals, activeListingIds: mock.activeListingIds, isMock: true };
+    return { daoConfig: null, proposals: [], activeListingIds: [], isMock: false };
 }
 
 export default function GovernancePage() {
     const { daoConfig, proposals, activeListingIds, isMock } = useLoaderData<typeof loader>();
     const navigate = useNavigate();
     const revalidator = useRevalidator();
-    const wallet = useWallet();
+    const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
     const { t } = useTranslation("governance");
+    const { data: session } = useSession();
+    const userRole = (session?.user as Record<string, unknown>)?.role as string | undefined;
+    const isAdmin = userRole === "admin";
 
     const [activeTab, setActiveTab] = useState<"voting" | "completed" | "all">("voting");
     const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -130,20 +133,20 @@ export default function GovernancePage() {
 
     useEffect(() => {
         async function check() {
-            if (!wallet.publicKey || !daoConfig || !connection) {
-                console.log("[DAO] 지갑 미연결 또는 config 없음", { wallet: wallet.publicKey?.toBase58(), daoConfig: !!daoConfig });
+            if (!wallet?.publicKey || !daoConfig || !connection) {
+                console.log("[DAO] 지갑 미연결 또는 config 없음", { wallet: wallet?.publicKey?.toBase58(), daoConfig: !!daoConfig });
                 setIsCouncilMember(false);
                 return;
             }
-            console.log("[DAO] Council Token 체크:", { wallet: wallet.publicKey.toBase58(), councilMint: daoConfig.councilMint });
+            console.log("[DAO] Council Token 체크:", { wallet: wallet?.publicKey.toBase58(), councilMint: daoConfig.councilMint });
             const balance = await checkCouncilTokenBalance(
-                connection, daoConfig.councilMint, wallet.publicKey
+                connection, daoConfig.councilMint, wallet?.publicKey
             );
             console.log("[DAO] Council Token 잔액:", balance);
             setIsCouncilMember(balance > 0);
         }
         check();
-    }, [wallet.publicKey, daoConfig, connection]);
+    }, [wallet?.publicKey, daoConfig, connection]);
 
     const handleRefresh = useCallback(() => {
         revalidator.revalidate();
@@ -204,7 +207,7 @@ export default function GovernancePage() {
                             </p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                            {(isCouncilMember || isMock) && (
+                            {(isCouncilMember || isAdmin) && (
                                 <Button
                                     variant="wood"
                                     size="lg"

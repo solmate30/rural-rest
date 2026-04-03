@@ -35,6 +35,10 @@ export type OnchainPropertyStatus = "funding" | "funded" | "active" | "failed";
 export interface OnchainProperty {
     status: OnchainPropertyStatus;
     tokensSold: number;
+    fundingDeadline: number; // unix seconds
+    totalSupply: number;
+    minFundingBps: number;
+    fundsReleased: boolean;
 }
 
 function parseStatus(raw: any): OnchainPropertyStatus {
@@ -59,7 +63,11 @@ export async function fetchPropertyOnchain(listingId: string): Promise<OnchainPr
 
         return {
             status: parseStatus(data.status),
-            tokensSold: Number(data.tokensSold), // BN → number
+            tokensSold: Number(data.tokensSold),
+            fundingDeadline: Number(data.fundingDeadline),
+            totalSupply: Number(data.totalSupply),
+            minFundingBps: Number(data.minFundingBps),
+            fundsReleased: !!data.fundsReleased,
         };
     } catch (err: any) {
         const msg = String(err?.message ?? "");
@@ -111,8 +119,11 @@ export async function tryAutoActivate(listingId: string): Promise<boolean> {
         const readProgram = getProgram();
         const ptData = await (readProgram.account as any).propertyToken.fetch(propertyTokenPda);
 
-        if (!ptData.status?.funded) {
-            console.warn(`[rwa.onchain] tryAutoActivate: ${listingId} 상태가 funded 아님 — skip`);
+        const isFunding = !!ptData.status?.funding;
+        const isFunded  = !!ptData.status?.funded;
+
+        if (!isFunding && !isFunded) {
+            console.warn(`[rwa.onchain] tryAutoActivate: ${listingId} 상태가 funding/funded 아님 — skip`);
             return false;
         }
 
@@ -120,31 +131,26 @@ export async function tryAutoActivate(listingId: string): Promise<boolean> {
         const authority = ptData.authority as PublicKey;
         const usdcMint = new PublicKey(SERVER_USDC_MINT);
 
-        // rwaConfig PDA
         const [rwaConfig] = PublicKey.findProgramAddressSync(
             [Buffer.from("rwa_config")],
             programId
         );
 
-        // crank이 rwaConfig에 등록돼 있는지 확인
         const rwaConfigData = await (readProgram.account as any).rwaConfig.fetch(rwaConfig);
         if (rwaConfigData.crankAuthority.toBase58() !== crank.publicKey.toBase58()) {
             console.warn("[rwa.onchain] CRANK_SECRET_KEY가 rwaConfig.crankAuthority와 불일치");
             return false;
         }
 
-        // fundingVault PDA
         const [fundingVault] = PublicKey.findProgramAddressSync(
             [Buffer.from("funding_vault"), Buffer.from(listingId)],
             programId
         );
 
-        // authority USDC ATA (SPV에게 자금 전송)
         const authorityUsdcAccount = getAssociatedTokenAddressSync(
             usdcMint, authority, false, TOKEN_PROGRAM_ID
         );
 
-        // crank provider
         const crankProvider = new AnchorProvider(
             connection,
             {
@@ -156,23 +162,25 @@ export async function tryAutoActivate(listingId: string): Promise<boolean> {
         );
         const crankProgram = new Program(IDL as any, crankProvider);
 
-        // releaseFunds
-        await (crankProgram.methods as any)
-            .releaseFunds(listingId)
-            .accounts({
-                operator: crank.publicKey,
-                propertyToken: propertyTokenPda,
-                rwaConfig,
-                fundingVault,
-                authorityUsdcAccount,
-                usdcMint,
-                usdcTokenProgram: TOKEN_PROGRAM_ID,
-                associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-                systemProgram: SystemProgram.programId,
-            })
-            .rpc();
+        // funding 상태면 releaseFunds 먼저 호출
+        if (isFunding) {
+            await (crankProgram.methods as any)
+                .releaseFunds(listingId)
+                .accounts({
+                    operator: crank.publicKey,
+                    propertyToken: propertyTokenPda,
+                    rwaConfig,
+                    fundingVault,
+                    authorityUsdcAccount,
+                    usdcMint,
+                    usdcTokenProgram: TOKEN_PROGRAM_ID,
+                    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+                    systemProgram: SystemProgram.programId,
+                })
+                .rpc();
+        }
 
-        // activateProperty
+        // activateProperty (funded → active)
         await (crankProgram.methods as any)
             .activateProperty(listingId)
             .accounts({
