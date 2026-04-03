@@ -18,7 +18,8 @@ import {
     TOKEN_2022_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { Program, AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
+import { Program, AnchorProvider, Wallet } from "@coral-xyz/anchor";
+import BN from "bn.js";
 import { db } from "~/db/index.server";
 import { listings, rwaTokens, user as userTable } from "~/db/schema";
 import { eq } from "drizzle-orm";
