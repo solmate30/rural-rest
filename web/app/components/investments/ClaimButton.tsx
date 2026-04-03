@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useConnection } from "@solana/wallet-adapter-react";
 import { Button } from "~/components/ui/button";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 
 import { PROGRAM_ID, USDC_MINT } from "~/lib/constants";
 import { getProgram, derivePdas, parseAnchorError } from "~/lib/anchor-client";
@@ -14,13 +15,14 @@ interface Props {
 }
 
 export function ClaimButton({ listingId, rwaTokenId, tokenMint, walletAddress, onClaimed }: Props) {
-    const walletCtx = useWallet();
+    const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
     const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
     const [errorMsg, setErrorMsg] = useState("");
 
     async function handleClaim() {
-        if (!walletCtx.publicKey) return;
+        if (!wallet) return;
+        const investor = wallet.publicKey;
         setStatus("loading");
         setErrorMsg("");
 
@@ -33,15 +35,13 @@ export function ClaimButton({ listingId, rwaTokenId, tokenMint, walletAddress, o
             } = await import("@solana/spl-token");
             const { SystemProgram } = await import("@solana/web3.js");
 
-            const investor = walletCtx.publicKey;
-            const program = await getProgram(connection, walletCtx);
+            const program = await getProgram(connection, wallet);
             const { propertyToken, investorPosition } = await derivePdas(listingId, investor);
 
             const usdcMint = new PublicKey(USDC_MINT);
             const investorUsdcAccount = getAssociatedTokenAddressSync(
                 usdcMint, investor, false, TOKEN_PROGRAM_ID
             );
-            // usdcVault: propertyToken의 USDC ATA (배당 적립 vault)
             const usdcVault = getAssociatedTokenAddressSync(
                 usdcMint, propertyToken, true, TOKEN_PROGRAM_ID
             );
@@ -94,7 +94,7 @@ export function ClaimButton({ listingId, rwaTokenId, tokenMint, walletAddress, o
         <div className="flex flex-col items-end gap-1">
             <Button
                 onClick={handleClaim}
-                disabled={status === "loading"}
+                disabled={status === "loading" || !wallet}
                 size="sm"
                 variant="success"
                 className="text-xs gap-1.5 shadow-sm shadow-[#17cf54]/20"

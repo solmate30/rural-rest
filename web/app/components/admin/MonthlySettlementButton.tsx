@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 
 import { PROGRAM_ID, USDC_MINT } from "~/lib/constants";
 import { getProgram, derivePdas } from "~/lib/anchor-client";
@@ -53,8 +53,7 @@ function krwFmt(krw: number) {
 
 export function MonthlySettlementButton({ listingId, listingTitle, month }: Props) {
     const { connection } = useConnection();
-    const wallet = useWallet();
-    const { setVisible } = useWalletModal();
+    const wallet = usePrivyAnchorWallet();
 
     const [open, setOpen] = useState(false);
     const [step, setStep] = useState<Step>("input");
@@ -131,12 +130,12 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
             setStep("preview");
 
             // 어드민 USDC 잔액 조회
-            if (wallet.publicKey) {
+            if (wallet?.publicKey) {
                 try {
                     const { getAssociatedTokenAddressSync, getAccount, TOKEN_PROGRAM_ID } = await import("@solana/spl-token");
                     const { PublicKey } = await import("@solana/web3.js");
                     const usdcMint = new PublicKey(USDC_MINT);
-                    const ata = getAssociatedTokenAddressSync(usdcMint, wallet.publicKey, false, TOKEN_PROGRAM_ID);
+                    const ata = getAssociatedTokenAddressSync(usdcMint, wallet!.publicKey, false, TOKEN_PROGRAM_ID);
                     const account = await getAccount(connection, ata, "confirmed", TOKEN_PROGRAM_ID);
                     setUsdcBalance(Number(account.amount));
                 } catch {
@@ -151,7 +150,7 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
     }
 
     async function handleConfirm() {
-        if (!preview || !wallet.publicKey) return;
+        if (!preview || !wallet?.publicKey) return;
         setLoading(true);
         setError("");
 
@@ -168,11 +167,11 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
                 ASSOCIATED_TOKEN_PROGRAM_ID,
             } = await import("@solana/spl-token");
 
-            const program = await getProgram(connection, wallet);
+            const program = await getProgram(connection, wallet!);
             const { propertyToken } = await derivePdas(listingId);
 
             const usdcMint = new PublicKey(USDC_MINT);
-            const authority = wallet.publicKey;
+            const authority = wallet!.publicKey;
             const authorityUsdcAccount = getAssociatedTokenAddressSync(usdcMint, authority, false, TOKEN_PROGRAM_ID);
             const [usdcVault] = PublicKey.findProgramAddressSync(
                 [propertyToken.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), usdcMint.toBuffer()],
@@ -231,7 +230,13 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
                         combinedTx.add(createAssociatedTokenAccountIdempotentInstruction(authority, govUsdcAccount, govPubkey, usdcMint, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID));
                         combinedTx.add(createTransferCheckedInstruction(authorityUsdcAccount, usdcMint, govUsdcAccount, authority, preview.localGovUsdc, 6, [], TOKEN_PROGRAM_ID));
                     }
-                    const payoutSig = await wallet.sendTransaction(combinedTx, connection);
+                    // sign + send (wallet adapter의 sendTransaction 대체)
+                    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+                    combinedTx.recentBlockhash = blockhash;
+                    combinedTx.feePayer = wallet!.publicKey;
+                    const signedTx = await wallet!.signTransaction(combinedTx);
+                    const payoutSig = await connection.sendRawTransaction(signedTx.serialize());
+                    await connection.confirmTransaction({ signature: payoutSig, blockhash, lastValidBlockHeight });
                     opPayoutTx = payoutSig;
                     govPayoutTx = payoutSig;
                     setSavedTxs((s) => ({ ...s, opPayoutTx: payoutSig, govPayoutTx: payoutSig }));
@@ -386,10 +391,10 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
                                     <a href="https://faucet.circle.com" target="_blank" rel="noopener noreferrer" className="ml-1 underline font-bold">Circle faucet</a>에서 충전하세요.
                                 </div>
                             )}
-                            {!wallet.connected && (
-                                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700">
-                                    온체인 정산을 위해 어드민 지갑을 연결하세요.
-                                    <button onClick={() => setVisible(true)} className="ml-2 underline font-bold">지갑 연결</button>
+                            {!wallet && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                                    온체인 정산을 위해 지갑을 준비 중입니다...
                                 </div>
                             )}
                             {loading && (
@@ -420,7 +425,7 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
                                 <button onClick={() => { setStep("input"); setError(""); }} className="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-600 hover:bg-stone-50 transition-colors">수정</button>
                                 <button
                                     onClick={() => handleConfirm()}
-                                    disabled={loading || preview.operatingProfitKrw === 0 || !wallet.connected || (preview.hasOperator && !preview.operatorWalletAddress)}
+                                    disabled={loading || preview.operatingProfitKrw === 0 || !wallet || (preview.hasOperator && !preview.operatorWalletAddress)}
                                     className="flex-1 py-2.5 rounded-xl bg-[#17cf54] text-white text-sm font-bold hover:bg-[#14b847] transition-colors disabled:opacity-50"
                                 >
                                     {loading ? "처리 중..." : "정산 확정"}

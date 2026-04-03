@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 
 import { PROGRAM_ID } from "~/lib/constants";
 import { getProgram, derivePdas, deriveRwaConfigPda, parseAnchorError } from "~/lib/anchor-client";
@@ -14,23 +14,19 @@ interface Props {
 
 export function ActivateButton({ rwaTokenId, listingId, tokenMint }: Props) {
     const { connection } = useConnection();
-    const wallet = useWallet();
-    const { setVisible } = useWalletModal();
+    const wallet = usePrivyAnchorWallet();
     const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
     const [errorMsg, setErrorMsg] = useState("");
 
     async function handleActivate() {
-        if (!wallet.connected || !wallet.publicKey) {
-            setVisible(true);
-            return;
-        }
+        if (!wallet || !wallet.publicKey) return;
         setStatus("loading");
         setErrorMsg("");
         try {
             const { PublicKey } = await import("@solana/web3.js");
             const { TOKEN_2022_PROGRAM_ID } = await import("@solana/spl-token");
 
-            const program = await getProgram(connection, wallet);
+            const program = await getProgram(connection, wallet!);
             const { propertyToken } = await derivePdas(listingId);
             const rwaConfig = await deriveRwaConfigPda();
 
@@ -73,11 +69,11 @@ export function ActivateButton({ rwaTokenId, listingId, tokenMint }: Props) {
         <div className="space-y-2">
             <Button
                 onClick={handleActivate}
-                disabled={status === "loading"}
+                disabled={!wallet || status === "loading"}
                 variant="success"
                 className="w-full py-3"
             >
-                {status === "loading" ? "활성화 중..." : !wallet.connected ? "지갑 연결 후 활성화" : "운영 시작 (Active)"}
+                {status === "loading" ? "활성화 중..." : !wallet ? "지갑 준비 중..." : "운영 시작 (Active)"}
             </Button>
             {status === "error" && (
                 <p className="text-sm text-red-500 text-center">{errorMsg}</p>

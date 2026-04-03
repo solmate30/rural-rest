@@ -3,7 +3,6 @@ import { Link, useLoaderData } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Header } from "../components/ui-mockup";
 import { requireUser } from "../lib/auth.server";
-import { WalletConnectSection } from "../components/WalletConnectSection";
 import {
     getDashboardStats,
     getOperatorListings,
@@ -337,7 +336,21 @@ export default function OperatorDashboard() {
                         <div className="p-6">
                             <h2 className="text-base font-bold text-[#4a3b2c] mb-1">{t("section.settlementWallet")}</h2>
                             <p className="text-sm text-stone-400 mb-6">{t("section.walletDesc")}</p>
-                            <WalletConnectSection currentWalletAddress={user.walletAddress} />
+                            {user.walletAddress ? (
+                                <div className="bg-white rounded-2xl border border-stone-100 p-6 space-y-3">
+                                    <h3 className="text-sm font-bold text-stone-800">정산 지갑 주소</h3>
+                                    <div className="flex items-center gap-2 bg-[#17cf54]/5 border border-[#17cf54]/20 rounded-xl px-4 py-3">
+                                        <span className="material-symbols-outlined text-[#17cf54] text-[18px]">check_circle</span>
+                                        <p className="text-xs text-stone-500 font-mono break-all">{user.walletAddress}</p>
+                                    </div>
+                                    <p className="text-xs text-stone-400">회원가입 시 자동으로 발급된 지갑 주소입니다. 이 주소로 정산 금액이 입금됩니다.</p>
+                                </div>
+                            ) : (
+                                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex items-center gap-3">
+                                    <span className="material-symbols-outlined text-[18px] animate-spin text-amber-600">progress_activity</span>
+                                    <p className="text-sm text-amber-700">지갑 준비 중입니다. 잠시 후 새로고침 해주세요.</p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

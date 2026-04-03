@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { VotingProgressBar } from "./VotingProgressBar";
@@ -40,7 +40,7 @@ export function ProposalDetailSheet({
 }: ProposalDetailSheetProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { t } = useTranslation("governance") as any;
-    const wallet = useWallet();
+    const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
     const [actionLoading, setActionLoading] = useState(false);
     const [actionError, setActionError] = useState<string | null>(null);
@@ -52,11 +52,11 @@ export function ProposalDetailSheet({
     const votingEnded = now > proposal.votingEndsAt;
     const canFinalize = isVoting && votingEnded;
     const handleFinalize = async () => {
-        if (!wallet.publicKey) return;
+        if (!wallet?.publicKey) return;
         setActionLoading(true);
         setActionError(null);
         try {
-            const program = await getDaoProgram(connection, wallet);
+            const program = await getDaoProgram(connection, wallet!);
             const daoConfigPda = await getDaoConfigPda();
             const proposalPda = await getProposalPda(proposal.id);
 
@@ -194,7 +194,7 @@ export function ProposalDetailSheet({
                         </div>
                     )}
 
-                    {canFinalize && wallet.publicKey && (
+                    {canFinalize && wallet?.publicKey && (
                         <div className="space-y-3 pt-6 border-t border-[#D7CCC8]/30">
                             <Button
                                 variant="wood"

@@ -10,7 +10,7 @@ import {
     getAssociatedTokenAddressSync,
     createAssociatedTokenAccountInstruction,
     createMintToInstruction,
-    TOKEN_PROGRAM_ID,
+    TOKEN_2022_PROGRAM_ID,
     ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import bs58 from "bs58";
@@ -52,7 +52,7 @@ export async function action({ request }: { request: Request }) {
         mintPubkey,
         recipientPubkey,
         false,
-        TOKEN_PROGRAM_ID,
+        TOKEN_2022_PROGRAM_ID,
         ASSOCIATED_TOKEN_PROGRAM_ID,
     );
 
@@ -67,14 +67,14 @@ export async function action({ request }: { request: Request }) {
                 recipientAta,
                 recipientPubkey,
                 mintPubkey,
-                TOKEN_PROGRAM_ID,
+                TOKEN_2022_PROGRAM_ID,
                 ASSOCIATED_TOKEN_PROGRAM_ID,
             )
         );
     }
 
-    // mint_to: amount × 10^9 (decimals=9)
-    const mintAmount = BigInt(amount) * BigInt(1_000_000_000);
+    // Council Token decimals=0, amount 그대로 사용
+    const mintAmount = BigInt(amount);
     tx.add(
         createMintToInstruction(
             mintPubkey,
@@ -82,7 +82,7 @@ export async function action({ request }: { request: Request }) {
             payer.publicKey,
             mintAmount,
             [],
-            TOKEN_PROGRAM_ID,
+            TOKEN_2022_PROGRAM_ID,
         )
     );
 

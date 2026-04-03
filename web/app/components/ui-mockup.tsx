@@ -1,10 +1,10 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { authClient } from "~/lib/auth.client";
+import { useSession, signOut as privySignOut, useLogout } from "~/lib/privy-hooks";
+import { usePrivy } from "@privy-io/react-auth";
+import { useExportWallet } from "@privy-io/react-auth/solana";
 import { cn } from "~/lib/utils";
 import { useToast } from "~/hooks/use-toast";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useLocation, useNavigate } from "react-router";
 import { useKyc } from "./KycProvider";
 import { useTranslation } from "react-i18next";
@@ -120,15 +120,14 @@ export function Header() {
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
 
-    const sessionRes = authClient?.useSession();
-    const session = sessionRes?.data;
-    const isPending = sessionRes?.isPending || false;
+    const { data: session, isPending } = useSession();
+    const { logout: privyLogout } = useLogout();
+    const { login } = usePrivy();
+    const { exportWallet } = useExportWallet();
     const { toast } = useToast();
     const location = useLocation();
     const navigate = useNavigate();
     const { isKycCompleted } = useKyc();
-    const { disconnect, connected, publicKey } = useWallet();
-    const { setVisible: setWalletVisible } = useWalletModal();
     const { t, i18n } = useTranslation("common");
 
     const userRole = (session?.user as Record<string, unknown>)?.role as string | undefined;
@@ -137,10 +136,9 @@ export function Header() {
     const isOperator = userRole === "operator";
 
     const handleSignOut = async () => {
-        await disconnect().catch(() => {});
-        await authClient.signOut();
+        await privyLogout();
+        await privySignOut();
         toast({ title: t("nav.logoutSuccess"), variant: "success" });
-        setTimeout(() => { window.location.href = "/"; }, 500);
     };
 
     const handleLangToggle = async () => {
@@ -182,6 +180,12 @@ export function Header() {
                             <>
                                 <a href="/" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.findStay")}</a>
                                 <a href="/invest" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.invest")}</a>
+                                {session && (
+                                    <>
+                                        <a href="/my-bookings" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.myBookings")}</a>
+                                        <a href="/my-investments" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.myPortfolio")}</a>
+                                    </>
+                                )}
                                 <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
                             </>
                         )}
@@ -201,7 +205,7 @@ export function Header() {
                     {/* 유저 영역 */}
                     {mounted && !isPending && (
                         !session ? (
-                            <Button variant="outline" className="h-9 text-sm" onClick={() => navigate(`/auth?return=${location.pathname}`)}>
+                            <Button variant="outline" className="h-9 text-sm" onClick={() => login()}>
                                 {t("nav.login")}
                             </Button>
                         ) : (
@@ -218,7 +222,7 @@ export function Header() {
                                                 </span>
                                             </div>
                                         )}
-                                        {connected && (
+                                        {session.user.walletAddress && (
                                             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-[#17cf54] border-2 border-white" />
                                         )}
                                         </div>
@@ -233,23 +237,38 @@ export function Header() {
                                         <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    {/* 지갑 */}
-                                    {connected && publicKey ? (
+                                    {/* 내 지갑 — Privy 임베디드 지갑 주소 표시 */}
+                                    {session.user.walletAddress ? (
+                                        <>
                                         <DropdownMenuItem
-                                            className="cursor-pointer justify-between"
-                                            onClick={() => disconnect()}
+                                            className="cursor-pointer focus:bg-primary/5"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(session.user.walletAddress!);
+                                                toast({ title: t("nav.walletCopied"), variant: "success" });
+                                            }}
                                         >
-                                            <span className="font-mono text-xs text-stone-600">
-                                                {publicKey.toBase58().slice(0, 6)}...{publicKey.toBase58().slice(-4)}
-                                            </span>
-                                            <span className="text-[11px] text-stone-400 ml-2">{t("nav.disconnectWallet")}</span>
+                                            <div className="flex items-center justify-between w-full gap-2">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-[11px] text-muted-foreground">{t("nav.myWallet")}</span>
+                                                    <span className="font-mono text-xs text-stone-600">
+                                                        {session.user.walletAddress.slice(0, 6)}...{session.user.walletAddress.slice(-4)}
+                                                    </span>
+                                                </div>
+                                                <span className="material-symbols-outlined text-[16px] text-stone-400">content_copy</span>
+                                            </div>
                                         </DropdownMenuItem>
-                                    ) : (
                                         <DropdownMenuItem
-                                            className="cursor-pointer text-stone-500"
-                                            onClick={() => setWalletVisible(true)}
+                                            className="cursor-pointer focus:bg-primary/5"
+                                            onClick={() => exportWallet({ address: session.user.walletAddress! })}
                                         >
-                                            {t("nav.connectWallet")}
+                                            <span className="text-xs text-stone-500">
+                                                {t("nav.exportWallet")}
+                                            </span>
+                                        </DropdownMenuItem>
+                                        </>
+                                    ) : (
+                                        <DropdownMenuItem className="cursor-default text-stone-400 text-xs focus:bg-transparent">
+                                            {t("nav.walletCreating")}
                                         </DropdownMenuItem>
                                     )}
                                     <DropdownMenuSeparator />

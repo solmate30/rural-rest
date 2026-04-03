@@ -15,6 +15,7 @@ export const user = sqliteTable("user", {
     kycVerifiedAt: text("kyc_verified_at"),
     walletNonce: text("wallet_nonce"),               // SIWS 서명 챌린지용 일회성 nonce
     walletNonceIssuedAt: text("wallet_nonce_issued_at"), // nonce 발급 시각 (5분 TTL)
+    privyDid: text("privy_did").unique(),            // Privy DID (did:privy:xxx)
     createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });

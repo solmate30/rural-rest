@@ -19,14 +19,14 @@ export async function action({ request }: Route.ActionArgs) {
         return Response.json({ error: "세션 지갑과 요청 지갑이 일치하지 않습니다" }, { status: 403 });
     }
 
-    // 토큰 상태 확인 — failed 아니면 거부
+    // 토큰 존재 확인 (온체인에서 환불 성공했으면 DB 기록 허용)
     const [token] = await db
         .select({ status: rwaTokens.status })
         .from(rwaTokens)
         .where(eq(rwaTokens.id, rwaTokenId));
 
-    if (!token || token.status !== "failed") {
-        return Response.json({ error: "환불 가능한 상태가 아닙니다" }, { status: 400 });
+    if (!token) {
+        return Response.json({ error: "토큰을 찾을 수 없습니다" }, { status: 404 });
     }
 
     // 온체인 TX 검증 — 실제로 성공한 트랜잭션인지 확인

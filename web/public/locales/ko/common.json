@@ -3,7 +3,7 @@
     "findStay": "숙소 찾기",
     "hostHome": "집 등록하기",
     "invest": "투자하기 (RWA)",
-    "governance": "거버넌스",
+    "governance": "커뮤니티",
     "myPortfolio": "내 포트폴리오",
     "login": "로그인",
     "logout": "로그아웃",
@@ -15,8 +15,12 @@
     "operatorDashboard": "운영 대시보드",
     "myBookings": "내 예약",
     "verifyKyc": "KYC 인증",
+    "myWallet": "내 지갑",
+    "walletCopied": "지갑 주소가 복사되었습니다",
+    "walletCreating": "지갑 생성 중...",
     "connectWallet": "지갑 연결",
-    "disconnectWallet": "연결 해제"
+    "disconnectWallet": "연결 해제",
+    "exportWallet": "비밀키 내보내기"
   },
   "footer": {
     "tagline": "비어있던 집, 다시 숨을 쉬다.",
@@ -34,7 +38,7 @@
       "featuredStays": "추천 숙소",
       "investRwa": "RWA 투자",
       "whitepaper": "백서",
-      "governance": "거버넌스",
+      "governance": "커뮤니티",
       "about": "소개",
       "blog": "블로그",
       "press": "언론",

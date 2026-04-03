@@ -14,7 +14,6 @@ import i18next from "i18next";
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import "@solana/wallet-adapter-react-ui/styles.css";
 import { Toaster } from "./components/ui/toaster";
 import { Header, Button, Card } from "./components/ui-mockup";
 import { detectLocale } from "./lib/i18n.server";
@@ -123,6 +122,50 @@ export function Layout({ children }: { children: React.ReactNode }) {
 import { AiConcierge } from "./components/AiConcierge";
 import RwaWalletProvider from "./components/RwaWalletProvider";
 import { KycProvider } from "./components/KycProvider";
+import { PrivyProvider, usePrivy, useLogin } from "@privy-io/react-auth";
+import { createSolanaRpc, createSolanaRpcSubscriptions } from "@solana/kit";
+import { useEffect } from "react";
+
+const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID as string;
+
+/**
+ * SessionCreator — 로그인 완료(+지갑 생성 완료) 후 서버 세션을 생성한다.
+ * useLogin의 onComplete는 createOnLogin 설정 시 인증 AND 지갑 생성이 모두 끝난 뒤 호출됨.
+ * Header, auth 페이지 등 어디서 login()을 트리거해도 항상 이 콜백이 실행된다.
+ */
+function SessionCreator() {
+    const { getAccessToken } = usePrivy();
+    useLogin({
+        onComplete: async ({ user }) => {
+            try {
+                const token = await getAccessToken();
+                if (!token) return;
+
+                const embedded = user.linkedAccounts?.find(
+                    (a: any) => a.type === "wallet" && a.chainType === "solana" && a.walletClientType === "privy",
+                ) as { address: string } | undefined;
+                const walletAddress = embedded?.address ?? null;
+
+                const res = await fetch("/api/auth/session", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token, walletAddress }),
+                });
+                if (!res.ok) {
+                    console.warn("[SessionCreator] 세션 생성 실패:", res.status);
+                    return;
+                }
+                // /auth 페이지에서 로그인한 경우 홈으로 이동
+                if (window.location.pathname === "/auth") {
+                    window.location.href = "/";
+                }
+            } catch (e) {
+                console.warn("[SessionCreator] 오류:", e);
+            }
+        },
+    });
+    return null;
+}
 
 export default function App() {
   const { locale, initialI18nStore } = useLoaderData<typeof loader>();
@@ -152,15 +195,43 @@ export default function App() {
   }
 
   return (
-    <I18nextProvider i18n={i18next}>
-      <KycProvider>
-        <RwaWalletProvider>
-          <Outlet />
-          <Toaster />
-          <AiConcierge />
-        </RwaWalletProvider>
-      </KycProvider>
-    </I18nextProvider>
+    <PrivyProvider
+      appId={PRIVY_APP_ID}
+      config={{
+        loginMethods: ["email", "google" /* , "custom:Kakao" */],
+        appearance: {
+          theme: "light",
+          accentColor: "#17cf54",
+          landingHeader: "Rural Rest에 오신 것을 환영합니다",
+          loginMessage: "이메일 또는 구글로 간편하게 시작하세요",
+        },
+        embeddedWallets: {
+          solana: { createOnLogin: "users-without-wallets" },
+          ethereum: { createOnLogin: "off" },
+        },
+        solana: {
+          rpcs: {
+            "solana:devnet": {
+              rpc: createSolanaRpc(import.meta.env.VITE_SOLANA_RPC || "https://api.devnet.solana.com") as any,
+              rpcSubscriptions: createSolanaRpcSubscriptions(
+                (import.meta.env.VITE_SOLANA_RPC || "https://api.devnet.solana.com").replace(/^https?:\/\//, (m: string) => m === "http://" ? "ws://" : "wss://"),
+              ),
+            },
+          },
+        },
+      }}
+    >
+      <I18nextProvider i18n={i18next}>
+        <KycProvider>
+          <RwaWalletProvider>
+            <SessionCreator />
+            <Outlet />
+            <Toaster />
+            <AiConcierge />
+          </RwaWalletProvider>
+        </KycProvider>
+      </I18nextProvider>
+    </PrivyProvider>
   );
 }
 

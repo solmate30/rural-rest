@@ -1,5 +1,5 @@
 /**
- * set-crank-authority.ts — RwaConfig crank_authority 교체 스크립트 (1회 실행)
+ * set-crank-authority.ts — RwaConfig crank_authority 교체 스크립트
  *
  * 실행:
  *   cd web
@@ -11,11 +11,9 @@ import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { RPC_URL, RWA_PROGRAM_ID } from "./_env";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const RPC_URL = "https://api.devnet.solana.com";
-const PROGRAM_ID = new PublicKey("EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR");
 
 const NEW_CRANK = new PublicKey(process.env.NEW_CRANK_PUBKEY ?? "");
 
@@ -40,7 +38,7 @@ async function main() {
 
     const [rwaConfigPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("rwa_config")],
-        PROGRAM_ID
+        RWA_PROGRAM_ID
     );
 
     const before = await (program.account as any).rwaConfig.fetch(rwaConfigPda);

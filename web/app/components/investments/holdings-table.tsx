@@ -102,14 +102,9 @@ export function HoldingsTable({ holdings, walletAddress }: Props) {
                                                 onCancelled={() => window.location.reload()}
                                             />
                                         )}
-                                        {(() => {
-                                            const deadlineExpired = Date.now() > h.fundingDeadlineMs;
-                                            const isRefundable = h.tokenStatus === "failed" ||
-                                                (h.tokenStatus === "funding" && deadlineExpired);
-                                            return isRefundable ? (
-                                                <RefundButton listingId={h.id} rwaTokenId={h.rwaTokenId} />
-                                            ) : null;
-                                        })()}
+                                        {h.tokenStatus === "failed" && (
+                                            <RefundButton listingId={h.id} rwaTokenId={h.rwaTokenId} />
+                                        )}
                                         {h.dividendStatus !== "pending" &&
                                             !(h.tokenStatus === "funding" || h.tokenStatus === "funded") &&
                                             h.tokenStatus !== "failed" && (

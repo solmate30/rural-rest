@@ -1,5 +1,5 @@
 /**
- * init-rwa.ts — RwaConfig 초기화 스크립트 (devnet, 1회 실행)
+ * init-rwa.ts — RwaConfig 초기화 스크립트
  *
  * 실행:
  *   cd web
@@ -11,11 +11,9 @@ import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { RPC_URL, RWA_PROGRAM_ID } from "./_env";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const RPC_URL = "https://api.devnet.solana.com";
-const PROGRAM_ID = new PublicKey("EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR");
 
 const keypairPath = path.join(process.env.HOME!, ".config/solana/id.json");
 const authority = Keypair.fromSecretKey(
@@ -33,7 +31,7 @@ async function main() {
 
     const [rwaConfigPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("rwa_config")],
-        PROGRAM_ID
+        RWA_PROGRAM_ID
     );
 
     const existing = await connection.getAccountInfo(rwaConfigPda);
@@ -47,8 +45,9 @@ async function main() {
     }
 
     console.log("Initializing RwaConfig...");
-    console.log("  authority:", authority.publicKey.toBase58());
-    console.log("  PDA      :", rwaConfigPda.toBase58());
+    console.log(`  RPC: ${RPC_URL}`);
+    console.log(`  authority: ${authority.publicKey.toBase58()}`);
+    console.log(`  PDA: ${rwaConfigPda.toBase58()}`);
 
     const tx = await (program.methods as any)
         .initializeConfig()
@@ -60,8 +59,8 @@ async function main() {
         .rpc();
 
     console.log("\nRwaConfig initialized!");
-    console.log("  tx :", tx);
-    console.log("  PDA:", rwaConfigPda.toBase58());
+    console.log(`  tx: ${tx}`);
+    console.log(`  PDA: ${rwaConfigPda.toBase58()}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

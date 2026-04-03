@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { usePrivyPublicKey } from "~/lib/privy-wallet";
 
 const NAV_ITEMS = [
     { label: "대시보드", to: "/admin" },
@@ -9,8 +8,7 @@ const NAV_ITEMS = [
 
 export function AdminNav() {
     const { pathname } = useLocation();
-    const { connected, publicKey, disconnect } = useWallet();
-    const { setVisible } = useWalletModal();
+    const walletAddress = usePrivyPublicKey();
 
     return (
         <div className="flex items-center justify-between border-b border-stone-200 mb-8">
@@ -33,25 +31,15 @@ export function AdminNav() {
                 })}
             </div>
             <div className="pb-2">
-                {connected && publicKey ? (
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-stone-400 font-mono">
-                            {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
-                        </span>
-                        <button
-                            onClick={() => disconnect()}
-                            className="text-xs px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors"
-                        >
-                            연결 해제
-                        </button>
-                    </div>
+                {walletAddress ? (
+                    <span className="text-xs text-stone-400 font-mono">
+                        {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
+                    </span>
                 ) : (
-                    <button
-                        onClick={() => setVisible(true)}
-                        className="text-xs px-3 py-1.5 rounded-lg bg-[#17cf54]/10 hover:bg-[#17cf54]/20 text-[#17cf54] font-medium transition-colors border border-[#17cf54]/20"
-                    >
-                        지갑 연결
-                    </button>
+                    <span className="text-xs text-stone-400 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                        지갑 준비 중
+                    </span>
                 )}
             </div>
         </div>
