@@ -45,6 +45,8 @@
     "concierge": "Transport Concierge",
     "conciergePrice": "Free",
     "total": "Total",
-    "selectDates": "Select dates to see final price."
+    "selectDates": "Select dates",
+    "nightCount": "{{count}} night",
+    "guestOption": "{{count}} guest"
   }
 }

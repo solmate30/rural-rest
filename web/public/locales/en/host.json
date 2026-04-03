@@ -1,0 +1,31 @@
+{
+  "bookings": {
+    "title": "Booking Management",
+    "subtitle": "Approve and manage bookings for your properties",
+    "newListing": "New Listing",
+    "tabPending": "Awaiting Approval",
+    "tabConfirmed": "Confirmed",
+    "tabHistory": "History",
+    "pendingDesc": "Payment received — awaiting host approval",
+    "empty": "No bookings here",
+    "colGuest": "Guest",
+    "colProperty": "Property",
+    "colDates": "Dates",
+    "colAmount": "Amount",
+    "colMethod": "Payment",
+    "colStatus": "Status",
+    "colActions": "Action",
+    "methodCard": "Card",
+    "methodUsdc": "USDC",
+    "approve": "Approve",
+    "reject": "Reject & Refund",
+    "processing": "Processing...",
+    "actionError": "Action failed",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "completed": "Completed"
+    }
+  }
+}

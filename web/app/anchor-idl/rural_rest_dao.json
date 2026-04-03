@@ -1,5 +1,5 @@
 {
-  "address": "3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX",
+  "address": "142FMJgEw2H4EYzqHk1mEsLoT4aDkfLJJ4UR5ELxmTU1",
   "metadata": {
     "name": "rural_rest_dao",
     "version": "0.1.0",
@@ -10,7 +10,7 @@
     {
       "name": "cancel_proposal",
       "docs": [
-        "\uc81c\uc548 \ucde8\uc18c. creator \ub610\ub294 authority\ub9cc \ud638\ucd9c \uac00\ub2a5."
+        "제안 취소. creator 또는 authority만 호출 가능."
       ],
       "discriminator": [
         106,
@@ -81,9 +81,9 @@
     {
       "name": "cast_vote",
       "docs": [
-        "\ud22c\ud45c. RWA \ubcf4\uc720\ub7c9 + Council Token \uc794\uc561 \ud569\uc0b0\uc73c\ub85c \uac00\uc911\uce58 \uacc4\uc0b0, 10% \ucea1 \uc801\uc6a9.",
+        "투표. RWA 보유량 + Council Token 잔액 합산으로 가중치 계산, 10% 캡 적용.",
         "remaining_accounts: [PropertyToken_1, InvestorPosition_1, PropertyToken_2, InvestorPosition_2, ...]",
-        "\uac01 \uc30d\uc5d0\uc11c PropertyToken.status == Active \uac80\uc99d + token_mint \uc77c\uce58 \uac80\uc99d"
+        "각 쌍에서 PropertyToken.status == Active 검증 + token_mint 일치 검증"
       ],
       "discriminator": [
         20,
@@ -178,7 +178,7 @@
         {
           "name": "voter_council_ata",
           "docs": [
-            "Voter\uc758 Council Token ATA (Optional \u2014 Council member\uac00 \uc544\ub2c8\uba74 None)"
+            "Voter의 Council Token ATA (Optional — Council member가 아니면 None)"
           ],
           "optional": true
         },
@@ -204,8 +204,8 @@
     {
       "name": "create_proposal",
       "docs": [
-        "\uc81c\uc548 \uc0dd\uc131. Council Token \ubcf4\uc720\uc790\ub9cc \ud638\ucd9c \uac00\ub2a5.",
-        "remaining_accounts: Active \uc0c1\ud0dc PropertyToken \uacc4\uc815\ub4e4 (total_eligible_weight \uc2a4\ub0c5\uc0f7)"
+        "제안 생성. Council Token 보유자만 호출 가능.",
+        "remaining_accounts: Active 상태 PropertyToken 계정들 (total_eligible_weight 스냅샷)"
       ],
       "discriminator": [
         132,
@@ -275,7 +275,7 @@
         {
           "name": "creator_council_ata",
           "docs": [
-            "creator\uc758 Council Token ATA (\uc794\uc561 >= 1 \uac80\uc99d)"
+            "creator의 Council Token ATA (잔액 >= 1 검증)"
           ],
           "pda": {
             "seeds": [
@@ -335,7 +335,7 @@
         {
           "name": "council_mint",
           "docs": [
-            "Council Token Mint (supply \u2192 total_eligible_weight \ud3ec\ud568)"
+            "Council Token Mint (supply → total_eligible_weight 포함)"
           ]
         },
         {
@@ -372,7 +372,7 @@
     {
       "name": "finalize_proposal",
       "docs": [
-        "\ud22c\ud45c \uc885\ub8cc \ud6c4 \uacb0\uacfc \ud310\uc815. \ub204\uad6c\ub098 \ud638\ucd9c \uac00\ub2a5 (permissionless)."
+        "투표 종료 후 결과 판정. 누구나 호출 가능 (permissionless)."
       ],
       "discriminator": [
         23,
@@ -439,7 +439,7 @@
     {
       "name": "initialize_dao",
       "docs": [
-        "DAO \ucd08\uae30\ud654. DaoConfig PDA \uc0dd\uc131 \ubc0f \ud30c\ub77c\ubbf8\ud130 \uc124\uc815."
+        "DAO 초기화. DaoConfig PDA 생성 및 파라미터 설정."
       ],
       "discriminator": [
         128,
@@ -520,7 +520,7 @@
     {
       "name": "transfer_authority",
       "docs": [
-        "Authority \uc774\uc804. \ud604\uc7ac authority\ub9cc \ud638\ucd9c \uac00\ub2a5."
+        "Authority 이전. 현재 authority만 호출 가능."
       ],
       "discriminator": [
         48,
@@ -571,8 +571,8 @@
     {
       "name": "update_dao_config",
       "docs": [
-        "DaoConfig \ud30c\ub77c\ubbf8\ud130 \uc5c5\ub370\uc774\ud2b8. authority(Squads multisig)\ub9cc \ud638\ucd9c \uac00\ub2a5.",
-        "\ubcc0\uacbd\ud558\uc9c0 \uc54a\uc744 \ud544\ub4dc\ub294 \ud604\uc7ac\uac12 \uadf8\ub300\ub85c \uc804\ub2ec."
+        "DaoConfig 파라미터 업데이트. authority(Squads multisig)만 호출 가능.",
+        "변경하지 않을 필드는 현재값 그대로 전달."
       ],
       "discriminator": [
         23,

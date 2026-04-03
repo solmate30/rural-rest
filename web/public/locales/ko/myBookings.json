@@ -1,0 +1,7 @@
+{
+  "title": "내 예약",
+  "empty": "아직 예약한 숙소가 없어요",
+  "findStay": "숙소 찾아보기",
+  "nights": "{{count}}박",
+  "pendingNote": "호스트 승인 대기 중"
+}

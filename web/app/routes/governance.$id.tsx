@@ -1,5 +1,5 @@
 import { useLoaderData, useNavigate, useRevalidator } from "react-router";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { Route } from "./+types/governance.$id";
 import { fetchDaoConfig, fetchProposal, tryAutoFinalize, fetchActiveListingIds } from "~/lib/dao.onchain.server";
 import type { DaoConfigData, ProposalData } from "~/lib/dao.onchain.server";
@@ -21,6 +21,31 @@ import {
 } from "~/components/governance/ProposalCard";
 import type { ProposalCategory } from "~/lib/dao.onchain.server";
 
+
+function ShareBlinksButton({ proposalId }: { proposalId: number }) {
+    const [copied, setCopied] = useState(false);
+
+    function handleShare() {
+        const actionUrl = `${window.location.origin}/api/actions/governance/${proposalId}`;
+        const blinksUrl = `https://dial.to/?action=solana-action:${encodeURIComponent(actionUrl)}`;
+        navigator.clipboard.writeText(blinksUrl).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    }
+
+    return (
+        <button
+            onClick={handleShare}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#D7CCC8] text-xs font-medium text-[#A1887F] hover:bg-[#FAF9F6] hover:text-[#8D6E63] transition-colors shrink-0 mt-1"
+        >
+            <span className="material-symbols-outlined text-[16px]">
+                {copied ? "check_circle" : "share"}
+            </span>
+            {copied ? "복사됨!" : "공유"}
+        </button>
+    );
+}
 
 // 더미 데이터 (온체인 미연결 시 UI 확인용)
 function getMockProposal(id: number): ProposalData | null {
@@ -280,9 +305,12 @@ export default function ProposalDetailPage() {
                                     {({ operations: t("card.catOperations"), guidelines: t("card.catGuidelines"), fundUsage: t("card.catFundUsage"), other: t("card.catOther") } as Record<string, string>)[proposal.category]}
                                 </span>
                             </div>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-[#3E2723] leading-tight tracking-tight">
-                                {proposal.title}
-                            </h1>
+                            <div className="flex items-start justify-between gap-4">
+                                <h1 className="text-3xl sm:text-4xl font-bold text-[#3E2723] leading-tight tracking-tight">
+                                    {proposal.title}
+                                </h1>
+                                <ShareBlinksButton proposalId={proposal.id} />
+                            </div>
                         </div>
 
                         {/* 메타보드 */}

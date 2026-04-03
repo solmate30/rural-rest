@@ -7,6 +7,13 @@
     "todayCheckin": "오늘 체크인",
     "occupancy30d": "점유율 (30일)"
   },
+  "tab": {
+    "pending": "승인 대기",
+    "confirmed": "확정된 예약",
+    "settlements": "정산",
+    "listings": "담당 매물",
+    "wallet": "정산 지갑"
+  },
   "status": {
     "pending": "대기 중",
     "confirmed": "확정",
@@ -16,13 +23,23 @@
     "processing": "처리 중"
   },
   "section": {
-    "pending": "대기 중 예약",
+    "pending": "승인 대기",
     "pendingCount": "{{count}}건",
-    "upcoming": "다가오는 체크인",
-    "settlementWallet": "정산 지갑",
+    "noPending": "대기 중인 예약이 없어요.",
+    "upcoming": "확정된 예약",
+    "noConfirmed": "확정된 예약이 없어요.",
     "settlementHistory": "정산 내역",
+    "noSettlements": "정산 내역이 없어요.",
+    "settlementWallet": "정산 지갑",
+    "walletDesc": "배당금과 정산액을 받을 Solana 지갑을 연결하세요.",
     "listings": "담당 매물",
     "noListings": "배정된 매물이 없어요."
+  },
+  "action": {
+    "approve": "승인",
+    "reject": "거절 및 환불",
+    "processing": "처리 중...",
+    "error": "처리 실패"
   },
   "settlement": {
     "detail": "{{month}} · 매출 {{revenue}} · 영업이익 {{profit}}"

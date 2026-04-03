@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useLoaderData } from "react-router";
-import { authClient } from "~/lib/auth.client";
+import { useSession } from "~/lib/privy-hooks";
 import ReactMarkdown from "react-markdown";
 import type { Route } from "./+types/governance.new";
 import { fetchDaoConfig, fetchActiveListingIds } from "~/lib/dao.onchain.server";
@@ -9,6 +9,7 @@ import type { DaoConfigData } from "~/lib/dao.onchain.server";
 import { useTranslation } from "react-i18next";
 
 import { Header, Footer } from "~/components/ui-mockup";
+import { toLocalDatetimeStr } from "~/lib/date-utils";
 import { CreateProposalForm, CATEGORIES } from "~/components/governance/CreateProposalForm";
 
 
@@ -42,7 +43,7 @@ export default function GovernanceNewPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { t, i18n } = useTranslation("governance") as any;
 
-    const defaultDeadline = new Date(Date.now() + 7 * 86400 * 1000).toISOString().slice(0, 16);
+    const defaultDeadline = toLocalDatetimeStr(new Date(Date.now() + 7 * 86400 * 1000));
     const [preview, setPreview] = useState<{
         title: string;
         category: string;
@@ -55,7 +56,7 @@ export default function GovernanceNewPage() {
         votingDeadline: defaultDeadline,
     });
 
-    const session = authClient.useSession?.()?.data;
+    const { data: session } = useSession();
     const creatorLabel = session?.user?.name ?? t("form.author");
     const locale = i18n.language === "ko" ? "ko-KR" : "en-US";
     const catValue = preview.category;

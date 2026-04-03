@@ -1,17 +1,23 @@
 import { Header, Button, Card, Footer } from "~/components/ui-mockup";
 import { useState } from "react";
 import { useLoaderData, useNavigate } from "react-router";
+import { usePythRate } from "~/hooks/usePythRate";
 import { useTranslation } from "react-i18next";
 import type { Route } from "./+types/property";
 import { cn } from "~/lib/utils";
 import { PropertyMap } from "~/components/PropertyMap";
 import { db } from "~/db/index.server";
-import { listings, user, rwaTokens } from "~/db/schema";
-import { eq } from "drizzle-orm";
+import { listings, user, rwaTokens, bookings } from "~/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { detectLocale } from "~/lib/i18n.server";
 import { applyListingLocale, translateAmenities } from "~/data/listing-translations";
 import { InvestmentUpsellCard } from "~/components/InvestmentUpsellCard";
 import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
+import { toLocalDateStr } from "~/lib/date-utils";
+import { Calendar } from "~/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { ko as koLocale, enUS } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 
 function toCityLabel(location: string): string {
     const m = location.match(/([가-힣]+)시/);
@@ -67,6 +73,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
             lng: listings.lng,
             hostId: listings.hostId,
             tokenStatus: rwaTokens.status,
+            totalSupply: rwaTokens.totalSupply,
+            tokensSold: rwaTokens.tokensSold,
+            fundingDeadline: rwaTokens.fundingDeadline,
+            minFundingBps: rwaTokens.minFundingBps,
         })
         .from(listings)
         .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
@@ -80,6 +90,19 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         const onchain = await fetchPropertyOnchain(params.id!);
         if (onchain) {
             row.tokenStatus = onchain.status as typeof row.tokenStatus;
+            row.tokensSold = onchain.tokensSold;
+        }
+        // invest.tsx와 동일한 데드라인 보정: 기간 경과 + 목표 미달 → failed
+        if (row.tokenStatus === "funding" && row.fundingDeadline) {
+            const deadlineMs = new Date(row.fundingDeadline).getTime();
+            if (Date.now() > deadlineMs) {
+                const totalSupply = row.totalSupply ?? 0;
+                const tokensSold = row.tokensSold ?? 0;
+                const progressBps = totalSupply > 0 ? (tokensSold / totalSupply) * 10000 : 0;
+                if (progressBps < (row.minFundingBps ?? 6000)) {
+                    row.tokenStatus = "failed" as typeof row.tokenStatus;
+                }
+            }
         }
     }
 
@@ -130,14 +153,44 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         pickupPoints: [] as { id: string; name: string; description: string; estimatedTimeToProperty: string }[],
     };
 
-    return { listing, bookingAllowed };
+    const bookedRanges = await db
+        .select({ checkIn: bookings.checkIn, checkOut: bookings.checkOut })
+        .from(bookings)
+        .where(
+            and(
+                eq(bookings.listingId, params.id!),
+                eq(bookings.status, "confirmed"),
+            )
+        );
+
+    return { listing, bookingAllowed, bookedRanges };
 }
 
 export default function PropertyDetail() {
-    const { listing, bookingAllowed } = useLoaderData<typeof loader>();
+    const { listing, bookingAllowed, bookedRanges } = useLoaderData<typeof loader>();
     const navigate = useNavigate();
     const { t } = useTranslation("property");
     const [showGallery, setShowGallery] = useState(false);
+    const [calCheckInOpen, setCalCheckInOpen] = useState(false);
+    const [calCheckOutOpen, setCalCheckOutOpen] = useState(false);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+    const [guests, setGuests] = useState(1);
+    const { rate: pythRate, loading: rateLoading } = usePythRate();
+    const { i18n } = useTranslation();
+    const calLocale = i18n.language === "ko" ? koLocale : enUS;
+
+    const checkIn = dateRange?.from ? toLocalDateStr(dateRange.from) : "";
+    const checkOut = dateRange?.to ? toLocalDateStr(dateRange.to) : "";
+    const nights = dateRange?.from && dateRange?.to
+        ? Math.max(0, Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / 86400000))
+        : 0;
+    const totalKrw = listing.pricePerNight * Math.max(1, nights);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    function formatDate(d: Date) {
+        return d.toLocaleDateString(i18n.language === "ko" ? "ko-KR" : "en-US", { month: "short", day: "numeric" });
+    }
 
     return (
         <div className="min-h-screen bg-background font-sans">
@@ -421,39 +474,112 @@ export default function PropertyDetail() {
                     <div className="lg:col-span-1">
                         <div className="sticky top-24 space-y-6">
                             <Card className="p-8 shadow-2xl border-none bg-white rounded-3xl">
-                                <div className="flex items-baseline justify-between mb-8">
+                                {/* 가격 */}
+                                <div className="flex items-start justify-between mb-6">
                                     <div className="flex flex-col">
                                         <span className="text-3xl font-bold text-stone-900">
                                             ₩{listing.pricePerNight.toLocaleString()}
                                         </span>
                                         <span className="text-xs text-stone-400 font-bold uppercase tracking-widest mt-1">{t("booking.perNight")}</span>
+                                        {!rateLoading && (
+                                            <span className="text-sm text-primary font-semibold mt-0.5">
+                                                ≈ {(listing.pricePerNight / pythRate).toFixed(2)} USDC
+                                            </span>
+                                        )}
                                     </div>
                                     {listing.rating != null && (
                                         <div className="text-sm font-bold text-primary">★ {listing.rating}</div>
                                     )}
                                 </div>
 
-                                <div className="space-y-4 mb-8">
-                                    <div className="grid grid-cols-2 gap-0 border border-stone-200 rounded-2xl overflow-hidden shadow-inner">
-                                        <div className="p-4 border-r border-b bg-stone-50/50">
-                                            <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{t("booking.checkin")}</label>
-                                            <div className="text-sm font-bold text-stone-700">{t("booking.selectDates")}</div>
+                                <div className="space-y-4 mb-6">
+                                    <div className="border border-stone-200 rounded-2xl overflow-hidden">
+                                        <div className="grid grid-cols-2 divide-x divide-stone-200">
+                                            {/* 체크인 */}
+                                            <Popover open={calCheckInOpen} onOpenChange={setCalCheckInOpen}>
+                                                <PopoverTrigger asChild>
+                                                    <button type="button" className={cn("p-4 text-left hover:bg-primary/5 transition-colors w-full", calCheckInOpen && "bg-primary/5")}>
+                                                        <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-1">{t("booking.checkin")}</p>
+                                                        <p className={cn("text-sm font-semibold", dateRange?.from ? "text-stone-800" : "text-stone-400")}>
+                                                            {dateRange?.from ? formatDate(dateRange.from) : t("booking.selectDates")}
+                                                        </p>
+                                                    </button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0 shadow-2xl" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={dateRange?.from}
+                                                        onSelect={(day) => {
+                                                            if (!day) return;
+                                                            const newTo = dateRange?.to && dateRange.to > day ? dateRange.to : undefined;
+                                                            setDateRange({ from: day, to: newTo });
+                                                            setCalCheckInOpen(false);
+                                                            if (!newTo) setCalCheckOutOpen(true);
+                                                        }}
+                                                        disabled={[
+                                                            { before: today },
+                                                            ...bookedRanges.map((r) => ({ from: r.checkIn, to: r.checkOut })),
+                                                        ]}
+                                                        locale={calLocale}
+                                                        className="rounded-2xl"
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                            {/* 체크아웃 */}
+                                            <Popover open={calCheckOutOpen} onOpenChange={setCalCheckOutOpen}>
+                                                <PopoverTrigger asChild>
+                                                    <button type="button" className={cn("p-4 text-left hover:bg-primary/5 transition-colors w-full", calCheckOutOpen && "bg-primary/5")}>
+                                                        <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-1">{t("booking.checkout")}</p>
+                                                        <p className={cn("text-sm font-semibold", dateRange?.to ? "text-stone-800" : "text-stone-400")}>
+                                                            {dateRange?.to ? formatDate(dateRange.to) : t("booking.selectDates")}
+                                                        </p>
+                                                    </button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0 shadow-2xl" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={dateRange?.to}
+                                                        onSelect={(day) => {
+                                                            if (!day) return;
+                                                            setDateRange((prev) => ({ from: prev?.from, to: day }));
+                                                            setCalCheckOutOpen(false);
+                                                        }}
+                                                        disabled={[
+                                                            { before: dateRange?.from ? new Date(dateRange.from.getTime() + 86400000) : today },
+                                                            ...bookedRanges.map((r) => ({ from: r.checkIn, to: r.checkOut })),
+                                                        ]}
+                                                        locale={calLocale}
+                                                        className="rounded-2xl"
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
                                         </div>
-                                        <div className="p-4 border-b bg-stone-50/50">
-                                            <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{t("booking.checkout")}</label>
-                                            <div className="text-sm font-bold text-stone-700">{t("booking.selectDates")}</div>
-                                        </div>
-                                        <div className="p-4 col-span-2 bg-stone-50/50 hover:bg-stone-100 transition-colors cursor-pointer">
-                                            <label className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{t("booking.guests")}</label>
-                                            <div className="text-sm font-bold text-stone-700">{t("booking.maxGuests", { count: listing.maxGuests })}</div>
-                                        </div>
+                                    </div>
+
+                                    <div className="border border-stone-200 rounded-2xl p-4">
+                                        <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-1.5">{t("booking.guests")}</p>
+                                        <select
+                                            value={guests}
+                                            onChange={e => setGuests(Number(e.target.value))}
+                                            className="w-full text-sm font-semibold text-stone-700 bg-transparent outline-none cursor-pointer"
+                                        >
+                                            {Array.from({ length: listing.maxGuests }, (_, i) => (
+                                                <option key={i + 1} value={i + 1}>{t("booking.guestOption", { count: i + 1 })}</option>
+                                            ))}
+                                        </select>
                                     </div>
 
                                     {bookingAllowed ? (
                                         <>
                                             <Button
                                                 className="w-full h-14 text-xl font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                                onClick={() => navigate(`/book/${listing.id}`)}
+                                                onClick={() => {
+                                                    const p = new URLSearchParams();
+                                                    if (checkIn) p.set("checkIn", checkIn);
+                                                    if (checkOut) p.set("checkOut", checkOut);
+                                                    p.set("guests", String(guests));
+                                                    navigate(`/book/${listing.id}?${p.toString()}`);
+                                                }}
                                             >
                                                 {t("booking.reserve")}
                                             </Button>
@@ -469,10 +595,10 @@ export default function PropertyDetail() {
                                     )}
                                 </div>
 
-                                <div className="space-y-4 pt-6 border-t border-stone-100 font-medium text-sm">
+                                <div className="space-y-3 pt-5 border-t border-stone-100 font-medium text-sm">
                                     <div className="flex justify-between text-stone-600">
-                                        <span>₩{listing.pricePerNight.toLocaleString()} × 1 night</span>
-                                        <span className="font-bold">₩{listing.pricePerNight.toLocaleString()}</span>
+                                        <span>₩{listing.pricePerNight.toLocaleString()} × {t("booking.nightCount", { count: nights > 0 ? nights : 1 })}</span>
+                                        <span className="font-bold">₩{totalKrw.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-stone-600">
                                         <div className="flex items-center gap-1">
@@ -485,9 +611,16 @@ export default function PropertyDetail() {
                                     </div>
                                     <div className="flex justify-between border-t border-stone-200 pt-4 text-base font-bold text-stone-900">
                                         <span>{t("booking.total")}</span>
-                                        <span>₩{listing.pricePerNight.toLocaleString()}</span>
+                                        <div className="text-right">
+                                            <p>₩{totalKrw.toLocaleString()}</p>
+                                            {!rateLoading && (
+                                                <p className="text-sm font-medium text-primary">≈ {(totalKrw / pythRate).toFixed(2)} USDC</p>
+                                            )}
+                                        </div>
                                     </div>
-                                    <p className="text-xs text-stone-400 text-center">{t("booking.selectDates")}</p>
+                                    {!checkIn && (
+                                        <p className="text-xs text-stone-400 text-center">{t("booking.selectDates")}</p>
+                                    )}
                                 </div>
 
                             </Card>

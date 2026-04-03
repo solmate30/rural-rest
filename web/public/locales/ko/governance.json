@@ -1,5 +1,5 @@
 {
-  "title": "거버넌스",
+  "title": "커뮤니티",
   "subtitle": "마을의 정책과 자금 운용을 함께 결정해요.",
   "daoNotReady": "DAO가 아직 초기화되지 않았습니다.",
   "newProposal": "새 안건 상정하기",
@@ -25,7 +25,8 @@
     "approval": "가결 조건",
     "approvalDesc": "정족수 충족 후 찬성률 {{threshold}}% 이상이면 가결됩니다.",
     "limit": "1인 투표 한도",
-    "limitDesc": "1인당 최대 {{cap}}표까지 행사할 수 있습니다."
+    "limitDesc": "1인당 최대 {{cap}}%의 투표권을 행사할 수 있습니다.",
+    "limitNone": "1인 투표 한도 없음 (보유 투표권 전체 행사 가능)"
   },
   "empty": {
     "active": "현재 진행 중인 투표가 없어요.",
@@ -34,7 +35,7 @@
     "hint": "새로운 안건이 등록되면 이곳에 표시됩니다."
   },
   "new": {
-    "breadcrumb": "거버넌스",
+    "breadcrumb": "커뮤니티",
     "title": "새 안건 상정",
     "desc": "제안 내용을 작성하면 온체인에 기록되고 투표가 시작됩니다.",
     "validatorWarning": "로컬 validator가 실행되지 않아 DAO 데이터를 불러올 수 없습니다. validator를 실행 후 새로고침하세요.",
@@ -46,7 +47,7 @@
     "bodyHint": "왼쪽에서 내용을 입력하면 미리보기가 표시됩니다."
   },
   "detail": {
-    "breadcrumb": "거버넌스",
+    "breadcrumb": "커뮤니티",
     "proposer": "제안자",
     "proposedAt": "제안일",
     "deadline": "마감일",
@@ -64,7 +65,8 @@
     "votingPeriod": "투표 기간",
     "quorum": "최소 참여율",
     "approval": "가결 기준",
-    "votingCap": "투표 한도"
+    "votingCap": "투표 한도",
+    "votingCapNone": "제한 없음"
   },
   "vote": {
     "for": "찬성",
@@ -75,7 +77,9 @@
     "participants": "명 참여",
     "quorum": "정족수",
     "quorumMet": "충족",
-    "quorumShort": "미달"
+    "quorumShort": "미달",
+    "votedAs": "{{type}}으로 투표했습니다",
+    "checkingStatus": "투표 상태 확인 중..."
   },
   "form": {
     "author": "작성자",
@@ -94,7 +98,8 @@
     "submitting": "트랜잭션 처리 중...",
     "uploadingIssue": "Issue 등록 중...",
     "errorTitle": "제목을 입력하세요.",
-    "errorDaoNotInit": "DAO가 온체인에 초기화되지 않았습니다. 로컬 validator를 실행한 후 새로고침하세요."
+    "errorDaoNotInit": "DAO가 온체인에 초기화되지 않았습니다. 로컬 validator를 실행한 후 새로고침하세요.",
+    "errorDeadlineTooShort": "투표 마감일은 최소 1일 이후로 설정해야 합니다."
   },
   "card": {
     "ended": "종료됨",

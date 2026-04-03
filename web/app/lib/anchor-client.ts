@@ -3,18 +3,20 @@
  * dynamic import 사용 — 번들 사이즈 최적화.
  */
 import type { Connection } from "@solana/web3.js";
-import type { WalletContextState } from "@solana/wallet-adapter-react";
 import { PROGRAM_ID, USDC_MINT } from "~/lib/constants";
+import type { PrivyAnchorWallet } from "~/lib/privy-wallet";
 
 /**
  * Anchor Program 인스턴스 생성 (클라이언트 전용)
  */
-export async function getProgram(connection: Connection, wallet: WalletContextState) {
+export async function getProgram(connection: Connection, wallet: PrivyAnchorWallet) {
     const { Program, AnchorProvider } = await import("@coral-xyz/anchor");
     const { default: IDL } = await import("~/anchor-idl/rural_rest_rwa.json");
 
     const provider = new AnchorProvider(connection, wallet as any, { commitment: "confirmed" });
-    return new Program(IDL as any, provider);
+    // IDL에 address가 없을 수 있으므로 PROGRAM_ID로 주입
+    const idl = { ...IDL, address: PROGRAM_ID };
+    return new Program(idl as any, provider);
 }
 
 /**
@@ -55,6 +57,29 @@ export async function getUsdcMint() {
 }
 
 /**
+ * BookingEscrow PDA (seeds: ["booking_escrow", bookingId_no_dashes])
+ * UUID 하이픈 제거 → 36 chars → 32 bytes (Solana 최대 seed 길이)
+ */
+export async function deriveBookingEscrowPda(bookingId: string) {
+    const { PublicKey } = await import("@solana/web3.js");
+    const programId = new PublicKey(PROGRAM_ID);
+    const seedId = bookingId.replace(/-/g, ""); // 36 → 32 bytes
+    const [pda, bump] = PublicKey.findProgramAddressSync(
+        [Buffer.from("booking_escrow"), Buffer.from(seedId)],
+        programId
+    );
+    return { pda, bump };
+}
+
+/**
+ * BookingEscrow USDC vault (ATA of booking_escrow PDA)
+ */
+export async function deriveBookingEscrowVault(escrowPda: import("@solana/web3.js").PublicKey, usdcMint: import("@solana/web3.js").PublicKey) {
+    const { getAssociatedTokenAddressSync } = await import("@solana/spl-token");
+    return getAssociatedTokenAddressSync(usdcMint, escrowPda, true);
+}
+
+/**
  * RwaConfig PDA (seeds: ["rwa_config"])
  */
 export async function deriveRwaConfigPda() {
@@ -88,6 +113,12 @@ const COMMON_ERRORS: Record<string, string> = {
     "0x1": "USDC 잔액이 부족합니다",
     "Attempt to debit an account but found no record of a prior credit": "USDC 잔액이 부족합니다. 지갑에 USDC를 충전하세요.",
     "no record of a prior credit": "USDC 잔액이 부족합니다. 지갑에 USDC를 충전하세요.",
+    "StalePythPrice": "환율 데이터가 오래되었습니다. 잠시 후 다시 시도하세요.",
+    "PythConfidenceTooWide": "현재 환율이 불안정합니다. 잠시 후 다시 시도하세요.",
+    "InvalidPythPrice": "환율 오라클 오류. 잠시 후 다시 시도하세요.",
+    "BookingNotPending": "이미 처리된 예약입니다",
+    "CheckInNotPassed": "체크아웃 후 정산이 가능합니다",
+    "VotingPeriodTooShort": "투표 마감일은 최소 1일 이후로 설정해야 합니다",
 };
 
 export function parseAnchorError(err: any, componentErrors?: Record<string, string>): string {

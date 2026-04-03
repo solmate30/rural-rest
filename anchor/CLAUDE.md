@@ -87,7 +87,97 @@ refund          → transfer_checked: funding_vault → investor_usdc
 activate        → set_authority: MintTokens → None (영구 소각)
 distribute      → transfer_checked: authority_usdc → usdc_vault
 claim           → transfer_checked: usdc_vault → investor_usdc
+
+create_booking_escrow  → transfer_checked: guest_usdc → escrow_vault  (Pyth로 KRW→USDC 변환)
+release_booking_escrow → transfer_checked: escrow_vault → authority_usdc
+cancel_booking_escrow  → transfer_checked: escrow_vault → guest_usdc
 ```
+
+---
+
+## BookingEscrow (예약 USDC 에스크로)
+
+예약은 오프체인 DB(no gas), 결제만 온체인 USDC로 처리. Pyth 오라클로 KRW→USDC 온체인 변환.
+
+### Account 구조
+
+```rust
+pub struct BookingEscrow {
+    pub guest: Pubkey,
+    pub listing_id: String,   // max 32바이트 (PDA seed 제한)
+    pub booking_id: String,   // max 36바이트 (UUID)
+    pub usdc_mint: Pubkey,
+    pub amount_usdc: u64,     // micro-USDC (6자리)
+    pub check_in: i64,        // Unix timestamp
+    pub check_out: i64,
+    pub status: EscrowStatus, // Pending | Released | Refunded
+    pub bump: u8,
+}
+```
+
+**PDA seeds**: `["booking_escrow", booking_id.as_bytes()]`
+**Escrow vault**: ATA(usdc_mint, booking_escrow_pda)
+
+### Instructions
+
+| Instruction | 서명자 | 조건 | CPI |
+|-------------|--------|------|-----|
+| `create_booking_escrow(listing_id, booking_id, amount_krw, check_in, check_out)` | guest | check_in > now, amount_krw > 0 | guest_usdc → escrow_vault |
+| `release_booking_escrow(booking_id)` | authority or crank_authority | status==Pending, now >= check_out | escrow_vault → authority_usdc |
+| `cancel_booking_escrow(booking_id)` | guest | status==Pending, now < check_in | escrow_vault → guest_usdc |
+
+### Pyth KRW→USDC 변환 수학
+
+Pyth USD/KRW 피드: "1 KRW당 USD" (raw_price × 10^expo = USD per KRW)
+
+```
+// expo는 음수 (예: -10)
+// micro_usdc = amount_krw × raw_price × 1_000_000 / 10^|expo|
+let divisor = 10u128.checked_pow((-expo) as u32);
+let micro_usdc = (amount_krw as u128)
+    .checked_mul(raw_price)?
+    .checked_mul(1_000_000)?
+    .checked_div(divisor)?;
+amount_usdc = u64::try_from(micro_usdc)?;
+```
+
+검증:
+- staleness: `price_feed.get_price_no_older_than(now, 60)` (60초 초과 시 StalePythPrice)
+- confidence: `conf × 50 <= price` (2% 초과 시 PythConfidenceTooWide)
+
+### Pyth 피드 주소
+
+| 네트워크 | 피드 (USD/KRW) |
+|----------|---------------|
+| devnet   | `Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD` |
+| mainnet  | `GVXRSBjFk6e6J3NbVPXohDJetcTjaeeuykUpbQF8UoMU` |
+| Hermes REST feed_id | `e539120487c29b4defdf9a53d337316ea022a2688978a468f9efd847201be7e3` |
+
+### skip-oracle 테스트 모드
+
+Pyth 계정 없는 로컬/unit 테스트용:
+
+```bash
+# skip-oracle feature로 테스트 (1 USD = 1350 KRW 고정)
+anchor test -- --features skip-oracle
+```
+
+```toml
+# Cargo.toml [features]
+skip-oracle = []  # Pyth 우회, amount_usdc = amount_krw * 1_000_000 / 1350
+```
+
+> **주의**: `bare anchor test`는 oracle feature 없이 실행되어 테스트가 skip-oracle 경로를 탐. 항상 `--features` 명시.
+
+### 에러 코드 (6020~6024)
+
+| 코드 | 이름 | 조건 |
+|------|------|------|
+| 6020 | StalePythPrice | Pyth 가격이 60초 이상 오래됨 |
+| 6021 | PythConfidenceTooWide | 신뢰도 구간 > 2% (불안정한 시장) |
+| 6022 | InvalidPythPrice | 가격 음수 또는 zero |
+| 6023 | BookingNotPending | status != Pending |
+| 6024 | CheckInNotPassed | now < check_out (체크아웃 전 release 시도) |
 
 ---
 
@@ -188,5 +278,9 @@ approval = votes_for >= (votes_for + votes_against) * approval_threshold_bps / 1
 | voting_cap_bps MVP=10000 | 개인 투표 캡 제거, 완전 토큰 비례 투표 | MVP 단계에서 기관 투자자 없음; 향후 기관 cap 별도 도입 예정 |
 | voter_count 온체인 저장 | Proposal에 `voter_count: u32` 추가, cast_vote 시 +1 | UI에서 "X표 / 전체 Y표 (Z명 참여)" 표시 위해 RPC 추가 호출 없이 조회 |
 | mainnet: audit 필수 | Sec3 + OtterSec | 실제 투자금 보호 |
+| BookingEscrow PDA | seeds: ["booking_escrow", booking_id] | booking_id = UUID 36바이트, PDA별 독립 에스크로 |
+| KRW→USDC 온체인 변환 | Pyth USD/KRW 피드, checked 산술, u128 중간값 | 오프체인 환율 하드코딩 불신, trustless 변환 |
+| skip-oracle feature | 테스트 시 Pyth 우회 (1350 KRW/USD 고정) | 로컬 테스트 환경에서 Pyth 계정 불필요 |
+| release_booking: crank_authority | rwa_config.crank_authority도 release 가능 | 자동 정산 크론잡 지원 |
 
 ---

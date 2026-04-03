@@ -31,7 +31,7 @@ interface SaveMintBody {
 }
 
 export async function action({ request }: { request: Request }) {
-    await requireUser(request, ["host", "admin"]);
+    await requireUser(request, ["spv", "admin"]);
 
     const body = await request.json() as SaveMintBody;
     const { listingId, tokenMint, valuationKrw, pricePerTokenUsdc, minFundingBps, fundingDeadlineTs } = body;

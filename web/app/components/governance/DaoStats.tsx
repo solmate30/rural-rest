@@ -25,7 +25,7 @@ export function DaoStats({ config }: { config: DaoConfigData }) {
         { label: t("stats.votingPeriod"), value: formatDuration(config.votingPeriod), unit: votingUnit },
         { label: t("stats.quorum"),        value: `${config.quorumBps / 100}`,                       unit: "%" },
         { label: t("stats.approval"),      value: `${config.approvalThresholdBps / 100}`,            unit: "%" },
-        { label: t("stats.votingCap"),     value: `${(config.votingCapBps / 100).toLocaleString()}`, unit: "%" },
+        { label: t("stats.votingCap"),     value: config.votingCapBps >= 10000 ? t("stats.votingCapNone") : `${config.votingCapBps / 100}`, unit: config.votingCapBps >= 10000 ? "" : "%" },
     ];
 
     return (

@@ -6,6 +6,6 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   plugins: [reactRouter(), tsconfigPaths()],
   ssr: {
-    noExternal: ["better-auth", "tailwind-merge", "clsx"],
+    noExternal: ["better-auth", "tailwind-merge", "clsx", "@privy-io/react-auth", "@privy-io/js-sdk-core"],
   },
 });

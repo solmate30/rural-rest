@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
+import { useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
 import {
     getDaoProgram,
@@ -14,11 +15,6 @@ import {
 } from "~/lib/dao-client";
 import type { ProposalData } from "~/lib/dao.onchain.server";
 
-const VOTE_TYPE_LABELS: Record<string, string> = {
-    for: "찬성",
-    against: "반대",
-    abstain: "기권",
-};
 
 interface VotePanelProps {
     proposal: ProposalData;
@@ -28,8 +24,10 @@ interface VotePanelProps {
 }
 
 export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: VotePanelProps) {
-    const wallet = useWallet();
+    const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { t } = useTranslation("governance") as any;
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -45,17 +43,17 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
 
     // 기존 투표 확인 + 투표권 조회
     const checkStatus = useCallback(async () => {
-        if (!wallet.publicKey || !connection) return;
+        if (!wallet?.publicKey || !connection) return;
         setCheckingVote(true);
         try {
             // VoteRecord 확인
-            const record = await fetchVoteRecord(connection, wallet, proposal.id, wallet.publicKey);
+            const record = await fetchVoteRecord(connection, wallet, proposal.id, wallet?.publicKey);
             setExistingVote(record);
 
             // 투표권 조회 (RWA positions + council token)
             if (!record) {
-                const positions = await fetchVoterPositions(connection, wallet.publicKey, activeListingIds);
-                const councilBalance = await checkCouncilTokenBalance(connection, councilMint, wallet.publicKey);
+                const positions = await fetchVoterPositions(connection, wallet?.publicKey, activeListingIds);
+                const councilBalance = await checkCouncilTokenBalance(connection, councilMint, wallet?.publicKey);
                 setRwaCount(positions.length);
                 setHasCouncilToken(councilBalance > 0);
                 setVotingPower(positions.length + (councilBalance > 0 ? 1 : 0));
@@ -65,14 +63,14 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
         } finally {
             setCheckingVote(false);
         }
-    }, [wallet.publicKey, connection, proposal.id, activeListingIds]);
+    }, [wallet?.publicKey, connection, proposal.id, activeListingIds]);
 
     useEffect(() => {
         checkStatus();
     }, [checkStatus]);
 
     const handleVote = async (voteType: "for" | "against" | "abstain") => {
-        if (!wallet.publicKey || !wallet.signTransaction) return;
+        if (!wallet || !wallet.publicKey) return;
         setLoading(true);
         setError(null);
 
@@ -132,11 +130,12 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
         }
     };
 
-    // 지갑 미연결
-    if (!wallet.publicKey) {
+    // 지갑 미준비
+    if (!wallet?.publicKey) {
         return (
             <div className="text-center py-6 text-[#A1887F]">
-                <p className="mt-2 text-sm font-medium">투표하려면 지갑을 연결하세요</p>
+                <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                <p className="mt-2 text-sm font-medium">지갑 준비 중...</p>
             </div>
         );
     }
@@ -152,7 +151,7 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
         return (
             <div className="rounded-xl bg-[#FAF9F6] border border-[#D7CCC8]/50 p-5 text-center shadow-sm">
                 <p className="text-sm font-bold text-[#3E2723]">
-                    {VOTE_TYPE_LABELS[existingVote.voteType]}으로 투표했습니다
+                    {t("vote.votedAs", { type: t(`vote.${existingVote.voteType}`) })}
                 </p>
             </div>
         );
@@ -162,7 +161,7 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
     if (checkingVote) {
         return (
             <div className="text-center py-6 text-[#A1887F] text-sm font-medium">
-                투표 상태 확인 중...
+                {t("vote.checkingStatus")}
             </div>
         );
     }
@@ -189,7 +188,7 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
                     disabled={loading}
                     className="flex flex-col items-center justify-center gap-1.5 h-auto py-4 rounded-xl bg-[#5E6E5A] hover:bg-[#4A5746] text-white shadow-sm transition-transform active:scale-95"
                 >
-                    <span className="text-xs font-bold">찬성</span>
+                    <span className="text-xs font-bold">{t("vote.for")}</span>
                 </Button>
                 <Button
                     variant="destructive"
@@ -198,7 +197,7 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
                     disabled={loading}
                     className="flex flex-col items-center justify-center gap-1.5 h-auto py-4 rounded-xl bg-[#A94438] hover:bg-[#8F372C] text-white shadow-sm transition-transform active:scale-95"
                 >
-                    <span className="text-xs font-bold">반대</span>
+                    <span className="text-xs font-bold">{t("vote.against")}</span>
                 </Button>
                 <Button
                     variant="outline"
@@ -207,7 +206,7 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
                     disabled={loading}
                     className="flex flex-col items-center justify-center gap-1.5 h-auto py-4 rounded-xl border-[#D7CCC8] text-[#5D4037] hover:bg-[#FAF9F6] hover:border-[#8D6E63] shadow-sm transition-all active:scale-95"
                 >
-                    <span className="text-xs font-bold">기권</span>
+                    <span className="text-xs font-bold">{t("vote.abstain")}</span>
                 </Button>
             </div>
 

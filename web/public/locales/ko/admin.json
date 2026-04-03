@@ -13,7 +13,8 @@
       "propertyStatus": "매물 현황",
       "investmentStatus": "투자 현황",
       "pipeline": "토큰화 파이프라인",
-      "allListings": "전체 매물"
+      "allListings": "전체 매물",
+      "pendingBookings": "대기 중 예약"
     },
     "stats": {
       "totalListings": "전체 숙소",
@@ -72,6 +73,23 @@
       "totalSupplyVal": "1억 개",
       "tokenPriceLabel": "토큰 1개"
     }
+  },
+  "pending": {
+    "title": "승인 대기 중인 예약",
+    "subtitle": "호스트 승인 전까지 결제금이 보류됩니다",
+    "empty": "승인 대기 중인 예약이 없습니다",
+    "colGuest": "게스트",
+    "colProperty": "숙소",
+    "colDates": "날짜",
+    "colAmount": "금액",
+    "colMethod": "결제 수단",
+    "colActions": "처리",
+    "methodCard": "카드",
+    "methodUsdc": "USDC",
+    "approve": "승인",
+    "reject": "거절 및 환불",
+    "processing": "처리 중...",
+    "actionError": "처리 실패"
   },
   "edit": {
     "title": "매물 수정",

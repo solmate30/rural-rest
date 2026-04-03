@@ -1,5 +1,5 @@
 {
-  "title": "Governance",
+  "title": "Community",
   "subtitle": "Vote on community policies and fund allocation.",
   "daoNotReady": "DAO has not been initialized yet.",
   "newProposal": "Submit a Proposal",
@@ -25,7 +25,8 @@
     "approval": "Approval Threshold",
     "approvalDesc": "After quorum is met, a {{threshold}}% approval rate is required to pass.",
     "limit": "Vote Limit per Person",
-    "limitDesc": "Each voter may cast up to {{cap}} votes."
+    "limitDesc": "Each voter may cast up to {{cap}}% of total voting power.",
+    "limitNone": "No per-voter cap (full voting power applies)"
   },
   "empty": {
     "active": "No active proposals right now.",
@@ -34,7 +35,7 @@
     "hint": "New proposals will appear here."
   },
   "new": {
-    "breadcrumb": "Governance",
+    "breadcrumb": "Community",
     "title": "Submit a Proposal",
     "desc": "Your proposal will be recorded on-chain and voting will begin immediately.",
     "validatorWarning": "Local validator is not running. DAO data cannot be loaded. Please start the validator and refresh.",
@@ -46,7 +47,7 @@
     "bodyHint": "Write on the left to see a live preview."
   },
   "detail": {
-    "breadcrumb": "Governance",
+    "breadcrumb": "Community",
     "proposer": "Proposer",
     "proposedAt": "Proposed",
     "deadline": "Deadline",
@@ -64,7 +65,8 @@
     "votingPeriod": "Voting Period",
     "quorum": "Quorum",
     "approval": "Approval",
-    "votingCap": "Voting Cap"
+    "votingCap": "Voting Cap",
+    "votingCapNone": "No limit"
   },
   "vote": {
     "for": "For",
@@ -75,7 +77,9 @@
     "participants": " voters",
     "quorum": "Quorum",
     "quorumMet": "Met",
-    "quorumShort": "Not met"
+    "quorumShort": "Not met",
+    "votedAs": "You voted {{type}}",
+    "checkingStatus": "Checking vote status..."
   },
   "form": {
     "author": "Author",
@@ -94,7 +98,8 @@
     "submitting": "Processing...",
     "uploadingIssue": "Creating issue...",
     "errorTitle": "Please enter a title.",
-    "errorDaoNotInit": "DAO is not initialized on-chain. Please start the local validator and refresh."
+    "errorDaoNotInit": "DAO is not initialized on-chain. Please start the local validator and refresh.",
+    "errorDeadlineTooShort": "Voting deadline must be at least 1 day from now."
   },
   "card": {
     "ended": "Ended",

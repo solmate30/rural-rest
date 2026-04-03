@@ -4,11 +4,14 @@
     "required": "모든 항목을 입력해주세요.",
     "checkoutBeforeCheckin": "체크아웃은 체크인 이후 날짜여야 합니다.",
     "pastDate": "지난 날짜는 선택할 수 없어요.",
-    "guestLimit": "최대 {{max}}명까지 예약 가능합니다."
+    "guestLimit": "최대 {{max}}명까지 예약 가능합니다.",
+    "dateConflict": "선택한 날짜에 이미 예약이 있습니다. 다른 날짜를 선택해주세요."
   },
   "confirm": {
-    "title": "예약이 접수되었어요!",
-    "message": "호스트가 24시간 내에 예약을 확인해드립니다.",
+    "title": "예약이 확정됐어요!",
+    "message": "즐거운 여행 되세요.",
+    "pendingTitle": "결제 완료 — 승인 대기 중",
+    "pendingMessage": "호스트가 24시간 내에 승인하면 예약이 확정돼요. 거절 시 전액 환불됩니다.",
     "bookingId": "예약 번호",
     "checkin": "체크인",
     "checkout": "체크아웃",
@@ -16,6 +19,7 @@
     "guestsCount": "{{count}}명",
     "total": "총 금액",
     "backHome": "홈으로 돌아가기",
+    "myBookings": "내 예약 보기",
     "viewProperty": "숙소 다시 보기"
   },
   "section": {
@@ -26,6 +30,7 @@
   "field": {
     "checkin": "체크인",
     "checkout": "체크아웃",
+    "selectDate": "날짜 선택",
     "guests": "인원",
     "maxGuests": "최대 {{max}}명",
     "shuttleFree": "무료 셔틀",
@@ -41,5 +46,26 @@
   },
   "submit": "예약 확정하기",
   "submitting": "처리 중...",
-  "noCharge": "호스트 승인 전 결제 없음"
+  "noCharge": "호스트 승인 전 결제 없음",
+  "payment": {
+    "title": "결제",
+    "nightsGuests": "{{nights}}박 · {{guests}}명",
+    "amount": "결제 금액",
+    "pythNote": "* 실제 USDC는 Pyth 오라클 환율로 결정",
+    "kycRequired": "결제 전 본인인증이 필요합니다",
+    "kycButton": "본인인증 하기",
+    "walletRequired": "결제를 위해 Solana 지갑을 연결하세요",
+    "connectWallet": "지갑 연결",
+    "walletConnected": "지갑 연결됨",
+    "payButton": "{{usdc}} USDC 결제",
+    "methodCard": "카드 / PayPal",
+    "methodCardDesc": "신용카드, 체크카드, PayPal",
+    "methodUsdc": "USDC (암호화폐)",
+    "methodUsdcDesc": "Solana 지갑으로 결제",
+    "cardPayButton": "₩{{amount}} 결제하기",
+    "preparingCard": "카드 결제 준비 중...",
+    "failTitle": "결제에 실패했습니다",
+    "error": "결제 중 오류가 발생했습니다"
+  },
+  "guestOption": "{{n}}명"
 }

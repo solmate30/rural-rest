@@ -8,6 +8,9 @@ import type enKyc from "../../public/locales/en/kyc.json";
 import type enGovernance from "../../public/locales/en/governance.json";
 import type enOperator from "../../public/locales/en/operator.json";
 import type enAdmin from "../../public/locales/en/admin.json";
+import type enHost from "../../public/locales/en/host.json";
+import type enMyBookings from "../../public/locales/en/myBookings.json";
+import type enOperator from "../../public/locales/en/operator.json";
 
 declare module "i18next" {
     interface CustomTypeOptions {
@@ -23,6 +26,9 @@ declare module "i18next" {
             governance: typeof enGovernance;
             operator: typeof enOperator;
             admin: typeof enAdmin;
+            host: typeof enHost;
+            myBookings: typeof enMyBookings;
+            operator: typeof enOperator;
         };
     }
 }

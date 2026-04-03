@@ -4,7 +4,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 // RWA 프로그램의 account 구조를 직접 역직렬화하기 위해 import
 use rural_rest_rwa::{InvestorPosition, PropertyStatus, PropertyToken};
 
-declare_id!("3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX");
+declare_id!("142FMJgEw2H4EYzqHk1mEsLoT4aDkfLJJ4UR5ELxmTU1");
 
 // =====================
 // Constants

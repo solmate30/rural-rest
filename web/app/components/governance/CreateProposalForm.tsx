@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 import { useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
 import {
@@ -18,6 +18,7 @@ import {
     parseDaoError,
 } from "~/lib/dao-client";
 import type { DaoConfigData } from "~/lib/dao.onchain.server";
+import { toLocalDatetimeStr } from "~/lib/date-utils";
 
 export const CATEGORIES = [
     { value: "operations", label: "운영", arg: { operations: {} } },
@@ -41,7 +42,7 @@ export function CreateProposalForm({
     onClose,
     onPreviewChange,
 }: CreateProposalFormProps) {
-    const wallet = useWallet();
+    const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { t } = useTranslation("governance") as any;
@@ -52,7 +53,7 @@ export function CreateProposalForm({
     // 기본 마감일: 7일 후
     const defaultDeadline = new Date(Date.now() + 7 * 86400 * 1000);
     const [votingDeadline, setVotingDeadline] = useState<string>(
-        defaultDeadline.toISOString().slice(0, 16) // "YYYY-MM-DDTHH:mm"
+        toLocalDatetimeStr(defaultDeadline)
     );
     const [loading, setLoading] = useState(false);
     const [issueLoading, setIssueLoading] = useState(false);
@@ -74,7 +75,7 @@ export function CreateProposalForm({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!wallet.publicKey || !wallet.signTransaction) return;
+        if (!wallet || !wallet.publicKey) return;
 
         if (!title.trim()) {
             setError(t("form.errorTitle"));
@@ -119,7 +120,7 @@ export function CreateProposalForm({
                 setIssueLoading(false);
             }
 
-            const program = await getDaoProgram(connection, wallet);
+            const program = await getDaoProgram(connection, wallet!);
             const { SystemProgram } = await import("@solana/web3.js");
             const { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID } = await import("@solana/spl-token");
             const { PublicKey } = await import("@solana/web3.js");
@@ -130,7 +131,7 @@ export function CreateProposalForm({
             const councilMintPk = new PublicKey(daoConfig.councilMint);
             const creatorCouncilAta = getAssociatedTokenAddressSync(
                 councilMintPk,
-                wallet.publicKey,
+                wallet!.publicKey,
                 false,
                 TOKEN_2022_PROGRAM_ID
             );
@@ -142,7 +143,12 @@ export function CreateProposalForm({
             const deadlineTs = Math.floor(new Date(votingDeadline).getTime() / 1000);
             const nowTs = Math.floor(Date.now() / 1000);
             const periodSecs = deadlineTs - nowTs;
-            const customPeriod = new BN(periodSecs > 0 ? periodSecs : 0);
+            if (periodSecs < 86400) {
+                setError(t("form.errorDeadlineTooShort"));
+                setLoading(false);
+                return;
+            }
+            const customPeriod = new BN(periodSecs);
 
             await (program.methods as any)
                 .createProposal(
@@ -152,7 +158,7 @@ export function CreateProposalForm({
                     customPeriod,
                 )
                 .accounts({
-                    creator: wallet.publicKey,
+                    creator: wallet!.publicKey,
                     daoConfig: daoConfigPda,
                     proposal: proposalPda,
                     creatorCouncilAta,
@@ -216,8 +222,8 @@ export function CreateProposalForm({
                         setVotingDeadline(e.target.value);
                         notifyPreview({ votingDeadline: e.target.value });
                     }}
-                    min={new Date(Date.now() + 86400 * 1000).toISOString().slice(0, 16)}
-                    max={new Date(Date.now() + 30 * 86400 * 1000).toISOString().slice(0, 16)}
+                    min={toLocalDatetimeStr(new Date(Date.now() + 86400 * 1000))}
+                    max={toLocalDatetimeStr(new Date(Date.now() + 30 * 86400 * 1000))}
                     className="w-full rounded-lg border border-[#D7CCC8] bg-[#FAF9F6] px-4 py-3.5 text-[15px] text-[#3E2723] focus:outline-none focus:ring-2 focus:ring-[#8D6E63]/30 focus:border-[#8D6E63] transition-all duration-300"
                 />
                 <p className="text-[11px] text-[#A1887F]">

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useConnection } from "@solana/wallet-adapter-react";
 import { Button } from "~/components/ui/button";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 
 import { PROGRAM_ID, USDC_MINT } from "~/lib/constants";
 import { getProgram, derivePdas, parseAnchorError } from "~/lib/anchor-client";
@@ -10,12 +11,12 @@ interface Props {
     rwaTokenId: string;
     propertyName: string;
     tokensOwned: number;
-    refundUsdc: number; // totalValue (USDC)
+    refundUsdc: number;
     onCancelled?: () => void;
 }
 
 export function CancelPositionButton({ listingId, rwaTokenId, propertyName, tokensOwned, refundUsdc, onCancelled }: Props) {
-    const walletCtx = useWallet();
+    const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -23,7 +24,8 @@ export function CancelPositionButton({ listingId, rwaTokenId, propertyName, toke
     const [errorMsg, setErrorMsg] = useState("");
 
     async function handleCancel() {
-        if (!walletCtx.publicKey) return;
+        if (!wallet) return;
+        const investor = wallet.publicKey;
         setLoading(true);
         setErrorMsg("");
 
@@ -35,8 +37,7 @@ export function CancelPositionButton({ listingId, rwaTokenId, propertyName, toke
                 TOKEN_2022_PROGRAM_ID,
             } = await import("@solana/spl-token");
 
-            const investor = walletCtx.publicKey;
-            const program = await getProgram(connection, walletCtx);
+            const program = await getProgram(connection, wallet);
             const { propertyToken, fundingVault, investorPosition } = await derivePdas(listingId, investor);
 
             const usdcMint = new PublicKey(USDC_MINT);
@@ -150,7 +151,7 @@ export function CancelPositionButton({ listingId, rwaTokenId, propertyName, toke
                                 </Button>
                                 <Button
                                     onClick={handleCancel}
-                                    disabled={loading}
+                                    disabled={loading || !wallet}
                                     variant="destructive"
                                     className="flex-1 rounded-xl font-bold"
                                 >
