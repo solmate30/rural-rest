@@ -7,6 +7,7 @@ import { db } from "~/db/index.server";
 import { bookings } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import { Header, Footer, Button, Card } from "~/components/ui-mockup";
+import { dbDateToLocalStr } from "~/lib/date-utils";
 
 export async function loader({ request }: Route.LoaderArgs) {
     const user = await requireUser(request);
@@ -34,8 +35,8 @@ export async function loader({ request }: Route.LoaderArgs) {
         booking: {
             id: booking.id,
             totalPrice: booking.totalPrice,
-            checkIn: booking.checkIn.toISOString().split("T")[0],
-            checkOut: booking.checkOut.toISOString().split("T")[0],
+            checkIn: dbDateToLocalStr(booking.checkIn),
+            checkOut: dbDateToLocalStr(booking.checkOut),
             listingId: booking.listingId,
         },
         pending: booking.status === "pending",

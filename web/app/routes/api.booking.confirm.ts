@@ -4,6 +4,7 @@ import { bookings } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import { Connection } from "@solana/web3.js";
 import { RPC_URL } from "~/lib/constants.server";
+import { parseLocalDate } from "~/lib/date-utils";
 
 /**
  * POST /api/booking/confirm
@@ -65,18 +66,18 @@ export async function action({ request }: { request: Request }) {
         return Response.json({ ok: true });
     }
 
-    // 신규 insert (결제 완료 → confirmed)
+    // 신규 insert (에스크로 잠김 → 호스트 승인 대기)
     await db.insert(bookings).values({
         id: bookingId,
         listingId,
         guestId: user.id,
-        checkIn: new Date(checkIn),
-        checkOut: new Date(checkOut),
+        checkIn: parseLocalDate(checkIn),
+        checkOut: parseLocalDate(checkOut),
         totalPrice: totalPrice ?? 0,
         totalPriceUsdc: amountUsdc,
         escrowPda,
         onchainPayTx: txSignature,
-        status: "confirmed",
+        status: "pending",
     });
 
     return Response.json({ ok: true });

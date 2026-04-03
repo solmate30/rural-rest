@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Form, useNavigation, Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import type { Route } from "./+types/book";
 import { requireUser } from "~/lib/auth.server";
@@ -10,7 +10,9 @@ import { db } from "~/db/index.server";
 import { listings, rwaTokens, bookings } from "~/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
+import { throttledSync } from "~/lib/rwa.server";
 import { PYTH_USD_KRW_FEED, KRW_PER_USDC_FALLBACK } from "~/lib/constants";
+import { parseLocalDate, parseLocalDateToUnix, toLocalDateStr } from "~/lib/date-utils";
 import { Header, Footer, Button, Card } from "~/components/ui-mockup";
 import { useKyc } from "~/components/KycProvider";
 import { usePythRate } from "~/hooks/usePythRate";
@@ -67,6 +69,7 @@ async function getListingById(id: string | undefined) {
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
+  await throttledSync().catch(() => {});
   const user = await requireUser(request);
   const listing = await getListingById(params.id);
   if (!listing) throw new Response("Not Found", { status: 404 });
@@ -97,10 +100,10 @@ export async function action({ params, request }: Route.ActionArgs) {
   if (!checkIn || !checkOut || !guests) {
     return { success: false as const, error: "error.required" };
   }
-  if (new Date(checkIn) >= new Date(checkOut)) {
+  if (parseLocalDate(checkIn) >= parseLocalDate(checkOut)) {
     return { success: false as const, error: "error.checkoutBeforeCheckin" };
   }
-  if (new Date(checkIn) < new Date(new Date().toDateString())) {
+  if (parseLocalDate(checkIn) <= parseLocalDate(toLocalDateStr(new Date()))) {
     return { success: false as const, error: "error.pastDate" };
   }
   if (guests > listing.maxGuests) {
@@ -109,8 +112,8 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   // 날짜 중복 예약 체크 (pending/confirmed 상태의 예약과 겹치는지 확인)
   // DB는 Unix timestamp(초) 저장 — ms → sec 변환 필수
-  const checkInSec = Math.floor(new Date(checkIn).getTime() / 1000);
-  const checkOutSec = Math.floor(new Date(checkOut).getTime() / 1000);
+  const checkInSec = parseLocalDateToUnix(checkIn);
+  const checkOutSec = parseLocalDateToUnix(checkOut);
   const overlapping = await db
     .select({ id: bookings.id })
     .from(bookings)
@@ -238,8 +241,7 @@ function CardPayStep({ booking }: { booking: BookingPayload }) {
 function PaymentStep({ booking, listingId }: { booking: BookingPayload; listingId: string }) {
   const { t } = useTranslation("book");
   const { connection } = useConnection();
-  const wallet = useWallet();
-  const { setVisible } = useWalletModal();
+  const wallet = usePrivyAnchorWallet();
   const { isKycCompleted } = useKyc();
   const [payMethod, setPayMethod] = useState<"card" | "usdc">("card");
   const [txState, setTxState] = useState<"idle" | "paying" | "done" | "error">("idle");
@@ -247,8 +249,8 @@ function PaymentStep({ booking, listingId }: { booking: BookingPayload; listingI
   const { rate: pythRate, loading: rateLoading } = usePythRate();
 
   async function handlePay() {
-    if (!wallet.publicKey || !wallet.connected) {
-      setVisible(true);
+    if (!wallet) {
+      setErrorMsg("결제 준비가 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.");
       return;
     }
     setTxState("paying");
@@ -266,8 +268,8 @@ function PaymentStep({ booking, listingId }: { booking: BookingPayload; listingI
       const guestUsdc = getAssociatedTokenAddressSync(usdcMint, wallet.publicKey);
       const pythPriceFeed = new PublicKey(PYTH_USD_KRW_FEED);
 
-      const checkInTs = Math.floor(new Date(booking.checkIn).getTime() / 1000);
-      const checkOutTs = Math.floor(new Date(booking.checkOut).getTime() / 1000);
+      const checkInTs = parseLocalDateToUnix(booking.checkIn);
+      const checkOutTs = parseLocalDateToUnix(booking.checkOut);
 
       // UUID 하이픈 제거 (36 → 32 bytes) — Solana seed 최대 길이 32 bytes 제한
       const bookingIdSeed = booking.id.replace(/-/g, "");
@@ -442,22 +444,19 @@ function PaymentStep({ booking, listingId }: { booking: BookingPayload; listingI
                   {t("payment.kycButton")}
                 </Button>
               </div>
-            ) : !wallet.connected ? (
+            ) : !wallet ? (
               <div className="space-y-3">
-                <p className="text-sm text-muted-foreground text-center">{t("payment.walletRequired")}</p>
-                <Button
-                  onClick={() => setVisible(true)}
-                  className="w-full h-14 text-lg font-bold rounded-2xl"
-                >
-                  {t("payment.connectWallet")}
-                </Button>
+                <div className="flex items-center justify-center gap-2 text-stone-400 text-sm py-6">
+                  <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                  결제 준비 중입니다. 잠시만 기다려주세요.
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm bg-green-50 rounded-xl p-3">
                   <span className="text-green-700 font-medium">{t("payment.walletConnected")}</span>
                   <span className="font-mono text-xs text-muted-foreground">
-                    {wallet.publicKey?.toBase58().slice(0, 6)}...{wallet.publicKey?.toBase58().slice(-4)}
+                    {wallet.publicKey.toBase58().slice(0, 6)}...{wallet.publicKey.toBase58().slice(-4)}
                   </span>
                 </div>
                 <Button
@@ -493,12 +492,9 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
   // URL 파라미터에서 초기 날짜 파싱 (YYYY-MM-DD 로컬 문자열)
   function parseDateParam(s: string | null): Date | undefined {
     if (!s) return undefined;
-    const [y, m, d] = s.split("-").map(Number);
-    if (!y || !m || !d) return undefined;
-    return new Date(y, m - 1, d); // 로컬 시간 기준 생성 (UTC 파싱 버그 방지)
-  }
-  function toLocalDateStr(d: Date) {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const parts = s.split("-").map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return undefined;
+    return parseLocalDate(s);
   }
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
@@ -584,7 +580,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                               if (!newTo) setCalCheckOutOpen(true);
                             }}
                             disabled={[
-                              { before: new Date() },
+                              { before: new Date(new Date().setHours(24, 0, 0, 0)) },
                               ...bookedRanges.map((r) => ({ from: r.checkIn, to: r.checkOut })),
                             ]}
                             locale={calLocale}
@@ -614,7 +610,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
                               setCalCheckOutOpen(false);
                             }}
                             disabled={[
-                              { before: dateRange?.from ? new Date(dateRange.from.getTime() + 86400000) : new Date() },
+                              { before: dateRange?.from ? new Date(dateRange.from.getTime() + 86400000) : new Date(new Date().setHours(48, 0, 0, 0)) },
                               ...bookedRanges.map((r) => ({ from: r.checkIn, to: r.checkOut })),
                             ]}
                             locale={calLocale}

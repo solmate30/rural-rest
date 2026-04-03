@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useNavigate, useLocation } from "react-router";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 import { Card, Input } from "~/components/ui-mockup";
 import { Button } from "~/components/ui/button";
 import { useToast } from "~/hooks/use-toast";
@@ -51,16 +51,12 @@ export function PurchaseCard({
     tokenName, tokenPrice, usdcPrice, apy, fundingProgress, availableTokens,
     totalSupply, holders, soldTokens, fundingDeadlineMs,
 }: Props) {
-    const walletCtx = useWallet();
-    const { connected, publicKey } = walletCtx;
+    const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
-    const { setVisible } = useWalletModal();
     const navigate = useNavigate();
+    const location = useLocation();
     const { toast } = useToast();
-    const { isKycCompleted, registeredWallet } = useKyc();
-    const isWalletMismatch = connected && publicKey && registeredWallet
-        ? publicKey.toBase58() !== registeredWallet
-        : false;
+    const { isKycCompleted } = useKyc();
 
     const [tokenCount, setTokenCount] = useState(1);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -77,7 +73,8 @@ export function PurchaseCard({
     const maxBuyable = Math.min(availableTokens, maxPerInvestor);
 
     const handleInvest = async () => {
-        if (!publicKey || !tokenMint) return;
+        if (!wallet || !tokenMint) return;
+        const { publicKey } = wallet;
         setIsProcessing(true);
         try {
             const { BN } = await import("@coral-xyz/anchor");
@@ -89,7 +86,7 @@ export function PurchaseCard({
                 TOKEN_PROGRAM_ID,
             } = await import("@solana/spl-token");
 
-            const program = await getProgram(connection, walletCtx);
+            const program = await getProgram(connection, wallet);
             const { propertyToken, fundingVault, investorPosition, programId } = await derivePdas(listingId, publicKey);
 
             const usdcMint = new PublicKey(USDC_MINT);
@@ -303,49 +300,27 @@ export function PurchaseCard({
                         펀딩 목표가 달성되었습니다.<br />첫 배당은 운영 시작 익월에 지급됩니다.
                     </p>
                 </div>
-            ) : connected ? (
-                isWalletMismatch ? (
-                    <div className="space-y-2">
-                        <Button disabled variant="secondary" size="xl" className="w-full cursor-not-allowed">
-                            <span className="material-symbols-outlined text-[20px]">block</span>
-                            인증된 지갑으로 연결해주세요
-                        </Button>
-                        <p className="text-center text-xs text-stone-500 leading-relaxed">
-                            KYC 인증된 지갑과 다릅니다.<br />
-                            인증된 지갑으로 변경 후 다시 시도해주세요.
-                        </p>
-                    </div>
-                ) : isKycCompleted ? (
-                    <Button
-                        variant="success"
-                        size="xl"
-                        className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
-                        onClick={handleInvest}
-                        disabled={isProcessing}
-                    >
-                        <span className="material-symbols-outlined text-[20px]">
-                            {isProcessing ? "hourglass_empty" : "account_balance_wallet"}
-                        </span>
-                        {isProcessing ? "Processing Transaction..." : "Buy with USDC"}
-                    </Button>
-                ) : (
-                    <Button
-                        variant="success"
-                        size="xl"
-                        className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
-                        onClick={() => navigate("/kyc")}
-                    >
-                        Complete KYC to Invest
-                    </Button>
-                )
+            ) : isKycCompleted ? (
+                <Button
+                    variant="success"
+                    size="xl"
+                    className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={handleInvest}
+                    disabled={isProcessing}
+                >
+                    <span className="material-symbols-outlined text-[20px]">
+                        {isProcessing ? "hourglass_empty" : "account_balance_wallet"}
+                    </span>
+                    {isProcessing ? "Processing Transaction..." : "Buy with USDC"}
+                </Button>
             ) : (
                 <Button
                     variant="success"
                     size="xl"
                     className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={() => setVisible(true)}
+                    onClick={() => navigate(`/kyc?return=${encodeURIComponent(location.pathname + location.search)}`)}
                 >
-                    Connect Wallet to Invest
+                    Complete KYC to Invest
                 </Button>
             )}
 

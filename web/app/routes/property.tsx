@@ -13,6 +13,7 @@ import { detectLocale } from "~/lib/i18n.server";
 import { applyListingLocale, translateAmenities } from "~/data/listing-translations";
 import { InvestmentUpsellCard } from "~/components/InvestmentUpsellCard";
 import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
+import { toLocalDateStr } from "~/lib/date-utils";
 import { Calendar } from "~/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { ko as koLocale, enUS } from "date-fns/locale";
@@ -72,6 +73,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
             lng: listings.lng,
             hostId: listings.hostId,
             tokenStatus: rwaTokens.status,
+            totalSupply: rwaTokens.totalSupply,
+            tokensSold: rwaTokens.tokensSold,
+            fundingDeadline: rwaTokens.fundingDeadline,
+            minFundingBps: rwaTokens.minFundingBps,
         })
         .from(listings)
         .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
@@ -85,6 +90,19 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         const onchain = await fetchPropertyOnchain(params.id!);
         if (onchain) {
             row.tokenStatus = onchain.status as typeof row.tokenStatus;
+            row.tokensSold = onchain.tokensSold;
+        }
+        // invest.tsx와 동일한 데드라인 보정: 기간 경과 + 목표 미달 → failed
+        if (row.tokenStatus === "funding" && row.fundingDeadline) {
+            const deadlineMs = new Date(row.fundingDeadline).getTime();
+            if (Date.now() > deadlineMs) {
+                const totalSupply = row.totalSupply ?? 0;
+                const tokensSold = row.tokensSold ?? 0;
+                const progressBps = totalSupply > 0 ? (tokensSold / totalSupply) * 10000 : 0;
+                if (progressBps < (row.minFundingBps ?? 6000)) {
+                    row.tokenStatus = "failed" as typeof row.tokenStatus;
+                }
+            }
         }
     }
 
@@ -161,10 +179,6 @@ export default function PropertyDetail() {
     const { i18n } = useTranslation();
     const calLocale = i18n.language === "ko" ? koLocale : enUS;
 
-    // toISOString()은 UTC 기준이라 한국(UTC+9)에서 하루 밀림 → 로컬 날짜 컴포넌트 사용
-    function toLocalDateStr(d: Date) {
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    }
     const checkIn = dateRange?.from ? toLocalDateStr(dateRange.from) : "";
     const checkOut = dateRange?.to ? toLocalDateStr(dateRange.to) : "";
     const nights = dateRange?.from && dateRange?.to
