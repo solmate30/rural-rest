@@ -68,6 +68,7 @@
     "revenueNote": "최근 12개월 · 1,000토큰 기준",
     "revenueNoteEst": "예상 · 1,000토큰 기준",
     "location": "위치 및 지도",
+    "reviews": "{{count}}개 리뷰",
     "fundingClosed": "모집 종료",
     "refundNotice": "모집 목표를 달성하지 못했습니다. 투자하신 금액을 환불받으실 수 있어요."
   },
@@ -92,6 +93,10 @@
     "colValue": "평가액",
     "colDividend": "미수령 배당",
     "tokens": "개"
+  },
+  "upsell": {
+    "title": "이 따스한 공간의\n공동 주인이 되어주세요",
+    "button": "이 집의 한 조각 소유하기"
   },
   "dividends": {
     "title": "배당 이력",

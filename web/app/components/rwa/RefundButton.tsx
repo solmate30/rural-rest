@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 import { Button } from "~/components/ui/button";
+import { useToast } from "~/hooks/use-toast";
 
 import { PROGRAM_ID, USDC_MINT } from "~/lib/constants";
 import { getProgram, derivePdas, parseAnchorError } from "~/lib/anchor-client";
@@ -16,8 +18,9 @@ const REFUND_ERRORS: Record<string, string> = {
 };
 
 export function RefundButton({ listingId, rwaTokenId }: Props) {
-    const walletCtx = useWallet();
+    const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
+    const { toast } = useToast();
     const [txStatus, setTxStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
     const [errorMsg, setErrorMsg] = useState("");
 
@@ -29,20 +32,20 @@ export function RefundButton({ listingId, rwaTokenId }: Props) {
     const [fetchingInvestment, setFetchingInvestment] = useState(false);
 
     useEffect(() => {
-        if (!walletCtx.publicKey) {
+        if (!wallet?.publicKey) {
             setMyInvestment(null);
             return;
         }
         setFetchingInvestment(true);
-        fetch(`/api/rwa/my-investment?rwaTokenId=${encodeURIComponent(rwaTokenId)}&wallet=${walletCtx.publicKey.toBase58()}`)
+        fetch(`/api/rwa/my-investment?rwaTokenId=${encodeURIComponent(rwaTokenId)}&wallet=${wallet.publicKey.toBase58()}`)
             .then(r => { if (!r.ok) throw new Error(); return r.json(); })
             .then(data => setMyInvestment(data))
             .catch(() => setMyInvestment(null))
             .finally(() => setFetchingInvestment(false));
-    }, [walletCtx.publicKey, rwaTokenId]);
+    }, [wallet?.publicKey, rwaTokenId]);
 
     async function handleRefund() {
-        if (!walletCtx.publicKey) return;
+        if (!wallet || !wallet.publicKey) return;
         setTxStatus("loading");
         setErrorMsg("");
 
@@ -53,8 +56,8 @@ export function RefundButton({ listingId, rwaTokenId }: Props) {
                 TOKEN_PROGRAM_ID,
             } = await import("@solana/spl-token");
 
-            const investor = walletCtx.publicKey;
-            const program = await getProgram(connection, walletCtx);
+            const investor = wallet!.publicKey;
+            const program = await getProgram(connection, wallet!);
             const { propertyToken, fundingVault, investorPosition } = await derivePdas(listingId, investor);
 
             const usdcMint = new PublicKey(USDC_MINT);
@@ -87,12 +90,27 @@ export function RefundButton({ listingId, rwaTokenId }: Props) {
                 setTxStatus("error");
                 return;
             }
-            setTxStatus("done");
-            setMyInvestment(prev => prev ? { ...prev, refundTx: signature } : prev);
+            toast({ title: "환불 완료", description: `${displayUsdc.toFixed(2)} USDC가 지갑으로 반환되었습니다.`, variant: "success" });
+            setTimeout(() => window.location.reload(), 1000);
+            return;
         } catch (err: any) {
-            // 온체인에서 이미 환불 완료 (DB 동기화 지연) → 완료로 처리
             if (err?.message?.includes("AlreadyRefunded")) {
-                setTxStatus("done");
+                // 온체인에서 이미 환불됨 — DB에도 마킹해서 목록에서 제거
+                try {
+                    const markRes = await fetch("/api/rwa/mark-refunded", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ rwaTokenId }),
+                    });
+                    if (!markRes.ok) {
+                        console.warn("[RefundButton] mark-refunded 실패:", await markRes.text());
+                    }
+                } catch (markErr) {
+                    console.warn("[RefundButton] mark-refunded 요청 실패:", markErr);
+                }
+                toast({ title: "환불 완료", description: "이미 환불 처리되었습니다.", variant: "success" });
+                setTimeout(() => window.location.reload(), 1500);
+                return;
             } else {
                 setErrorMsg(parseAnchorError(err, REFUND_ERRORS));
                 setTxStatus("error");
@@ -100,10 +118,10 @@ export function RefundButton({ listingId, rwaTokenId }: Props) {
         }
     }
 
-    // 지갑 미연결
-    if (!walletCtx.connected) {
+    // 지갑 미준비
+    if (!wallet) {
         return (
-            <p className="text-sm text-stone-400 text-center py-2">지갑을 연결하면 환불 여부를 확인할 수 있습니다.</p>
+            <p className="text-sm text-stone-400 text-center py-2">지갑 준비 중...</p>
         );
     }
 
@@ -119,16 +137,9 @@ export function RefundButton({ listingId, rwaTokenId }: Props) {
         );
     }
 
-    // 이미 환불 완료
+    // 이미 환불 완료 — 목록에서 사라지기 전 잠깐 보일 수 있음
     if (myInvestment.refundTx || txStatus === "done") {
-        return (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-center">
-                <p className="text-sm font-bold text-green-700">환불 완료</p>
-                <p className="text-xs text-green-600 mt-1">
-                    {(myInvestment.investedUsdc ?? 0).toFixed(6)} USDC가 지갑으로 반환되었습니다.
-                </p>
-            </div>
-        );
+        return null;
     }
 
     // 환불 가능

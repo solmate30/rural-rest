@@ -14,7 +14,7 @@
     },
     "wallet": {
       "title": "Web3 Wallet Integration",
-      "desc": "After KYC, connect your personal wallet to receive dividends directly."
+      "desc": "After KYC, connect your wallet to pay for bookings and access investment services."
     }
   },
   "form": {
@@ -34,7 +34,7 @@
   },
   "wallet": {
     "title": "Connect Your Wallet",
-    "message": "Ownership and monthly rental income are sent directly to your personal wallet.",
+    "message": "Connect your personal wallet to pay for bookings and use investment services.",
     "info": "You need a Solana-compatible wallet (e.g., Solflare).",
     "connect": "Connect Wallet",
     "getWallet": "Don't have a wallet?",

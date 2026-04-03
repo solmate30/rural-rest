@@ -11,7 +11,7 @@ import { ReleaseFundsButton } from "~/components/rwa/ReleaseFundsButton";
 import type { Route } from "./+types/admin.tokenize";
 import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
 
-import { TOTAL_SUPPLY, KRW_PER_USDC } from "~/lib/constants";
+import { TOTAL_SUPPLY, KRW_PER_USDC_FALLBACK } from "~/lib/constants";
 import { formatKrwLabel } from "~/lib/formatters";
 
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
@@ -25,7 +25,7 @@ import { cn } from "~/lib/utils";
 /* ------------------------------------------------------------------ */
 
 export async function loader({ request, params }: Route.LoaderArgs) {
-    await requireUser(request, ["host", "admin"]);
+    const user = await requireUser(request, ["spv", "operator", "admin"]);
     const listingId = params.listingId;
 
     const [listingRow] = await db
@@ -36,11 +36,17 @@ export async function loader({ request, params }: Route.LoaderArgs) {
             images: listings.images,
             valuationKrw: listings.valuationKrw,
             pricePerNight: listings.pricePerNight,
+            hostId: listings.hostId,
         })
         .from(listings)
         .where(eq(listings.id, listingId));
 
     if (!listingRow) throw new Response("Not Found", { status: 404 });
+
+    // host는 본인 매물만 접근 가능, admin은 전체 접근
+    if ((user as any).role === "spv" && listingRow.hostId !== user.id) {
+        throw new Response("Forbidden", { status: 403 });
+    }
 
     const [tokenRow] = await db
         .select({
@@ -127,7 +133,7 @@ export default function AdminTokenize() {
     );
 
     const tokenPriceKrw = valuationKrw / TOTAL_SUPPLY;
-    const tokenPriceUsdc = tokenPriceKrw / KRW_PER_USDC;
+    const tokenPriceUsdc = tokenPriceKrw / KRW_PER_USDC_FALLBACK;
     const targetKrw = valuationKrw * (minFundingPct / 100);
 
     const previewApyBps = valuationKrw > 0

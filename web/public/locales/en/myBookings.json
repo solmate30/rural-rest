@@ -1,0 +1,7 @@
+{
+  "title": "My Bookings",
+  "empty": "No bookings yet",
+  "findStay": "Find a Stay",
+  "nights": "{{count}} nights",
+  "pendingNote": "Awaiting host approval"
+}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 import { Button } from "~/components/ui/button";
 
 import { PROGRAM_ID, USDC_MINT } from "~/lib/constants";
@@ -19,9 +19,8 @@ const RELEASE_ERRORS: Record<string, string> = {
 };
 
 export function ReleaseFundsButton({ listingId, rwaTokenId, tokenMint, authorityWallet }: Props) {
-    const walletCtx = useWallet();
+    const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
-    const { setVisible } = useWalletModal();
     const [txStatus, setTxStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
     const [errorMsg, setErrorMsg] = useState("");
     const [step, setStep] = useState<"release" | "activate" | "db">("release");
@@ -29,21 +28,21 @@ export function ReleaseFundsButton({ listingId, rwaTokenId, tokenMint, authority
     const [authStatus, setAuthStatus] = useState<"checking" | "ok" | "unauthorized" | "unknown">("checking");
 
     useEffect(() => {
-        if (!walletCtx.publicKey) {
+        if (!wallet?.publicKey) {
             setAuthStatus("unknown");
             return;
         }
         let cancelled = false;
         async function checkAuth() {
             try {
-                const program = await getProgram(connection, walletCtx);
+                const program = await getProgram(connection, wallet!);
                 const rwaConfigPda = await deriveRwaConfigPda();
                 const config = await (program.account as any).rwaConfig.fetch(rwaConfigPda);
                 if (cancelled) return;
-                const wallet = walletCtx.publicKey!.toBase58();
+                const walletAddress = wallet!.publicKey.toBase58();
                 const isAuthorized =
-                    wallet === config.authority.toBase58() ||
-                    wallet === config.crankAuthority.toBase58();
+                    walletAddress === config.authority.toBase58() ||
+                    walletAddress === config.crankAuthority.toBase58();
                 setAuthStatus(isAuthorized ? "ok" : "unauthorized");
             } catch {
                 if (!cancelled) setAuthStatus("unknown");
@@ -51,10 +50,10 @@ export function ReleaseFundsButton({ listingId, rwaTokenId, tokenMint, authority
         }
         checkAuth();
         return () => { cancelled = true; };
-    }, [walletCtx.publicKey, connection]);
+    }, [wallet?.publicKey, connection]);
 
     async function handleRelease() {
-        if (!walletCtx.publicKey) return;
+        if (!wallet || !wallet.publicKey) return;
         setTxStatus("loading");
         setErrorMsg("");
         setStep("release");
@@ -68,12 +67,12 @@ export function ReleaseFundsButton({ listingId, rwaTokenId, tokenMint, authority
                 TOKEN_2022_PROGRAM_ID,
             } = await import("@solana/spl-token");
 
-            const program = await getProgram(connection, walletCtx);
+            const program = await getProgram(connection, wallet!);
             const { propertyToken, fundingVault } = await derivePdas(listingId);
             const rwaConfig = await deriveRwaConfigPda();
 
             const usdcMint = new PublicKey(USDC_MINT);
-            const authority = walletCtx.publicKey;
+            const authority = wallet!.publicKey;
             const authorityUsdcAccount = getAssociatedTokenAddressSync(
                 usdcMint, authority, false, TOKEN_PROGRAM_ID
             );
@@ -83,51 +82,84 @@ export function ReleaseFundsButton({ listingId, rwaTokenId, tokenMint, authority
                 authority, authorityUsdcAccount, authority, usdcMint, TOKEN_PROGRAM_ID
             );
 
-            // 1단계: 자금 인출 (funding_vault → authority 지갑, funds_released = true)
-            const releaseSig = await program.methods
-                .releaseFunds(listingId)
-                .accounts({
-                    propertyToken,
-                    operator: authority,
-                    rwaConfig,
-                    fundingVault,
-                    authorityUsdcAccount,
-                    usdcMint,
-                    usdcTokenProgram: TOKEN_PROGRAM_ID,
-                })
-                .preInstructions([createAtaIx])
-                .rpc();
+            // 온체인 상태 확인 후 필요한 instruction만 구성
+            const ptData = await (program.account as any).propertyToken.fetch(propertyToken);
+            const onchainFunding = !!ptData.status?.funding;
+            const onchainFunded = !!ptData.status?.funded;
+            const onchainActive = !!ptData.status?.active;
 
-            setTxSig(releaseSig);
+            const { Transaction } = await import("@solana/web3.js");
+            const tx = new Transaction().add(createAtaIx);
+
+            if (onchainFunding) {
+                // funding → release_funds + activate 둘 다 필요
+                tx.add(
+                    await program.methods
+                        .releaseFunds(listingId)
+                        .accounts({
+                            propertyToken,
+                            operator: authority,
+                            rwaConfig,
+                            fundingVault,
+                            authorityUsdcAccount,
+                            usdcMint,
+                            usdcTokenProgram: TOKEN_PROGRAM_ID,
+                        })
+                        .instruction()
+                );
+                tx.add(
+                    await program.methods
+                        .activateProperty(listingId)
+                        .accounts({
+                            propertyToken,
+                            operator: authority,
+                            rwaConfig,
+                            tokenMint: new PublicKey(tokenMint),
+                            tokenProgram: TOKEN_2022_PROGRAM_ID,
+                        })
+                        .instruction()
+                );
+            } else if (onchainFunded) {
+                // 이미 release됨 → activate만
+                tx.add(
+                    await program.methods
+                        .activateProperty(listingId)
+                        .accounts({
+                            propertyToken,
+                            operator: authority,
+                            rwaConfig,
+                            tokenMint: new PublicKey(tokenMint),
+                            tokenProgram: TOKEN_2022_PROGRAM_ID,
+                        })
+                        .instruction()
+                );
+            }
+            // onchainActive면 온체인 tx 불필요, DB sync만 진행
+
+            if (!onchainActive) {
+                tx.feePayer = authority;
+                tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+                const signed = await wallet.signTransaction(tx);
+                const sig = await connection.sendRawTransaction(signed.serialize());
+                await connection.confirmTransaction(sig, "confirmed");
+                setTxSig(sig);
+            }
+
             setStep("activate");
-
-            // 2단계: 운영 시작 (Funded → Active, 민트 권한 영구 소각)
-            await program.methods
-                .activateProperty(listingId)
-                .accounts({
-                    propertyToken,
-                    operator: authority,
-                    rwaConfig,
-                    tokenMint: new PublicKey(tokenMint),
-                    tokenProgram: TOKEN_2022_PROGRAM_ID,
-                })
-                .rpc();
 
             setStep("db");
 
-            // 3단계: DB 동기화
-            await Promise.all([
-                fetch("/api/rwa/release-funds", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ rwaTokenId, txSignature: releaseSig }),
-                }),
-                fetch("/api/rwa/activate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ rwaTokenId }),
-                }),
-            ]);
+            // 3단계: DB 동기화 (순차: funding→funded→active)
+            await fetch("/api/rwa/release-funds", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rwaTokenId }),
+            });
+            await fetch("/api/rwa/activate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rwaTokenId }),
+            });
 
             setTxStatus("done");
             setTimeout(() => window.location.reload(), 1000);
@@ -137,15 +169,10 @@ export function ReleaseFundsButton({ listingId, rwaTokenId, tokenMint, authority
         }
     }
 
-    if (!walletCtx.connected) {
+    if (!wallet) {
         return (
-            <Button
-                variant="outline"
-                className="w-full py-3"
-                onClick={() => setVisible(true)}
-            >
-                <span className="material-symbols-outlined text-[18px]">account_balance_wallet</span>
-                지갑 연결
+            <Button variant="outline" className="w-full py-3" disabled>
+                지갑 준비 중...
             </Button>
         );
     }

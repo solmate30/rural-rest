@@ -3,8 +3,8 @@ import { CancelPositionButton } from "./CancelPositionButton";
 import { RefundButton } from "~/components/rwa/RefundButton";
 import { useTranslation } from "react-i18next";
 
-import { KRW_PER_USDC } from "~/lib/constants";
 import { fmtUsdc, fmtKrw } from "~/lib/formatters";
+import { usePythRate } from "~/hooks/usePythRate";
 
 interface Holding {
     id: string;          // listingId
@@ -30,6 +30,7 @@ interface Props {
 export function HoldingsTable({ holdings, walletAddress }: Props) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { t } = useTranslation("invest") as any;
+    const { rate: krwPerUsdc } = usePythRate();
 
     if (holdings.length === 0) {
         return (
@@ -70,7 +71,7 @@ export function HoldingsTable({ holdings, walletAddress }: Props) {
                                 </td>
                                 <td className="py-4 px-5 text-right text-sm">
                                     <p className="font-semibold text-stone-800">{fmtUsdc(h.totalValue)}</p>
-                                    <p className="text-xs text-stone-400">{fmtKrw(h.totalValue * KRW_PER_USDC)}</p>
+                                    <p className="text-xs text-stone-400">{fmtKrw(h.totalValue * krwPerUsdc)}</p>
                                 </td>
                                 <td className="py-4 px-5 text-right text-sm">
                                     {h.dividendStatus === "pending" ? (
@@ -101,14 +102,9 @@ export function HoldingsTable({ holdings, walletAddress }: Props) {
                                                 onCancelled={() => window.location.reload()}
                                             />
                                         )}
-                                        {(() => {
-                                            const deadlineExpired = Date.now() > h.fundingDeadlineMs;
-                                            const isRefundable = h.tokenStatus === "failed" ||
-                                                (h.tokenStatus === "funding" && deadlineExpired);
-                                            return isRefundable ? (
-                                                <RefundButton listingId={h.id} rwaTokenId={h.rwaTokenId} />
-                                            ) : null;
-                                        })()}
+                                        {h.tokenStatus === "failed" && (
+                                            <RefundButton listingId={h.id} rwaTokenId={h.rwaTokenId} />
+                                        )}
                                         {h.dividendStatus !== "pending" &&
                                             !(h.tokenStatus === "funding" || h.tokenStatus === "funded") &&
                                             h.tokenStatus !== "failed" && (

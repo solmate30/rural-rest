@@ -5,13 +5,13 @@ import { Header, Footer } from "../components/ui-mockup";
 import { Button } from "~/components/ui/button";
 import { useLoaderData, useSearchParams } from "react-router";
 import { useEffect } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { usePrivyPublicKey } from "~/lib/privy-wallet";
 import type { Route } from "./+types/my-investments";
 import { db } from "~/db/index.server";
 import { listings, rwaTokens, rwaInvestments, rwaDividends, user } from "~/db/schema";
 import { eq, desc, isNull, and } from "drizzle-orm";
 import { fetchPropertiesOnchain } from "~/lib/rwa.onchain.server";
+import { throttledSync } from "~/lib/rwa.server";
 import { getSession } from "~/lib/auth.server";
 import { useTranslation } from "react-i18next";
 
@@ -80,6 +80,7 @@ function buildDividendRecords(
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
+    await throttledSync().catch(() => {});
     const url = new URL(request.url);
     const walletAddress = url.searchParams.get("wallet");
 
@@ -203,20 +204,19 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function MyInvestmentsRoute() {
     const { portfolioSummary, ownedTokens, dividendRecords } = useLoaderData<typeof loader>();
-    const { publicKey } = useWallet();
-    const { setVisible } = useWalletModal();
+    const publicKeyStr = usePrivyPublicKey();
     const [searchParams, setSearchParams] = useSearchParams();
     const { t, i18n } = useTranslation("invest");
 
-    // 지갑 연결되면 URL에 wallet 파라미터 자동 추가 → 로더 재실행
+    // 임베디드 지갑이 준비되면 URL에 wallet 파라미터 자동 추가 → 로더 재실행
     useEffect(() => {
-        if (publicKey) {
+        if (publicKeyStr) {
             const current = searchParams.get("wallet");
-            if (current !== publicKey.toBase58()) {
-                setSearchParams({ wallet: publicKey.toBase58() }, { replace: true });
+            if (current !== publicKeyStr) {
+                setSearchParams({ wallet: publicKeyStr }, { replace: true });
             }
         }
-    }, [publicKey]);
+    }, [publicKeyStr]);
 
     const walletParam = searchParams.get("wallet");
 
@@ -232,15 +232,11 @@ export default function MyInvestmentsRoute() {
                 {!walletParam ? (
                     <div className="py-24 text-center">
                         <span className="material-symbols-outlined text-[56px] text-stone-300">account_balance_wallet</span>
-                        <p className="text-stone-500 mt-4 mb-6 font-medium">{t("portfolio.connectWallet")}</p>
-                        <Button
-                            onClick={() => setVisible(true)}
-                            variant="success"
-                            size="lg"
-                            className="shadow-lg shadow-[#17cf54]/20"
-                        >
-                            {t("portfolio.connectButton")}
-                        </Button>
+                        <p className="text-stone-500 mt-4 mb-6 font-medium">포트폴리오를 불러오는 중입니다</p>
+                        <div className="flex items-center justify-center gap-2 text-stone-400 text-sm">
+                            <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                            잠시 후 자동으로 로드됩니다.
+                        </div>
                     </div>
                 ) : (
                     <>

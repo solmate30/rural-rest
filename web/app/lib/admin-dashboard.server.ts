@@ -204,6 +204,7 @@ export interface OperatorBookingRow {
     checkOut: Date;
     totalPrice: number;
     status: string;
+    escrowPda: string | null;
 }
 
 /** operator가 담당하는 매물 목록 (operatorId 기준) */
@@ -281,13 +282,14 @@ export async function getOperatorBookings(operatorId: string): Promise<OperatorB
             checkOut: bookings.checkOut,
             totalPrice: bookings.totalPrice,
             status: bookings.status,
+            escrowPda: bookings.escrowPda,
         })
         .from(bookings)
         .innerJoin(userTable, eq(bookings.guestId, userTable.id))
         .where(
             and(
                 inArray(bookings.listingId, listingIds),
-                sql`(${bookings.status} = 'pending' OR (${bookings.status} = 'confirmed' AND ${bookings.checkIn} >= ${now}))`,
+                sql`(${bookings.status} = 'pending' OR (${bookings.status} = 'confirmed' AND (${bookings.checkIn} >= ${now} OR ${bookings.escrowPda} IS NOT NULL)))`,
             )
         )
         .orderBy(bookings.checkIn);
@@ -301,6 +303,7 @@ export async function getOperatorBookings(operatorId: string): Promise<OperatorB
         checkOut: r.checkOut,
         totalPrice: r.totalPrice,
         status: r.status,
+        escrowPda: r.escrowPda ?? null,
     }));
 }
 

@@ -1,0 +1,31 @@
+{
+  "bookings": {
+    "title": "예약 관리",
+    "subtitle": "내 숙소의 예약을 승인하고 관리하세요",
+    "newListing": "새 숙소 등록",
+    "tabPending": "승인 대기",
+    "tabConfirmed": "확정된 예약",
+    "tabHistory": "이력",
+    "pendingDesc": "결제 완료 — 호스트 승인 대기 중",
+    "empty": "해당 예약이 없습니다",
+    "colGuest": "게스트",
+    "colProperty": "숙소",
+    "colDates": "날짜",
+    "colAmount": "금액",
+    "colMethod": "결제 수단",
+    "colStatus": "상태",
+    "colActions": "처리",
+    "methodCard": "카드",
+    "methodUsdc": "USDC",
+    "approve": "승인",
+    "reject": "거절 및 환불",
+    "processing": "처리 중...",
+    "actionError": "처리 실패",
+    "status": {
+      "pending": "대기 중",
+      "confirmed": "확정",
+      "cancelled": "취소됨",
+      "completed": "완료"
+    }
+  }
+}

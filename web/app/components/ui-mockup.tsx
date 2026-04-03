@@ -1,13 +1,21 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { authClient } from "~/lib/auth.client";
+import { useSession, signOut as privySignOut, useLogout } from "~/lib/privy-hooks";
+import { usePrivy } from "@privy-io/react-auth";
+import { useExportWallet } from "@privy-io/react-auth/solana";
 import { cn } from "~/lib/utils";
 import { useToast } from "~/hooks/use-toast";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { useLocation, useNavigate } from "react-router";
 import { useKyc } from "./KycProvider";
 import { useTranslation } from "react-i18next";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 
 export function Button({
     className,
@@ -111,34 +119,31 @@ export function Slider({
 export function Header() {
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
-    const sessionRes = authClient?.useSession();
-    const session = sessionRes?.data;
-    const isPending = sessionRes?.isPending || false;
+
+    const { data: session, isPending } = useSession();
+    const { logout: privyLogout } = useLogout();
+    const { login } = usePrivy();
+    const { exportWallet } = useExportWallet();
     const { toast } = useToast();
     const location = useLocation();
     const navigate = useNavigate();
     const { isKycCompleted } = useKyc();
-    const { disconnect } = useWallet();
-    const isInvestRoute = location.pathname.startsWith('/invest') || location.pathname.startsWith('/my-investments') || location.pathname.startsWith('/governance');
     const { t, i18n } = useTranslation("common");
 
+    const userRole = (session?.user as Record<string, unknown>)?.role as string | undefined;
+    const isAdmin = userRole === "admin";
+    const isHost = userRole === "spv";
+    const isOperator = userRole === "operator";
+
     const handleSignOut = async () => {
-        await disconnect().catch(() => {});
-        await authClient.signOut();
-        toast({
-            title: t("nav.logoutSuccess"),
-            description: t("nav.logoutDesc", "다음에 또 만나요!"),
-            variant: "success",
-        });
-        setTimeout(() => {
-            window.location.href = "/";
-        }, 500);
+        await privyLogout();
+        await privySignOut();
+        toast({ title: t("nav.logoutSuccess"), variant: "success" });
     };
 
     const handleLangToggle = async () => {
         const next = i18n.language === "ko" ? "en" : "ko";
         await i18n.changeLanguage(next);
-        // 서버에 언어 설정 저장 (쿠키 + DB)
         fetch("/api/set-language", {
             method: "POST",
             body: JSON.stringify({ locale: next }),
@@ -149,104 +154,162 @@ export function Header() {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-8">
+                {/* 로고 */}
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
                     <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
                         <span className="text-white font-bold">R</span>
                     </div>
                     <span className="text-xl font-bold tracking-tight text-primary">Rural Rest</span>
                 </div>
-                <nav className="hidden md:flex items-center gap-6">
-                    <a href="/" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.findStay")}</a>
-                    <a href="/operator" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.hostHome")}</a>
-                    <a href="/invest" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">{t("nav.invest")}</a>
-                    <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
-                    {isInvestRoute && (
-                        <a href="/my-investments" className="text-sm font-bold text-primary hover:text-primary/80 transition-colors">{t("nav.myPortfolio")}</a>
-                    )}
 
-                    {/* Conditional Auth Rendering */}
-                    {isInvestRoute ? (
-                        mounted && (
-                            <div className="ml-2 pl-6 border-l border-border h-10 flex items-center gap-3">
+                {/* 우측: 네비 + 유저 */}
+                <div className="flex items-center gap-5">
+                    <nav className="hidden md:flex items-center gap-5">
+                        {isAdmin ? (
+                            <>
+                                <a href="/operator" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.operatorDashboard")}</a>
+                                <a href="/admin" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.adminDashboard")}</a>
+                                <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
+                            </>
+                        ) : isOperator || isHost ? (
+                            <>
+                                <a href="/operator" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.operatorDashboard")}</a>
+                                <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
+                            </>
+                        ) : (
+                            <>
+                                <a href="/" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.findStay")}</a>
+                                <a href="/invest" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.invest")}</a>
                                 {session && (
-                                    <button
-                                        onClick={handleSignOut}
-                                        className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 transition-colors"
-                                    >
-                                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                                            <span className="text-[10px] font-bold text-primary">
-                                                {session.user.name?.charAt(0).toUpperCase()}
-                                            </span>
-                                        </div>
-                                        <span className="hidden sm:inline">{session.user.name}</span>
-                                    </button>
+                                    <>
+                                        <a href="/my-bookings" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.myBookings")}</a>
+                                        <a href="/my-investments" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.myPortfolio")}</a>
+                                    </>
                                 )}
-                                {!session ? (
-                                    <Button
-                                        variant="outline"
-                                        className="h-9 text-sm"
-                                        onClick={() => navigate(`/auth?return=${location.pathname}`)}
-                                    >
-                                        {t("nav.login")}
-                                    </Button>
-                                ) : !isKycCompleted ? (
-                                    <Button
-                                        variant="outline"
-                                        className="h-10 text-xs font-bold gap-1 text-amber-600 hover:text-amber-700 border-amber-300 hover:border-amber-400 hover:bg-amber-50"
-                                        onClick={() => navigate(`/kyc?return=${location.pathname}`)}
-                                    >
-                                        {t("nav.verifyKyc")}
-                                    </Button>
-                                ) : (
-                                    <WalletMultiButton className="!bg-[#17cf54] !text-white !border-none hover:!bg-[#14b847] !shadow-sm !rounded-[var(--radius)] !h-10 !px-6 !py-2 !text-sm !font-medium transition-colors" />
-                                )}
-                            </div>
-                        )
-                    ) : (
-                        mounted && !isPending && (
-                            session ? (
-                                <div className="flex items-center gap-4 ml-4">
-                                    <div className="flex items-center gap-2.5">
-                                        {session.user.image ? (
-                                            <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-white ring-1 ring-stone-200 shadow-sm">
-                                                <img
-                                                    src={session.user.image}
-                                                    alt={session.user.name}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className={`h-9 w-9 rounded-full flex items-center justify-center border-2 border-white ring-1 shadow-sm ${(session.user as Record<string, unknown>).role === "admin" ? "bg-amber-500/10 ring-amber-400/30" : "bg-primary/10 ring-primary/20"}`}>
-                                                <span className={`text-xs font-bold ${(session.user as Record<string, unknown>).role === "admin" ? "text-amber-600" : "text-primary"}`}>
-                                                    {(session.user as Record<string, unknown>).role === "admin" ? "A" : session.user.name?.charAt(0).toUpperCase()}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <span className="text-sm font-semibold text-foreground/80">
-                                            {(session.user as Record<string, unknown>).role === "admin"
-                                                ? t("nav.admin")
-                                                : `${session.user.name}님`}
-                                        </span>
-                                    </div>
-                                    <Button variant="outline" onClick={handleSignOut} className="h-9 px-4 text-xs font-bold">{t("nav.logout")}</Button>
-                                </div>
-                            ) : (
-                                <Button variant="outline" className="ml-4" onClick={() => window.location.href = '/auth'}>{t("nav.login")}</Button>
-                            )
-                        )
-                    )}
+                                <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
+                            </>
+                        )}
+                    </nav>
 
                     {/* 언어 스위처 */}
                     {mounted && (
                         <button
                             onClick={handleLangToggle}
                             className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-border hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                            aria-label="언어 변경 / Change language"
+                            aria-label="언어 변경"
                         >
                             {i18n.language === "ko" ? "EN" : "한국어"}
                         </button>
                     )}
-                </nav>
+
+                    {/* 유저 영역 */}
+                    {mounted && !isPending && (
+                        !session ? (
+                            <Button variant="outline" className="h-9 text-sm" onClick={() => login()}>
+                                {t("nav.login")}
+                            </Button>
+                        ) : (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button className="flex items-center gap-1.5 rounded-full p-0.5 hover:ring-2 hover:ring-primary/30 transition-all outline-none">
+                                        <div className="relative">
+                                        {session.user.image ? (
+                                            <img src={session.user.image} alt={session.user.name} className="h-9 w-9 rounded-full object-cover border border-stone-200" />
+                                        ) : (
+                                            <div className={`h-9 w-9 rounded-full flex items-center justify-center border ${isAdmin ? "bg-amber-500/10 border-amber-300" : "bg-primary/10 border-primary/20"}`}>
+                                                <span className={`text-xs font-bold ${isAdmin ? "text-amber-600" : "text-primary"}`}>
+                                                    {isAdmin ? "A" : session.user.name?.charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {session.user.walletAddress && (
+                                            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-[#17cf54] border-2 border-white" />
+                                        )}
+                                        </div>
+                                        <svg className="w-3 h-3 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel className="font-normal">
+                                        <p className="text-sm font-semibold">{isAdmin ? t("nav.admin") : session.user.name}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {/* 내 지갑 — Privy 임베디드 지갑 주소 표시 */}
+                                    {session.user.walletAddress ? (
+                                        <>
+                                        <DropdownMenuItem
+                                            className="cursor-pointer focus:bg-primary/5"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(session.user.walletAddress!);
+                                                toast({ title: t("nav.walletCopied"), variant: "success" });
+                                            }}
+                                        >
+                                            <div className="flex items-center justify-between w-full gap-2">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-[11px] text-muted-foreground">{t("nav.myWallet")}</span>
+                                                    <span className="font-mono text-xs text-stone-600">
+                                                        {session.user.walletAddress.slice(0, 6)}...{session.user.walletAddress.slice(-4)}
+                                                    </span>
+                                                </div>
+                                                <span className="material-symbols-outlined text-[16px] text-stone-400">content_copy</span>
+                                            </div>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            className="cursor-pointer focus:bg-primary/5"
+                                            onClick={() => exportWallet({ address: session.user.walletAddress! })}
+                                        >
+                                            <span className="text-xs text-stone-500">
+                                                {t("nav.exportWallet")}
+                                            </span>
+                                        </DropdownMenuItem>
+                                        </>
+                                    ) : (
+                                        <DropdownMenuItem className="cursor-default text-stone-400 text-xs focus:bg-transparent">
+                                            {t("nav.walletCreating")}
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    {/* 역할별 메뉴 */}
+                                    {(isOperator || isAdmin) && (
+                                        <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/operator")}>
+                                            {t("nav.operatorDashboard")}
+                                        </DropdownMenuItem>
+                                    )}
+                                    {isAdmin && (
+                                        <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/admin")}>
+                                            {t("nav.adminDashboard")}
+                                        </DropdownMenuItem>
+                                    )}
+                                    {!isOperator && !isKycCompleted && (
+                                        <DropdownMenuItem
+                                            className="text-amber-600 focus:text-amber-600 focus:bg-amber-50 cursor-pointer"
+                                            onClick={() => navigate(`/kyc?return=${location.pathname}`)}
+                                        >
+                                            {t("nav.verifyKyc")}
+                                        </DropdownMenuItem>
+                                    )}
+                                    {!isOperator && !isAdmin && (
+                                        <>
+                                            <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/my-bookings")}>
+                                                {t("nav.myBookings")}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/my-investments")}>
+                                                {t("nav.myPortfolio")}
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="cursor-pointer text-muted-foreground focus:text-foreground" onClick={handleSignOut}>
+                                        {t("nav.logout")}
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )
+                    )}
+                </div>
             </div>
         </header>
     );

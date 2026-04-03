@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface KycContextType {
     isKycCompleted: boolean;
+    isKycLoading: boolean;
     /** DB에 등록된 지갑 주소 (KYC 완료 시 저장됨) */
     registeredWallet: string | null;
     completeKyc: () => void;
@@ -11,15 +12,12 @@ interface KycContextType {
 const KycContext = createContext<KycContextType | undefined>(undefined);
 
 export function KycProvider({ children }: { children: React.ReactNode }) {
-    const [isKycCompleted, setIsKycCompleted] = useState<boolean>(false);
+    const cached = typeof window !== "undefined" ? localStorage.getItem("ruralrest_kyc") === "true" : false;
+    const [isKycCompleted, setIsKycCompleted] = useState<boolean>(cached);
+    const [isKycLoading, setIsKycLoading] = useState<boolean>(!cached);
     const [registeredWallet, setRegisteredWallet] = useState<string | null>(null);
-    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
-        // localStorage에서 낙관적으로 먼저 읽기 (깜빡임 방지)
-        const cached = localStorage.getItem("ruralrest_kyc");
-        if (cached === "true") setIsKycCompleted(true);
-
         // DB에서 실제 상태 동기화
         fetch("/api/user/kyc-status")
             .then((res) => {
@@ -44,7 +42,7 @@ export function KycProvider({ children }: { children: React.ReactNode }) {
             .catch(() => {
                 // 네트워크 오류 시 localStorage 값 유지
             })
-            .finally(() => setIsLoaded(true));
+            .finally(() => setIsKycLoading(false));
     }, []);
 
     const completeKyc = () => {
@@ -58,10 +56,8 @@ export function KycProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("ruralrest_kyc");
     };
 
-    if (!isLoaded) return null;
-
     return (
-        <KycContext.Provider value={{ isKycCompleted, registeredWallet, completeKyc, resetKyc }}>
+        <KycContext.Provider value={{ isKycCompleted, isKycLoading, registeredWallet, completeKyc, resetKyc }}>
             {children}
         </KycContext.Provider>
     );

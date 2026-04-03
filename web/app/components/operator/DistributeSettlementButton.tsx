@@ -1,6 +1,7 @@
 import { useState } from "react";
-
-import { KRW_PER_USDC } from "~/lib/constants";
+import { useTranslation } from "react-i18next";
+import { KRW_PER_USDC_FALLBACK } from "~/lib/constants";
+import { fmtNumber } from "~/lib/formatters";
 
 interface Props {
     listingId: string;
@@ -9,6 +10,8 @@ interface Props {
 }
 
 export function DistributeSettlementButton({ listingId, operatorId, listingTitle }: Props) {
+    const { i18n } = useTranslation();
+    const locale = i18n.language;
     const [open, setOpen] = useState(false);
     const [month, setMonth] = useState(() => {
         const now = new Date();
@@ -23,7 +26,7 @@ export function DistributeSettlementButton({ listingId, operatorId, listingTitle
     const cost = parseInt(costKrw) || 0;
     const profit = Math.max(0, gross - cost);
     const settlementKrw = Math.floor(profit * 0.3);
-    const settlementUsdc = Math.floor((settlementKrw / KRW_PER_USDC) * 1_000_000);
+    const settlementUsdc = Math.floor((settlementKrw / KRW_PER_USDC_FALLBACK) * 1_000_000);
 
     async function handleDistribute() {
         if (!month || gross <= 0) {
@@ -109,7 +112,7 @@ export function DistributeSettlementButton({ listingId, operatorId, listingTitle
                         <div className="bg-stone-50 rounded-xl p-3 space-y-1 text-xs text-stone-600">
                             <div className="flex justify-between">
                                 <span>영업이익</span>
-                                <span className="font-medium">{profit.toLocaleString()}원</span>
+                                <span className="font-medium">₩{fmtNumber(profit, locale)}</span>
                             </div>
                             <div className="flex justify-between font-bold text-[#17cf54]">
                                 <span>운영자 정산액 (30%)</span>

@@ -3,9 +3,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useKyc } from "../components/KycProvider";
 import { Button, Card, Header, Footer } from "../components/ui-mockup";
-import { authClient } from "~/lib/auth.client";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useSession } from "~/lib/privy-hooks";
 
 export function meta() {
     return [
@@ -21,13 +19,9 @@ export default function KycRoute() {
     const { t } = useTranslation("kyc");
 
     const { isKycCompleted, completeKyc } = useKyc();
-    const sessionRes = authClient?.useSession();
+    const sessionRes = useSession();
 
-    const { connected, publicKey, signMessage } = useWallet();
-    const { setVisible } = useWalletModal();
-
-    const [step, setStep] = useState<"intro" | "scanning" | "success" | "onboarding">("intro");
-    const [signingInProgress, setSigningInProgress] = useState(false);
+    const [step, setStep] = useState<"intro" | "scanning" | "success">("intro");
 
     // 로그인 필수
     useEffect(() => {
@@ -36,72 +30,23 @@ export default function KycRoute() {
         }
     }, [sessionRes, navigate]);
 
-    // 이미 KYC + 지갑 연결 완료 시 바로 이동 (onboarding 단계 제외 — SIWS 흐름이 직접 navigate함)
+    // 이미 KYC 완료 시 바로 이동
     useEffect(() => {
-        if (isKycCompleted && connected && step !== "onboarding") {
+        if (isKycCompleted && step !== "success") {
             navigate(returnUrl);
         }
-    }, [isKycCompleted, connected, step, navigate, returnUrl]);
-
-    // onboarding 단계에서 지갑 연결 완료 시 → SIWS 서명 검증 후 DB 저장
-    useEffect(() => {
-        if (!connected || !publicKey || !signMessage || step !== "onboarding" || signingInProgress) return;
-
-        setSigningInProgress(true);
-        const walletAddress = publicKey.toBase58();
-
-        (async () => {
-            try {
-                // 1. 서버에서 nonce 발급
-                const nonceRes = await fetch("/api/user/wallet-nonce");
-                const { nonce } = await nonceRes.json() as { nonce: string };
-
-                // 2. 지갑으로 메시지 서명 → 팝업 표시됨
-                const messageBytes = new TextEncoder().encode(nonce);
-                const sig = await signMessage(messageBytes);
-
-                // 3. 서버에 서명 전송 → 검증 후 wallet_address 저장
-                const res = await fetch("/api/user/connect-wallet", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        walletAddress,
-                        signature: Array.from(sig),
-                        nonce,
-                    }),
-                });
-
-                if (!res.ok) {
-                    const { error } = await res.json() as { error: string };
-                    throw new Error(error);
-                }
-
-                completeKyc();
-                navigate(returnUrl);
-            } catch (e) {
-                console.error("지갑 서명 실패:", e);
-                setSigningInProgress(false);
-            }
-        })();
-    }, [connected, publicKey, signMessage, step, signingInProgress, completeKyc, navigate, returnUrl]);
+    }, [isKycCompleted, step, navigate, returnUrl]);
 
     const handleStartScan = () => {
         setStep("scanning");
         setTimeout(() => {
             setStep("success");
-
-            // KYC 완료 DB 저장
             fetch("/api/user/save-kyc", { method: "POST" }).catch(() => {});
-
             setTimeout(() => {
-                setStep("onboarding");
+                completeKyc();
+                navigate(returnUrl);
             }, 2000);
         }, 3000);
-    };
-
-    const handleFinishKycOnly = () => {
-        completeKyc();
-        navigate(returnUrl);
     };
 
     return (
@@ -143,15 +88,6 @@ export default function KycRoute() {
                                 <div>
                                     <h3 className="font-bold text-stone-800">{t("feature.privacy.title")}</h3>
                                     <p className="text-sm text-stone-500 mt-1">{t("feature.privacy.desc")}</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-4 group cursor-default">
-                                <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center shrink-0 border border-stone-100 group-hover:bg-stone-50 transition-colors">
-                                    <span className="material-symbols-outlined text-[#ab9ff2] text-[24px]">account_balance_wallet</span>
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-stone-800">{t("feature.wallet.title")}</h3>
-                                    <p className="text-sm text-stone-500 mt-1">{t("feature.wallet.desc")}</p>
                                 </div>
                             </div>
                         </div>
@@ -225,47 +161,6 @@ export default function KycRoute() {
                                         <div>
                                             <h2 className="text-2xl font-bold text-foreground">{t("done.title")}</h2>
                                             <p className="text-sm text-stone-500 mt-1">{t("done.message")}</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {step === "onboarding" && (
-                                    <div className="w-full text-center space-y-5 animate-in slide-in-from-right-8 fade-in duration-500">
-                                        <div className="w-20 h-20 bg-[#ab9ff2]/10 rounded-2xl flex items-center justify-center mx-auto transform rotate-3">
-                                            <span className="material-symbols-outlined text-[40px] text-[#ab9ff2]">account_balance_wallet</span>
-                                        </div>
-                                        <div>
-                                            <h2 className="text-2xl font-bold text-foreground">{t("wallet.title")}</h2>
-                                        </div>
-                                        <div className="text-stone-600 text-sm bg-stone-50 p-4 rounded-2xl text-left border border-stone-100 space-y-3">
-                                            <p>
-                                                {t("wallet.message")}
-                                            </p>
-                                            <p className="text-xs text-stone-500 flex items-start gap-2 pt-2 border-t border-stone-200">
-                                                <span className="material-symbols-outlined text-[16px] shrink-0 mt-0.5 text-stone-400">info</span>
-                                                <span>{t("wallet.info")}</span>
-                                            </p>
-                                        </div>
-                                        <div className="space-y-2 w-full">
-                                            <Button
-                                                className="w-full h-12 text-md font-bold bg-[#17cf54] hover:bg-[#14b847] text-white shadow-md"
-                                                onClick={() => setVisible(true)}
-                                            >
-                                                {t("wallet.connect")}
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                className="w-full h-12 text-md font-bold text-stone-600 border-stone-300 hover:bg-stone-50"
-                                                onClick={() => window.open("https://solflare.com/", "_blank")}
-                                            >
-                                                {t("wallet.getWallet")}
-                                            </Button>
-                                            <button
-                                                className="text-xs font-bold text-stone-400 hover:text-stone-600 transition-colors underline underline-offset-4"
-                                                onClick={handleFinishKycOnly}
-                                            >
-                                                {t("wallet.skip")}
-                                            </button>
                                         </div>
                                     </div>
                                 )}

@@ -40,6 +40,7 @@ export async function fetchActiveListingIds(): Promise<string[]> {
     try {
         const program = getRwaProgram();
         const accounts = await (program.account as any).propertyToken.all();
+        // Active 상태만 투표권 부여 (Funding/Funded는 환불 가능성 있음)
         return accounts
             .filter((a: any) => a.account.status?.active !== undefined)
             .map((a: any) => a.account.listingId as string);

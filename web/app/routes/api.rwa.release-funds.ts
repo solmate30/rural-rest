@@ -1,8 +1,8 @@
 import { requireUser } from "~/lib/auth.server";
-import { activateRwaToken } from "~/lib/rwa.server";
+import { releaseFundsRwaToken } from "~/lib/rwa.server";
 
 export async function action({ request }: { request: Request }) {
-    await requireUser(request, ["host", "admin"]);
+    await requireUser(request, ["spv", "admin"]);
 
     const { rwaTokenId } = await request.json() as { rwaTokenId: string };
     if (!rwaTokenId) {
@@ -10,7 +10,7 @@ export async function action({ request }: { request: Request }) {
     }
 
     try {
-        await activateRwaToken(rwaTokenId);
+        await releaseFundsRwaToken(rwaTokenId);
         return Response.json({ ok: true });
     } catch (e: any) {
         return Response.json({ error: e.message }, { status: 400 });

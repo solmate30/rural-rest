@@ -1,7 +1,7 @@
 # 08. DAO 구현 명세서 (Technical Specification)
 
 > Created: 2026-02-18 12:00
-> Last Updated: 2026-04-01 03:30
+> Last Updated: 2026-04-03 00:00
 > Migration: Realms → Custom Anchor (2026-03-30). 이전 Realms 버전은 `docs/00_ARCHIVE/08_DAO_IMPLEMENTATION_SPEC_REALMS.md`에 보존.
 
 본 문서는 [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md) 기획서를 바탕으로 Rural Rest DAO의 1단계 기술 구현을 정의한다. RWA 1차 발행 직후 투표 기능만을 온체인으로 구현하는 범위를 기술한다.
@@ -39,41 +39,45 @@
 
 #### B. Council Token 준비
 
-- [ ] **Council Token-2022 Mint 생성** (NonTransferable extension 적용)
-    - `COUNCIL_TOKEN_MINT` 환경 변수에 공개키 기입
-- [ ] **마을 대표/지방정부 지갑 목록 확보**
-    - Council Token 발급 대상 지갑 주소 준비
+- [x] **Council Token Mint 생성** — `FEDWxrjgozxhXFN8N8fy4XhrAJEbdQQb9xRJpNwYbtKq` (devnet, SPL Token)
+    - `COUNCIL_MINT` 환경 변수에 공개키 기입 완료
+    - Mint Authority = Crank Authority (`6xwcyZ8gwbW6vXFbijSYeTkcrtGfXueU82LRsgsnk9nm`)
+- [x] **Admin 대시보드 발급 UI** — `/admin` 페이지 상단 "Council Token 발급" 버튼 → 사이드 패널
+    - `POST /api/admin/issue-council-token` API 구현 완료
+- [ ] **마을 대표/지방정부 지갑 목록 확보** — 실제 운영 시 필요
+- [ ] **host/지자체 회원가입 시 자동 발급** — 추후 구현 예정
 
-#### C. Squads Multisig 준비
+#### C. Squads Multisig 준비 (MVP 이후)
 
-- [ ] **Squads Protocol v4 Multisig 생성**
-    - M-of-N 서명자 구성 확정 (예: 2-of-3)
-    - `MULTISIG_PUBKEY` 환경 변수에 공개키 기입
-- [ ] **Council Token Mint Authority → Multisig 이전**
+- [ ] **Squads Protocol v4 Multisig 생성** — mainnet 전환 시 필요
+- [ ] **Council Token Mint Authority → Multisig 이전** — mainnet 전환 시 필요
 
 #### D. DAO 프로그램 배포
 
-- [ ] **`rural-rest-dao` Anchor 프로그램 빌드 및 배포**
-    - `DAO_PROGRAM_ID` 환경 변수에 공개키 기입
+- [x] **`rural-rest-dao` Anchor 프로그램 빌드 및 배포** — `3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX`
+- [x] **`initialize_dao` 호출** — DaoConfig PDA 생성 완료
+    - PDA: `C7ovfgZkJLbDAn5bs4gQtVT2dENosmfi58DmFvufBWiH`
+    - voting_period: 604800 (7일), quorum: 10%, approval: 50%, cap: 없음
 
 #### E. 환경 변수 완성
 
 | 변수 | 용도 | 상태 |
 |------|------|------|
-| `SOLANA_NETWORK` | `devnet` (초기) | 기존 |
-| `DAO_PROGRAM_ID` | DAO Anchor 프로그램 공개키 | D 완료 후 |
-| `COUNCIL_TOKEN_MINT` | Council Token Mint 공개키 | B 완료 후 |
-| `MULTISIG_PUBKEY` | Squads multisig 공개키 | C 완료 후 |
+| `SOLANA_RPC_URL` | devnet RPC URL | 완료 |
+| `SERVER_DAO_PROGRAM_ID` | DAO 프로그램 ID | 완료 |
+| `COUNCIL_MINT` | Council Token Mint 공개키 | 완료 |
+| `CRANK_SECRET_KEY` | Crank 비밀키 (발급/자동화용) | 완료 |
 
-#### F. 구현 순서
+#### F. 구현 순서 (실제 완료 순서)
 
 ```
-1. Anchor DAO 프로그램 작성 + localnet 테스트
-2. Council Token Mint 생성 스크립트
-3. Squads Multisig 생성 + Council Mint Authority 이전
-4. Devnet 배포 + initialize_dao + E2E 테스트
-5. 웹 UI (/invest/:id/governance)
-6. QA 시나리오 전체 통과 확인
+1. Anchor DAO 프로그램 작성 + localnet 테스트  ✅
+2. Council Token Mint 생성 (spl-token CLI)      ✅
+3. Devnet 배포 + initialize_dao                 ✅
+4. 웹 UI /governance, /governance/new, /governance/:id  ✅
+5. Governance Blinks (/api/actions/governance/:proposalId)  ✅
+6. Admin 대시보드 Council Token 발급 패널       ✅
+7. Squads Multisig + Mint Authority 이전        □ mainnet 전환 시
 ```
 
 ---
