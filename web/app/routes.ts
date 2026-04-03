@@ -46,6 +46,7 @@ export default [
     route("api/booking/release-escrow", "routes/api.booking.release-escrow.ts"),
     route("api/actions/invest/:listingId", "routes/api.actions.invest.$listingId.ts"),
     route("api/actions/governance/:proposalId", "routes/api.actions.governance.$proposalId.ts"),
+    route("api/webhooks/helius", "routes/api.webhooks.helius.ts"),
     route("book/success", "routes/book.success.tsx"),
     route("book/fail", "routes/book.fail.tsx"),
     route("search", "routes/search.tsx"),
