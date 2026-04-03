@@ -114,7 +114,6 @@
       <div style="font-size:14px;font-weight:500;color:var(--fg2);margin-top:12px;">한국 + 일본 + 유럽 1,200만 채 빈집의 잠긴 자산 가치</div>
       <div style="margin-top:24px;display:flex;gap:24px;">
         <div><div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--fg);">$4.0B</div><div style="font-size:10px;color:var(--fg3);">SAM (한국 15만 채)</div></div>
-        <div><div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--fg);">$24B</div><div style="font-size:10px;color:var(--fg3);">On-chain RWA Market</div></div>
       </div>
     </div>
     <!-- Right: 3 text blocks, no boxes -->
@@ -165,7 +164,7 @@
 
     <!-- Right: 30/30/40 -->
     <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.15em;color:var(--fg3);text-transform:uppercase;">Booking Revenue Split</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:.15em;color:var(--fg3);text-transform:uppercase;">Profit Distribution</div>
       <div style="display:flex;gap:8px;width:100%;">
         <div style="flex:3;text-align:center;padding:28px 8px;background:var(--green-bg);border-radius:12px;">
           <div style="font-size:52px;font-weight:800;letter-spacing:-3px;color:var(--green);">30<span style="font-size:18px;letter-spacing:0;">%</span></div>
@@ -196,42 +195,44 @@
   <h2>투자부터 배당까지, 온체인 동작</h2>
   <p class="desc">15개 온체인 기능, 62개 테스트. Devnet에서 지금 실행 중.</p>
 
-  <!-- 4 big stats in a row, just numbers + labels, NO cards -->
+  <!-- 3 stats -->
   <div style="display:flex;gap:40px;margin:28px 0 32px;padding-bottom:28px;border-bottom:1px solid var(--line);">
     <div><div style="font-family:var(--mono);font-size:44px;font-weight:700;color:var(--green);letter-spacing:-2px;">15</div><div style="font-size:11px;font-weight:600;color:var(--fg2);">On-chain Functions</div></div>
     <div><div style="font-family:var(--mono);font-size:44px;font-weight:700;color:var(--green);letter-spacing:-2px;">62</div><div style="font-size:11px;font-weight:600;color:var(--fg2);">Tests Passing</div><div style="font-family:var(--mono);font-size:9px;color:var(--fg3);">RWA 42 + DAO 20</div></div>
     <div><div style="font-size:22px;font-weight:800;color:var(--green);">Devnet Live</div><div style="font-size:11px;font-weight:600;color:var(--fg2);">Deployed &amp; Running</div></div>
-    <div><div style="font-size:22px;font-weight:800;color:var(--green);">Token-2022</div><div style="font-size:11px;font-weight:600;color:var(--fg2);">NonTransferable</div></div>
+    <div><div style="font-size:22px;font-weight:800;color:var(--green);">Pyth Oracle</div><div style="font-size:11px;font-weight:600;color:var(--fg2);">KRW/USDC 실시간 환율</div></div>
   </div>
 
-  <!-- 5 steps connected by a horizontal line -->
-  <div style="flex:1;display:flex;position:relative;">
-    <!-- connecting line -->
-    <div style="position:absolute;top:14px;left:24px;right:24px;height:2px;background:linear-gradient(90deg,var(--green),var(--blue),var(--purple));border-radius:1px;"></div>
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;padding:0 8px;">
-      <div style="width:28px;height:28px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">1</div>
-      <div style="font-size:14px;font-weight:700;color:var(--fg);margin-top:14px;">발행</div>
-      <div style="font-size:11px;color:var(--fg2);line-height:1.6;margin-top:4px;">부동산 온체인 등록<br>RWA 토큰 발행</div>
+  <!-- 5 steps — arrow card flow -->
+  <div style="display:flex;align-items:center;gap:0;padding-top:8px;">
+    <div style="flex:1;padding:16px 18px;background:rgba(23,207,84,.15);border:1px solid rgba(23,207,84,.25);border-radius:10px;text-align:center;">
+      <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--green);">01</div>
+      <div style="font-size:15px;font-weight:700;color:var(--fg);margin-top:6px;">숙소 등록</div>
+      <div style="font-size:12px;color:var(--fg2);line-height:1.6;margin-top:4px;">빈집 온체인 등록<br>RWA 토큰 발행</div>
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;padding:0 8px;">
-      <div style="width:28px;height:28px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">2</div>
-      <div style="font-size:14px;font-weight:700;color:var(--fg);margin-top:14px;">투자</div>
-      <div style="font-size:11px;color:var(--fg2);line-height:1.6;margin-top:4px;">USDC 납입 → 토큰 수령<br>NonTransferable 적용</div>
+    <div style="font-size:20px;color:var(--fg3);padding:0 6px;flex-shrink:0;align-self:center;">→</div>
+    <div style="flex:1;padding:16px 18px;background:rgba(23,207,84,.15);border:1px solid rgba(23,207,84,.25);border-radius:10px;text-align:center;">
+      <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--green);">02</div>
+      <div style="font-size:15px;font-weight:700;color:var(--fg);margin-top:6px;">투자</div>
+      <div style="font-size:12px;color:var(--fg2);line-height:1.6;margin-top:4px;">USDC 납입 → 토큰 수령<br>Token-2022 양도 불가</div>
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;padding:0 8px;">
-      <div style="width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">3</div>
-      <div style="font-size:14px;font-weight:700;color:var(--fg);margin-top:14px;">활성화</div>
-      <div style="font-size:11px;color:var(--fg2);line-height:1.6;margin-top:4px;">펀딩 목표 달성<br>에스크로 해제, 숙소 오픈</div>
+    <div style="font-size:20px;color:var(--fg3);padding:0 6px;flex-shrink:0;align-self:center;">→</div>
+    <div style="flex:1;padding:16px 18px;background:rgba(79,142,247,.15);border:1px solid rgba(79,142,247,.25);border-radius:10px;text-align:center;">
+      <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--blue);">03</div>
+      <div style="font-size:15px;font-weight:700;color:var(--fg);margin-top:6px;">숙소 오픈</div>
+      <div style="font-size:12px;color:var(--fg2);line-height:1.6;margin-top:4px;">펀딩 목표 달성<br>에스크로 해제</div>
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;padding:0 8px;">
-      <div style="width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">4</div>
-      <div style="font-size:14px;font-weight:700;color:var(--fg);margin-top:14px;">정산</div>
-      <div style="font-size:11px;color:var(--fg2);line-height:1.6;margin-top:4px;">월 수익 단일 트랜잭션<br>30 &middot; 30 &middot; 40 분배</div>
+    <div style="font-size:20px;color:var(--fg3);padding:0 6px;flex-shrink:0;align-self:center;">→</div>
+    <div style="flex:1;padding:16px 18px;background:rgba(79,142,247,.15);border:1px solid rgba(79,142,247,.25);border-radius:10px;text-align:center;">
+      <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--blue);">04</div>
+      <div style="font-size:15px;font-weight:700;color:var(--fg);margin-top:6px;">자동 정산</div>
+      <div style="font-size:12px;color:var(--fg2);line-height:1.6;margin-top:4px;">월 수익 단일 트랜잭션<br>30 &middot; 30 &middot; 40 분배</div>
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;padding:0 8px;">
-      <div style="width:28px;height:28px;border-radius:50%;background:var(--purple);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;">5</div>
-      <div style="font-size:14px;font-weight:700;color:var(--fg);margin-top:14px;">수령</div>
-      <div style="font-size:11px;color:var(--fg2);line-height:1.6;margin-top:4px;">투자자 USDC 도착<br>Helius webhook 기록</div>
+    <div style="font-size:20px;color:var(--fg3);padding:0 6px;flex-shrink:0;align-self:center;">→</div>
+    <div style="flex:1;padding:16px 18px;background:rgba(160,108,245,.15);border:1px solid rgba(160,108,245,.25);border-radius:10px;text-align:center;">
+      <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--purple);">05</div>
+      <div style="font-size:15px;font-weight:700;color:var(--fg);margin-top:6px;">배당 수령</div>
+      <div style="font-size:12px;color:var(--fg2);line-height:1.6;margin-top:4px;">USDC 지갑 도착<br>배당 내역 자동 기록</div>
     </div>
   </div>
 </div>
@@ -248,34 +249,34 @@
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 64px;flex:1;">
     <!-- Left: Travelers -->
     <div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--fg3);margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--fg);display:inline-block;">TRAVELERS</div>
-      <div style="padding:14px 0;border-bottom:1px solid var(--line);">
-        <div style="font-size:15px;font-weight:700;color:var(--fg);">Global Authentic Explorers</div>
-        <div style="font-size:12px;color:var(--fg2);line-height:1.65;margin-top:4px;">'Real Korea'의 정취와 스토리를 찾는 MZ세대 글로벌 여행자.</div>
+      <div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:var(--fg3);margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--fg);display:inline-block;">TRAVELERS</div>
+      <div style="padding:16px 0;border-bottom:1px solid var(--line);">
+        <div style="font-size:18px;font-weight:700;color:var(--fg);">Global Authentic Explorers</div>
+        <div style="font-size:14px;color:var(--fg2);line-height:1.7;margin-top:4px;">'Real Korea'의 정취와 스토리를 찾는 MZ세대 글로벌 여행자.</div>
       </div>
-      <div style="padding:14px 0;border-bottom:1px solid var(--line);">
-        <div style="font-size:15px;font-weight:700;color:var(--fg);">Active Experience Seekers</div>
-        <div style="font-size:12px;color:var(--fg2);line-height:1.65;margin-top:4px;">전통주 빚기, 농사 체험. 주민 밀착형 하이퍼 로컬 액티비티.</div>
+      <div style="padding:16px 0;border-bottom:1px solid var(--line);">
+        <div style="font-size:18px;font-weight:700;color:var(--fg);">Active Experience Seekers</div>
+        <div style="font-size:14px;color:var(--fg2);line-height:1.7;margin-top:4px;">전통주 빚기, 농사 체험. 주민 밀착형 하이퍼 로컬 액티비티.</div>
       </div>
-      <div style="padding:14px 0;border-bottom:1px solid var(--line);">
-        <div style="font-size:15px;font-weight:700;color:var(--fg);">Digital Nomads</div>
-        <div style="font-size:12px;color:var(--fg2);line-height:1.65;margin-top:4px;">자연 속 몰입과 고속 인터넷을 동시에 원하는 리모트 워커.</div>
+      <div style="padding:16px 0;border-bottom:1px solid var(--line);">
+        <div style="font-size:18px;font-weight:700;color:var(--fg);">Digital Nomads</div>
+        <div style="font-size:14px;color:var(--fg2);line-height:1.7;margin-top:4px;">자연 속 몰입과 고속 인터넷을 동시에 원하는 리모트 워커.</div>
       </div>
-      <div style="padding:14px 0;">
-        <div style="font-size:15px;font-weight:700;color:var(--fg);">School &amp; Edu-Groups</div>
-        <div style="font-size:12px;color:var(--fg2);line-height:1.65;margin-top:4px;">학교 교육기관 단위의 단체 농촌 체험학습.</div>
+      <div style="padding:16px 0;">
+        <div style="font-size:18px;font-weight:700;color:var(--fg);">School &amp; Edu-Groups</div>
+        <div style="font-size:14px;color:var(--fg2);line-height:1.7;margin-top:4px;">학교 교육기관 단위의 단체 농촌 체험학습.</div>
       </div>
     </div>
     <!-- Right: Investors -->
     <div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--fg3);margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--green);display:inline-block;">INVESTORS &amp; GOVERNANCE</div>
-      <div style="padding:14px 0;border-bottom:1px solid var(--line);">
-        <div style="font-size:15px;font-weight:700;color:var(--fg);">Impact Investors</div>
-        <div style="font-size:12px;color:var(--fg2);line-height:1.65;margin-top:4px;">RWA 투자 + 가치 소비로 지역 재생 기여. DAO 거버넌스 참여.</div>
+      <div style="font-size:14px;font-weight:700;letter-spacing:.12em;color:var(--fg3);margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--green);display:inline-block;">INVESTORS &amp; GOVERNANCE</div>
+      <div style="padding:16px 0;border-bottom:1px solid var(--line);">
+        <div style="font-size:18px;font-weight:700;color:var(--fg);">Impact Investors</div>
+        <div style="font-size:14px;color:var(--fg2);line-height:1.7;margin-top:4px;">RWA 투자 + 가치 소비로 지역 재생 기여. DAO 거버넌스 참여.</div>
       </div>
-      <div style="padding:14px 0;">
-        <div style="font-size:15px;font-weight:700;color:var(--fg);">Crypto Newcomers via Blinks</div>
-        <div style="font-size:12px;color:var(--fg2);line-height:1.65;margin-top:4px;">SNS 링크 클릭 한 번으로 투자 완료. 크립토 경험 불필요.</div>
+      <div style="padding:16px 0;">
+        <div style="font-size:18px;font-weight:700;color:var(--fg);">Crypto Newcomers via Blinks</div>
+        <div style="font-size:14px;color:var(--fg2);line-height:1.7;margin-top:4px;">SNS 링크 클릭 한 번으로 투자 완료. 크립토 경험 불필요.</div>
       </div>
     </div>
   </div>
@@ -290,7 +291,7 @@
   <h2>이미 수요는 만들어지고 있습니다</h2>
   <p class="desc" style="margin-bottom:20px;">알고리즘 없이, 광고 없이 — SNS에서 자생적으로 퍼지는 농촌 여행 콘텐츠.</p>
 
-  <div style="display:flex;gap:12px;flex:1;">
+  <div style="display:flex;gap:12px;flex:1;min-height:0;">
     <div style="flex:1;border-radius:12px;overflow:hidden;background:var(--bg2);display:flex;align-items:center;justify-content:center;">
       <img src="pitch-deck-assets/1.png" alt="SNS 1" style="width:100%;height:100%;object-fit:contain;">
     </div>
@@ -318,60 +319,59 @@
   <div class="tg" style="color:var(--blue);">Strategic Advantage</div>
   <h2>Zero-CAPEX. 각국 정부가 먼저 나섭니다.</h2>
 
-  <div style="display:grid;grid-template-columns:1.15fr .85fr;gap:56px;flex:1;margin-top:20px;">
-    <!-- Left: Government + unit economics -->
-    <div style="display:flex;flex-direction:column;gap:24px;">
-      <!-- Government table -->
-      <div>
-        <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--green);margin-bottom:12px;">GOVERNMENT EVIDENCE</div>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-          <tr style="border-bottom:1px solid var(--line);">
-            <td style="padding:10px 0;font-weight:700;color:var(--fg);width:70px;">Italy</td>
-            <td style="padding:10px 0;color:var(--fg2);">Mussomeli: 빈집 500채 재활용 → 관광객 <strong>10x</strong>, 인구 감소 중단</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--line);">
-            <td style="padding:10px 0;font-weight:700;color:var(--fg);">Japan</td>
-            <td style="padding:10px 0;color:var(--fg2);">850만 채 아키야에 취득 리모델링 보조금 투입 중</td>
-          </tr>
-          <tr>
-            <td style="padding:10px 0;font-weight:700;color:var(--fg);">Korea</td>
-            <td style="padding:10px 0;color:var(--fg2);">2025 빈집 정비 특별법, 공사비 최대 <strong>70%</strong> 국가 지원</td>
-          </tr>
-        </table>
-        <div style="font-size:11px;color:var(--fg3);margin-top:8px;">공통 패턴: 정부는 방치 비용을 쓰면서도 수익 모델이 없음.</div>
-      </div>
-      <!-- Unit economics — simple 2-col -->
-      <div>
-        <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--fg3);margin-bottom:12px;">UNIT ECONOMICS</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-          <div style="padding:16px 20px;background:var(--green-bg);border-radius:10px;">
-            <div style="font-size:11px;color:var(--fg3);">도미토리 1박 &#8361;40,000</div>
-            <div style="font-size:20px;font-weight:800;color:var(--fg);margin-top:4px;">&#8361;29,700<span style="font-size:12px;font-weight:400;color:var(--fg2);">/월</span></div>
-            <div style="font-size:13px;font-weight:700;color:var(--green);margin-top:2px;">APY ~1.3%</div>
-          </div>
-          <div style="padding:16px 20px;background:var(--green-bg);border-radius:10px;">
-            <div style="font-size:11px;color:var(--fg3);">독채 1박 &#8361;90,000</div>
-            <div style="font-size:20px;font-weight:800;color:var(--fg);margin-top:4px;">&#8361;66,825<span style="font-size:12px;font-weight:400;color:var(--fg2);">/월</span></div>
-            <div style="font-size:13px;font-weight:700;color:var(--green);margin-top:2px;">APY ~2.6%</div>
-          </div>
+  <!-- Top: Government Evidence (full width) -->
+  <div style="margin-top:16px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--green);margin-bottom:10px;">GOVERNMENT EVIDENCE</div>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <tr style="border-bottom:1px solid var(--line);">
+        <td style="padding:10px 0;font-weight:700;color:var(--fg);width:70px;">Italy</td>
+        <td style="padding:10px 0;color:var(--fg2);">Mussomeli: 빈집 500채 재활용 → 관광객 <strong>10x</strong>, 인구 감소 중단</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--line);">
+        <td style="padding:10px 0;font-weight:700;color:var(--fg);">Japan</td>
+        <td style="padding:10px 0;color:var(--fg2);">850만 채 아키야에 취득 리모델링 보조금 투입 중</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;font-weight:700;color:var(--fg);">Korea</td>
+        <td style="padding:10px 0;color:var(--fg2);">2025 빈집 정비 특별법, 공사비 최대 <strong>70%</strong> 국가 지원</td>
+      </tr>
+    </table>
+    <div style="font-size:13px;color:var(--fg2);margin-top:8px;">공통 패턴: 정부는 방치 비용을 쓰면서도 수익 모델이 없음.</div>
+  </div>
+
+  <!-- Bottom: Unit Economics + Revenue Model side by side -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;flex:1;margin-top:20px;align-items:start;">
+    <!-- Unit Economics -->
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--fg3);margin-bottom:12px;">UNIT ECONOMICS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="padding:16px 20px;background:var(--green-bg);border-radius:10px;">
+          <div style="font-size:12px;color:var(--fg3);">도미토리 1박 &#8361;40,000</div>
+          <div style="font-size:22px;font-weight:800;color:var(--fg);margin-top:4px;">&#8361;40,000<span style="font-size:12px;font-weight:400;color:var(--fg2);">/월</span></div>
+          <div style="font-size:14px;font-weight:700;color:var(--green);margin-top:2px;">APY ~2.0%</div>
         </div>
-        <div style="font-size:10px;color:var(--fg3);margin-top:6px;">점유율 55% &middot; 운영비 45% 가정</div>
+        <div style="padding:16px 20px;background:var(--green-bg);border-radius:10px;">
+          <div style="font-size:12px;color:var(--fg3);">독채 1박 &#8361;90,000</div>
+          <div style="font-size:22px;font-weight:800;color:var(--fg);margin-top:4px;">&#8361;85,000<span style="font-size:12px;font-weight:400;color:var(--fg2);">/월</span></div>
+          <div style="font-size:14px;font-weight:700;color:var(--green);margin-top:2px;">APY ~3.5%</div>
+        </div>
       </div>
+      <div style="font-size:12px;color:var(--fg3);margin-top:8px;">점유율 55% &middot; 운영비 45% 가정</div>
     </div>
 
-    <!-- Right: Revenue model — large numbered items -->
-    <div style="display:flex;flex-direction:column;justify-content:center;">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--fg3);margin-bottom:20px;">REVENUE MODEL</div>
-      <div style="display:flex;gap:16px;padding:20px 0;border-bottom:1px solid var(--line);align-items:flex-start;">
-        <div style="font-family:var(--mono);font-size:32px;font-weight:700;color:var(--green);line-height:1;">01</div>
+    <!-- Revenue Model -->
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--fg3);margin-bottom:12px;">REVENUE MODEL</div>
+      <div style="display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);align-items:flex-start;">
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--green);line-height:1;">01</div>
         <div><div style="font-size:15px;font-weight:700;color:var(--fg);">예약 수수료 10~15%</div><div style="font-size:12px;color:var(--fg2);margin-top:2px;">예약 완료 시 자동 적용</div></div>
       </div>
-      <div style="display:flex;gap:16px;padding:20px 0;border-bottom:1px solid var(--line);align-items:flex-start;">
-        <div style="font-family:var(--mono);font-size:32px;font-weight:700;color:var(--blue);line-height:1;">02</div>
+      <div style="display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);align-items:flex-start;">
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--blue);line-height:1;">02</div>
         <div><div style="font-size:15px;font-weight:700;color:var(--fg);">토큰 발행 수수료</div><div style="font-size:12px;color:var(--fg2);margin-top:2px;">숙소 1채 온보딩 시 1회성</div></div>
       </div>
-      <div style="display:flex;gap:16px;padding:20px 0;align-items:flex-start;">
-        <div style="font-family:var(--mono);font-size:32px;font-weight:700;color:var(--purple);line-height:1;">03</div>
+      <div style="display:flex;gap:14px;padding:14px 0;align-items:flex-start;">
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--purple);line-height:1;">03</div>
         <div><div style="font-size:15px;font-weight:700;color:var(--fg);">B2B SaaS 라이선싱</div><div style="font-size:12px;color:var(--fg2);margin-top:2px;">Phase 2+: 일본 유럽 지자체 라이선스</div></div>
       </div>
     </div>
@@ -402,9 +402,9 @@
     </div>
     <!-- Sub-cent -->
     <div style="padding:28px 32px;border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;justify-content:center;">
-      <div style="font-family:var(--mono);font-size:36px;font-weight:700;color:#17cf54;letter-spacing:-2px;">$0.00025</div>
+      <div style="font-size:40px;font-weight:800;color:#17cf54;letter-spacing:-2px;">Sub-cent</div>
       <div style="font-size:16px;font-weight:700;color:var(--fg);margin-top:8px;">소액 분산 투자가 경제적</div>
-      <div style="font-size:13px;color:var(--fg2);line-height:1.7;margin-top:4px;">Ethereum이라면 가스비가 투자금 초과.</div>
+      <div style="font-size:13px;color:var(--fg2);line-height:1.7;margin-top:4px;">트랜잭션당 1센트 미만. 소액 투자도 수수료 부담 없음.</div>
     </div>
     <!-- Token-2022 -->
     <div style="padding:28px 32px;border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;justify-content:center;">
@@ -465,26 +465,28 @@
   <h2>한국에서 증명하고, 세계로</h2>
   <p class="desc" style="margin-bottom:28px;">단순 운영사를 넘어 빈집 재생의 표준 프로토콜.</p>
 
-  <div style="display:flex;gap:20px;flex:1;">
-    <div style="flex:1;border-top:4px solid var(--green);padding-top:20px;display:flex;flex-direction:column;">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--green);">PHASE 1</div>
-      <div style="font-size:48px;font-weight:800;letter-spacing:-3px;color:var(--fg);margin:4px 0 12px;">Y1-2</div>
-      <div style="font-size:16px;font-weight:700;color:var(--fg);margin-bottom:6px;">경주 파일럿 → 경북 확장</div>
-      <div style="font-size:13px;color:var(--fg2);line-height:1.75;">한국형 표준 운영 모델 완성.<br>온체인 정산 실증.<br>Devnet → Mainnet.</div>
-    </div>
-    <div style="width:1px;background:var(--line);"></div>
-    <div style="flex:1;border-top:4px solid var(--blue);padding-top:20px;display:flex;flex-direction:column;">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--blue);">PHASE 2</div>
-      <div style="font-size:48px;font-weight:800;letter-spacing:-3px;color:var(--fg);margin:4px 0 12px;">Y2-3</div>
-      <div style="font-size:16px;font-weight:700;color:var(--fg);margin-bottom:6px;">일본 아키야 시장 진출</div>
-      <div style="font-size:13px;color:var(--fg2);line-height:1.75;">JV / 파트너십 기반.<br>B2B SaaS 런칭.<br>지자체 프로토콜 라이선싱.</div>
-    </div>
-    <div style="width:1px;background:var(--line);"></div>
-    <div style="flex:1;border-top:4px solid var(--purple);padding-top:20px;display:flex;flex-direction:column;">
+  <!-- Staircase: bottom-left → top-right (growth direction) -->
+  <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;gap:8px;margin-top:8px;position:relative;">
+    <!-- Phase 3: top-right -->
+    <div style="grid-column:3;grid-row:1;border-top:3px solid var(--purple);border-left:2px solid var(--line);padding:12px 20px;display:flex;flex-direction:column;justify-content:center;">
       <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--purple);">PHASE 3</div>
-      <div style="font-size:48px;font-weight:800;letter-spacing:-3px;color:var(--fg);margin:4px 0 12px;">Y3+</div>
-      <div style="font-size:16px;font-weight:700;color:var(--fg);margin-bottom:6px;">유럽 확장 — 글로벌 OS</div>
-      <div style="font-size:13px;color:var(--fg2);line-height:1.75;">전 세계 빈집 소유주를 위한<br>로컬 호스피탈리티 프로토콜.<br>글로벌 표준화.</div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-2px;color:var(--fg);margin:2px 0 6px;">Y3+</div>
+      <div style="font-size:13px;font-weight:700;color:var(--fg);margin-bottom:3px;">유럽 확장 — 글로벌 OS</div>
+      <div style="font-size:11px;color:var(--fg2);line-height:1.6;">전 세계 빈집 소유주를 위한<br>로컬 호스피탈리티 프로토콜.</div>
+    </div>
+    <!-- Phase 2: middle-center -->
+    <div style="grid-column:2;grid-row:2;border-top:3px solid var(--blue);border-left:2px solid var(--line);padding:12px 20px;display:flex;flex-direction:column;justify-content:center;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--blue);">PHASE 2</div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-2px;color:var(--fg);margin:2px 0 6px;">Y2-3</div>
+      <div style="font-size:13px;font-weight:700;color:var(--fg);margin-bottom:3px;">일본 아키야 시장 진출</div>
+      <div style="font-size:11px;color:var(--fg2);line-height:1.6;">JV / 파트너십 기반.<br>B2B SaaS 런칭.</div>
+    </div>
+    <!-- Phase 1: bottom-left -->
+    <div style="grid-column:1;grid-row:3;border-top:3px solid var(--green);border-left:2px solid var(--line);padding:12px 20px;display:flex;flex-direction:column;justify-content:center;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--green);">PHASE 1</div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-2px;color:var(--fg);margin:2px 0 6px;">Y1-2</div>
+      <div style="font-size:13px;font-weight:700;color:var(--fg);margin-bottom:3px;">경주 파일럿 → 경북 확장</div>
+      <div style="font-size:11px;color:var(--fg2);line-height:1.6;">한국형 표준 운영 모델 완성.<br>온체인 정산 실증.</div>
     </div>
   </div>
 </div>
