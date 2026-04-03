@@ -242,7 +242,7 @@ export default function GovernancePage() {
                                     { label: t("rules.proposal"), desc: t("rules.proposalDesc") },
                                     { label: t("rules.vote"), desc: t("rules.voteDesc") },
                                     { label: t("rules.approval"), desc: t("rules.approvalDesc", { threshold: daoConfig.approvalThresholdBps / 100 }) },
-                                    { label: t("rules.limit"), desc: t("rules.limitDesc", { cap: daoConfig.votingCapBps / 100 }) },
+                                    { label: t("rules.limit"), desc: daoConfig.votingCapBps >= 10000 ? t("rules.limitNone") : t("rules.limitDesc", { cap: daoConfig.votingCapBps / 100 }) },
                                 ].map(({ label, desc }) => (
                                     <div key={label} className="pt-3">
                                         <p className="text-[11px] font-bold tracking-widest uppercase text-[#8D6E63] mb-1">{label}</p>
