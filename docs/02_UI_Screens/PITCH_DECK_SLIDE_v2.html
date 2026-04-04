@@ -73,6 +73,27 @@
     .d.on { background:#17cf54; box-shadow:0 0 6px rgba(23,207,84,.5); }
     #keys { position:fixed; top:14px; right:18px; font-family:var(--mono); font-size:9px; color:var(--fg3);
       background:rgba(10,15,12,.85); padding:3px 10px; border-radius:100px; border:1px solid var(--line); z-index:100; }
+
+    @media print {
+      @page { size: 1280px 720px; margin: 0; }
+      *, *::before, *::after { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      html, body { width: 1280px; height: 720px; overflow: visible; background: #0a0f0c !important; }
+      #nav, #keys { display: none !important; }
+      #deck { position: static; width: 1280px; height: auto; transform: none !important; display: block; background: #0a0f0c !important; }
+      .S {
+        position: static !important;
+        opacity: 1 !important;
+        transform: none !important;
+        pointer-events: all !important;
+        display: flex !important;
+        width: 1280px;
+        height: 720px;
+        page-break-after: always;
+        break-after: page;
+        border-radius: 0;
+        background: #0a0f0c !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -131,7 +152,7 @@
       <div style="padding:20px 0;">
         <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--purple);margin-bottom:6px;">CAPITAL</div>
         <div style="font-size:14px;font-weight:600;color:var(--fg);margin-bottom:4px;">투자자</div>
-        <div style="font-size:13px;color:var(--fg2);line-height:1.7;">실물 수익 기반 온체인 자산 수요 급증. RWA 시장 <strong>$24B</strong>. 소액 부동산 접근 창구 부재.</div>
+        <div style="font-size:13px;color:var(--fg2);line-height:1.7;">실물 수익 기반 온체인 자산 수요 급증. 소액 부동산 접근 창구 부재.</div>
       </div>
     </div>
   </div>
@@ -274,9 +295,13 @@
         <div style="font-size:18px;font-weight:700;color:var(--fg);">Impact Investors</div>
         <div style="font-size:14px;color:var(--fg2);line-height:1.7;margin-top:4px;">RWA 투자 + 가치 소비로 지역 재생 기여. DAO 거버넌스 참여.</div>
       </div>
-      <div style="padding:16px 0;">
+      <div style="padding:16px 0;border-bottom:1px solid var(--line);">
         <div style="font-size:18px;font-weight:700;color:var(--fg);">Crypto Newcomers via Blinks</div>
         <div style="font-size:14px;color:var(--fg2);line-height:1.7;margin-top:4px;">SNS 링크 클릭 한 번으로 투자 완료. 크립토 경험 불필요.</div>
+      </div>
+      <div style="padding:16px 0;">
+        <div style="font-size:18px;font-weight:700;color:var(--fg);">Local Governments</div>
+        <div style="font-size:14px;color:var(--fg2);line-height:1.7;margin-top:4px;">온체인 지갑으로 직접 수익 수령. 방치 비용 → 수익 모델 전환.</div>
       </div>
     </div>
   </div>
@@ -474,6 +499,10 @@
       <div style="font-size:13px;font-weight:700;color:var(--fg);margin-bottom:3px;">유럽 확장 — 글로벌 OS</div>
       <div style="font-size:11px;color:var(--fg2);line-height:1.6;">전 세계 빈집 소유주를 위한<br>로컬 호스피탈리티 프로토콜.</div>
     </div>
+    <!-- KPI hint: top-right area -->
+    <div style="grid-column:3;grid-row:2;padding:0 20px;display:flex;align-items:flex-start;">
+      <div style="font-family:var(--mono);font-size:13px;color:var(--fg2);line-height:1.8;">EU + JP SaaS licensing<br>Global protocol standard</div>
+    </div>
     <!-- Phase 2: middle-center -->
     <div style="grid-column:2;grid-row:2;border-top:3px solid var(--blue);border-left:2px solid var(--line);padding:12px 20px;display:flex;flex-direction:column;justify-content:center;">
       <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--blue);">PHASE 2</div>
@@ -481,12 +510,20 @@
       <div style="font-size:13px;font-weight:700;color:var(--fg);margin-bottom:3px;">일본 아키야 시장 진출</div>
       <div style="font-size:11px;color:var(--fg2);line-height:1.6;">JV / 파트너십 기반.<br>B2B SaaS 런칭.</div>
     </div>
+    <!-- KPI hint: middle-left -->
+    <div style="grid-column:2;grid-row:3;padding:0 20px;display:flex;align-items:flex-start;">
+      <div style="font-family:var(--mono);font-size:13px;color:var(--fg2);line-height:1.8;">100+ houses onboarded<br>Japan JV signed</div>
+    </div>
     <!-- Phase 1: bottom-left -->
     <div style="grid-column:1;grid-row:3;border-top:3px solid var(--green);border-left:2px solid var(--line);padding:12px 20px;display:flex;flex-direction:column;justify-content:center;">
       <div style="font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--green);">PHASE 1</div>
       <div style="font-size:32px;font-weight:800;letter-spacing:-2px;color:var(--fg);margin:2px 0 6px;">Y1-2</div>
       <div style="font-size:13px;font-weight:700;color:var(--fg);margin-bottom:3px;">경주 파일럿 → 경북 확장</div>
       <div style="font-size:11px;color:var(--fg2);line-height:1.6;">한국형 표준 운영 모델 완성.<br>온체인 정산 실증.</div>
+    </div>
+    <!-- KPI hint: bottom-left below phase 1 area -->
+    <div style="grid-column:1;grid-row:2;padding:0 20px;display:flex;align-items:flex-end;">
+      <div style="font-family:var(--mono);font-size:13px;color:var(--fg2);line-height:1.8;">5 pilot houses<br>Mainnet launch</div>
     </div>
   </div>
 </div>
