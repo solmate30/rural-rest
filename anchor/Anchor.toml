@@ -6,8 +6,8 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-rural_rest_rwa = "EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR"
-rural_rest_dao = "3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX"
+rural_rest_rwa = "BAJ2fSZGZMkt6dFs4Rn5u8CCSsaVtgKbr5Jfca659iZr"
+rural_rest_dao = "142FMJgEw2H4EYzqHk1mEsLoT4aDkfLJJ4UR5ELxmTU1"
 
 [programs.devnet]
 rural_rest_rwa = "BAJ2fSZGZMkt6dFs4Rn5u8CCSsaVtgKbr5Jfca659iZr"

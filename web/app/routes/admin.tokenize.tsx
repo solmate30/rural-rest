@@ -13,6 +13,7 @@ import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
 
 import { TOTAL_SUPPLY, KRW_PER_USDC_FALLBACK } from "~/lib/constants";
 import { formatKrwLabel } from "~/lib/formatters";
+import { DateTimePicker } from "~/components/ui/datetime-picker";
 
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -383,13 +384,10 @@ export default function AdminTokenize() {
                                     </div>
                                     <div>
                                         <label className="text-xs text-stone-500 mb-1.5 block">{t("tokenize.deadline2")}</label>
-                                        <input
-                                            type="datetime-local"
+                                        <DateTimePicker
                                             value={deadlineStr}
-                                            onChange={(e) => setDeadlineStr(e.target.value)}
+                                            onChange={setDeadlineStr}
                                             min={minDatetime}
-                                            max={maxDatetime}
-                                            className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#17cf54]/30 bg-white"
                                         />
                                         <div className="flex gap-1.5 mt-2">
                                             {[1, 6, 24, 72].map((h) => (

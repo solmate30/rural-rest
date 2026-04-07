@@ -16,7 +16,10 @@ import { useWallets } from "@privy-io/react-auth/solana";
 import { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 
 // Vite 환경변수는 서버에서는 undefined일 수 있으므로 클라이언트에서만 사용
-const SOLANA_CHAIN = `solana:${typeof import.meta !== "undefined" ? (import.meta.env.VITE_SOLANA_NETWORK ?? "devnet") : "devnet"}` as const;
+// Privy는 CAIP-2 표준 체인만 지원 (localnet 미지원)
+// localnet 테스트 시에도 서명 체인 ID는 devnet으로 고정
+const _network = typeof import.meta !== "undefined" ? (import.meta.env.VITE_SOLANA_NETWORK ?? "devnet") : "devnet";
+const SOLANA_CHAIN = `solana:${_network === "localnet" ? "devnet" : _network}` as const;
 
 export interface PrivyAnchorWallet {
     publicKey: PublicKey;

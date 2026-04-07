@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function ActivateButton({ rwaTokenId, listingId, tokenMint }: Props) {
+    const { t } = useTranslation("admin");
     const { connection } = useConnection();
     const wallet = usePrivyAnchorWallet();
     const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -60,7 +62,7 @@ export function ActivateButton({ rwaTokenId, listingId, tokenMint }: Props) {
     if (status === "done") {
         return (
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#17cf54]/10 text-[#17cf54] font-bold text-sm border border-[#17cf54]/20">
-                활성화 완료
+                {t("rwa.activate.done")}
             </span>
         );
     }
@@ -73,7 +75,7 @@ export function ActivateButton({ rwaTokenId, listingId, tokenMint }: Props) {
                 variant="success"
                 className="w-full py-3"
             >
-                {status === "loading" ? "활성화 중..." : !wallet ? "지갑 준비 중..." : "운영 시작 (Active)"}
+                {status === "loading" ? t("rwa.activate.activating") : !wallet ? t("rwa.activate.connecting") : t("rwa.activate.button")}
             </Button>
             {status === "error" && (
                 <p className="text-sm text-red-500 text-center">{errorMsg}</p>

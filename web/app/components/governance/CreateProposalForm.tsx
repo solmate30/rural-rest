@@ -217,6 +217,7 @@ export function CreateProposalForm({
                 </label>
                 <input
                     type="datetime-local"
+                    lang="en"
                     value={votingDeadline}
                     onChange={(e) => {
                         setVotingDeadline(e.target.value);

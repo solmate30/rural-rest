@@ -167,6 +167,56 @@
     "apyHintHigh": "Est. APY {{pct}}% — Higher than typical real estate yields. Supporting data is recommended.",
     "issueInstruction": "Sign with your wallet to issue tokens and start fundraising."
   },
+  "rwa": {
+    "initialize": {
+      "sending": "Sending transaction...",
+      "connecting": "Connecting wallet...",
+      "button": "Issue Tokens →",
+      "done": "Token issued on-chain. Reloading..."
+    },
+    "activate": {
+      "activating": "Activating...",
+      "connecting": "Connecting wallet...",
+      "button": "Activate Property",
+      "done": "Activated"
+    },
+    "release": {
+      "connecting": "Connecting wallet...",
+      "activationComplete": "Activation Complete",
+      "reloading": "Reloading page...",
+      "step1": "Releasing funds... (1/3)",
+      "step2": "Activating property... (2/3)",
+      "step3": "Saving... (3/3)",
+      "button": "Launch Property",
+      "unauthorized": "Connected wallet is not the authority or crank wallet. Transaction may fail."
+    },
+    "distribute": {
+      "button": "Distribute Dividend",
+      "title": "Distribute Dividend",
+      "monthLabel": "Dividend Month",
+      "amountLabel": "Total Investor Amount (USDC)",
+      "amountPlaceholder": "e.g. 150.00",
+      "amountHint": "Investor share of 70% operating profit (auto-split by stake)",
+      "cancel": "Cancel",
+      "processing": "Processing...",
+      "done": "Done",
+      "distribute": "Distribute",
+      "invalidAmount": "Please enter a valid amount",
+      "success": "Dividend distributed to {{count}} investors",
+      "error": "Distribution failed"
+    },
+    "council": {
+      "title": "Issue Council Token",
+      "desc": "Issue governance voting tokens to municipalities and village managers.",
+      "walletLabel": "Recipient Wallet Address",
+      "walletPlaceholder": "Solana wallet address (base58)",
+      "amountLabel": "Amount",
+      "issuing": "Issuing...",
+      "issue": "Issue Token",
+      "error": "Issuance failed",
+      "success": "Issued — tx: {{sig}}"
+    }
+  },
   "settlements": {
     "month": "{{month}}{{settled}}",
     "settled": " (Settled)",
@@ -174,7 +224,12 @@
     "status": {
       "settled": "Settled",
       "unsettled": "Unsettled",
-      "na": "N/A"
+      "na": "N/A",
+      "active": "Active",
+      "funded": "Funded",
+      "funding": "Funding",
+      "failed": "Failed",
+      "draft": "Draft"
     },
     "revenue": "Accommodation Revenue",
     "bookingCount": "{{count}} bookings",
@@ -202,6 +257,49 @@
     "unclaimed": "Unclaimed",
     "notSettledYet": "Settlement has not been run for this month yet.",
     "notSettledHint": "Use the settle button above to run the settlement.",
-    "noRevenue": "No booking revenue this month."
+    "noRevenue": "No booking revenue this month.",
+    "modal": {
+      "button": "Settle",
+      "title": "{{month}} Settlement",
+      "preview": "{{month}} Preview",
+      "revenueSection": "Revenue / Costs",
+      "revenue": "Accommodation Revenue",
+      "krwUnit": "{{amount}} KRW",
+      "bookings": "({{count}} bookings)",
+      "calculating": "Calculating...",
+      "reportLabel": "Operations Report",
+      "reportAutoFilled": "Operating cost auto-filled",
+      "reportUpload": "Upload PDF / Excel",
+      "reportClick": "Click to select file",
+      "costLabel": "Operating Cost (KRW)",
+      "costPlaceholder": "Enter manually or upload report",
+      "cancel": "Cancel",
+      "previewBtn": "Preview",
+      "distributionSection": "Distribution Breakdown",
+      "municipality": "Municipality",
+      "operator": "Operator",
+      "investor": "Investors",
+      "operatorUnassigned": "(unassigned)",
+      "operatorNoWallet": "(wallet not registered)",
+      "investorInactive": "(not active)",
+      "investorNone": "(no investors)",
+      "operatorNoWalletWarning": "Operator has not registered a wallet. Please register in the operator dashboard first.",
+      "adminUsdcLow": "Insufficient admin USDC — balance: {{balance}} USDC, required: {{required}} USDC.",
+      "walletPreparing": "Preparing wallet for on-chain settlement...",
+      "onchainRunning": "Executing on-chain transactions",
+      "partialFailure": "Some transactions failed.",
+      "retry": "Retry from failed step",
+      "edit": "Edit",
+      "confirm": "Confirm Settlement",
+      "processing": "Processing...",
+      "done": "Settlement Complete",
+      "govDistribution": "Municipality Distribution (40%)",
+      "operatorPayout": "Operator Payout (30%)",
+      "investorDividends": "Investor Dividends (30%)",
+      "close": "Close",
+      "txDistribute": "Investor dividend distribution",
+      "txOperatorPayout": "Operator USDC transfer (30%)",
+      "txGovPayout": "Municipality USDC transfer (40%)"
+    }
   }
 }

@@ -8,3 +8,12 @@
 # React Router
 /.react-router/
 /build/
+
+# Vercel
+.vercel/
+
+# Build logs
+build.log
+
+# Local test keypairs
+scripts/investor-keypair.json

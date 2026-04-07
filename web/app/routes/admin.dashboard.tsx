@@ -11,6 +11,7 @@ import { DateTime } from "luxon";
 import type { Route } from "./+types/admin.dashboard";
 import { InitializePropertyButton } from "~/components/rwa/InitializePropertyButton";
 import { ReleaseFundsButton } from "~/components/rwa/ReleaseFundsButton";
+import { DateTimePicker } from "~/components/ui/datetime-picker";
 import { throttledSyncAndCrank } from "~/lib/rwa.server";
 
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
@@ -60,7 +61,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     const allListings = await getHostListings("", "admin");
 
     const [investorCountRow] = await db
-        .select({ count: sql<number>`count(distinct ${rwaInvestments.userId})` })
+        .select({ count: sql<number>`count(distinct ${rwaInvestments.walletAddress})` })
         .from(rwaInvestments);
 
     const [totalInvestedRow] = await db
@@ -627,13 +628,10 @@ function ListingSheet({
                                 </div>
                                 <div>
                                     <label className="text-xs text-stone-500 mb-1.5 block">{t("tokenize.deadline2")}</label>
-                                    <input
-                                        type="datetime-local"
+                                    <DateTimePicker
                                         value={deadlineStr}
-                                        onChange={(e) => setDeadlineStr(e.target.value)}
+                                        onChange={setDeadlineStr}
                                         min={minDatetime}
-                                        max={maxDatetime}
-                                        className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#17cf54]/30 bg-white"
                                     />
                                     <div className="flex gap-1.5 mt-2">
                                         {[1, 6, 24, 72].map((h) => (
@@ -903,6 +901,7 @@ function PendingBookingsSection({ pendingBookings }: { pendingBookings: PendingB
 /* ------------------------------------------------------------------ */
 
 function CouncilTokenSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+    const { t } = useTranslation("admin");
     const [wallet, setWallet] = useState("");
     const [amount, setAmount] = useState("1");
     const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -922,9 +921,9 @@ function CouncilTokenSheet({ open, onOpenChange }: { open: boolean; onOpenChange
             const text = await res.text();
             let data: any = {};
             try { data = JSON.parse(text); } catch { throw new Error(text.slice(0, 200)); }
-            if (!res.ok) throw new Error(data.error ?? "발급 실패");
+            if (!res.ok) throw new Error(data.error ?? t("rwa.council.error"));
             setStatus("done");
-            setResultMsg(`발급 완료 — tx: ${data.signature}`);
+            setResultMsg(t("rwa.council.success", { sig: data.signature }));
             setWallet("");
             setAmount("1");
         } catch (e: any) {
@@ -939,17 +938,17 @@ function CouncilTokenSheet({ open, onOpenChange }: { open: boolean; onOpenChange
                 <SheetHeader className="mb-6">
                     <SheetTitle className="text-base font-bold text-[#4a3b2c] flex items-center gap-2">
                         <span className="material-symbols-outlined text-[18px] text-violet-500">token</span>
-                        Council Token 발급
+                        {t("rwa.council.title")}
                     </SheetTitle>
                     <SheetDescription>
-                        지자체·마을지기에게 거버넌스 의결권 토큰을 발급합니다.
+                        {t("rwa.council.desc")}
                     </SheetDescription>
                 </SheetHeader>
                 <div className="flex flex-col gap-4">
                     <div>
-                        <label className="text-xs text-stone-400 font-medium mb-1.5 block">수령 지갑 주소</label>
+                        <label className="text-xs text-stone-400 font-medium mb-1.5 block">{t("rwa.council.walletLabel")}</label>
                         <Input
-                            placeholder="솔라나 지갑 주소 (base58)"
+                            placeholder={t("rwa.council.walletPlaceholder")}
                             value={wallet}
                             onChange={(e) => setWallet(e.target.value)}
                             className="rounded-xl font-mono text-sm"
@@ -957,7 +956,7 @@ function CouncilTokenSheet({ open, onOpenChange }: { open: boolean; onOpenChange
                         />
                     </div>
                     <div>
-                        <label className="text-xs text-stone-400 font-medium mb-1.5 block">수량</label>
+                        <label className="text-xs text-stone-400 font-medium mb-1.5 block">{t("rwa.council.amountLabel")}</label>
                         <Input
                             type="number"
                             min="1"
@@ -973,7 +972,7 @@ function CouncilTokenSheet({ open, onOpenChange }: { open: boolean; onOpenChange
                         disabled={status === "loading" || !wallet.trim()}
                         className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white"
                     >
-                        {status === "loading" ? "발급 중..." : "발급하기"}
+                        {status === "loading" ? t("rwa.council.issuing") : t("rwa.council.issue")}
                     </Button>
                     {resultMsg && (
                         <p className={`text-xs font-mono break-all ${status === "done" ? "text-emerald-600" : "text-red-500"}`}>
@@ -1054,7 +1053,7 @@ export default function AdminDashboard() {
                             onClick={() => setCouncilSheetOpen(true)}
                             className="border-violet-200 text-violet-600 hover:bg-violet-50"
                         >
-                            Council Token 발급
+                            {t("rwa.council.title")}
                         </Button>
                         <Button variant="outline" size="sm" asChild>
                             <Link to="/host/edit/new">{t("dashboard.newListing")}</Link>
@@ -1294,7 +1293,7 @@ export default function AdminDashboard() {
                                                             {listing.title}
                                                         </p>
                                                         <p className="text-xs text-stone-400">
-                                                            {listing.location}
+                                                            {listing.location.split(",").slice(0, 2).join(",").trim()}
                                                         </p>
                                                     </div>
                                                 </div>

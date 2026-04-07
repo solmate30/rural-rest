@@ -36,8 +36,8 @@ const RPC_URL = "http://127.0.0.1:8899";
 const ENV_PATH = path.join(__dirname, "../.env");
 const KEYPAIR_PATH = path.join(process.env.HOME!, ".config/solana/id.json");
 
-const RWA_PROGRAM_ID = new PublicKey("EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR");
-const DAO_PROGRAM_ID = new PublicKey("3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX");
+const RWA_PROGRAM_ID = new PublicKey("BAJ2fSZGZMkt6dFs4Rn5u8CCSsaVtgKbr5Jfca659iZr");
+const DAO_PROGRAM_ID = new PublicKey("142FMJgEw2H4EYzqHk1mEsLoT4aDkfLJJ4UR5ELxmTU1");
 
 const VOTING_PERIOD = new BN(7 * 24 * 60 * 60); // 7일
 const QUORUM_BPS = 1000;                          // 10%
@@ -46,7 +46,7 @@ const VOTING_CAP_BPS = 10000;                    // cap 없음
 
 // ── .env 업데이트 헬퍼 ────────────────────────────────────────────────────────
 function updateEnv(key: string, value: string) {
-    let content = fs.readFileSync(ENV_PATH, "utf-8");
+    let content = fs.existsSync(ENV_PATH) ? fs.readFileSync(ENV_PATH, "utf-8") : "";
     const regex = new RegExp(`^(#\\s*)?${key}=.*$`, "m");
     const newLine = `${key}=${value}`;
     if (regex.test(content)) {
@@ -169,6 +169,15 @@ async function main() {
     const existingDao = await connection.getAccountInfo(daoConfigPda);
     if (existingDao) {
         console.log(`  DaoConfig 이미 초기화됨: ${daoConfigPda.toBase58()}`);
+        // .env에 VITE_COUNCIL_MINT 없으면 온체인에서 읽어서 업데이트
+        const existingCouncilMint = process.env.VITE_COUNCIL_MINT;
+        const envContent = fs.existsSync(ENV_PATH) ? fs.readFileSync(ENV_PATH, "utf-8") : "";
+        if (!existingCouncilMint || !envContent.includes("VITE_COUNCIL_MINT=")) {
+            const cfg = await daoProgram.account.daoConfig.fetch(daoConfigPda);
+            const mintAddr = (cfg as any).councilMint.toBase58();
+            updateEnv("VITE_COUNCIL_MINT", mintAddr);
+            console.log(`  VITE_COUNCIL_MINT .env 복구: ${mintAddr}`);
+        }
     } else {
         const councilMint = await createMint(
             connection,

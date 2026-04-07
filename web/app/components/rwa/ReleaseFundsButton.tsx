@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 import { Button } from "~/components/ui/button";
@@ -19,6 +20,7 @@ const RELEASE_ERRORS: Record<string, string> = {
 };
 
 export function ReleaseFundsButton({ listingId, rwaTokenId, tokenMint, authorityWallet }: Props) {
+    const { t } = useTranslation("admin");
     const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
     const [txStatus, setTxStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -172,7 +174,7 @@ export function ReleaseFundsButton({ listingId, rwaTokenId, tokenMint, authority
     if (!wallet) {
         return (
             <Button variant="outline" className="w-full py-3" disabled>
-                지갑 준비 중...
+                {t("rwa.release.connecting")}
             </Button>
         );
     }
@@ -180,17 +182,17 @@ export function ReleaseFundsButton({ listingId, rwaTokenId, tokenMint, authority
     if (txStatus === "done") {
         return (
             <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-center space-y-1">
-                <p className="text-sm font-bold text-green-700">운영 전환 완료</p>
+                <p className="text-sm font-bold text-green-700">{t("rwa.release.activationComplete")}</p>
                 <p className="text-xs text-green-600 font-mono">{txSig.slice(0, 16)}...</p>
-                <p className="text-xs text-stone-400">페이지를 새로고침합니다...</p>
+                <p className="text-xs text-stone-400">{t("rwa.release.reloading")}</p>
             </div>
         );
     }
 
     const loadingLabel =
-        step === "release" ? "투자금 수령 중... (1/3)" :
-        step === "activate" ? "운영 전환 처리 중... (2/3)" :
-        "저장 중... (3/3)";
+        step === "release" ? t("rwa.release.step1") :
+        step === "activate" ? t("rwa.release.step2") :
+        t("rwa.release.step3");
 
     return (
         <div className="space-y-3">
@@ -198,8 +200,7 @@ export function ReleaseFundsButton({ listingId, rwaTokenId, tokenMint, authority
                 <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-xs">
                     <span className="shrink-0 mt-0.5">&#9888;</span>
                     <span>
-                        연결된 지갑이 authority 또는 crank 지갑이 아닙니다.
-                        트랜잭션이 실패할 수 있습니다.
+                        {t("rwa.release.unauthorized")}
                     </span>
                 </div>
             )}
@@ -209,7 +210,7 @@ export function ReleaseFundsButton({ listingId, rwaTokenId, tokenMint, authority
                 variant="wood"
                 className="w-full py-3"
             >
-                {txStatus === "loading" ? loadingLabel : "운영 개시"}
+                {txStatus === "loading" ? loadingLabel : t("rwa.release.button")}
             </Button>
             {txStatus === "error" && (
                 <p className="text-sm text-red-500 text-center">{errorMsg}</p>
