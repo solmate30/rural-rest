@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
+import { useTranslation } from "react-i18next";
 
 import { PROGRAM_ID, USDC_MINT } from "~/lib/constants";
 import { getProgram, derivePdas } from "~/lib/anchor-client";
@@ -52,6 +53,7 @@ function krwFmt(krw: number) {
 }
 
 export function MonthlySettlementButton({ listingId, listingTitle, month }: Props) {
+    const { t } = useTranslation("admin");
     const { connection } = useConnection();
     const wallet = usePrivyAnchorWallet();
 
@@ -59,13 +61,13 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
     const [step, setStep] = useState<Step>("input");
     const [costKrw, setCostKrw] = useState("");
     const [uploadedFile, setUploadedFile] = useState<string | null>(null);
-    const DEMO_OPERATING_COST = 150000;
-
     function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
         setUploadedFile(file.name);
-        setCostKrw(String(DEMO_OPERATING_COST));
+        // 매출의 30%를 운영비로 자동 입력 (매출 미로드 시 0)
+        const autoCost = revenueInfo ? Math.floor(revenueInfo.grossRevenueKrw * 0.3) : 0;
+        setCostKrw(String(autoCost));
     }
 
     const [loading, setLoading] = useState(false);
@@ -285,9 +287,9 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
     const hasSavedTx = Object.values(savedTxs).some(Boolean);
 
     const TX_STEPS = [
-        { key: "distribute" as const, label: "투자자 배당 분배" },
-        { key: "operatorPayout" as const, label: "운영자 USDC 전송 (30%)" },
-        { key: "govPayout" as const, label: "지자체 USDC 전송 (40%)" },
+        { key: "distribute" as const, label: t("settlements.modal.txDistribute") },
+        { key: "operatorPayout" as const, label: t("settlements.modal.txOperatorPayout") },
+        { key: "govPayout" as const, label: t("settlements.modal.txGovPayout") },
     ];
 
     if (!open) {
@@ -296,18 +298,17 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
                 onClick={() => setOpen(true)}
                 className="text-xs font-semibold text-[#4a3b2c] border border-stone-300 hover:border-[#17cf54] hover:text-[#17cf54] px-3 py-1.5 rounded-lg transition-colors"
             >
-                정산하기
+                {t("settlements.modal.button")}
             </button>
         );
     }
 
-    const [monthYear, monthNum] = month.split("-");
-
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={loading ? undefined : handleClose}>
+
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
                 <div className="px-6 pt-6 pb-4 border-b border-stone-100 text-center">
-                    <h3 className="font-bold text-[#4a3b2c] text-base">{month} 정산</h3>
+                    <h3 className="font-bold text-[#4a3b2c] text-base">{t("settlements.modal.title", { month })}</h3>
                     <p className="text-xs text-stone-400 mt-0.5">{listingTitle}</p>
                 </div>
 
@@ -317,24 +318,24 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
                         <>
                             <div className="space-y-3">
                                 <div className="bg-stone-50 rounded-xl px-4 py-3 flex justify-between items-center">
-                                    <span className="text-xs text-stone-500">숙박 매출</span>
-                                    {revenueLoading ? <span className="text-xs text-stone-400">계산 중...</span>
-                                        : revenueInfo ? <span className="text-sm font-semibold text-[#4a3b2c]">{krwFmt(revenueInfo.grossRevenueKrw)}원 <span className="text-xs text-stone-400">({revenueInfo.bookingCount}건)</span></span>
+                                    <span className="text-xs text-stone-500">{t("settlements.modal.revenue")}</span>
+                                    {revenueLoading ? <span className="text-xs text-stone-400">{t("settlements.modal.calculating")}</span>
+                                        : revenueInfo ? <span className="text-sm font-semibold text-[#4a3b2c]">{krwFmt(revenueInfo.grossRevenueKrw)} <span className="text-xs text-stone-400">{t("settlements.modal.bookings", { count: revenueInfo.bookingCount })}</span></span>
                                         : <span className="text-xs text-stone-400">-</span>}
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-medium text-stone-600">운영 보고서</label>
+                                    <label className="text-xs font-medium text-stone-600">{t("settlements.modal.reportLabel")}</label>
                                     <label className={`flex flex-col items-center justify-center gap-1.5 w-full border-2 border-dashed rounded-xl px-4 py-4 cursor-pointer transition-colors ${uploadedFile ? "border-[#17cf54]/40 bg-[#17cf54]/5" : "border-stone-200 hover:border-stone-300 bg-stone-50"}`}>
                                         <input type="file" accept=".pdf,.xlsx,.xls,.csv" className="hidden" onChange={handleFileUpload} />
                                         {uploadedFile
-                                            ? <><svg className="w-5 h-5 text-[#17cf54]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span className="text-xs font-medium text-[#17cf54]">{uploadedFile}</span><span className="text-[10px] text-stone-400">운영비 자동 입력됨</span></>
-                                            : <><svg className="w-5 h-5 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg><span className="text-xs text-stone-400">PDF / Excel 업로드</span><span className="text-[10px] text-stone-300">클릭하여 파일 선택</span></>}
+                                            ? <><svg className="w-5 h-5 text-[#17cf54]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span className="text-xs font-medium text-[#17cf54]">{uploadedFile}</span><span className="text-[10px] text-stone-400">{t("settlements.modal.reportAutoFilled")}</span></>
+                                            : <><svg className="w-5 h-5 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg><span className="text-xs text-stone-400">{t("settlements.modal.reportUpload")}</span><span className="text-[10px] text-stone-300">{t("settlements.modal.reportClick")}</span></>}
                                     </label>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-medium text-stone-600">운영비 (KRW)</label>
+                                    <label className="text-xs font-medium text-stone-600">{t("settlements.modal.costLabel")}</label>
                                     <input
-                                        type="number" placeholder="직접 입력 또는 보고서 업로드"
+                                        type="number" placeholder={t("settlements.modal.costPlaceholder")}
                                         value={costKrw} onChange={(e) => setCostKrw(e.target.value)} min="0"
                                         className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#17cf54]/30"
                                     />
@@ -342,9 +343,9 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
                             </div>
                             {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
                             <div className="flex gap-2">
-                                <button onClick={handleClose} className="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-600 hover:bg-stone-50 transition-colors">취소</button>
+                                <button onClick={handleClose} className="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-600 hover:bg-stone-50 transition-colors">{t("settlements.modal.cancel")}</button>
                                 <button onClick={handlePreview} disabled={loading} className="flex-1 py-2.5 rounded-xl bg-[#17cf54] text-white text-sm font-bold hover:bg-[#14b847] transition-colors disabled:opacity-50">
-                                    {loading ? "계산 중..." : "미리 계산"}
+                                    {loading ? t("settlements.modal.calculating") : t("settlements.modal.previewBtn")}
                                 </button>
                             </div>
                         </>
@@ -352,54 +353,55 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
 
                     {step === "preview" && preview && (
                         <>
-                            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide">{monthYear}년 {monthNum}월 미리보기</div>
+                            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide">{t("settlements.modal.preview", { month })}</div>
                             <div className="bg-stone-50 rounded-xl p-4 space-y-2">
-                                <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide mb-3">수익 / 비용</p>
-                                <div className="flex justify-between text-sm text-stone-600"><span>숙박 매출</span><span className="font-medium">{krwFmt(preview.grossRevenueKrw)}원 <span className="text-xs text-stone-400">({preview.bookingCount}건)</span></span></div>
-                                <div className="flex justify-between text-sm text-stone-600"><span>운영비</span><span>- {krwFmt(preview.operatingCostKrw)}원</span></div>
-                                <div className="border-t border-stone-200 pt-2 flex justify-between text-sm font-semibold text-[#4a3b2c]"><span>영업이익</span><span>{krwFmt(preview.operatingProfitKrw)}원</span></div>
+                                <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide mb-3">{t("settlements.modal.revenueSection")}</p>
+                                <div className="flex justify-between text-sm text-stone-600"><span>{t("settlements.modal.revenue")}</span><span className="font-medium">{krwFmt(preview.grossRevenueKrw)} <span className="text-xs text-stone-400">{t("settlements.modal.bookings", { count: preview.bookingCount })}</span></span></div>
+                                <div className="flex justify-between text-sm text-stone-600"><span>{t("settlements.operatingCost", { amount: "" }).trim()}</span><span>- {krwFmt(preview.operatingCostKrw)}</span></div>
+                                <div className="border-t border-stone-200 pt-2 flex justify-between text-sm font-semibold text-[#4a3b2c]"><span>{t("settlements.operatingProfit")}</span><span>{krwFmt(preview.operatingProfitKrw)}</span></div>
                             </div>
                             <div className="bg-stone-50 rounded-xl p-4 space-y-2">
-                                <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide mb-3">분배 내역</p>
-                                <div className="flex justify-between text-sm text-stone-600"><span>지자체 <span className="text-xs text-stone-400">(40%)</span></span><span>{usdcFmt(preview.localGovUsdc)} USDC</span></div>
+                                <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide mb-3">{t("settlements.modal.distributionSection")}</p>
+                                <div className="flex justify-between text-sm text-stone-600"><span>{t("settlements.modal.municipality")} <span className="text-xs text-stone-400">(40%)</span></span><span>{usdcFmt(preview.localGovUsdc)} USDC</span></div>
                                 <div className="flex justify-between text-sm text-stone-600">
-                                    <span>운영자 <span className="text-xs text-stone-400">(30%)</span></span>
+                                    <span>{t("settlements.modal.operator")} <span className="text-xs text-stone-400">(30%)</span></span>
                                     <span className={preview.hasOperator && preview.operatorWalletAddress ? "text-[#17cf54] font-medium" : "text-red-400"}>
                                         {usdcFmt(preview.operatorUsdc)} USDC
-                                        {!preview.hasOperator && <span className="ml-1 text-xs">(미배정)</span>}
-                                        {preview.hasOperator && !preview.operatorWalletAddress && <span className="ml-1 text-xs">(지갑 미등록)</span>}
+                                        {!preview.hasOperator && <span className="ml-1 text-xs">{t("settlements.modal.operatorUnassigned")}</span>}
+                                        {preview.hasOperator && !preview.operatorWalletAddress && <span className="ml-1 text-xs">{t("settlements.modal.operatorNoWallet")}</span>}
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-sm text-stone-600">
-                                    <span>투자자 <span className="text-xs text-stone-400">(30%)</span>{preview.hasActiveToken && preview.investorCount > 0 && <span className="ml-1 text-xs text-stone-400">{preview.investorCount}명</span>}</span>
+                                    <span>{t("settlements.modal.investor")} <span className="text-xs text-stone-400">(30%)</span>{preview.hasActiveToken && preview.investorCount > 0 && <span className="ml-1 text-xs text-stone-400">{t("settlements.investorCount", { count: preview.investorCount })}</span>}</span>
                                     <span className={preview.hasActiveToken && preview.investorCount > 0 ? "text-[#17cf54] font-medium" : "text-stone-400"}>
                                         {usdcFmt(preview.investorUsdc)} USDC
-                                        {!preview.hasActiveToken && <span className="ml-1 text-xs">(미운영)</span>}
-                                        {preview.hasActiveToken && preview.investorCount === 0 && <span className="ml-1 text-xs">(투자자 없음)</span>}
+                                        {!preview.hasActiveToken && <span className="ml-1 text-xs">{t("settlements.modal.investorInactive")}</span>}
+                                        {preview.hasActiveToken && preview.investorCount === 0 && <span className="ml-1 text-xs">{t("settlements.modal.investorNone")}</span>}
                                     </span>
                                 </div>
                             </div>
                             {preview.hasOperator && !preview.operatorWalletAddress && (
                                 <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-xs text-red-600">
-                                    운영자가 지갑을 등록하지 않았습니다. 운영자 대시보드에서 먼저 등록해야 합니다.
+                                    {t("settlements.modal.operatorNoWalletWarning")}
                                 </div>
                             )}
                             {usdcBalance !== null && (preview.operatorUsdc + preview.localGovUsdc) > usdcBalance && (
                                 <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-xs text-red-600">
-                                    어드민 USDC 잔액 부족 — 보유 {(usdcBalance / 1_000_000).toFixed(2)} USDC,
-                                    필요 {((preview.operatorUsdc + preview.localGovUsdc) / 1_000_000).toFixed(2)} USDC.
-                                    <a href="https://faucet.circle.com" target="_blank" rel="noopener noreferrer" className="ml-1 underline font-bold">Circle faucet</a>에서 충전하세요.
+                                    {t("settlements.modal.adminUsdcLow", {
+                                        balance: (usdcBalance / 1_000_000).toFixed(2),
+                                        required: ((preview.operatorUsdc + preview.localGovUsdc) / 1_000_000).toFixed(2),
+                                    })}
                                 </div>
                             )}
                             {!wallet && (
                                 <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700 flex items-center gap-2">
                                     <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
-                                    온체인 정산을 위해 지갑을 준비 중입니다...
+                                    {t("settlements.modal.walletPreparing")}
                                 </div>
                             )}
                             {loading && (
                                 <div className="bg-stone-50 rounded-xl p-4 space-y-2">
-                                    <p className="text-xs font-semibold text-stone-500 mb-2">온체인 트랜잭션 실행 중</p>
+                                    <p className="text-xs font-semibold text-stone-500 mb-2">{t("settlements.modal.onchainRunning")}</p>
                                     {TX_STEPS.map(({ key, label }) => (
                                         <div key={key} className="flex items-center justify-between text-xs text-stone-600">
                                             <span>{label}</span>{txStatusIcon(txProgress[key])}
@@ -409,26 +411,26 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
                             )}
                             {hasPartialFailure && hasSavedTx && !loading && (
                                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
-                                    <p className="text-xs text-amber-700 font-medium">일부 트랜잭션이 실패했습니다.</p>
+                                    <p className="text-xs text-amber-700 font-medium">{t("settlements.modal.partialFailure")}</p>
                                     {TX_STEPS.map(({ key, label }) => (
                                         <div key={key} className="flex items-center justify-between text-xs text-stone-600">
                                             <span>{label}</span>{txStatusIcon(txProgress[key])}
                                         </div>
                                     ))}
                                     <button onClick={() => handleConfirm()} className="w-full mt-1 py-2 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-colors">
-                                        실패한 단계부터 재시도
+                                        {t("settlements.modal.retry")}
                                     </button>
                                 </div>
                             )}
                             {error && !hasPartialFailure && <p className="text-xs text-red-500 font-medium">{error}</p>}
                             <div className="flex gap-2">
-                                <button onClick={() => { setStep("input"); setError(""); }} className="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-600 hover:bg-stone-50 transition-colors">수정</button>
+                                <button onClick={() => { setStep("input"); setError(""); }} className="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-600 hover:bg-stone-50 transition-colors">{t("settlements.modal.edit")}</button>
                                 <button
                                     onClick={() => handleConfirm()}
                                     disabled={loading || preview.operatingProfitKrw === 0 || !wallet || (preview.hasOperator && !preview.operatorWalletAddress)}
                                     className="flex-1 py-2.5 rounded-xl bg-[#17cf54] text-white text-sm font-bold hover:bg-[#14b847] transition-colors disabled:opacity-50"
                                 >
-                                    {loading ? "처리 중..." : "정산 확정"}
+                                    {loading ? t("settlements.modal.processing") : t("settlements.modal.confirm")}
                                 </button>
                             </div>
                         </>
@@ -440,14 +442,14 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
                                 <div className="w-12 h-12 rounded-full bg-[#17cf54]/10 flex items-center justify-center mx-auto">
                                     <svg className="w-6 h-6 text-[#17cf54]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                                 </div>
-                                <p className="font-bold text-[#4a3b2c]">정산 완료</p>
+                                <p className="font-bold text-[#4a3b2c]">{t("settlements.modal.done")}</p>
                             </div>
                             <div className="bg-stone-50 rounded-xl p-4 space-y-2 text-sm">
-                                {done.localGovSettlement && <div className="flex justify-between text-stone-600"><span>지자체 분배 (40%)</span><span className="font-medium text-[#17cf54]">{done.localGovSettlement}</span></div>}
-                                {done.operatorSettlement && <div className="flex justify-between text-stone-600"><span>운영자 지급 (30%)</span><span className="font-medium text-[#17cf54]">{done.operatorSettlement}</span></div>}
-                                {done.dividends && <div className="flex justify-between text-stone-600"><span>투자자 배당 (30%)</span><span className="font-medium text-[#17cf54]">{done.dividends}</span></div>}
+                                {done.localGovSettlement && <div className="flex justify-between text-stone-600"><span>{t("settlements.modal.govDistribution")}</span><span className="font-medium text-[#17cf54]">{done.localGovSettlement}</span></div>}
+                                {done.operatorSettlement && <div className="flex justify-between text-stone-600"><span>{t("settlements.modal.operatorPayout")}</span><span className="font-medium text-[#17cf54]">{done.operatorSettlement}</span></div>}
+                                {done.dividends && <div className="flex justify-between text-stone-600"><span>{t("settlements.modal.investorDividends")}</span><span className="font-medium text-[#17cf54]">{done.dividends}</span></div>}
                             </div>
-                            <button onClick={handleClose} className="w-full py-2.5 rounded-xl bg-[#17cf54] text-white text-sm font-bold hover:bg-[#14b847] transition-colors">닫기</button>
+                            <button onClick={handleClose} className="w-full py-2.5 rounded-xl bg-[#17cf54] text-white text-sm font-bold hover:bg-[#14b847] transition-colors">{t("settlements.modal.close")}</button>
                         </>
                     )}
                 </div>

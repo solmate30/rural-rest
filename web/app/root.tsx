@@ -214,7 +214,7 @@ export default function App() {
             "solana:devnet": {
               rpc: createSolanaRpc(import.meta.env.VITE_SOLANA_RPC || "https://api.devnet.solana.com") as any,
               rpcSubscriptions: createSolanaRpcSubscriptions(
-                (import.meta.env.VITE_SOLANA_RPC || "https://api.devnet.solana.com").replace(/^https?:\/\//, (m: string) => m === "http://" ? "ws://" : "wss://"),
+                (import.meta.env.VITE_SOLANA_RPC || "https://api.devnet.solana.com").replace(/^http:\/\//, "ws://").replace(/^https:\/\//, "wss://"),
               ),
             },
           },

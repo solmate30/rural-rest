@@ -49,10 +49,13 @@ stitch.json
 web/stitch_*.html
 web/test-ledger/
 web/scripts/investor-keypair.json
+web/scripts/investor-*-keypair.json
 web/scripts/admin-keypair.json
 web/scripts/operator-keypair.json
 web/scripts/.test-env-summary.json
 web/scripts/bulk-investor-*.json
+web/scripts/demo-investor-*.json
+web/scripts/other-investor-*.json
 web/scripts/test-payer.json
 web/scripts/test-usdc-mint.json
 web/scripts/spv-wallet.json
@@ -62,4 +65,7 @@ web/scripts/devnet-gov-wallet.json
 web/scripts/devnet-operator-wallet.json
 web/test-wallets.json
 anchor/test-ledger/
+test-ledger/
+.vercel/
+web/build.log
 *.bak

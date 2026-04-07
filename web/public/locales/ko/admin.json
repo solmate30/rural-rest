@@ -168,6 +168,56 @@
     "apyHintHigh": "예상 APY {{pct}}% — 일반적인 수익률보다 높습니다. 근거 자료를 갖추는 것을 권장합니다.",
     "issueInstruction": "지갑으로 서명하면 토큰이 발행되고 투자자 모집이 시작됩니다."
   },
+  "rwa": {
+    "initialize": {
+      "sending": "트랜잭션 전송 중...",
+      "connecting": "지갑 준비 중...",
+      "button": "발행하기 →",
+      "done": "온체인 발행 완료. 페이지를 새로 고침 중..."
+    },
+    "activate": {
+      "activating": "활성화 중...",
+      "connecting": "지갑 준비 중...",
+      "button": "운영 시작",
+      "done": "활성화 완료"
+    },
+    "release": {
+      "connecting": "지갑 준비 중...",
+      "activationComplete": "운영 전환 완료",
+      "reloading": "페이지를 새로고침합니다...",
+      "step1": "투자금 수령 중... (1/3)",
+      "step2": "운영 전환 처리 중... (2/3)",
+      "step3": "저장 중... (3/3)",
+      "button": "운영 개시",
+      "unauthorized": "연결된 지갑이 authority 또는 crank 지갑이 아닙니다. 트랜잭션이 실패할 수 있습니다."
+    },
+    "distribute": {
+      "button": "배당 분배",
+      "title": "배당 분배",
+      "monthLabel": "배당 월",
+      "amountLabel": "투자자 배분 총액 (USDC)",
+      "amountPlaceholder": "예: 150.00",
+      "amountHint": "영업이익의 70% 중 투자자 몫 (지분 비율로 자동 분배)",
+      "cancel": "취소",
+      "processing": "처리 중...",
+      "done": "완료",
+      "distribute": "분배",
+      "invalidAmount": "금액을 올바르게 입력해주세요",
+      "success": "{{count}}명에게 배당 분배 완료",
+      "error": "분배 실패"
+    },
+    "council": {
+      "title": "Council Token 발급",
+      "desc": "지자체·마을지기에게 거버넌스 의결권 토큰을 발급합니다.",
+      "walletLabel": "수령 지갑 주소",
+      "walletPlaceholder": "솔라나 지갑 주소 (base58)",
+      "amountLabel": "수량",
+      "issuing": "발급 중...",
+      "issue": "발급하기",
+      "error": "발급 실패",
+      "success": "발급 완료 — tx: {{sig}}"
+    }
+  },
   "settlements": {
     "month": "{{month}}{{settled}}",
     "settled": " (완료)",
@@ -175,7 +225,12 @@
     "status": {
       "settled": "완료",
       "unsettled": "미정산",
-      "na": "해당 없음"
+      "na": "해당 없음",
+      "active": "운영 중",
+      "funded": "모집 완료",
+      "funding": "모집 중",
+      "failed": "모집 실패",
+      "draft": "초안"
     },
     "revenue": "숙박 매출",
     "bookingCount": "{{count}}건 예약",
@@ -203,6 +258,49 @@
     "unclaimed": "미청구",
     "notSettledYet": "이번 달은 아직 정산이 진행되지 않았습니다.",
     "notSettledHint": "위의 정산 버튼으로 정산을 실행하세요.",
-    "noRevenue": "이번 달 예약 매출이 없습니다."
+    "noRevenue": "이번 달 예약 매출이 없습니다.",
+    "modal": {
+      "button": "정산하기",
+      "title": "{{month}} 정산",
+      "preview": "{{month}} 미리보기",
+      "revenueSection": "수익 / 비용",
+      "revenue": "숙박 매출",
+      "krwUnit": "{{amount}}원",
+      "bookings": "({{count}}건)",
+      "calculating": "계산 중...",
+      "reportLabel": "운영 보고서",
+      "reportAutoFilled": "운영비 자동 입력됨",
+      "reportUpload": "PDF / Excel 업로드",
+      "reportClick": "클릭하여 파일 선택",
+      "costLabel": "운영비 (KRW)",
+      "costPlaceholder": "직접 입력 또는 보고서 업로드",
+      "cancel": "취소",
+      "previewBtn": "미리 계산",
+      "distributionSection": "분배 내역",
+      "municipality": "지자체",
+      "operator": "운영자",
+      "investor": "투자자",
+      "operatorUnassigned": "(미배정)",
+      "operatorNoWallet": "(지갑 미등록)",
+      "investorInactive": "(미운영)",
+      "investorNone": "(투자자 없음)",
+      "operatorNoWalletWarning": "운영자가 지갑을 등록하지 않았습니다. 운영자 대시보드에서 먼저 등록해야 합니다.",
+      "adminUsdcLow": "어드민 USDC 잔액 부족 — 보유 {{balance}} USDC, 필요 {{required}} USDC.",
+      "walletPreparing": "온체인 정산을 위해 지갑을 준비 중입니다...",
+      "onchainRunning": "온체인 트랜잭션 실행 중",
+      "partialFailure": "일부 트랜잭션이 실패했습니다.",
+      "retry": "실패한 단계부터 재시도",
+      "edit": "수정",
+      "confirm": "정산 확정",
+      "processing": "처리 중...",
+      "done": "정산 완료",
+      "govDistribution": "지자체 분배 (40%)",
+      "operatorPayout": "운영자 지급 (30%)",
+      "investorDividends": "투자자 배당 (30%)",
+      "close": "닫기",
+      "txDistribute": "투자자 배당 분배",
+      "txOperatorPayout": "운영자 USDC 전송 (30%)",
+      "txGovPayout": "지자체 USDC 전송 (40%)"
+    }
   }
 }

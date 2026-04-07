@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 
@@ -22,6 +23,7 @@ interface Props {
 type Status = "idle" | "loading" | "done" | "error";
 
 export function InitializePropertyButton({ listingId, values, disabled, onStatusChange }: Props) {
+    const { t } = useTranslation("admin");
     const { connection } = useConnection();
     const wallet = usePrivyAnchorWallet();
     const [status, setStatus] = useState<Status>("idle");
@@ -106,7 +108,7 @@ export function InitializePropertyButton({ listingId, values, disabled, onStatus
             )}
             {status === "done" && (
                 <div className="px-4 py-3 rounded-xl bg-[#17cf54]/10 border border-[#17cf54]/20 text-sm text-[#17cf54] font-medium">
-                    온체인 발행 완료. 페이지를 새로 고침 중...
+                    {t("rwa.initialize.done")}
                 </div>
             )}
             <Button
@@ -117,10 +119,10 @@ export function InitializePropertyButton({ listingId, values, disabled, onStatus
                 className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
             >
                 {status === "loading"
-                    ? "트랜잭션 전송 중..."
+                    ? t("rwa.initialize.sending")
                     : !wallet
-                    ? "지갑 준비 중..."
-                    : "발행하기 →"}
+                    ? t("rwa.initialize.connecting")
+                    : t("rwa.initialize.button")}
             </Button>
         </div>
     );

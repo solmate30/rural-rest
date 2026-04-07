@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
     rwaTokenId: string;
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export function DistributeDividendButton({ rwaTokenId, listingTitle }: Props) {
+    const { t } = useTranslation("admin");
     const [open, setOpen] = useState(false);
     const [month, setMonth] = useState(() => {
         const now = new Date();
@@ -18,7 +20,7 @@ export function DistributeDividendButton({ rwaTokenId, listingTitle }: Props) {
     async function handleDistribute() {
         const totalRevenueUsdc = Math.round(parseFloat(revenueUsdc) * 1_000_000);
         if (!month || isNaN(totalRevenueUsdc) || totalRevenueUsdc <= 0) {
-            setMessage("금액을 올바르게 입력해주세요");
+            setMessage(t("rwa.distribute.invalidAmount"));
             return;
         }
         setStatus("loading");
@@ -30,9 +32,9 @@ export function DistributeDividendButton({ rwaTokenId, listingTitle }: Props) {
                 body: JSON.stringify({ rwaTokenId, month, totalRevenueUsdc }),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error ?? "분배 실패");
+            if (!res.ok) throw new Error(data.error ?? t("rwa.distribute.error"));
             setStatus("done");
-            setMessage(`${data.distributed}명에게 배당 분배 완료`);
+            setMessage(t("rwa.distribute.success", { count: data.distributed }));
         } catch (e: any) {
             setStatus("error");
             setMessage(e.message);
@@ -45,7 +47,7 @@ export function DistributeDividendButton({ rwaTokenId, listingTitle }: Props) {
                 onClick={() => setOpen(true)}
                 className="text-xs text-stone-500 hover:text-[#17cf54] font-medium px-3 py-1.5 rounded-lg hover:bg-stone-100 transition-colors"
             >
-                배당 분배
+                {t("rwa.distribute.button")}
             </button>
         );
     }
@@ -53,12 +55,12 @@ export function DistributeDividendButton({ rwaTokenId, listingTitle }: Props) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setOpen(false)}>
             <div className="bg-white rounded-2xl p-6 w-80 shadow-xl space-y-4" onClick={(e) => e.stopPropagation()}>
-                <h3 className="font-bold text-[#4a3b2c]">배당 분배</h3>
+                <h3 className="font-bold text-[#4a3b2c]">{t("rwa.distribute.title")}</h3>
                 <p className="text-xs text-stone-500">{listingTitle}</p>
 
                 <div className="space-y-3">
                     <div className="space-y-1">
-                        <label className="text-xs font-medium text-stone-600">배당 월</label>
+                        <label className="text-xs font-medium text-stone-600">{t("rwa.distribute.monthLabel")}</label>
                         <input
                             type="month"
                             value={month}
@@ -67,17 +69,17 @@ export function DistributeDividendButton({ rwaTokenId, listingTitle }: Props) {
                         />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-xs font-medium text-stone-600">투자자 배분 총액 (USDC)</label>
+                        <label className="text-xs font-medium text-stone-600">{t("rwa.distribute.amountLabel")}</label>
                         <input
                             type="number"
-                            placeholder="예: 150.00"
+                            placeholder={t("rwa.distribute.amountPlaceholder")}
                             value={revenueUsdc}
                             onChange={(e) => setRevenueUsdc(e.target.value)}
                             min="0"
                             step="0.01"
                             className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#17cf54]/30"
                         />
-                        <p className="text-[10px] text-stone-400">영업이익의 70% 중 투자자 몫 (지분 비율로 자동 분배)</p>
+                        <p className="text-[10px] text-stone-400">{t("rwa.distribute.amountHint")}</p>
                     </div>
                 </div>
 
@@ -92,14 +94,14 @@ export function DistributeDividendButton({ rwaTokenId, listingTitle }: Props) {
                         onClick={() => { setOpen(false); setStatus("idle"); setMessage(""); }}
                         className="flex-1 py-2 rounded-xl border border-stone-200 text-sm text-stone-600 hover:bg-stone-50 transition-colors"
                     >
-                        취소
+                        {t("rwa.distribute.cancel")}
                     </button>
                     <button
                         onClick={handleDistribute}
                         disabled={status === "loading" || status === "done"}
                         className="flex-1 py-2 rounded-xl bg-[#17cf54] text-white text-sm font-bold hover:bg-[#14b847] transition-colors disabled:opacity-50"
                     >
-                        {status === "loading" ? "처리 중..." : status === "done" ? "완료" : "분배"}
+                        {status === "loading" ? t("rwa.distribute.processing") : status === "done" ? t("rwa.distribute.done") : t("rwa.distribute.distribute")}
                     </button>
                 </div>
             </div>
