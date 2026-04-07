@@ -4,6 +4,35 @@
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
+## 0. 핵심 플로우 구현 현황
+
+> 서비스 핵심 5단계 기준. 상세 내용: [23_BUSINESS_AND_SERVICE_OVERVIEW.md](../01_Concept_Design/23_BUSINESS_AND_SERVICE_OVERVIEW.md)
+
+| 단계 | 내용 | 상태 | 주요 파일 |
+|------|------|------|----------|
+| 1. 숙소 등록 | 어드민 UI에서 신규 숙소 등록 | ⚠️ 미완 (DB 직접 입력 중) | `admin.dashboard.tsx` |
+| 1. RWA 발행 | 온체인 SPL 토큰 mint 생성 | ✅ 완료 | `InitializePropertyButton` |
+| 2. 토큰 구매 | 투자자 USDC → 에스크로, 토큰 수령 | ✅ 완료 | `/invest/:id`, `PurchaseCard` |
+| 3A. 자금 해제 | funded → active 전환 | ✅ 완료 | `ReleaseFundsButton` |
+| 3B. 환불 | 펀딩 실패 시 USDC 반환 | ✅ 완료 | `RefundButton` |
+| 4. 예약/결제 | 날짜 선택, 카드/USDC 결제 | ✅ 완료 | `/book/:id` |
+| 4. 체크인 | QR 디지털 키 | 🔲 Phase 2 | `03_DIGITAL_KEY_SYSTEM.md` |
+| 5. 월 정산 | 3자 자동 분배 + 투자자 claim | ✅ 완료 | `/admin/settlements/:id` |
+
+### 유저 여정별 미구현 항목
+
+| 여정 | 미구현 항목 | 우선순위 |
+|------|------------|---------|
+| 여행자 | 예약 승인 알림 (이메일/푸시) | Phase 1 |
+| 여행자 | 디지털 키(QR) 체크인 | Phase 2 |
+| 투자자 | KYC 실제 신원 확인 (현재 시뮬레이션) | Phase 2 |
+| 투자자 | DAO 투표 온체인 연동 (현재 UI 목업) | Phase 1 |
+| 어드민 | 숙소 신규 등록 UI (현재 DB 직접 입력) | Phase 1 |
+| 어드민 | 마을운영자 계정 생성 UI (Privy importUser) | Phase 1 |
+| 마을운영자 | 디지털 키 발송 연동 | Phase 2 |
+
+---
+
 ## 1. Current Sprint (High Priority)
 **(Focus: MVP Database & API Setup)**
 *   [x] **Task 2.1**: Setup Tech Stack (React Router v7, Drizzle, Turso). → 코드 구현 완료 (package.json, drizzle.config.ts, db/index.server.ts)
