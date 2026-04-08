@@ -198,12 +198,12 @@ export default function App() {
     <PrivyProvider
       appId={PRIVY_APP_ID}
       config={{
-        loginMethods: ["email", "google" /* , "custom:Kakao" */],
+        loginMethods: ["email", "google", "custom:Kakao" as any],
         appearance: {
-          theme: "light",
+          theme: "#fcfaf7",
           accentColor: "#17cf54",
-          landingHeader: "Rural Rest에 오신 것을 환영합니다",
-          loginMessage: "이메일 또는 구글로 간편하게 시작하세요",
+          landingHeader: "Welcome to Rural Rest",
+          loginMessage: "한국의 고요한 시골집, 특별한 경험을 시작하세요",
         },
         embeddedWallets: {
           solana: { createOnLogin: "users-without-wallets" },
