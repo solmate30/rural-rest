@@ -1,206 +1,350 @@
-import { Header, Button, Input, Card } from "../components/ui-mockup";
-import { useTranslation } from "react-i18next";
-import { useCloudinaryUpload } from "~/hooks/use-cloudinary-upload";
+/**
+ * admin.edit.tsx
+ * 숙소 수정 페이지 — /host/edit/:id
+ *
+ * loader: DB에서 listing 조회
+ * action: title, description, pricePerNight, maxGuests, images, amenities,
+ *         transportSupport, smartLockEnabled 업데이트
+ * Availability 캘린더: 정적 목업 유지
+ */
+
 import { useState, useRef } from "react";
+import { Form, useLoaderData, useActionData, useNavigation, redirect } from "react-router";
+import type { Route } from "./+types/admin.edit";
+import { requireUser } from "~/lib/auth.server";
+import { db } from "~/db/index.server";
+import { listings } from "~/db/schema";
+import { eq } from "drizzle-orm";
+import { Header, Button, Card } from "../components/ui-mockup";
+import { useCloudinaryUpload } from "~/hooks/use-cloudinary-upload";
+import { AMENITY_OPTIONS } from "~/lib/listing-constants";
+
+// ────────────────────────────────────────────────────────────
+// loader
+// ────────────────────────────────────────────────────────────
+
+export async function loader({ request, params }: Route.LoaderArgs) {
+    await requireUser(request, ["admin"]);
+    const [listing] = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.id, params.id));
+    if (!listing) throw new Response("Not Found", { status: 404 });
+    return { listing };
+}
+
+// ────────────────────────────────────────────────────────────
+// action
+// ────────────────────────────────────────────────────────────
+
+export async function action({ request, params }: Route.ActionArgs) {
+    await requireUser(request, ["admin"]);
+    const fd = await request.formData();
+
+    const title = fd.get("title")?.toString().trim() ?? "";
+    const description = fd.get("description")?.toString().trim() ?? "";
+    const pricePerNight = Number(fd.get("pricePerNight"));
+    const maxGuests = Number(fd.get("maxGuests"));
+    const transportSupport = fd.get("transportSupport") === "true";
+    const smartLockEnabled = fd.get("smartLockEnabled") === "true";
+    const amenities = fd.getAll("amenities").map(String);
+    const images = fd.getAll("images").map(String).filter(Boolean);
+
+    const errors: Record<string, string> = {};
+    if (!title) errors.title = "숙소명을 입력해주세요";
+    if (!description) errors.description = "숙소 설명을 입력해주세요";
+    if (!Number.isFinite(pricePerNight) || pricePerNight <= 0) errors.pricePerNight = "가격을 입력해주세요";
+    if (!Number.isFinite(maxGuests) || maxGuests <= 0) errors.maxGuests = "최대 인원을 입력해주세요";
+
+    if (Object.keys(errors).length > 0)
+        return Response.json({ errors }, { status: 422 });
+
+    await db
+        .update(listings)
+        .set({ title, description, pricePerNight, maxGuests, amenities, images, transportSupport, smartLockEnabled })
+        .where(eq(listings.id, params.id));
+
+    return Response.json({ ok: true });
+}
+
+// ────────────────────────────────────────────────────────────
+// 컴포넌트
+// ────────────────────────────────────────────────────────────
+
+const INPUT_CLS = "w-full h-10 rounded-xl border border-input bg-background px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default function AdminEdit() {
-    const { t } = useTranslation("admin");
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [images, setImages] = useState<string[]>([]);
+    const { listing } = useLoaderData<typeof loader>();
+    const actionData = useActionData<typeof action>();
+    const navigation = useNavigation();
+    const isSaving = navigation.state === "submitting";
+    const errors = (actionData as { errors?: Record<string, string> } | undefined)?.errors;
+    const saved = (actionData as { ok?: boolean } | undefined)?.ok;
 
-    // Cloudinary Upload Hook
+    const [title, setTitle] = useState(listing.title);
+    const [description, setDescription] = useState(listing.description);
+    const [pricePerNight, setPricePerNight] = useState(listing.pricePerNight);
+    const [maxGuests, setMaxGuests] = useState(listing.maxGuests);
+    const [amenities, setAmenities] = useState<string[]>((listing.amenities as unknown as string[]) ?? []);
+    const [images, setImages] = useState<string[]>(() => {
+        const raw = listing.images;
+        if (!raw) return [];
+        if (typeof raw === "string") { try { return JSON.parse(raw) as string[]; } catch { return []; } }
+        return raw as unknown as string[];
+    });
+    const [transportSupport, setTransportSupport] = useState(listing.transportSupport);
+    const [smartLockEnabled, setSmartLockEnabled] = useState(listing.smartLockEnabled);
+
+    // ── 사진 업로드
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const { upload, isUploading, progress } = useCloudinaryUpload({
         type: "listing",
-        listingId: "listing_1", // Placeholder for testing
-        onSuccess: (result) => {
-            setImages((prev) => [...prev, result.secureUrl]);
-            console.log("Upload Success:", result);
-        },
-        onError: (error) => {
-            alert("Upload failed: " + error);
-        }
+        listingId: listing.id,
+        onSuccess: (result) => setImages((prev) => [...prev, result.secureUrl]),
+        onError: (err) => alert("업로드 실패: " + err),
     });
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
         const files = e.target.files;
-        if (!files || files.length === 0) return;
+        if (!files) return;
+        for (let i = 0; i < files.length; i++) await upload(files[i]);
+        e.target.value = "";
+    }
 
-        for (let i = 0; i < files.length; i++) {
-            await upload(files[i]);
-        }
-    };
+    function removeImage(url: string) {
+        setImages((prev) => prev.filter((u) => u !== url));
+    }
+
+    function toggleAmenity(a: string) {
+        setAmenities((prev) => prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]);
+    }
 
     return (
-        <div className="min-h-screen bg-stone-50/50">
-            <Header />
-            <main className="container mx-auto py-12 px-4 max-w-4xl">
-                <div className="flex items-center justify-between mb-8">
-                    <div className="space-y-1">
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("edit.title")}</h1>
-                        <p className="text-muted-foreground">{t("edit.desc")}</p>
+        <Form method="post">
+            {/* hidden fields */}
+            {images.map((url) => <input key={url} type="hidden" name="images" value={url} />)}
+            {amenities.map((a) => <input key={a} type="hidden" name="amenities" value={a} />)}
+            <input type="hidden" name="transportSupport" value={String(transportSupport)} />
+            <input type="hidden" name="smartLockEnabled" value={String(smartLockEnabled)} />
+
+            <div className="min-h-screen bg-stone-50/50">
+                <Header />
+                <main className="container mx-auto py-12 px-4 max-w-4xl">
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="space-y-1">
+                            <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Admin · 숙소 수정</p>
+                            <h1 className="text-3xl font-bold tracking-tight text-foreground">{listing.title}</h1>
+                            <p className="text-sm text-muted-foreground">{listing.location}</p>
+                        </div>
                     </div>
-                    <div className="flex gap-4">
-                        <Button variant="outline">{t("edit.previewGuest")}</Button>
-                        <Button>{t("edit.saveChanges")}</Button>
-                    </div>
-                </div>
 
-                <div className="space-y-10 pb-32">
-                    {/* Section 1: Photos */}
-                    <section className="space-y-4">
-                        <h2 className="text-xl font-bold flex items-center gap-2">
-                            <span className="h-6 w-1 bg-primary rounded-full" />
-                            {t("edit.photoManager")}
-                        </h2>
-                        <input
-                            type="file"
-                            multiple
-                            className="hidden"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                            accept="image/*"
-                        />
-                        <Card className="p-10 border-dashed border-2 bg-stone-50 flex flex-col items-center justify-center space-y-4 min-h-[300px] relative overflow-hidden">
-                            {isUploading && (
-                                <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center space-y-2">
-                                    <div className="w-48 h-2 bg-stone-200 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-primary transition-all duration-300"
-                                            style={{ width: `${progress}%` }}
-                                        />
-                                    </div>
-                                    <p className="text-xs font-medium text-primary uppercase tracking-widest">{t("edit.uploading", { pct: progress })}</p>
-                                </div>
-                            )}
-
-                            {images.length > 0 ? (
-                                <div className="grid grid-cols-3 gap-4 w-full">
-                                    {images.map((url, idx) => (
-                                        <div key={idx} className="aspect-video rounded-xl overflow-hidden border shadow-sm group relative">
-                                            <img src={url} alt={`Listing ${idx}`} className="w-full h-full object-cover" />
-                                            <button className="absolute top-2 right-2 h-6 w-6 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                    <div className="space-y-10 pb-32">
+                        {/* 사진 */}
+                        <section className="space-y-4">
+                            <SectionTitle>사진 관리</SectionTitle>
+                            <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleFiles} />
+                            <Card className="p-6 relative overflow-hidden min-h-[200px]">
+                                {isUploading && (
+                                    <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center gap-2">
+                                        <div className="w-48 h-2 bg-stone-200 rounded-full overflow-hidden">
+                                            <div className="h-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
                                         </div>
-                                    ))}
-                                    <button
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-stone-100 transition-colors"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
-                                        <span className="text-xs mt-1 font-medium">{t("edit.addMore")}</span>
-                                    </button>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" x2="12" y1="3" y2="15" /></svg>
+                                        <p className="text-xs text-primary font-medium">업로드 중... {progress}%</p>
                                     </div>
-                                    <div className="text-center">
-                                        <p className="font-bold">{t("edit.uploadHint")}</p>
-                                        <p className="text-sm text-muted-foreground">{t("edit.uploadHint2")}</p>
+                                )}
+                                {images.length > 0 ? (
+                                    <div className="grid grid-cols-3 gap-4">
+                                        {images.map((url, idx) => (
+                                            <div key={url} className="relative aspect-video rounded-xl overflow-hidden border group">
+                                                <img src={url} alt={`사진 ${idx + 1}`} className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeImage(url)}
+                                                    className="absolute top-2 right-2 h-6 w-6 rounded-full bg-black/50 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >×</button>
+                                            </div>
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-stone-100 transition-colors"
+                                        >
+                                            <span className="text-xl">+</span>
+                                            <span className="text-xs mt-1">추가</span>
+                                        </button>
                                     </div>
-                                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>{t("edit.browseFiles")}</Button>
-                                </>
-                            )}
-                        </Card>
-                    </section>
-
-                    {/* Section 2: Listing Details */}
-                    <section className="space-y-4">
-                        <h2 className="text-xl font-bold flex items-center gap-2">
-                            <span className="h-6 w-1 bg-primary rounded-full" />
-                            {t("edit.listingDetails")}
-                        </h2>
-                        <Card className="p-8 space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">{t("edit.propertyTitle")}</label>
-                                <Input defaultValue={t("edit.propertyTitleEx")} />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">{t("edit.description")}</label>
-                                <div className="border rounded-xl bg-background overflow-hidden">
-                                    <div className="border-b bg-stone-50 p-2 flex gap-4">
-                                        <button className="p-1 hover:bg-white rounded font-bold">B</button>
-                                        <button className="p-1 hover:bg-white rounded italic">I</button>
-                                        <button className="p-1 hover:bg-white rounded underline">U</button>
-                                    </div>
-                                    <textarea className="w-full min-h-[200px] p-4 text-sm focus:outline-none bg-transparent" defaultValue={t("edit.descriptionEx")}></textarea>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">{t("edit.basePrice")}</label>
-                                    <Input type="number" defaultValue={t("edit.basePriceEx")} />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">{t("edit.maxGuests")}</label>
-                                    <Input type="number" defaultValue={t("edit.maxGuestsEx")} />
-                                </div>
-                            </div>
-                        </Card>
-                    </section>
-
-                    {/* Section 3: Availability (Static Mock) */}
-                    <section className="space-y-4">
-                        <h2 className="text-xl font-bold flex items-center gap-2">
-                            <span className="h-6 w-1 bg-primary rounded-full" />
-                            {t("edit.availability")}
-                        </h2>
-                        <Card className="p-8 flex flex-col items-center">
-                            <div className="w-full max-w-sm border rounded-2xl p-6 bg-white overflow-hidden shadow-inner">
-                                <div className="flex justify-between items-center mb-6">
-                                    <span className="font-bold">May 2026</span>
-                                    <div className="flex gap-2">
-                                        <Button variant="ghost" className="h-8 w-8 p-0 border">←</Button>
-                                        <Button variant="ghost" className="h-8 w-8 p-0 border">→</Button>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-bold text-muted-foreground uppercase mb-2">
-                                    <span>{t("edit.days.sun")}</span>
-                                    <span>{t("edit.days.mon")}</span>
-                                    <span>{t("edit.days.tue")}</span>
-                                    <span>{t("edit.days.wed")}</span>
-                                    <span>{t("edit.days.thu")}</span>
-                                    <span>{t("edit.days.fri")}</span>
-                                    <span>{t("edit.days.sat")}</span>
-                                </div>
-                                <div className="grid grid-cols-7 gap-2">
-                                    {Array.from({ length: 31 }).map((_, i) => (
-                                        <div key={i} className={`h-10 rounded-lg flex flex-col items-center justify-center text-xs relative ${i + 1 === 15 ? 'bg-primary text-white shadow-md' : 'hover:bg-primary/5 cursor-pointer border border-transparent hover:border-primary/20'}`}>
-                                            <span>{i + 1}</span>
-                                            <span className="text-[8px] opacity-70">120k</span>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center gap-3 py-8">
+                                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                                         </div>
+                                        <p className="font-medium text-sm">사진을 업로드하세요</p>
+                                        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>파일 선택</Button>
+                                    </div>
+                                )}
+                            </Card>
+                        </section>
+
+                        {/* 기본 정보 */}
+                        <section className="space-y-4">
+                            <SectionTitle>기본 정보</SectionTitle>
+                            <Card className="p-8 space-y-6">
+                                <Field label="숙소명" error={errors?.title} required>
+                                    <input name="title" value={title} onChange={(e) => setTitle(e.target.value)} className={INPUT_CLS} maxLength={100} />
+                                </Field>
+                                <Field label="숙소 설명" error={errors?.description} required>
+                                    <textarea
+                                        name="description"
+                                        rows={6}
+                                        value={description}
+                                        onChange={(e) => setDescription(e.target.value)}
+                                        className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                                    />
+                                </Field>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Field label="1박 가격 (KRW)" error={errors?.pricePerNight} required>
+                                        <input name="pricePerNight" type="number" min="1" value={pricePerNight} onChange={(e) => setPricePerNight(Number(e.target.value))} className={INPUT_CLS} />
+                                    </Field>
+                                    <Field label="최대 인원" error={errors?.maxGuests} required>
+                                        <input name="maxGuests" type="number" min="1" max="20" value={maxGuests} onChange={(e) => setMaxGuests(Number(e.target.value))} className={INPUT_CLS} />
+                                    </Field>
+                                </div>
+                            </Card>
+                        </section>
+
+                        {/* 편의시설 */}
+                        <section className="space-y-4">
+                            <SectionTitle>편의시설</SectionTitle>
+                            <Card className="p-8">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {AMENITY_OPTIONS.map((a) => (
+                                        <button
+                                            key={a}
+                                            type="button"
+                                            onClick={() => toggleAmenity(a)}
+                                            className={`px-4 py-2.5 rounded-xl text-sm border transition-colors text-left ${
+                                                amenities.includes(a)
+                                                    ? "bg-primary/10 border-primary text-primary font-medium"
+                                                    : "border-border text-muted-foreground hover:bg-muted/40"
+                                            }`}
+                                        >
+                                            {a}
+                                        </button>
                                     ))}
                                 </div>
-                            </div>
-                            <div className="mt-8 flex gap-6 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-2">
-                                    <div className="h-3 w-3 rounded bg-primary" /> {t("edit.legend.available")}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="h-3 w-3 rounded bg-stone-200" /> {t("edit.legend.blocked")}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="h-3 w-3 rounded border border-primary/40 bg-primary/5" /> {t("edit.legend.selected")}
-                                </div>
-                            </div>
-                        </Card>
-                    </section>
-                </div>
-            </main>
+                            </Card>
+                        </section>
 
-            {/* Sticky Save Bar */}
-            <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-xl border-t z-50 shadow-2xl">
-                <div className="container mx-auto flex justify-between items-center max-w-4xl">
-                    <div className="flex items-center gap-2 text-primary font-medium">
-                        <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                        {t("edit.editingActive")}
+                        {/* 옵션 */}
+                        <section className="space-y-4">
+                            <SectionTitle>옵션</SectionTitle>
+                            <Card className="p-8 space-y-4">
+                                <ToggleRow
+                                    label="교통 지원"
+                                    description="게스트 교통 편의 서비스 제공"
+                                    value={transportSupport}
+                                    onChange={setTransportSupport}
+                                />
+                                <ToggleRow
+                                    label="스마트락"
+                                    description="디지털 키로 체크인/체크아웃"
+                                    value={smartLockEnabled}
+                                    onChange={setSmartLockEnabled}
+                                />
+                            </Card>
+                        </section>
+
+                        {/* Availability — 정적 목업 */}
+                        <section className="space-y-4">
+                            <SectionTitle>예약 가능일 (목업)</SectionTitle>
+                            <Card className="p-8 flex flex-col items-center">
+                                <div className="w-full max-w-sm border rounded-2xl p-6 bg-white overflow-hidden shadow-inner">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <span className="font-bold">May 2026</span>
+                                        <div className="flex gap-2">
+                                            <Button type="button" variant="ghost" className="h-8 w-8 p-0 border">←</Button>
+                                            <Button type="button" variant="ghost" className="h-8 w-8 p-0 border">→</Button>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-bold text-muted-foreground uppercase mb-2">
+                                        {["일","월","화","수","목","금","토"].map((d) => <span key={d}>{d}</span>)}
+                                    </div>
+                                    <div className="grid grid-cols-7 gap-2">
+                                        {Array.from({ length: 31 }).map((_, i) => (
+                                            <div key={i} className={`h-10 rounded-lg flex flex-col items-center justify-center text-xs ${i + 1 === 15 ? "bg-primary text-white" : "hover:bg-primary/5 cursor-pointer border border-transparent hover:border-primary/20"}`}>
+                                                <span>{i + 1}</span>
+                                                <span className="text-[8px] opacity-70">120k</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <p className="mt-4 text-xs text-muted-foreground">예약 가능일 관리는 Phase 2에서 구현됩니다.</p>
+                            </Card>
+                        </section>
                     </div>
-                    <div className="flex gap-4">
-                        <Button variant="outline" className="px-8 shadow-sm">{t("edit.discard")}</Button>
-                        <Button className="px-8 shadow-md">{t("edit.publish")}</Button>
+                </main>
+
+                {/* Sticky Save Bar */}
+                <div className="fixed bottom-0 left-0 right-0 p-5 bg-white/80 backdrop-blur-xl border-t z-50 shadow-2xl">
+                    <div className="container mx-auto flex justify-between items-center max-w-4xl">
+                        <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                            <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                            {saved ? "저장 완료" : "편집 중"}
+                        </div>
+                        <Button type="submit" disabled={isSaving} className="px-8">
+                            {isSaving ? "저장 중..." : "저장"}
+                        </Button>
                     </div>
                 </div>
             </div>
+        </Form>
+    );
+}
+
+// ────────────────────────────────────────────────────────────
+// 내부 컴포넌트
+// ────────────────────────────────────────────────────────────
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+    return (
+        <h2 className="text-xl font-bold flex items-center gap-2">
+            <span className="h-6 w-1 bg-primary rounded-full" />
+            {children}
+        </h2>
+    );
+}
+
+function Field({ label, required, error, children }: {
+    label: string; required?: boolean; error?: string; children: React.ReactNode;
+}) {
+    return (
+        <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-foreground">
+                {label}
+                {required && <span className="text-red-500 ml-0.5">*</span>}
+            </label>
+            {children}
+            {error && <p className="text-xs text-red-500">{error}</p>}
+        </div>
+    );
+}
+
+function ToggleRow({ label, description, value, onChange }: {
+    label: string; description: string; value: boolean; onChange: (v: boolean) => void;
+}) {
+    return (
+        <div className="flex items-center justify-between">
+            <div>
+                <p className="text-sm font-medium">{label}</p>
+                <p className="text-xs text-muted-foreground">{description}</p>
+            </div>
+            <button
+                type="button"
+                onClick={() => onChange(!value)}
+                className={`relative h-6 w-11 rounded-full transition-colors ${value ? "bg-primary" : "bg-muted"}`}
+            >
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${value ? "translate-x-5" : "translate-x-0.5"}`} />
+            </button>
         </div>
     );
 }

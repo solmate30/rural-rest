@@ -25,7 +25,6 @@ export async function action({ request }: Route.ActionArgs) {
     };
 
     let folder: string;
-    let preset: string | undefined;
 
     switch (type) {
         case "listing": {
@@ -49,18 +48,16 @@ export async function action({ request }: Route.ActionArgs) {
             }
 
             folder = `rural-rest/listings/${listingId}`;
-            preset = "listing_preset";
             break;
         }
         case "avatar": {
             folder = `rural-rest/users/${user.id}`;
-            preset = "avatar_preset";
             break;
         }
         default:
             return Response.json({ error: "Invalid type" }, { status: 400 });
     }
 
-    const params = generateSignedParams(folder, preset);
+    const params = generateSignedParams(folder);
     return Response.json(params);
 }

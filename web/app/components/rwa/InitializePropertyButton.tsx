@@ -42,6 +42,7 @@ export function InitializePropertyButton({ listingId, values, disabled, onStatus
             const { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } = await import("@solana/spl-token");
 
             const program = await getProgram(connection, wallet!);
+            const seedId = listingId.replace(/-/g, ""); // UUID 36 → 32 bytes
             const { propertyToken, fundingVault } = await derivePdas(listingId);
 
             const usdcMint = new PublicKey(USDC_MINT);
@@ -56,7 +57,7 @@ export function InitializePropertyButton({ listingId, values, disabled, onStatus
 
             const sig = await program.methods
                 .initializeProperty(
-                    listingId,
+                    seedId,
                     new BN(TOTAL_SUPPLY),
                     new BN(values.valuationKrw),
                     new BN(pricePerTokenUsdc),

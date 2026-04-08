@@ -173,7 +173,8 @@ async function main() {
         const existingCouncilMint = process.env.VITE_COUNCIL_MINT;
         const envContent = fs.existsSync(ENV_PATH) ? fs.readFileSync(ENV_PATH, "utf-8") : "";
         if (!existingCouncilMint || !envContent.includes("VITE_COUNCIL_MINT=")) {
-            const cfg = await daoProgram.account.daoConfig.fetch(daoConfigPda);
+            // TODO: DAO IDL에 daoConfig account 정의 추가 후 as any 제거
+            const cfg = await (daoProgram.account as any).daoConfig.fetch(daoConfigPda);
             const mintAddr = (cfg as any).councilMint.toBase58();
             updateEnv("VITE_COUNCIL_MINT", mintAddr);
             console.log(`  VITE_COUNCIL_MINT .env 복구: ${mintAddr}`);

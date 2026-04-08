@@ -36,6 +36,7 @@ import { Separator } from "~/components/ui/separator";
 import { Input } from "~/components/ui/input";
 import {
     Sheet,
+    SheetClose,
     SheetContent,
     SheetHeader,
     SheetTitle,
@@ -530,7 +531,7 @@ function ListingSheet({
                             {/* Actions */}
                             {listing.tokenStatus === "funding" && listing.rwaTokenId &&
                              deadline && Date.now() > deadline.getTime() &&
-                             fundingProgress >= minPct && (
+                             soldPct >= minPct && (
                                 <div className="space-y-2">
                                     <p className="text-xs text-stone-400 font-medium">{t("dashboard.sheet.forceFundTitle")}</p>
                                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 leading-relaxed">
@@ -591,16 +592,36 @@ function ListingSheet({
                                 </div>
                             )}
 
-                            <Button variant="outline" size="sm" className="w-full" asChild>
-                                <Link to={`/invest/${listing.id}`}>
-                                    <span className="material-symbols-outlined text-[14px]">open_in_new</span>
-                                    {t("dashboard.sheet.viewInvestPage")}
-                                </Link>
-                            </Button>
+                            <SheetClose asChild>
+                                <Button variant="outline" size="sm" className="w-full" asChild>
+                                    <Link to={`/host/edit/${listing.id}`}>
+                                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                                        숙소 수정
+                                    </Link>
+                                </Button>
+                            </SheetClose>
+
+                            <SheetClose asChild>
+                                <Button variant="outline" size="sm" className="w-full" asChild>
+                                    <Link to={`/invest/${listing.id}`}>
+                                        <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                                        {t("dashboard.sheet.viewInvestPage")}
+                                    </Link>
+                                </Button>
+                            </SheetClose>
                         </>
                     ) : (
                         /* ---- Pre-tokenization content ---- */
                         <>
+                            <SheetClose asChild>
+                                <Button variant="outline" size="sm" className="w-full" asChild>
+                                    <Link to={`/host/edit/${listing.id}`}>
+                                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                                        숙소 수정
+                                    </Link>
+                                </Button>
+                            </SheetClose>
+
                             {/* Valuation */}
                             <div>
                                 <p className="text-xs text-stone-400 mb-1">{t("tokenize.valuationLabel")}</p>
@@ -1056,7 +1077,7 @@ export default function AdminDashboard() {
                             {t("rwa.council.title")}
                         </Button>
                         <Button variant="outline" size="sm" asChild>
-                            <Link to="/host/edit/new">{t("dashboard.newListing")}</Link>
+                            <Link to="/admin/listing/new">{t("dashboard.newListing")}</Link>
                         </Button>
                     </div>
                 </div>

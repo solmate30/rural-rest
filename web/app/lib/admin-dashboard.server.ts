@@ -172,7 +172,10 @@ export async function getHostListings(hostId: string, role: string): Promise<Hos
     const onchainMap = await fetchPropertiesOnchain(initializedIds);
 
     return rows.map((r) => {
-        const imgs = r.images as string[] | null;
+        const rawImgs = r.images;
+        const imgs = typeof rawImgs === "string"
+            ? (JSON.parse(rawImgs) as string[])
+            : rawImgs as string[] | null;
         const image = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : "";
         const onchain = onchainMap.get(r.id);
         return {
@@ -236,7 +239,10 @@ export async function getOperatorListings(operatorId: string): Promise<HostListi
     const onchainMap = await fetchPropertiesOnchain(initializedIds);
 
     return rows.map((r) => {
-        const imgs = r.images as string[] | null;
+        const rawImgs = r.images;
+        const imgs = typeof rawImgs === "string"
+            ? (JSON.parse(rawImgs) as string[])
+            : rawImgs as string[] | null;
         const image = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : "";
         const onchain = onchainMap.get(r.id);
         return {
