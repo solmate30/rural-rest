@@ -529,7 +529,7 @@ function ListingSheet({
                             {/* Actions */}
                             {listing.tokenStatus === "funding" && listing.rwaTokenId &&
                              deadline && Date.now() > deadline.getTime() &&
-                             fundingProgress >= minPct && (
+                             soldPct >= minPct && (
                                 <div className="space-y-2">
                                     <p className="text-xs text-stone-400 font-medium">{t("dashboard.sheet.forceFundTitle")}</p>
                                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 leading-relaxed">

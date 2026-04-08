@@ -50,6 +50,7 @@ function parseStatus(raw: any): OnchainPropertyStatus {
 }
 
 export async function fetchPropertyOnchain(listingId: string): Promise<OnchainProperty | null> {
+    if (Buffer.from(listingId).length > 32) return null;
     try {
         const program = getProgram();
         const programId = new PublicKey(SERVER_PROGRAM_ID);
