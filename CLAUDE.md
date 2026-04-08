@@ -85,6 +85,51 @@ Defined in `app/db/schema.ts`. Core tables: `user`, `session`, `account`, `verif
 
 Custom components live in `app/components/ui-mockup.tsx` (Button, Card, Input, Badge, Slider, Header, Footer). Radix-based components in `app/components/ui/`. Path alias `~/*` maps to `./app/*`.
 
+## Component Guidelines
+
+### Classification
+- **UI primitives** (`app/components/ui/`): Single responsibility, controlled only via props, domain-agnostic.
+  - Pure UI elements only: `Button`, `Input`, `Modal`, `Badge`, etc.
+  - Compound components that require domain knowledge (e.g. `AddressSearch`) belong in domain components.
+- **Domain components** (`app/components/{domain}/`): Components that know about specific domain data shapes.
+  - Organized by domain subfolder: `listing/`, `booking/`, `investment/`, `village/`
+  - e.g. `listing/ListingCard`, `booking/BookingForm`, `investment/PurchaseCard`
+- **Route-local components**: UI used only within a single route stays inlined in the route file.
+  - Move to one of the above the moment it is used in 2+ routes.
+
+### Server / Client Boundary (React Router 7)
+- **`.server.ts` files**: Server-only logic — DB, env, auth. The `@react-router/dev/vite` plugin blocks these from the client bundle at build time. This guarantee depends on the Vite plugin being present; accidentally importing a `.server.ts` file from client code will cause a build error or unintended bundling.
+- **All components run on the client** — React Router 7 is not Next.js RSC. There is no `'use client'` directive.
+- **Data fetching in loader/action only** — never call DB directly inside a component.
+- **Always type loader/action return values**
+  - `npm run typecheck` runs `react-router typegen`, which auto-generates `+types/` files.
+  - Without `useLoaderData<typeof loader>()`, the inferred type falls back to `unknown`.
+  ```ts
+  // Good
+  export async function loader(): Promise<{ listings: Listing[] }> { ... }
+  const { listings } = useLoaderData<typeof loader>();
+  ```
+- **SSR + browser APIs**: SSR is on by default. Guard any `window`/`document` access:
+  ```ts
+  // Safe inside useEffect
+  useEffect(() => { /* window access OK */ }, []);
+
+  // Or explicit guard
+  if (typeof window !== 'undefined') { ... }
+  ```
+
+### Custom Hook Extraction
+- Extract to a `hooks/` file when component logic exceeds ~30 lines or is reusable.
+- Location:
+  - Domain-specific: `app/components/{domain}/hooks/`
+  - General-purpose: `app/hooks/`
+- Components own **rendering only**; hooks own **state, side effects, and API calls**.
+
+### Rules
+- If the same component appears in 2+ routes, extract it immediately.
+- If a route file's component LOC exceeds 150, consider extraction.
+- If props drilling reaches 3 levels, use Context or restructure components.
+
 ### Data
 
 Currently uses deterministic mock data from `app/data/listings.ts` for development. Prices in KRW.

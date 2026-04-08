@@ -54,6 +54,7 @@ const amenityMapEn: Record<string, string> = {
     "세탁기": "Washing Machine",
     "작업 책상": "Work Desk",
     "바베큐 그릴": "BBQ Grill",
+    "주차": "Parking",
     "주차 1대": "Parking (1 car)",
     "주차 2대": "Parking (2 cars)",
     "주차 3대": "Parking (3 cars)",

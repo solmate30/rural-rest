@@ -1,6 +1,6 @@
 # 00. Product Backlog & Implementation Status
 > Created: 2026-02-07 17:34
-> Last Updated: 2026-03-30 00:00
+> Last Updated: 2026-04-08 00:00
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
@@ -10,7 +10,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 
 | 단계 | 내용 | 상태 | 주요 파일 |
 |------|------|------|----------|
-| 1. 숙소 등록 | 어드민 UI에서 신규 숙소 등록 | ⚠️ 미완 (DB 직접 입력 중) | `admin.dashboard.tsx` |
+| 1. 숙소 등록 | 어드민 UI에서 신규 숙소 등록 | ✅ 완료 | `admin.listing.new.tsx` |
 | 1. RWA 발행 | 온체인 SPL 토큰 mint 생성 | ✅ 완료 | `InitializePropertyButton` |
 | 2. 토큰 구매 | 투자자 USDC → 에스크로, 토큰 수령 | ✅ 완료 | `/invest/:id`, `PurchaseCard` |
 | 3A. 자금 해제 | funded → active 전환 | ✅ 완료 | `ReleaseFundsButton` |
@@ -27,7 +27,6 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 | 여행자 | 디지털 키(QR) 체크인 | Phase 2 |
 | 투자자 | KYC 실제 신원 확인 (현재 시뮬레이션) | Phase 2 |
 | 투자자 | DAO 투표 온체인 연동 (현재 UI 목업) | Phase 1 |
-| 어드민 | 숙소 신규 등록 UI (현재 DB 직접 입력) | Phase 1 |
 | 어드민 | 마을운영자 계정 생성 UI (Privy importUser) | Phase 1 |
 | 마을운영자 | 디지털 키 발송 연동 | Phase 2 |
 
@@ -57,7 +56,8 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] Create API: `action` for Booking Creation. → 코드 구현 완료 (book.tsx action: Mock 기반 성공 응답, 폼 검증 4종)
 *   [x] **Task 2.12**: Implement AI Global Concierge Chat UI. → 구현 완료 (Floating Chat UI, Global Layout 연동)
 *   [x] Implement Admin Dashboard Data Fetching (Revenue/Occupancy). → 코드 구현 완료 (`admin-dashboard.server.ts`, `admin.dashboard.tsx` loader 연동)
-*   [ ] **Listing Create/Update to DB**: Admin Edit 페이지에서 폼 제출 시 `listings` 테이블에 insert/update. (현재 admin.edit.tsx는 UI만 있으며 action·loader 미구현)
+*   [x] **Listing Create to DB**: `/admin/listing/new` — Daum 주소 검색, region 자동추출, DB INSERT, `/host/edit/:id` redirect. (`admin.listing.new.tsx`)
+*   [ ] **Listing Update to DB**: Admin Edit 페이지에서 폼 제출 시 `listings` 테이블에 update. (현재 admin.edit.tsx는 UI만 있으며 action·loader 미구현)
 
 ### Design System
 *   [x] **Task 2.13**: Setup Shadcn/UI Components (Button, Card, Input, Dialog, ScrollArea, Avatar). → Button, Card, Input, Dialog, ScrollArea, Avatar, Toast 설치 완료 (`app/components/ui/`)

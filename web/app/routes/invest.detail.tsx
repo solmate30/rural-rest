@@ -207,7 +207,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         estimatedApyBps = Math.round((annualDividendUsdc / valuationUsdc) * 10000);
     }
 
-    const images = row.images as string[];
+    const rawImages = row.images;
+    const images = typeof rawImages === "string"
+        ? (JSON.parse(rawImages) as string[])
+        : rawImages as string[];
     const rawAmenities = row.amenities as string[];
 
     const localizedKo = applyListingLocale(

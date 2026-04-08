@@ -109,7 +109,7 @@ async function main() {
 
     const propertyPdas = activeTokens.map(({ listingId }) => {
         const [pda] = PublicKey.findProgramAddressSync(
-            [Buffer.from("property"), Buffer.from(listingId)], rwaProgramPk
+            [Buffer.from("property"), Buffer.from(listingId.replace(/-/g, ""))], rwaProgramPk
         );
         return { pubkey: pda, isWritable: false, isSigner: false };
     });
