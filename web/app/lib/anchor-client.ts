@@ -27,13 +27,14 @@ export async function derivePdas(listingId: string): Promise<{ propertyToken: im
 export async function derivePdas(listingId: string, investor?: { toBuffer: () => Uint8Array }) {
     const { PublicKey } = await import("@solana/web3.js");
     const programId = new PublicKey(PROGRAM_ID);
+    const seedId = listingId.replace(/-/g, ""); // UUID 36 → 32 bytes
 
     const [propertyToken] = PublicKey.findProgramAddressSync(
-        [Buffer.from("property"), Buffer.from(listingId)],
+        [Buffer.from("property"), Buffer.from(seedId)],
         programId
     );
     const [fundingVault] = PublicKey.findProgramAddressSync(
-        [Buffer.from("funding_vault"), Buffer.from(listingId)],
+        [Buffer.from("funding_vault"), Buffer.from(seedId)],
         programId
     );
 

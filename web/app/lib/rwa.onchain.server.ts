@@ -53,9 +53,10 @@ export async function fetchPropertyOnchain(listingId: string): Promise<OnchainPr
     try {
         const program = getProgram();
         const programId = new PublicKey(SERVER_PROGRAM_ID);
+        const seedId = listingId.replace(/-/g, "");
 
         const [propertyToken] = PublicKey.findProgramAddressSync(
-            [Buffer.from("property"), Buffer.from(listingId)],
+            [Buffer.from("property"), Buffer.from(seedId)],
             programId
         );
 
@@ -107,13 +108,14 @@ export async function tryAutoActivate(listingId: string): Promise<boolean> {
     try {
         const connection = getConnection();
         const programId = new PublicKey(SERVER_PROGRAM_ID);
+        const seedId = listingId.replace(/-/g, "");
 
         // crank 키페어 로드
         const crank = Keypair.fromSecretKey(bs58.decode(CRANK_SECRET_KEY));
 
         // propertyToken 조회
         const [propertyTokenPda] = PublicKey.findProgramAddressSync(
-            [Buffer.from("property"), Buffer.from(listingId)],
+            [Buffer.from("property"), Buffer.from(seedId)],
             programId
         );
         const readProgram = getProgram();
@@ -143,7 +145,7 @@ export async function tryAutoActivate(listingId: string): Promise<boolean> {
         }
 
         const [fundingVault] = PublicKey.findProgramAddressSync(
-            [Buffer.from("funding_vault"), Buffer.from(listingId)],
+            [Buffer.from("funding_vault"), Buffer.from(seedId)],
             programId
         );
 

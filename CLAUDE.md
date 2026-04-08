@@ -85,6 +85,51 @@ Defined in `app/db/schema.ts`. Core tables: `user`, `session`, `account`, `verif
 
 Custom components live in `app/components/ui-mockup.tsx` (Button, Card, Input, Badge, Slider, Header, Footer). Radix-based components in `app/components/ui/`. Path alias `~/*` maps to `./app/*`.
 
+## Component Guidelines
+
+### Classification
+- **UI primitives** (`app/components/ui/`): Single responsibility, controlled only via props, domain-agnostic.
+  - Pure UI elements only: `Button`, `Input`, `Modal`, `Badge`, etc.
+  - Compound components that require domain knowledge (e.g. `AddressSearch`) belong in domain components.
+- **Domain components** (`app/components/{domain}/`): Components that know about specific domain data shapes.
+  - Organized by domain subfolder: `listing/`, `booking/`, `investment/`, `village/`
+  - e.g. `listing/ListingCard`, `booking/BookingForm`, `investment/PurchaseCard`
+- **Route-local components**: UI used only within a single route stays inlined in the route file.
+  - Move to one of the above the moment it is used in 2+ routes.
+
+### Server / Client Boundary (React Router 7)
+- **`.server.ts` files**: Server-only logic — DB, env, auth. The `@react-router/dev/vite` plugin blocks these from the client bundle at build time. This guarantee depends on the Vite plugin being present; accidentally importing a `.server.ts` file from client code will cause a build error or unintended bundling.
+- **All components run on the client** — React Router 7 is not Next.js RSC. There is no `'use client'` directive.
+- **Data fetching in loader/action only** — never call DB directly inside a component.
+- **Always type loader/action return values**
+  - `npm run typecheck` runs `react-router typegen`, which auto-generates `+types/` files.
+  - Without `useLoaderData<typeof loader>()`, the inferred type falls back to `unknown`.
+  ```ts
+  // Good
+  export async function loader(): Promise<{ listings: Listing[] }> { ... }
+  const { listings } = useLoaderData<typeof loader>();
+  ```
+- **SSR + browser APIs**: SSR is on by default. Guard any `window`/`document` access:
+  ```ts
+  // Safe inside useEffect
+  useEffect(() => { /* window access OK */ }, []);
+
+  // Or explicit guard
+  if (typeof window !== 'undefined') { ... }
+  ```
+
+### Custom Hook Extraction
+- Extract to a `hooks/` file when component logic exceeds ~30 lines or is reusable.
+- Location:
+  - Domain-specific: `app/components/{domain}/hooks/`
+  - General-purpose: `app/hooks/`
+- Components own **rendering only**; hooks own **state, side effects, and API calls**.
+
+### Rules
+- If the same component appears in 2+ routes, extract it immediately.
+- If a route file's component LOC exceeds 150, consider extraction.
+- If props drilling reaches 3 levels, use Context or restructure components.
+
 ### Data
 
 Currently uses deterministic mock data from `app/data/listings.ts` for development. Prices in KRW.
@@ -116,6 +161,23 @@ docs/02_UI_Screens/         -- UI prototypes, flow diagrams (page-by-page finish
 docs/03_Technical_Specs/    -- DB schema, API specs, implementation guides
 docs/04_Logic_Progress/   -- Backlog, business logic, state machines, algorithms
 docs/05_QA_Validation/    -- Test scenarios, QA checklists (system validation)
+docs/06_Pitch/            -- Pitch decks and presentation scripts
 ```
 
 Files are numbered (e.g., `01_VISION.md`) and must include creation/update dates in `YYYY-MM-DD HH:mm` format.
+
+### 개발 시 필독 문서
+
+기능을 구현하거나 변경할 때 아래 문서를 참고한다:
+
+- `docs/01_Concept_Design/23_BUSINESS_AND_SERVICE_OVERVIEW.md` — 비즈니스 구조, 핵심 5단계 플로우, 역할별 화면 구조
+- `docs/01_Concept_Design/24_USER_JOURNEYS.md` — 역할별 유저 여정 (구현 대상이 어느 흐름에 속하는지 확인)
+
+### 문서 업데이트 규칙
+
+기능 구현 완료 후 **`docs/04_Logic_Progress/00_BACKLOG.md` 하나만** 업데이트한다:
+1. 완료된 항목 `[ ]` → `[x]` 체크
+2. "유저 여정별 미구현 항목" 표에서 해당 줄 제거
+3. 새로 발견한 갭이 있으면 추가
+
+비즈니스 구조나 유저 플로우가 바뀔 때만 `23`, `24` 문서를 수정한다.

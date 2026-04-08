@@ -186,8 +186,8 @@ export async function loader({ params }: Route.LoaderArgs) {
             return null;
         }
 
-        // Gist raw URL (레거시 호환)
-        if (uri.includes("gist.")) {
+        // Gist raw URL 또는 일반 URL (텍스트/마크다운 직접 fetch)
+        if (uri.startsWith("http")) {
             try {
                 const res = await fetch(uri);
                 if (res.ok) return await res.text();
