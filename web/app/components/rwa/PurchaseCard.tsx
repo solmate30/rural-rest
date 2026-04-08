@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
@@ -6,6 +6,9 @@ import { Card, Input } from "~/components/ui-mockup";
 import { Button } from "~/components/ui/button";
 import { useToast } from "~/hooks/use-toast";
 import { useKyc } from "~/components/KycProvider";
+import { usePrivy } from "@privy-io/react-auth";
+
+type Step = "buy" | "need-wallet" | "need-kyc";
 
 function useCountdown(deadlineMs: number) {
     const calc = () => {
@@ -18,8 +21,9 @@ function useCountdown(deadlineMs: number) {
             seconds: Math.floor((diff % 60000) / 1000),
         };
     };
-    const [t, setT] = useState(calc);
+    const [t, setT] = useState<ReturnType<typeof calc>>(null);
     useEffect(() => {
+        setT(calc());
         const id = setInterval(() => setT(calc()), 1000);
         return () => clearInterval(id);
     }, [deadlineMs]);
@@ -57,9 +61,16 @@ export function PurchaseCard({
     const location = useLocation();
     const { toast } = useToast();
     const { isKycCompleted } = useKyc();
+    const { login } = usePrivy();
 
     const [tokenCount, setTokenCount] = useState(1);
     const [isProcessing, setIsProcessing] = useState(false);
+
+    const step: Step = useMemo(() => {
+        if (!wallet) return "need-wallet";
+        if (!isKycCompleted) return "need-kyc";
+        return "buy";
+    }, [wallet, isKycCompleted]);
 
     const subtotalUsdc = usdcPrice * tokenCount;
     const subtotalKrw = tokenPrice * tokenCount;
@@ -300,7 +311,25 @@ export function PurchaseCard({
                         펀딩 목표가 달성되었습니다.<br />첫 배당은 운영 시작 익월에 지급됩니다.
                     </p>
                 </div>
-            ) : isKycCompleted ? (
+            ) : step === "need-wallet" ? (
+                <Button
+                    variant="success"
+                    size="xl"
+                    className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={login}
+                >
+                    로그인하기
+                </Button>
+            ) : step === "need-kyc" ? (
+                <Button
+                    variant="success"
+                    size="xl"
+                    className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={() => navigate(`/kyc?return=${encodeURIComponent(location.pathname + location.search)}`)}
+                >
+                    신원 확인하기
+                </Button>
+            ) : (
                 <Button
                     variant="success"
                     size="xl"
@@ -311,16 +340,7 @@ export function PurchaseCard({
                     <span className="material-symbols-outlined text-[20px]">
                         {isProcessing ? "hourglass_empty" : "account_balance_wallet"}
                     </span>
-                    {isProcessing ? "Processing Transaction..." : "Buy with USDC"}
-                </Button>
-            ) : (
-                <Button
-                    variant="success"
-                    size="xl"
-                    className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={() => navigate(`/kyc?return=${encodeURIComponent(location.pathname + location.search)}`)}
-                >
-                    Complete KYC to Invest
+                    {isProcessing ? "처리 중..." : "USDC로 투자하기"}
                 </Button>
             )}
 
