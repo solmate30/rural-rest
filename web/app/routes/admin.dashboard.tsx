@@ -48,6 +48,110 @@ import { TOTAL_SUPPLY } from "~/lib/constants";
 import { usePythRate } from "~/hooks/usePythRate";
 
 /* ------------------------------------------------------------------ */
+/*  Helper: CreateOperatorSheet                                         */
+/* ------------------------------------------------------------------ */
+
+function CreateOperatorSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+    const [resultMsg, setResultMsg] = useState("");
+
+    function reset() {
+        setName("");
+        setEmail("");
+        setStatus("idle");
+        setResultMsg("");
+    }
+
+    async function handleCreate() {
+        if (!name.trim() || !email.trim()) return;
+        setStatus("loading");
+        setResultMsg("");
+        try {
+            const res = await fetch("/api/admin/create-operator", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: name.trim(), email: email.trim() }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? "운영자 생성 실패");
+            setStatus("done");
+            setResultMsg(
+                data.created
+                    ? `운영자 계정이 생성되었습니다. ${email}로 로그인 링크가 전송됩니다.`
+                    : `기존 계정의 권한이 운영자로 변경되었습니다.`,
+            );
+        } catch (e: any) {
+            setStatus("error");
+            setResultMsg(e.message);
+        }
+    }
+
+    return (
+        <Sheet open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
+            <SheetContent side="right" className="w-full sm:max-w-md bg-[#fcfaf7]">
+                <SheetHeader className="mb-6">
+                    <SheetTitle className="text-base font-bold text-[#4a3b2c] flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px] text-emerald-600">person_add</span>
+                        마을운영자 계정 생성
+                    </SheetTitle>
+                    <SheetDescription>
+                        이메일로 Privy 계정을 생성하고 운영자 권한을 부여합니다.
+                        생성 후 해당 이메일로 로그인하면 운영자 대시보드에 접근 가능합니다.
+                    </SheetDescription>
+                </SheetHeader>
+                <div className="flex flex-col gap-4">
+                    <div>
+                        <label className="text-xs text-stone-400 font-medium mb-1.5 block">운영자 이름</label>
+                        <Input
+                            placeholder="예: 홍길동"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="rounded-xl text-sm"
+                            disabled={status === "loading" || status === "done"}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs text-stone-400 font-medium mb-1.5 block">이메일</label>
+                        <Input
+                            type="email"
+                            placeholder="operator@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="rounded-xl text-sm"
+                            disabled={status === "loading" || status === "done"}
+                        />
+                    </div>
+                    {status !== "done" ? (
+                        <Button
+                            onClick={handleCreate}
+                            disabled={status === "loading" || !name.trim() || !email.trim()}
+                            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                            {status === "loading" ? "생성 중..." : "운영자 계정 생성"}
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            onClick={() => { reset(); onOpenChange(false); }}
+                            className="rounded-xl"
+                        >
+                            닫기
+                        </Button>
+                    )}
+                    {resultMsg && (
+                        <p className={`text-xs break-all leading-relaxed ${status === "done" ? "text-emerald-600" : "text-red-500"}`}>
+                            {resultMsg}
+                        </p>
+                    )}
+                </div>
+            </SheetContent>
+        </Sheet>
+    );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Loader                                                             */
 /* ------------------------------------------------------------------ */
 
@@ -594,15 +698,6 @@ function ListingSheet({
 
                             <SheetClose asChild>
                                 <Button variant="outline" size="sm" className="w-full" asChild>
-                                    <Link to={`/host/edit/${listing.id}`}>
-                                        <span className="material-symbols-outlined text-[14px]">edit</span>
-                                        숙소 수정
-                                    </Link>
-                                </Button>
-                            </SheetClose>
-
-                            <SheetClose asChild>
-                                <Button variant="outline" size="sm" className="w-full" asChild>
                                     <Link to={`/invest/${listing.id}`}>
                                         <span className="material-symbols-outlined text-[14px]">open_in_new</span>
                                         {t("dashboard.sheet.viewInvestPage")}
@@ -613,14 +708,6 @@ function ListingSheet({
                     ) : (
                         /* ---- Pre-tokenization content ---- */
                         <>
-                            <SheetClose asChild>
-                                <Button variant="outline" size="sm" className="w-full" asChild>
-                                    <Link to={`/host/edit/${listing.id}`}>
-                                        <span className="material-symbols-outlined text-[14px]">edit</span>
-                                        숙소 수정
-                                    </Link>
-                                </Button>
-                            </SheetClose>
 
                             {/* Valuation */}
                             <div>
@@ -741,6 +828,16 @@ function ListingSheet({
                             </div>
                         </>
                     )}
+
+                    {/* 공통 하단 액션 */}
+                    <SheetClose asChild>
+                        <Button variant="outline" size="sm" className="w-full" asChild>
+                            <Link to={`/host/edit/${listing.id}`}>
+                                <span className="material-symbols-outlined text-[14px]">edit</span>
+                                숙소 수정
+                            </Link>
+                        </Button>
+                    </SheetClose>
                 </div>
             </SheetContent>
         </Sheet>
@@ -1025,6 +1122,7 @@ export default function AdminDashboard() {
     const [sheetOpen, setSheetOpen] = useState(false);
     const [selectedListing, setSelectedListing] = useState<HostListingRow | null>(null);
     const [councilSheetOpen, setCouncilSheetOpen] = useState(false);
+    const [operatorSheetOpen, setOperatorSheetOpen] = useState(false);
 
     const openSheet = (listing: HostListingRow) => {
         setSelectedListing(listing);
@@ -1068,6 +1166,14 @@ export default function AdminDashboard() {
                         </p>
                     </div>
                     <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setOperatorSheetOpen(true)}
+                            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                        >
+                            운영자 계정 생성
+                        </Button>
                         <Button
                             variant="outline"
                             size="sm"
@@ -1404,6 +1510,8 @@ export default function AdminDashboard() {
 
             {/* Right slide sheet — Council Token 발급 */}
             <CouncilTokenSheet open={councilSheetOpen} onOpenChange={setCouncilSheetOpen} />
+            {/* Right slide sheet — 마을운영자 계정 생성 */}
+            <CreateOperatorSheet open={operatorSheetOpen} onOpenChange={setOperatorSheetOpen} />
         </div>
     );
 }
