@@ -1,4 +1,17 @@
 /**
+ * Cloudinary URL에 최적화 transform 삽입
+ * - w: 표시 너비 (기본 800px, 카드용 600px 등)
+ * - q_auto: 품질 자동 최적화
+ * - f_auto: WebP/AVIF 자동 포맷 선택
+ *
+ * 비 Cloudinary URL이면 원본 그대로 반환
+ */
+export function cdnImg(url: string, width = 800): string {
+    if (!url?.includes("cloudinary.com")) return url;
+    return url.replace("/upload/", `/upload/w_${width},q_auto,f_auto/`);
+}
+
+/**
  * USDC 표시 (소수점 자동 조절)
  * 0 → "0 USDC", 1.5 → "1.50 USDC", 0.00012 → "0.0001 USDC"
  */
