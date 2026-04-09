@@ -18,5 +18,13 @@ export async function detectLocale(request: Request): Promise<SupportedLocale> {
     const cookieLang = match?.[1];
     if (cookieLang === "ko" || cookieLang === "en") return cookieLang;
 
+    // Accept-Language 헤더 파싱 (예: "ko-KR,ko;q=0.9,en;q=0.8")
+    const acceptLang = request.headers.get("accept-language") ?? "";
+    const preferred = acceptLang
+        .split(",")
+        .map((s) => s.trim().split(";")[0].split("-")[0].toLowerCase())
+        .find((lang) => lang === "ko" || lang === "en");
+    if (preferred === "ko" || preferred === "en") return preferred;
+
     return DEFAULT_LOCALE;
 }

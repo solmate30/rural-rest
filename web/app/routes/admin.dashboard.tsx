@@ -48,6 +48,105 @@ import { TOTAL_SUPPLY } from "~/lib/constants";
 import { usePythRate } from "~/hooks/usePythRate";
 
 /* ------------------------------------------------------------------ */
+/*  Helper: CreateOperatorSheet                                         */
+/* ------------------------------------------------------------------ */
+
+function CreateOperatorSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+    const [resultMsg, setResultMsg] = useState("");
+
+    function reset() {
+        setName("");
+        setEmail("");
+        setStatus("idle");
+        setResultMsg("");
+    }
+
+    async function handleCreate() {
+        if (!name.trim() || !email.trim()) return;
+        setStatus("loading");
+        setResultMsg("");
+        try {
+            const res = await fetch("/api/admin/create-operator", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: name.trim(), email: email.trim() }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? "계정을 만들지 못했어요");
+            setStatus("done");
+            setResultMsg(`운영자 계정이 생성되었습니다. ${email}로 /auth에서 로그인하도록 안내해주세요.`);
+        } catch (e: any) {
+            setStatus("error");
+            setResultMsg(e.message);
+        }
+    }
+
+    return (
+        <Sheet open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
+            <SheetContent side="right" className="w-full sm:max-w-md bg-[#fcfaf7]">
+                <SheetHeader className="mb-6">
+                    <SheetTitle className="text-base font-bold text-[#4a3b2c]">
+                        마을운영자 계정 생성
+                    </SheetTitle>
+                    <SheetDescription>
+                        이메일로 Privy 계정을 생성하고 운영자 권한을 부여합니다.
+                        생성 후 해당 이메일로 로그인하면 운영자 대시보드에 접근 가능합니다.
+                    </SheetDescription>
+                </SheetHeader>
+                <div className="flex flex-col gap-4">
+                    <div>
+                        <label className="text-xs text-stone-400 font-medium mb-1.5 block">운영자 이름</label>
+                        <Input
+                            placeholder="예: 홍길동"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="rounded-xl text-sm"
+                            disabled={status === "loading" || status === "done"}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs text-stone-400 font-medium mb-1.5 block">이메일</label>
+                        <Input
+                            type="email"
+                            placeholder="operator@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="rounded-xl text-sm"
+                            disabled={status === "loading" || status === "done"}
+                        />
+                    </div>
+                    {status !== "done" ? (
+                        <Button
+                            onClick={handleCreate}
+                            disabled={status === "loading" || !name.trim() || !email.trim()}
+                            className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                            {status === "loading" ? "만들고 있어요..." : "계정 만들기"}
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            onClick={() => { reset(); onOpenChange(false); }}
+                            className="rounded-xl"
+                        >
+                            닫기
+                        </Button>
+                    )}
+                    {resultMsg && (
+                        <p className={`text-xs break-all leading-relaxed ${status === "done" ? "text-emerald-600" : "text-red-500"}`}>
+                            {resultMsg}
+                        </p>
+                    )}
+                </div>
+            </SheetContent>
+        </Sheet>
+    );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Loader                                                             */
 /* ------------------------------------------------------------------ */
 
@@ -594,18 +693,8 @@ function ListingSheet({
 
                             <SheetClose asChild>
                                 <Button variant="outline" size="sm" className="w-full" asChild>
-                                    <Link to={`/host/edit/${listing.id}`}>
-                                        <span className="material-symbols-outlined text-[14px]">edit</span>
-                                        숙소 수정
-                                    </Link>
-                                </Button>
-                            </SheetClose>
-
-                            <SheetClose asChild>
-                                <Button variant="outline" size="sm" className="w-full" asChild>
                                     <Link to={`/invest/${listing.id}`}>
-                                        <span className="material-symbols-outlined text-[14px]">open_in_new</span>
-                                        {t("dashboard.sheet.viewInvestPage")}
+{t("dashboard.sheet.viewInvestPage")}
                                     </Link>
                                 </Button>
                             </SheetClose>
@@ -613,14 +702,6 @@ function ListingSheet({
                     ) : (
                         /* ---- Pre-tokenization content ---- */
                         <>
-                            <SheetClose asChild>
-                                <Button variant="outline" size="sm" className="w-full" asChild>
-                                    <Link to={`/host/edit/${listing.id}`}>
-                                        <span className="material-symbols-outlined text-[14px]">edit</span>
-                                        숙소 수정
-                                    </Link>
-                                </Button>
-                            </SheetClose>
 
                             {/* Valuation */}
                             <div>
@@ -660,7 +741,7 @@ function ListingSheet({
                                                 key={h}
                                                 type="button"
                                                 onClick={() => quickSet(h)}
-                                                className="text-[11px] px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors"
+                                                className="text-[11px] px-2.5 min-h-11 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors"
                                             >
                                                 {t("tokenize.quickSet", { hours: h })}
                                             </button>
@@ -741,6 +822,15 @@ function ListingSheet({
                             </div>
                         </>
                     )}
+
+                    {/* 공통 하단 액션 */}
+                    <SheetClose asChild>
+                        <Button variant="outline" size="sm" className="w-full" asChild>
+                            <Link to={`/host/edit/${listing.id}`}>
+                                숙소 수정
+                            </Link>
+                        </Button>
+                    </SheetClose>
                 </div>
             </SheetContent>
         </Sheet>
@@ -957,8 +1047,7 @@ function CouncilTokenSheet({ open, onOpenChange }: { open: boolean; onOpenChange
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent side="right" className="w-full sm:max-w-md bg-[#fcfaf7]">
                 <SheetHeader className="mb-6">
-                    <SheetTitle className="text-base font-bold text-[#4a3b2c] flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px] text-violet-500">token</span>
+                    <SheetTitle className="text-base font-bold text-[#4a3b2c]">
                         {t("rwa.council.title")}
                     </SheetTitle>
                     <SheetDescription>
@@ -1054,149 +1143,93 @@ export default function AdminDashboard() {
     );
 
     return (
-        <div className="min-h-screen bg-[#fcfaf7] font-sans">
-            <Header />
+        <div className="font-sans">
             <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8">
-                {/* ====== Section 1: Page header + quick actions ====== */}
-                <div className="flex items-end justify-between mb-8">
-                    <div>
-                        <h1 className="text-2xl font-bold text-[#4a3b2c]">
-                            {t("dashboard.title")}
-                        </h1>
-                        <p className="text-sm text-stone-400 mt-1">
-                            {t("dashboard.subtitle")}
-                        </p>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCouncilSheetOpen(true)}
-                            className="border-violet-200 text-violet-600 hover:bg-violet-50"
-                        >
-                            {t("rwa.council.title")}
-                        </Button>
-                        <Button variant="outline" size="sm" asChild>
-                            <Link to="/admin/listing/new">{t("dashboard.newListing")}</Link>
-                        </Button>
-                    </div>
+                {/* ====== Section 1: 페이지 헤더 ====== */}
+                <div className="mb-10">
+                    <h1 className="text-2xl font-bold text-[#4a3b2c]">
+                        {t("dashboard.title")}
+                    </h1>
+                    <p className="text-sm text-[#a0856c] mt-1">
+                        {t("dashboard.subtitle")}
+                    </p>
                 </div>
 
-                {/* ====== Section 2: Stats -- two card groups ====== */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    {/* -- Property stats -- */}
-                    <Card className="rounded-3xl border-stone-100 shadow-sm">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-stone-400 tracking-wider uppercase">
-                                {t("dashboard.sections.propertyStatus")}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <StatItem
-                                large
-                                icon="home"
-                                iconBg="bg-[#17cf54]/10 text-[#17cf54]"
-                                label={t("dashboard.stats.totalListings")}
-                                value={stats.totalListings}
-                            />
-                            <Separator className="my-4" />
-                            <div className="grid grid-cols-3 gap-4">
-                                <StatItem
-                                    icon="verified"
-                                    iconBg="bg-blue-500/10 text-blue-600"
-                                    label={t("dashboard.stats.tokenized")}
-                                    value={stats.tokenizedCount}
-                                />
-                                <StatItem
-                                    icon="trending_up"
-                                    iconBg="bg-amber-500/10 text-amber-600"
-                                    label={t("dashboard.stats.funding")}
-                                    value={stats.fundingCount}
-                                />
-                                <StatItem
-                                    icon="check_circle"
-                                    iconBg="bg-emerald-500/10 text-emerald-600"
-                                    label={t("dashboard.stats.active")}
-                                    value={stats.activeCount}
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* -- Investment stats -- */}
-                    <Card className="rounded-3xl border-stone-100 shadow-sm">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-stone-400 tracking-wider uppercase">
-                                {t("dashboard.sections.investmentStatus")}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <StatItem
-                                large
-                                icon="attach_money"
-                                iconBg="bg-[#17cf54]/10 text-[#17cf54]"
-                                label={t("dashboard.stats.totalInvested")}
-                                value={fmtUsdc(stats.totalInvestedUsdc)}
-                            />
-                            <Separator className="my-4" />
-                            <div className="grid grid-cols-2 gap-4">
-                                <StatItem
-                                    icon="group"
-                                    iconBg="bg-stone-100 text-stone-500"
-                                    label={t("dashboard.stats.totalUsers")}
-                                    value={stats.totalUsers}
-                                />
-                                <StatItem
-                                    icon="person"
-                                    iconBg="bg-blue-500/10 text-blue-600"
-                                    label={t("dashboard.stats.totalInvestors")}
-                                    value={stats.totalInvestors}
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* ====== Section 3: Tokenization pipeline ====== */}
-                <Card className="rounded-3xl border-stone-100 shadow-sm mb-8">
-                    <CardHeader>
-                        <CardTitle className="text-base font-bold text-[#4a3b2c]">
-                            {t("dashboard.sections.pipeline")}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center justify-between px-4">
-                            <PipelineStep
-                                label={t("dashboard.pipeline.notTokenized")}
-                                count={notTokenizedCount}
-                                color="stone"
-                            />
-                            <div className="flex-1 h-0.5 bg-stone-200 mx-3" />
-                            <PipelineStep
-                                label={t("dashboard.pipeline.funding")}
-                                count={stats.fundingCount}
-                                color="amber"
-                            />
-                            <div className="flex-1 h-0.5 bg-stone-200 mx-3" />
-                            <PipelineStep
-                                label={t("dashboard.pipeline.funded")}
-                                count={fundedCount}
-                                color="blue"
-                            />
-                            <div className="flex-1 h-0.5 bg-stone-200 mx-3" />
-                            <PipelineStep
-                                label={t("dashboard.pipeline.active")}
-                                count={stats.activeCount}
-                                color="emerald"
-                            />
+                {/* ====== Section 2: 핵심 지표 ====== */}
+                <div className="grid grid-cols-4 border border-[#e8e0d6] rounded-2xl overflow-hidden bg-[#fcfaf7] mb-8">
+                    {[
+                        { label: t("dashboard.stats.totalListings"), value: String(stats.totalListings), sub: `운영중 ${stats.activeCount}` },
+                        { label: t("dashboard.stats.totalInvested"), value: fmtUsdc(stats.totalInvestedUsdc), sub: `투자자 ${stats.totalInvestors}명`, accent: true },
+                        { label: t("dashboard.stats.totalUsers"), value: String(stats.totalUsers), sub: `투자자 포함` },
+                        { label: t("dashboard.stats.tokenized"), value: String(stats.tokenizedCount), sub: `펀딩중 ${stats.fundingCount}` },
+                    ].map(({ label, value, sub, accent }, i) => (
+                        <div key={label} className={cn("px-6 py-5", i > 0 && "border-l border-[#e8e0d6]")}>
+                            <p className="text-xs text-[#a0856c] mb-2 font-medium">{label}</p>
+                            <p className={cn("text-3xl font-bold tracking-tight leading-none", accent ? "text-[#17cf54]" : "text-[#4a3b2c]")}>
+                                {value}
+                            </p>
+                            <p className="text-xs text-[#c4aa92] mt-2">{sub}</p>
                         </div>
-                    </CardContent>
-                </Card>
+                    ))}
+                </div>
 
-                {/* ====== Section 4: Pending bookings ====== */}
-                <PendingBookingsSection pendingBookings={pendingBookings} />
+                {/* ====== Section 3: 매물 진행 단계 ====== */}
+                <div className="border border-[#e8e0d6] rounded-2xl bg-[#fcfaf7] px-6 py-5 mb-8">
+                    <p className="text-xs font-semibold text-[#a0856c] uppercase tracking-widest mb-6">
+                        매물 진행 단계
+                    </p>
+                    <div className="flex items-start">
+                        {[
+                            { label: t("dashboard.pipeline.notTokenized"), count: notTokenizedCount, active: notTokenizedCount > 0 },
+                            { label: t("dashboard.pipeline.funding"), count: stats.fundingCount, active: stats.fundingCount > 0 },
+                            { label: t("dashboard.pipeline.funded"), count: fundedCount, active: fundedCount > 0 },
+                            { label: t("dashboard.pipeline.active"), count: stats.activeCount, active: stats.activeCount > 0 },
+                        ].map(({ label, count, active }, i, arr) => (
+                            <div key={i} className="flex-1 flex flex-col items-center">
+                                {/* 원 + 연결선 */}
+                                <div className="w-full flex items-center mb-3">
+                                    {/* 왼쪽 선 */}
+                                    {i > 0 && (
+                                        <div className={cn("flex-1 h-px", arr[i - 1].active ? "bg-[#4a3b2c]" : "bg-[#e8e0d6]")} />
+                                    )}
+                                    {/* 원 */}
+                                    <div className={cn(
+                                        "w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                                        active ? "bg-[#4a3b2c] text-white" : "bg-[#e8e0d6] text-[#c4aa92]"
+                                    )}>
+                                        {count}
+                                    </div>
+                                    {/* 오른쪽 선 */}
+                                    {i < arr.length - 1 && (
+                                        <div className={cn("flex-1 h-px", active ? "bg-[#4a3b2c]" : "bg-[#e8e0d6]")} />
+                                    )}
+                                </div>
+                                {/* 레이블 */}
+                                <p className={cn("text-xs font-medium text-center", active ? "text-[#4a3b2c]" : "text-[#c4aa92]")}>
+                                    {label}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
-                {/* ====== Section 5: Listings table with search/filter ====== */}
+                {/* ====== Section 4: Council Token 발급 ====== */}
+                <div className="flex items-center justify-between border border-[#e8e0d6] rounded-2xl bg-[#fcfaf7] px-6 py-4 mb-8">
+                    <div>
+                        <p className="text-sm font-semibold text-[#4a3b2c]">Council Token 발급</p>
+                        <p className="text-xs text-[#a0856c] mt-0.5">거버넌스 참여권 토큰을 특정 주소로 발급합니다</p>
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCouncilSheetOpen(true)}
+                        className="text-[#6b5744] border-[#e8e0d6] hover:bg-[#f0ebe4]"
+                    >
+                        {t("rwa.council.title")}
+                    </Button>
+                </div>
+
+                {/* ====== Section 5: 매물 목록 ====== */}
                 <Card className="rounded-3xl border-stone-100 shadow-sm">
                     <CardHeader>
                         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -1255,13 +1288,13 @@ export default function AdminDashboard() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="border-stone-100">
-                                    <TableHead className="pl-6 w-[320px]">
+                                    <TableHead className="pl-6 min-w-0">
                                         {t("dashboard.table.colProperty")}
                                     </TableHead>
-                                    <TableHead className="text-right">
+                                    <TableHead className="text-right hidden sm:table-cell">
                                         {t("dashboard.table.colPrice")}
                                     </TableHead>
-                                    <TableHead>{t("dashboard.table.colStatus")}</TableHead>
+                                    <TableHead className="hidden md:table-cell">{t("dashboard.table.colStatus")}</TableHead>
                                     <TableHead className="text-right pr-6">
                                         {t("dashboard.table.colActions")}
                                     </TableHead>
@@ -1321,12 +1354,12 @@ export default function AdminDashboard() {
                                             </TableCell>
 
                                             {/* Price */}
-                                            <TableCell className="text-right text-sm text-stone-700">
+                                            <TableCell className="text-right text-sm text-stone-700 hidden sm:table-cell">
                                                 {fmtKrw(listing.pricePerNight)}
                                             </TableCell>
 
                                             {/* Status badge */}
-                                            <TableCell>
+                                            <TableCell className="hidden md:table-cell">
                                                 <div className="flex items-center gap-1.5">
                                                     {listing.tokenMint ? (
                                                         <Badge

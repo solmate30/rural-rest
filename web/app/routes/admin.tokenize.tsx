@@ -172,8 +172,7 @@ export default function AdminTokenize() {
             : null;
 
         return (
-            <div className="min-h-screen bg-[#fcfaf7] font-sans">
-                <Header />
+            <div className="font-sans">
                 <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8 max-w-6xl">
                     {/* Page header */}
                     <div className="flex items-center gap-4 mb-8">
@@ -328,8 +327,7 @@ export default function AdminTokenize() {
     /*  PRE-TOKENIZATION: no token yet                                  */
     /* ================================================================ */
     return (
-        <div className="min-h-screen bg-[#fcfaf7] font-sans">
-            <Header />
+        <div className="font-sans">
             <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8">
                 {/* Back link + page header */}
                 <div className="mb-8">

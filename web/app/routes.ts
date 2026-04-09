@@ -1,4 +1,4 @@
-import { type RouteConfig, index, route } from "@react-router/dev/routes";
+import { type RouteConfig, index, route, layout } from "@react-router/dev/routes";
 
 export default [
     index("routes/home.tsx"),
@@ -7,12 +7,15 @@ export default [
     route("book/:id", "routes/book.tsx"),
     route("operator", "routes/operator.dashboard.tsx"),
     route("host/edit/:id", "routes/admin.edit.tsx"),
-    route("admin/listing/new", "routes/admin.listing.new.tsx"),
-    route("admin/tokenize/:listingId", "routes/admin.tokenize.tsx"),
     route("api/building/lookup", "routes/api.building.lookup.ts"),
-    route("admin", "routes/admin.dashboard.tsx"),
-    route("admin/settlements", "routes/admin.settlements.tsx"),
-    route("admin/settlements/:listingId", "routes/admin.settlements.detail.tsx"),
+    layout("routes/admin._layout.tsx", [
+        route("admin", "routes/admin.dashboard.tsx"),
+        route("admin/listing/new", "routes/admin.listing.new.tsx"),
+        route("admin/tokenize/:listingId", "routes/admin.tokenize.tsx"),
+        route("admin/operators", "routes/admin.operators.tsx"),
+        route("admin/settlements", "routes/admin.settlements.tsx"),
+        route("admin/settlements/:listingId", "routes/admin.settlements.detail.tsx"),
+    ]),
     route("api/auth/session", "routes/api.auth.session.ts"),
     route("api/user/me", "routes/api.user.me.ts"),
     route("api/user/sync-wallet", "routes/api.user.sync-wallet.ts"),
@@ -33,6 +36,7 @@ export default [
     route("api/admin/monthly-settlement", "routes/api.admin.monthly-settlement.ts"),
     route("api/admin/force-fund", "routes/api.admin.force-fund.ts"),
     route("api/admin/issue-council-token", "routes/api.admin.issue-council-token.ts"),
+    route("api/admin/create-operator", "routes/api.admin.create-operator.ts"),
     route("api/chat/concierge", "routes/api.chat.concierge.ts"),
     route("api/set-language", "routes/api.set-language.ts"),
     route("api/governance/issue", "routes/api.governance.issue.ts"),

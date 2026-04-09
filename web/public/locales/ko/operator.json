@@ -20,7 +20,8 @@
     "cancelled": "취소",
     "completed": "완료",
     "auto": "자동 지급",
-    "processing": "처리 중"
+    "processing": "처리 중",
+    "released": "정산 완료"
   },
   "section": {
     "pending": "승인 대기",
@@ -30,6 +31,7 @@
     "noConfirmed": "확정된 예약이 없어요.",
     "settlementHistory": "정산 내역",
     "noSettlements": "정산 내역이 없어요.",
+    "pendingRelease": "정산 대기",
     "settlementWallet": "정산 지갑",
     "walletDesc": "배당금과 정산액을 받을 Solana 지갑을 연결하세요.",
     "listings": "담당 매물",
@@ -38,8 +40,14 @@
   "action": {
     "approve": "승인",
     "reject": "거절 및 환불",
+    "release": "정산받기",
     "processing": "처리 중...",
     "error": "처리 실패"
+  },
+  "wallet": {
+    "addressLabel": "정산 지갑 주소",
+    "autoIssued": "회원가입 시 자동으로 발급된 지갑 주소예요. 이 주소로 정산 금액이 입금돼요.",
+    "preparing": "지갑을 준비하고 있어요. 잠시만 기다려 주세요."
   },
   "settlement": {
     "detail": "{{month}} · 매출 {{revenue}} · 영업이익 {{profit}}"

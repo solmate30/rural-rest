@@ -1,11 +1,15 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 import { Card, Input } from "~/components/ui-mockup";
 import { Button } from "~/components/ui/button";
 import { useToast } from "~/hooks/use-toast";
 import { useKyc } from "~/components/KycProvider";
+import { usePrivy } from "@privy-io/react-auth";
+import { useTranslation } from "react-i18next";
+
+type Step = "buy" | "need-wallet" | "wallet-loading" | "need-kyc";
 
 function useCountdown(deadlineMs: number) {
     const calc = () => {
@@ -18,8 +22,9 @@ function useCountdown(deadlineMs: number) {
             seconds: Math.floor((diff % 60000) / 1000),
         };
     };
-    const [t, setT] = useState(calc);
+    const [t, setT] = useState<ReturnType<typeof calc>>(null);
     useEffect(() => {
+        setT(calc());
         const id = setInterval(() => setT(calc()), 1000);
         return () => clearInterval(id);
     }, [deadlineMs]);
@@ -53,13 +58,22 @@ export function PurchaseCard({
 }: Props) {
     const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
-    const navigate = useNavigate();
     const location = useLocation();
     const { toast } = useToast();
     const { isKycCompleted } = useKyc();
+    const { login, authenticated, ready } = usePrivy();
+    const { t } = useTranslation("invest");
 
     const [tokenCount, setTokenCount] = useState(1);
     const [isProcessing, setIsProcessing] = useState(false);
+
+    const step: Step = useMemo(() => {
+        if (!ready) return "wallet-loading";
+        if (!wallet && authenticated) return "wallet-loading";
+        if (!wallet) return "need-wallet";
+        if (!isKycCompleted) return "need-kyc";
+        return "buy";
+    }, [ready, wallet, authenticated, isKycCompleted]);
 
     const subtotalUsdc = usdcPrice * tokenCount;
     const subtotalKrw = tokenPrice * tokenCount;
@@ -67,8 +81,6 @@ export function PurchaseCard({
     const isSoldOut = fundingProgress >= 100;
     const isNotMinted = !tokenMint;
     const isDeadlineExpired = fundingDeadlineMs > 0 && Date.now() > fundingDeadlineMs;
-    // 인당 구매 상한 = min(잔여수량, 총공급의 30%) — Anchor 온체인 로직과 동일하게 맞춤
-    // 의결권 캡(10%)은 DAO 구현 시 별도 처리
     const maxPerInvestor = Math.floor(totalSupply * 3 / 10);
     const maxBuyable = Math.min(availableTokens, maxPerInvestor);
 
@@ -87,12 +99,11 @@ export function PurchaseCard({
             } = await import("@solana/spl-token");
 
             const program = await getProgram(connection, wallet);
-            const { propertyToken, fundingVault, investorPosition, programId } = await derivePdas(listingId, publicKey);
+            const { propertyToken, fundingVault, investorPosition } = await derivePdas(listingId, publicKey);
 
             const usdcMint = new PublicKey(USDC_MINT);
             const tokenMintPubkey = new PublicKey(tokenMint);
 
-            // ATAs
             const investorUsdcAccount = getAssociatedTokenAddressSync(
                 usdcMint, publicKey, false, TOKEN_PROGRAM_ID
             );
@@ -100,11 +111,9 @@ export function PurchaseCard({
                 tokenMintPubkey, publicKey, false, TOKEN_2022_PROGRAM_ID
             );
 
-            // investor_position이 없으면 open_position을 preInstruction으로 추가
             const positionAccount = await connection.getAccountInfo(investorPosition);
             const preIxs = [];
 
-            // investor_usdc_account — 없으면 생성 (idempotent)
             preIxs.push(
                 createAssociatedTokenAccountIdempotentInstruction(
                     publicKey, investorUsdcAccount, publicKey, usdcMint, TOKEN_PROGRAM_ID
@@ -115,11 +124,7 @@ export function PurchaseCard({
                 preIxs.push(
                     await program.methods
                         .openPosition(listingId)
-                        .accounts({
-                            investor: publicKey,
-                            propertyToken,
-                            investorPosition,
-                        })
+                        .accounts({ investor: publicKey, propertyToken, investorPosition })
                         .instruction()
                 );
             }
@@ -141,7 +146,6 @@ export function PurchaseCard({
                 .preInstructions(preIxs)
                 .rpc();
 
-            // DB 기록
             const dbRes = await fetch("/api/rwa/record-purchase", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -165,7 +169,7 @@ export function PurchaseCard({
         } catch (err: any) {
             console.error("[PurchaseCard] tx error:", err);
             const msg = parseAnchorError(err);
-            toast({ title: "결제 실패", description: msg, variant: "destructive" });
+            toast({ title: t("purchase.processing"), description: msg, variant: "destructive" });
         } finally {
             setIsProcessing(false);
         }
@@ -175,22 +179,23 @@ export function PurchaseCard({
 
     return (
         <Card className="p-6 shadow-2xl border-none bg-white rounded-3xl space-y-4">
-            <h3 className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Purchase Tokens</h3>
+            <h3 className="text-xs uppercase font-bold text-stone-400 tracking-wider">{t("purchase.title")}</h3>
 
             {/* Token Input */}
             <div>
                 <div className="flex items-start justify-between mb-1.5">
-                    <label className="text-xs font-medium text-stone-600">Amount</label>
+                    <label className="text-xs font-medium text-stone-600">{t("purchase.amount")}</label>
                     <div className="text-xs text-stone-400 text-right">
-                        <div>Available: {availableTokens.toLocaleString()}</div>
-                        <div>Max per wallet: {maxPerInvestor.toLocaleString()}</div>
+                        <div>{t("purchase.available", { count: availableTokens.toLocaleString() })}</div>
+                        <div>{t("purchase.maxPerWallet", { count: maxPerInvestor.toLocaleString() })}</div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
-                        className="h-10 w-10 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50"
+                        className="h-11 w-11 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50"
                         onClick={() => setTokenCount((c) => Math.max(1, c - 1))}
                         disabled={isSoldOut || isNotMinted}
+                        aria-label="수량 감소"
                     >−</button>
                     <Input
                         type="number"
@@ -201,9 +206,10 @@ export function PurchaseCard({
                         disabled={isSoldOut || isNotMinted}
                     />
                     <button
-                        className="h-10 w-10 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50"
+                        className="h-11 w-11 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50"
                         onClick={() => setTokenCount((c) => Math.min(c + 1, maxBuyable))}
                         disabled={isSoldOut || isNotMinted || tokenCount >= maxBuyable}
+                        aria-label="수량 증가"
                     >+</button>
                 </div>
             </div>
@@ -219,14 +225,14 @@ export function PurchaseCard({
                         감정가가 낮게 설정되어 수익률이 과장될 수 있습니다.
                     </div>
                 )}
-                <div className={`flex justify-between text-xs ${apy > 1000 ? "text-amber-500" : "text-[#17cf54]"}`}>
-                    <span>Est. Annual Return</span>
+                <div className={`flex justify-between text-xs ${apy > 1000 ? "text-amber-500" : "text-invest"}`}>
+                    <span>{t("purchase.estReturn")}</span>
                     <span className="font-bold">
                         {estAnnualReturn >= 1 ? `₩${Math.round(estAnnualReturn).toLocaleString()}` : `₩${estAnnualReturn.toFixed(4)}`}
                     </span>
                 </div>
                 <div className="flex justify-between border-t border-stone-200 pt-3 font-bold text-stone-900">
-                    <span>Total</span>
+                    <span>{t("purchase.total")}</span>
                     <span>
                         {fmtUsdc(subtotalUsdc)}
                         <span className="text-xs text-stone-400 font-normal ml-1">
@@ -239,35 +245,35 @@ export function PurchaseCard({
             {/* Countdown */}
             {countdown ? (
                 <div className="bg-stone-50 border border-stone-100 rounded-2xl px-4 pt-3.5 pb-4">
-                    <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-2">Funding Ends In</p>
+                    <p className="text-xs uppercase font-bold text-stone-400 tracking-wider mb-2">{t("purchase.fundingEndsIn")}</p>
                     <div className="grid grid-cols-4 gap-2">
                         {[
-                            { label: "Days", value: countdown.days },
-                            { label: "Hrs",  value: countdown.hours },
-                            { label: "Min",  value: countdown.minutes },
-                            { label: "Sec",  value: countdown.seconds },
+                            { label: t("purchase.days"), value: countdown.days },
+                            { label: t("purchase.hrs"),  value: countdown.hours },
+                            { label: t("purchase.min"),  value: countdown.minutes },
+                            { label: t("purchase.sec"),  value: countdown.seconds },
                         ].map(({ label, value }, i) => (
                             <div key={label} className="text-center relative">
-                                {i < 3 && <span className="absolute -right-1.5 top-2 text-base font-bold text-stone-300 select-none">:</span>}
+                                {i < 3 && <span className="absolute -right-1.5 top-2 text-base font-bold text-stone-300 select-none" aria-hidden="true">:</span>}
                                 <div className="bg-stone-100 rounded-xl py-2.5">
                                     <span className="text-2xl font-bold text-[#4a3b2c] tabular-nums">{String(value).padStart(2, "0")}</span>
                                 </div>
-                                <p className="text-[10px] text-stone-400 font-medium mt-1">{label}</p>
+                                <p className="text-xs text-stone-400 font-medium mt-1">{label}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             ) : isDeadlineExpired ? (
                 <div className="bg-stone-50 border border-stone-100 rounded-2xl px-4 pt-3.5 pb-4">
-                    <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-2">Funding Ended</p>
+                    <p className="text-xs uppercase font-bold text-stone-400 tracking-wider mb-2">{t("purchase.fundingEnded")}</p>
                     <div className="grid grid-cols-4 gap-2">
-                        {["Days", "Hrs", "Min", "Sec"].map((label, i) => (
+                        {[t("purchase.days"), t("purchase.hrs"), t("purchase.min"), t("purchase.sec")].map((label, i) => (
                             <div key={label} className="text-center relative">
-                                {i < 3 && <span className="absolute -right-1.5 top-2 text-base font-bold text-stone-300 select-none">:</span>}
+                                {i < 3 && <span className="absolute -right-1.5 top-2 text-base font-bold text-stone-300 select-none" aria-hidden="true">:</span>}
                                 <div className="bg-stone-100 rounded-xl py-2.5">
                                     <span className="text-2xl font-bold text-stone-300 tabular-nums">00</span>
                                 </div>
-                                <p className="text-[10px] text-stone-400 font-medium mt-1">{label}</p>
+                                <p className="text-xs text-stone-400 font-medium mt-1">{label}</p>
                             </div>
                         ))}
                     </div>
@@ -277,71 +283,86 @@ export function PurchaseCard({
             {/* CTA */}
             {isNotMinted ? (
                 <Button disabled variant="secondary" size="xl" className="w-full cursor-not-allowed">
-                    <span className="material-symbols-outlined text-[20px]">schedule</span>
-                    Not Minted
+                    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">schedule</span>
+                    {t("purchase.notMinted")}
                 </Button>
             ) : isDeadlineExpired ? (
                 <div className="space-y-2">
                     <Button disabled variant="secondary" size="xl" className="w-full cursor-not-allowed">
-                        <span className="material-symbols-outlined text-[20px]">event_busy</span>
-                        Funding Ended
+                        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">event_busy</span>
+                        {t("purchase.fundingEnded")}
                     </Button>
                     <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700 text-center">
-                        펀딩 기간이 종료되었습니다.<br />목표 미달 시 투자금이 환불됩니다.
+                        {t("purchase.expiredDesc")}
                     </div>
                 </div>
             ) : isSoldOut ? (
                 <div className="space-y-2">
                     <Button disabled variant="secondary" size="xl" className="w-full cursor-not-allowed">
-                        <span className="material-symbols-outlined text-[20px]">lock</span>
-                        Sold Out
+                        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">lock</span>
+                        {t("purchase.soldOut")}
                     </Button>
                     <p className="text-center text-xs text-stone-400 leading-relaxed">
-                        펀딩 목표가 달성되었습니다.<br />첫 배당은 운영 시작 익월에 지급됩니다.
+                        {t("purchase.soldOutDesc")}
                     </p>
                 </div>
-            ) : isKycCompleted ? (
+            ) : step === "wallet-loading" ? (
+                <Button disabled variant="secondary" size="xl" className="w-full">
+                    <span className="material-symbols-outlined text-[20px] animate-spin" aria-hidden="true">progress_activity</span>
+                    {t("purchase.walletLoading")}
+                </Button>
+            ) : step === "need-wallet" ? (
                 <Button
                     variant="success"
                     size="xl"
-                    className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={handleInvest}
-                    disabled={isProcessing}
+                    className="w-full shadow-xl shadow-invest/20 hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={login}
                 >
-                    <span className="material-symbols-outlined text-[20px]">
-                        {isProcessing ? "hourglass_empty" : "account_balance_wallet"}
-                    </span>
-                    {isProcessing ? "Processing Transaction..." : "Buy with USDC"}
+                    {t("purchase.login")}
                 </Button>
+            ) : step === "need-kyc" ? (
+                <div className="space-y-3">
+                    <div className="bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-xs text-stone-600 leading-relaxed">
+                        <span className="font-semibold text-stone-800 block mb-1">{t("purchase.kycTitle")}</span>
+                        {t("purchase.kycDesc")}
+                    </div>
+                    <Button
+                        variant="success"
+                        size="xl"
+                        className="w-full shadow-xl shadow-invest/20 hover:scale-[1.02] active:scale-[0.98]"
+                        onClick={() => window.open(`/kyc?return=${encodeURIComponent(location.pathname + location.search)}`, '_blank')}
+                    >
+                        {t("purchase.kycBtn")}
+                    </Button>
+                </div>
             ) : (
                 <Button
                     variant="success"
                     size="xl"
-                    className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={() => navigate(`/kyc?return=${encodeURIComponent(location.pathname + location.search)}`)}
+                    className="w-full shadow-xl shadow-invest/20 hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={handleInvest}
+                    disabled={isProcessing}
                 >
-                    Complete KYC to Invest
+                    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+                        {isProcessing ? "progress_activity" : "account_balance_wallet"}
+                    </span>
+                    {isProcessing ? t("purchase.processing") : t("purchase.invest")}
                 </Button>
             )}
 
-            <p className="text-center text-[10px] text-stone-400 font-bold uppercase tracking-widest">
-                No charge until funding goal is met
+            <p className="text-center text-xs text-stone-400 font-bold uppercase tracking-widest">
+                {t("purchase.noCharge")}
             </p>
 
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
                 <div className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-amber-600 shrink-0 mt-0.5">warning</span>
+                    <span className="material-symbols-outlined text-[16px] text-amber-600 shrink-0 mt-0.5" aria-hidden="true">warning</span>
                     <p className="text-xs text-amber-800 leading-relaxed">
-                        <span className="font-bold">Investment Risk Disclosure</span><br />
-                        This investment carries the risk of principal loss. Rental yields may vary depending on seasonal and market conditions.
+                        <span className="font-bold">{t("purchase.riskTitle")}</span><br />
+                        {t("purchase.riskBody")}
                     </p>
                 </div>
             </div>
-
-            <Button variant="ghost" size="sm" className="w-full text-stone-400 hover:text-stone-600">
-                <span className="material-symbols-outlined text-[14px]">flag</span>
-                문제 신고
-            </Button>
         </Card>
     );
 }

@@ -55,8 +55,8 @@ export function TokenInfoCard({
                         key={label}
                         className={`rounded-2xl p-4 flex flex-col gap-1 border ${warn ? "bg-amber-50 border-amber-200" : "bg-stone-50 border-stone-100"}`}
                     >
-                        <p className="text-[10px] uppercase font-bold tracking-wider text-stone-400">{label}</p>
-                        <p className={`text-xl font-bold leading-tight ${warn ? "text-amber-500" : green ? "text-[#17cf54]" : "text-[#4a3b2c]"}`}>
+                        <p className="text-xs uppercase font-bold tracking-wider text-stone-400">{label}</p>
+                        <p className={`text-xl font-bold leading-tight ${warn ? "text-amber-500" : green ? "text-invest" : "text-[#4a3b2c]"}`}>
                             {primary}
                         </p>
                         <p className={`text-xs ${warn ? "text-amber-500" : "text-stone-400"}`}>{secondary}</p>
@@ -74,7 +74,7 @@ export function TokenInfoCard({
                 </div>
                 <div className="h-2 w-full rounded-full bg-stone-100 overflow-hidden">
                     <div
-                        className="h-full rounded-full bg-[#17cf54] transition-all"
+                        className="h-full rounded-full bg-invest transition-all"
                         style={{ width: `${barWidth}%`, minWidth: soldTokens > 0 ? "2px" : "0" }}
                     />
                 </div>
@@ -82,7 +82,7 @@ export function TokenInfoCard({
                     <span className="text-xs text-stone-400">
                         {soldPct < 1 && soldTokens > 0 ? `${fmtNumber(soldTokens, locale)} sold` : `${soldPct}% sold`}
                     </span>
-                    <span className="text-xs font-semibold text-[#17cf54]">
+                    <span className="text-xs font-semibold text-invest">
                         {fmtNumber(totalSupply - soldTokens, locale)} remaining
                     </span>
                 </div>

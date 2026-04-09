@@ -15,6 +15,12 @@ import { RefundButton } from "~/components/rwa/RefundButton";
 import { PropertyGallery } from "~/components/rwa/PropertyGallery";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router";
+import { usePrivy } from "@privy-io/react-auth";
+import { useKyc } from "~/components/KycProvider";
+import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
+import { Button } from "~/components/ui/button";
+import { fmtUsdc } from "~/lib/formatters";
 
 import { KRW_PER_USDC_FALLBACK } from "~/lib/constants";
 import { fetchPythKrwRate } from "~/lib/pyth";
@@ -37,7 +43,7 @@ function ShareBlinksButton({ listingId }: { listingId: string }) {
     return (
         <button
             onClick={handleShare}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-stone-200 text-xs font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-colors shrink-0"
         >
             <span className="material-symbols-outlined text-[16px]">
                 {copied ? "check_circle" : "share"}
@@ -298,6 +304,79 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     };
 }
 
+function MobileInvestBar({ property }: { property: Awaited<ReturnType<typeof loader>> }) {
+    const { login, authenticated, ready } = usePrivy();
+    const wallet = usePrivyAnchorWallet();
+    const { isKycCompleted } = useKyc();
+    const location = useLocation();
+    const { t } = useTranslation("invest");
+
+    const isSoldOut = property.fundingProgress >= 100;
+    const isExpired = Date.now() > property.fundingDeadline;
+    const isNotMinted = !property.tokenMint;
+    const deadlineExpired = Date.now() > property.fundingDeadline;
+    const goalNotMet = property.fundingProgress < (property.minFundingBps / 100);
+    const isRefundable = property.rawStatus === "failed" ||
+        (property.rawStatus === "funding" && deadlineExpired && goalNotMet);
+
+    // 환불 대상이거나 비활성 상태면 바 숨김
+    if (isRefundable) return null;
+
+    // PurchaseCard와 동일한 step 로직
+    const step = !ready || (!wallet && authenticated) ? "wallet-loading"
+        : !wallet ? "need-wallet"
+        : !isKycCompleted ? "need-kyc"
+        : "buy";
+
+    return (
+        <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-border bg-card/95 backdrop-blur-md safe-area-inset-bottom">
+            <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex-1 min-w-0">
+                    <p className="text-xs uppercase font-bold text-stone-400 tracking-wider">{t("purchase.tokenPrice")}</p>
+                    <p className="text-sm font-bold text-foreground">
+                        {fmtUsdc(property.usdcPrice)}
+                        <span className="text-xs text-stone-400 font-normal ml-1">{t("purchase.perToken")}</span>
+                    </p>
+                </div>
+                {isNotMinted || isExpired || isSoldOut ? (
+                    <Button disabled variant="secondary" className="shrink-0">
+                        {isSoldOut ? t("purchase.soldOut") : isExpired ? t("purchase.expired") : t("purchase.preparing")}
+                    </Button>
+                ) : step === "wallet-loading" ? (
+                    <Button disabled variant="secondary" className="shrink-0">
+                        <span className="material-symbols-outlined text-[16px] animate-spin" aria-hidden="true">progress_activity</span>
+                        {t("purchase.walletLoading")}
+                    </Button>
+                ) : step === "need-wallet" ? (
+                    <Button
+                        variant="success"
+                        className="shrink-0 shadow-lg shadow-invest/20"
+                        onClick={login}
+                    >
+                        {t("purchase.login")}
+                    </Button>
+                ) : step === "need-kyc" ? (
+                    <Button
+                        variant="success"
+                        className="shrink-0 shadow-lg shadow-invest/20"
+                        onClick={() => window.open(`/kyc?return=${encodeURIComponent(location.pathname + location.search)}`, '_blank')}
+                    >
+                        {t("purchase.kycBtn")}
+                    </Button>
+                ) : (
+                    <Button
+                        variant="success"
+                        className="shrink-0 shadow-lg shadow-invest/20"
+                        onClick={() => document.getElementById("purchase-card")?.scrollIntoView({ behavior: "smooth" })}
+                    >
+                        {t("purchase.invest")}
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function InvestDetail() {
     const property = useLoaderData<typeof loader>();
     const { t, i18n } = useTranslation("invest");
@@ -307,8 +386,9 @@ export default function InvestDetail() {
     return (
         <div className="min-h-screen bg-background font-sans">
             <Header />
+            <MobileInvestBar property={property} />
 
-            <main className="container mx-auto py-8 px-4 sm:px-8 max-w-6xl">
+            <main className="container mx-auto py-8 px-4 sm:px-8 max-w-6xl pb-20 lg:pb-8">
 
                 {/* Title & Badges */}
                 <div className="mb-6 space-y-2">
@@ -320,7 +400,7 @@ export default function InvestDetail() {
                                 </span>
                             )}
                             {(property.rawStatus === "funded" || property.rawStatus === "active") && (
-                                <span className="bg-[#17cf54] text-white text-xs font-bold px-3 py-1 rounded-full">
+                                <span className="bg-invest text-white text-xs font-bold px-3 py-1 rounded-full">
                                     {t("status.funded")}
                                 </span>
                             )}
@@ -346,7 +426,7 @@ export default function InvestDetail() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
                     {/* ── Left Column ── */}
-                    <div className="lg:col-span-2 space-y-12">
+                    <div className="lg:col-span-2">
 
                         {/* Token Info */}
                         <section className="pt-8 border-t">
@@ -366,25 +446,25 @@ export default function InvestDetail() {
                         </section>
 
                         {/* About */}
-                        <section className="space-y-4 pt-8 border-t">
+                        <section className="space-y-4 mt-10 pt-8 border-t">
                             <h2 className="text-2xl font-bold text-foreground">{t("detail.aboutHome")}</h2>
                             <p className="text-muted-foreground leading-relaxed text-lg">{loc.about}</p>
                         </section>
 
                         {/* Renovation History */}
-                        <section className="space-y-6 pt-8 border-t">
+                        <section className="space-y-6 mt-10 pt-8 border-t">
                             <h2 className="text-2xl font-bold text-foreground">{t("detail.renovation")}</h2>
                             <div className="space-y-4">
                                 {property.renovationHistory.map((item, i) => (
                                     <div key={i} className="flex items-start gap-4">
                                         <div className="flex flex-col items-center">
-                                            <div className="h-3 w-3 rounded-full bg-[#17cf54] mt-0.5 shrink-0" />
+                                            <div className="h-3 w-3 rounded-full bg-invest mt-0.5 shrink-0" />
                                             {i < property.renovationHistory.length - 1 && (
                                                 <div className="w-px h-8 bg-border mt-1" />
                                             )}
                                         </div>
                                         <div className="-mt-0.5">
-                                            <span className="text-xs font-bold text-[#17cf54]">{item.date}</span>
+                                            <span className="text-xs font-bold text-invest">{item.date}</span>
                                             <p className="text-sm text-foreground mt-0.5">{item.desc}</p>
                                         </div>
                                     </div>
@@ -395,19 +475,19 @@ export default function InvestDetail() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1.5 p-4 rounded-xl bg-stone-50 border border-stone-100 shadow-sm">
                                     <span className="material-symbols-outlined text-stone-400 text-[20px]">group</span>
-                                    <p className="text-[10px] uppercase font-bold tracking-wider text-stone-400">{t("detail.maxGuests")}</p>
+                                    <p className="text-xs uppercase font-bold tracking-wider text-stone-400">{t("detail.maxGuests")}</p>
                                     <p className="text-xl font-bold text-[#4a3b2c]">{t("detail.guestsCount", { count: property.maxGuests })}</p>
                                 </div>
                                 <div className="flex flex-col gap-1.5 p-4 rounded-xl bg-stone-50 border border-stone-100 shadow-sm">
                                     <span className="material-symbols-outlined text-stone-400 text-[20px]">bar_chart</span>
-                                    <p className="text-[10px] uppercase font-bold tracking-wider text-stone-400">{t("detail.occupancy")}</p>
+                                    <p className="text-xs uppercase font-bold tracking-wider text-stone-400">{t("detail.occupancy")}</p>
                                     <p className="text-xl font-bold text-[#4a3b2c]">{property.occupancyRate}<span className="text-sm font-normal text-stone-400 ml-0.5">%</span></p>
                                 </div>
                             </div>
                         </section>
 
                         {/* Amenities */}
-                        <section className="space-y-6 pt-8 border-t">
+                        <section className="space-y-6 mt-8 pt-8 border-t">
                             <h2 className="text-2xl font-bold text-foreground">{t("detail.amenities")}</h2>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 {loc.amenities.map((amenity) => (
@@ -423,7 +503,7 @@ export default function InvestDetail() {
                         </section>
 
                         {/* Host Info */}
-                        <section className="space-y-6 pt-8 border-t">
+                        <section className="space-y-6 mt-16 pt-8 border-t">
                             <h2 className="text-2xl font-bold text-foreground">{t("detail.operator")}</h2>
                             <div className="flex gap-6 items-start">
                                 <div className="h-16 w-16 rounded-full bg-stone-200 shrink-0 overflow-hidden border-2 border-white shadow-md">
@@ -481,7 +561,7 @@ export default function InvestDetail() {
 
                     {/* ── Right Column ── */}
                     <div className="lg:col-span-1 space-y-4">
-                        <div className="lg:sticky lg:top-24">
+                        <div id="purchase-card" className="lg:sticky lg:top-24">
                             {(() => {
                                 const deadlineExpired = Date.now() > property.fundingDeadline;
                                 const goalNotMet = property.fundingProgress < (property.minFundingBps / 100);

@@ -28,21 +28,11 @@ export async function loader({ request }: Route.LoaderArgs) {
     return { user, stats, listings, bookings, settlements };
 }
 
-function formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
-}
-
 type Tab = "pending" | "confirmed" | "settlements" | "listings" | "wallet";
 
 export default function OperatorDashboard() {
-    const { t } = useTranslation("operator");
-    const { user, stats, listings, bookings, settlements } = useLoaderData() as {
-        user: { walletAddress: string | null };
-        stats: DashboardStats;
-        listings: HostListingRow[];
-        bookings: OperatorBookingRow[];
-        settlements: OperatorSettlementRow[];
-    };
+    const { t, i18n } = useTranslation("operator");
+    const { user, stats, listings, bookings, settlements } = useLoaderData<typeof loader>();
 
     const [activeTab, setActiveTab] = useState<Tab>("pending");
     const [pendingBookings, setPendingBookings] = useState(
@@ -51,6 +41,11 @@ export default function OperatorDashboard() {
     const confirmedBookings = bookings.filter((b) => b.status === "confirmed");
     const [actionStates, setActionStates] = useState<Record<string, "idle" | "loading" | "error">>({});
     const [releaseStates, setReleaseStates] = useState<Record<string, "idle" | "loading" | "done" | "error">>({});
+
+    function formatDate(date: Date): string {
+        const locale = i18n.language === "ko" ? "ko-KR" : "en-US";
+        return new Date(date).toLocaleDateString(locale, { month: "short", day: "numeric" });
+    }
 
     async function handleRelease(bookingId: string) {
         setReleaseStates((s) => ({ ...s, [bookingId]: "loading" }));
@@ -123,7 +118,7 @@ export default function OperatorDashboard() {
                     {statItems.map((s) => (
                         <div key={s.label} className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm">
                             <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center mb-3", s.bg)}>
-                                <span className={cn("material-symbols-outlined text-[18px]", s.color)}>{s.icon}</span>
+                                <span className={cn("material-symbols-outlined text-[18px]", s.color)} aria-hidden="true">{s.icon}</span>
                             </div>
                             <p className="text-[11px] text-stone-400 font-medium mb-0.5">{s.label}</p>
                             <p className="text-xl font-bold text-[#4a3b2c]">{s.value}</p>
@@ -132,13 +127,20 @@ export default function OperatorDashboard() {
                 </div>
 
                 {/* 탭 네비게이션 */}
-                <div className="flex gap-1 mb-6 bg-stone-100 rounded-2xl p-1 w-fit overflow-x-auto">
+                <div
+                    role="tablist"
+                    aria-label={t("title")}
+                    className="flex gap-1 mb-6 bg-stone-100 rounded-2xl p-1 w-fit overflow-x-auto"
+                >
                     {tabs.map((tab) => (
                         <button
                             key={tab.key}
+                            role="tab"
+                            aria-selected={activeTab === tab.key}
+                            aria-controls={`tabpanel-${tab.key}`}
                             onClick={() => setActiveTab(tab.key)}
                             className={cn(
-                                "flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors",
+                                "flex items-center gap-1.5 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-colors",
                                 activeTab === tab.key
                                     ? "bg-white text-[#4a3b2c] shadow-sm"
                                     : "text-stone-500 hover:text-[#4a3b2c]"
@@ -158,201 +160,243 @@ export default function OperatorDashboard() {
                 <div className="bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden">
 
                     {/* 승인 대기 */}
-                    {activeTab === "pending" && (
-                        <div className="p-6">
-                            <h2 className="text-base font-bold text-[#4a3b2c] mb-4">{t("section.pending")}</h2>
-                            {pendingBookings.length === 0 ? (
-                                <div className="flex flex-col items-center gap-2 text-stone-300 py-12">
-                                    <span className="material-symbols-outlined text-[40px]">check_circle</span>
-                                    <p className="text-sm">{t("section.noPending")}</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {pendingBookings.map((b) => {
-                                        const state = actionStates[b.id] ?? "idle";
-                                        const isLoading = state === "loading";
-                                        return (
-                                            <div key={b.id} className="flex items-center gap-4 p-4 rounded-2xl border border-amber-100 bg-amber-50/50">
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-semibold text-[#4a3b2c] text-sm">{b.listingTitle}</p>
-                                                    <p className="text-xs text-stone-500 mt-0.5">
-                                                        {b.guestName} &middot; {formatDate(b.checkIn)} — {formatDate(b.checkOut)} &middot; {fmtKrw(b.totalPrice)}
-                                                    </p>
-                                                    {state === "error" && <p className="text-xs text-red-500 mt-1">{t("action.error")}</p>}
-                                                </div>
-                                                <div className="flex gap-2 shrink-0">
-                                                    <button
-                                                        disabled={isLoading}
-                                                        onClick={() => handleApprove(b.id)}
-                                                        className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-[#17cf54] text-white hover:bg-[#13b347] disabled:opacity-50 transition-colors"
-                                                    >
-                                                        {isLoading ? t("action.processing") : t("action.approve")}
-                                                    </button>
-                                                    <button
-                                                        disabled={isLoading}
-                                                        onClick={() => handleReject(b.id)}
-                                                        className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
-                                                    >
-                                                        {t("action.reject")}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* 확정된 예약 */}
-                    {activeTab === "confirmed" && (
-                        <div className="p-6">
-                            <h2 className="text-base font-bold text-[#4a3b2c] mb-4">{t("section.upcoming")}</h2>
-                            {confirmedBookings.length === 0 ? (
-                                <div className="flex flex-col items-center gap-2 text-stone-300 py-12">
-                                    <span className="material-symbols-outlined text-[40px]">event_available</span>
-                                    <p className="text-sm">{t("section.noConfirmed")}</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {confirmedBookings.map((b) => {
-                                        const canRelease = !!b.escrowPda && new Date(b.checkOut) < new Date();
-                                        const releaseState = releaseStates[b.id] ?? "idle";
-                                        return (
-                                        <div key={b.id} className="flex items-center gap-4 p-4 rounded-2xl border border-stone-100 bg-stone-50/50">
-                                            <div className="w-10 h-10 rounded-xl bg-[#17cf54]/10 flex items-center justify-center shrink-0">
-                                                <span className="material-symbols-outlined text-[18px] text-[#17cf54]">calendar_month</span>
-                                            </div>
+                    <div
+                        id="tabpanel-pending"
+                        role="tabpanel"
+                        aria-labelledby="tab-pending"
+                        hidden={activeTab !== "pending"}
+                        className="p-6"
+                    >
+                        <h2 className="text-base font-bold text-[#4a3b2c] mb-4">{t("section.pending")}</h2>
+                        {pendingBookings.length === 0 ? (
+                            <div className="flex flex-col items-center gap-2 text-stone-300 py-12">
+                                <span className="material-symbols-outlined text-[40px]" aria-hidden="true">check_circle</span>
+                                <p className="text-sm">{t("section.noPending")}</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {pendingBookings.map((b) => {
+                                    const state = actionStates[b.id] ?? "idle";
+                                    const isLoading = state === "loading";
+                                    return (
+                                        <div key={b.id} className="flex items-center gap-4 p-4 rounded-2xl border border-amber-100 bg-amber-50/50">
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-semibold text-[#4a3b2c] text-sm">{b.listingTitle}</p>
                                                 <p className="text-xs text-stone-500 mt-0.5">
-                                                    {b.guestName} &middot; {formatDate(b.checkIn)} — {formatDate(b.checkOut)}
+                                                    {b.guestName} &middot; {formatDate(b.checkIn)} — {formatDate(b.checkOut)} &middot; {fmtKrw(b.totalPrice)}
                                                 </p>
-                                                {releaseState === "error" && <p className="text-xs text-red-500 mt-1">{t("action.error")}</p>}
+                                                {state === "error" && <p className="text-xs text-red-500 mt-1">{t("action.error")}</p>}
                                             </div>
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <span className="text-xs font-semibold text-[#17cf54] bg-[#17cf54]/10 px-2.5 py-1 rounded-full">
-                                                    {fmtKrw(b.totalPrice)}
-                                                </span>
-                                                {canRelease && releaseState !== "done" && (
-                                                    <button
-                                                        disabled={releaseState === "loading"}
-                                                        onClick={() => handleRelease(b.id)}
-                                                        className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                                                    >
-                                                        {releaseState === "loading" ? t("action.processing") : "USDC 정산"}
-                                                    </button>
-                                                )}
-                                                {releaseState === "done" && (
-                                                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">정산 완료</span>
-                                                )}
+                                            <div className="flex gap-2 shrink-0">
+                                                <button
+                                                    disabled={isLoading}
+                                                    onClick={() => handleApprove(b.id)}
+                                                    className="text-xs font-semibold px-3 py-2.5 rounded-xl bg-[#17cf54] text-white hover:bg-[#13b347] disabled:opacity-50 transition-colors"
+                                                >
+                                                    {isLoading ? t("action.processing") : t("action.approve")}
+                                                </button>
+                                                <button
+                                                    disabled={isLoading}
+                                                    onClick={() => handleReject(b.id)}
+                                                    className="text-xs font-semibold px-3 py-2.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                                                >
+                                                    {t("action.reject")}
+                                                </button>
                                             </div>
                                         </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 확정된 예약 */}
+                    <div
+                        id="tabpanel-confirmed"
+                        role="tabpanel"
+                        aria-labelledby="tab-confirmed"
+                        hidden={activeTab !== "confirmed"}
+                        className="p-6"
+                    >
+                        <h2 className="text-base font-bold text-[#4a3b2c] mb-4">{t("section.upcoming")}</h2>
+                        {confirmedBookings.length === 0 ? (
+                            <div className="flex flex-col items-center gap-2 text-stone-300 py-12">
+                                <span className="material-symbols-outlined text-[40px]" aria-hidden="true">event_available</span>
+                                <p className="text-sm">{t("section.noConfirmed")}</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {confirmedBookings.map((b) => (
+                                    <div key={b.id} className="flex items-center gap-4 p-4 rounded-2xl border border-stone-100 bg-stone-50/50">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-[#4a3b2c] text-sm">{b.listingTitle}</p>
+                                            <p className="text-xs text-stone-500 mt-0.5">
+                                                {b.guestName} &middot; {formatDate(b.checkIn)} — {formatDate(b.checkOut)}
+                                            </p>
+                                        </div>
+                                        <span className="text-xs font-semibold text-[#17cf54] bg-[#17cf54]/10 px-2.5 py-1 rounded-full shrink-0">
+                                            {fmtKrw(b.totalPrice)}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 정산 내역 */}
+                    <div
+                        id="tabpanel-settlements"
+                        role="tabpanel"
+                        aria-labelledby="tab-settlements"
+                        hidden={activeTab !== "settlements"}
+                        className="p-6"
+                    >
+                        <h2 className="text-base font-bold text-[#4a3b2c] mb-4">{t("section.settlementHistory")}</h2>
+
+                        {/* 정산받기 버튼 — 체크아웃 완료된 confirmed 예약 */}
+                        {(() => {
+                            const releasable = bookings.filter(
+                                (b) => b.status === "confirmed" && !!b.escrowPda && new Date(b.checkOut) < new Date()
+                            );
+                            if (releasable.length === 0) return null;
+                            return (
+                                <div className="mb-4 space-y-2">
+                                    <p className="text-xs font-medium text-stone-500 mb-2">{t("section.pendingRelease")}</p>
+                                    {releasable.map((b) => {
+                                        const releaseState = releaseStates[b.id] ?? "idle";
+                                        return (
+                                            <div key={b.id} className="flex items-center gap-4 p-4 rounded-2xl border border-blue-100 bg-blue-50/40">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-semibold text-[#4a3b2c] text-sm">{b.listingTitle}</p>
+                                                    <p className="text-xs text-stone-500 mt-0.5">
+                                                        {b.guestName} &middot; {formatDate(b.checkIn)} — {formatDate(b.checkOut)}
+                                                    </p>
+                                                    {releaseState === "error" && <p className="text-xs text-red-500 mt-1">{t("action.error")}</p>}
+                                                </div>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <span className="text-xs font-semibold text-[#17cf54] bg-[#17cf54]/10 px-2.5 py-1 rounded-full">
+                                                        {fmtKrw(b.totalPrice)}
+                                                    </span>
+                                                    {releaseState === "done" ? (
+                                                        <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">{t("status.released")}</span>
+                                                    ) : (
+                                                        <button
+                                                            disabled={releaseState === "loading"}
+                                                            onClick={() => handleRelease(b.id)}
+                                                            className="text-xs font-semibold px-3 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                                        >
+                                                            {releaseState === "loading" ? t("action.processing") : t("action.release")}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
                                         );
                                     })}
                                 </div>
-                            )}
-                        </div>
-                    )}
+                            );
+                        })()}
 
-                    {/* 정산 내역 */}
-                    {activeTab === "settlements" && (
-                        <div className="p-6">
-                            <h2 className="text-base font-bold text-[#4a3b2c] mb-4">{t("section.settlementHistory")}</h2>
-                            {settlements.length === 0 ? (
-                                <div className="flex flex-col items-center gap-2 text-stone-300 py-12">
-                                    <span className="material-symbols-outlined text-[40px]">receipt_long</span>
-                                    <p className="text-sm">{t("section.noSettlements")}</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {settlements.map((s) => (
-                                        <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl border border-stone-100">
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-semibold text-[#4a3b2c] text-sm">{s.listingTitle}</p>
-                                                <p className="text-xs text-stone-500 mt-0.5">
-                                                    {t("settlement.detail", {
-                                                        month: s.month,
-                                                        revenue: s.grossRevenueKrw.toLocaleString(),
-                                                        profit: s.operatingProfitKrw.toLocaleString(),
-                                                    })}
-                                                </p>
-                                            </div>
-                                            {s.payoutTx ? (
-                                                <span className="text-xs font-semibold text-[#17cf54] bg-[#17cf54]/10 border border-[#17cf54]/20 px-2.5 py-1 rounded-lg">
-                                                    {t("status.auto")}
-                                                </span>
-                                            ) : (
-                                                <span className="text-xs text-stone-400 font-medium">{t("status.processing")}</span>
-                                            )}
+                        {settlements.length === 0 ? (
+                            <div className="flex flex-col items-center gap-2 text-stone-300 py-12">
+                                <span className="material-symbols-outlined text-[40px]" aria-hidden="true">receipt_long</span>
+                                <p className="text-sm">{t("section.noSettlements")}</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {settlements.map((s) => (
+                                    <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl border border-stone-100">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-[#4a3b2c] text-sm">{s.listingTitle}</p>
+                                            <p className="text-xs text-stone-500 mt-0.5">
+                                                {t("settlement.detail", {
+                                                    month: s.month,
+                                                    revenue: s.grossRevenueKrw.toLocaleString(),
+                                                    profit: s.operatingProfitKrw.toLocaleString(),
+                                                })}
+                                            </p>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                        {s.payoutTx ? (
+                                            <span className="text-xs font-semibold text-[#17cf54] bg-[#17cf54]/10 border border-[#17cf54]/20 px-2.5 py-1 rounded-lg">
+                                                {t("status.auto")}
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-stone-400 font-medium">{t("status.processing")}</span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
                     {/* 담당 매물 */}
-                    {activeTab === "listings" && (
-                        <div className="p-6">
-                            <h2 className="text-base font-bold text-[#4a3b2c] mb-4">{t("section.listings")}</h2>
-                            {listings.length === 0 ? (
-                                <div className="flex flex-col items-center gap-2 text-stone-300 py-12">
-                                    <span className="material-symbols-outlined text-[40px]">home_work</span>
-                                    <p className="text-sm">{t("section.noListings")}</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {listings.map((listing) => (
-                                        <div key={listing.id} className="flex items-center gap-4 p-4 rounded-2xl border border-stone-100 hover:border-stone-200 transition-colors">
-                                            <div className="w-16 h-12 rounded-xl overflow-hidden bg-stone-100 shrink-0">
-                                                {listing.image ? (
-                                                    <img src={listing.image} alt="" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center">
-                                                        <span className="material-symbols-outlined text-stone-300 text-[20px]">home</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-semibold text-[#4a3b2c] text-sm">{listing.title}</p>
-                                                <p className="text-xs text-stone-400 mt-0.5">{listing.location} &middot; {fmtKrw(listing.pricePerNight)}{t("listing.perNight")}</p>
-                                            </div>
-                                            <Link
-                                                to={`/property/${listing.id}`}
-                                                className="text-xs font-medium text-stone-400 hover:text-[#4a3b2c] px-3 py-1.5 rounded-xl hover:bg-stone-100 transition-colors"
-                                            >
-                                                {t("listing.view")}
-                                            </Link>
+                    <div
+                        id="tabpanel-listings"
+                        role="tabpanel"
+                        aria-labelledby="tab-listings"
+                        hidden={activeTab !== "listings"}
+                        className="p-6"
+                    >
+                        <h2 className="text-base font-bold text-[#4a3b2c] mb-4">{t("section.listings")}</h2>
+                        {listings.length === 0 ? (
+                            <div className="flex flex-col items-center gap-2 text-stone-300 py-12">
+                                <span className="material-symbols-outlined text-[40px]" aria-hidden="true">home_work</span>
+                                <p className="text-sm">{t("section.noListings")}</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {listings.map((listing) => (
+                                    <div key={listing.id} className="flex items-center gap-4 p-4 rounded-2xl border border-stone-100 hover:border-stone-200 transition-colors">
+                                        <div className="w-16 h-12 rounded-xl overflow-hidden bg-stone-100 shrink-0">
+                                            {listing.image ? (
+                                                <img src={listing.image} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center">
+                                                    <span className="material-symbols-outlined text-stone-300 text-[20px]" aria-hidden="true">home</span>
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-[#4a3b2c] text-sm">{listing.title}</p>
+                                            <p className="text-xs text-stone-400 mt-0.5">{listing.location} &middot; {fmtKrw(listing.pricePerNight)}{t("listing.perNight")}</p>
+                                        </div>
+                                        <Link
+                                            to={`/property/${listing.id}`}
+                                            className="text-xs font-medium text-stone-400 hover:text-[#4a3b2c] px-3 py-1.5 rounded-xl hover:bg-stone-100 transition-colors"
+                                        >
+                                            {t("listing.view")}
+                                        </Link>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
                     {/* 정산 지갑 */}
-                    {activeTab === "wallet" && (
-                        <div className="p-6">
-                            <h2 className="text-base font-bold text-[#4a3b2c] mb-1">{t("section.settlementWallet")}</h2>
-                            <p className="text-sm text-stone-400 mb-6">{t("section.walletDesc")}</p>
-                            {user.walletAddress ? (
-                                <div className="bg-white rounded-2xl border border-stone-100 p-6 space-y-3">
-                                    <h3 className="text-sm font-bold text-stone-800">정산 지갑 주소</h3>
-                                    <div className="flex items-center gap-2 bg-[#17cf54]/5 border border-[#17cf54]/20 rounded-xl px-4 py-3">
-                                        <span className="material-symbols-outlined text-[#17cf54] text-[18px]">check_circle</span>
-                                        <p className="text-xs text-stone-500 font-mono break-all">{user.walletAddress}</p>
-                                    </div>
-                                    <p className="text-xs text-stone-400">회원가입 시 자동으로 발급된 지갑 주소입니다. 이 주소로 정산 금액이 입금됩니다.</p>
+                    <div
+                        id="tabpanel-wallet"
+                        role="tabpanel"
+                        aria-labelledby="tab-wallet"
+                        hidden={activeTab !== "wallet"}
+                        className="p-6"
+                    >
+                        <h2 className="text-base font-bold text-[#4a3b2c] mb-1">{t("section.settlementWallet")}</h2>
+                        <p className="text-sm text-stone-400 mb-6">{t("section.walletDesc")}</p>
+                        {user.walletAddress ? (
+                            <div className="bg-white rounded-2xl border border-stone-100 p-6 space-y-3">
+                                <h3 className="text-sm font-bold text-stone-800">{t("wallet.addressLabel")}</h3>
+                                <div className="flex items-center gap-2 bg-[#17cf54]/5 border border-[#17cf54]/20 rounded-xl px-4 py-3">
+                                    <span className="material-symbols-outlined text-[#17cf54] text-[18px]" aria-hidden="true">check_circle</span>
+                                    <p className="text-xs text-stone-500 font-mono break-all">{user.walletAddress}</p>
                                 </div>
-                            ) : (
-                                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex items-center gap-3">
-                                    <span className="material-symbols-outlined text-[18px] animate-spin text-amber-600">progress_activity</span>
-                                    <p className="text-sm text-amber-700">지갑 준비 중입니다. 잠시 후 새로고침 해주세요.</p>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                <p className="text-xs text-stone-400">{t("wallet.autoIssued")}</p>
+                            </div>
+                        ) : (
+                            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex items-center gap-3">
+                                <span className="material-symbols-outlined text-[18px] animate-spin text-amber-600" aria-hidden="true">progress_activity</span>
+                                <p className="text-sm text-amber-700">{t("wallet.preparing")}</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </main>
         </div>

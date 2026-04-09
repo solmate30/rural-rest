@@ -19,6 +19,8 @@ module.exports = {
             "governance",
             "admin",
             "operator",
+            "host",
+            "myBookings",
         ],
         defaultNS: "common",
         // 미번역 키에 __MISSING__ 마킹 → 빈 문자열 대신 식별 용이

@@ -1,6 +1,5 @@
 import { useLoaderData, Link, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Header } from "../components/ui-mockup";
 import { requireUser } from "../lib/auth.server";
 import { db } from "../db/index.server";
 import {
@@ -210,30 +209,43 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         }).sort((a, b) => b.tokenAmount - a.tokenAmount);
     }
 
-    const monthSummaries = await Promise.all(months.map(async (month) => {
-        const [my, mm] = month.split("-").map(Number);
-        const mStartTs = DateTime.local(my, mm, 1).startOf("month").toUnixInteger();
-        const mEndTs = DateTime.local(my, mm, 1).endOf("month").toUnixInteger();
+    // N+1 방지: 모든 달의 매출/정산 여부를 2번 쿼리로 한 번에 조회
+    const firstMonth = months[months.length - 1]; // 가장 오래된 달
+    const [fy, fm] = firstMonth.split("-").map(Number);
+    const [cy, cm] = months[0].split("-").map(Number);
+    const rangeStartTs = DateTime.local(fy, fm, 1).startOf("month").toUnixInteger();
+    const rangeEndTs = DateTime.local(cy, cm, 1).endOf("month").toUnixInteger();
 
-        const [rev] = await db
-            .select({ sum: sql<number>`coalesce(sum(${bookings.totalPrice}), 0)` })
+    const [revenueByMonth, settledMonths] = await Promise.all([
+        db
+            .select({
+                month: sql<string>`strftime('%Y-%m', datetime(${bookings.checkIn}, 'unixepoch'))`,
+                sum: sql<number>`coalesce(sum(${bookings.totalPrice}), 0)`,
+            })
             .from(bookings)
             .where(and(
                 eq(bookings.listingId, listingId),
                 sql`${bookings.status} in ('confirmed', 'completed')`,
-                sql`${bookings.checkIn} >= ${mStartTs}`,
-                sql`${bookings.checkIn} <= ${mEndTs}`,
-            ));
-
-        const [op] = await db
-            .select({ id: operatorSettlements.id })
+                sql`${bookings.checkIn} >= ${rangeStartTs}`,
+                sql`${bookings.checkIn} <= ${rangeEndTs}`,
+            ))
+            .groupBy(sql`strftime('%Y-%m', datetime(${bookings.checkIn}, 'unixepoch'))`),
+        db
+            .select({ month: operatorSettlements.month })
             .from(operatorSettlements)
-            .where(and(eq(operatorSettlements.listingId, listingId), eq(operatorSettlements.month, month)));
+            .where(and(
+                eq(operatorSettlements.listingId, listingId),
+                inArray(operatorSettlements.month, months),
+            )),
+    ]);
 
-        const grossRevenueKrw = Number(rev?.sum ?? 0);
-        const settled = !!op;
+    const revenueMap = new Map(revenueByMonth.map((r) => [r.month, Number(r.sum)]));
+    const settledSet = new Set(settledMonths.map((s) => s.month));
 
-        return { month, grossRevenueKrw, settled };
+    const monthSummaries = months.map((month) => ({
+        month,
+        grossRevenueKrw: revenueMap.get(month) ?? 0,
+        settled: settledSet.has(month),
     }));
 
     const filteredMonthSummaries = monthSummaries.filter((r) => r.grossRevenueKrw > 0 || r.settled);
@@ -308,11 +320,17 @@ export default function AdminSettlementsDetail() {
         (selectedData.investorTotalUsdc ?? 0);
 
     return (
-        <div className="min-h-screen bg-[#fcfaf7] font-sans">
-            <Header />
+        <div className="font-sans">
             <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8">
                 {/* Header */}
-                <div className="flex items-center gap-4 mb-8">
+                <div className="flex items-center gap-4 mb-8 flex-wrap">
+                    <Link
+                        to="/admin"
+                        aria-label="어드민 대시보드로 돌아가기"
+                        className="shrink-0 w-11 h-11 rounded-xl border border-stone-200 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                    </Link>
                     <div className="w-14 h-14 rounded-xl overflow-hidden bg-stone-100 border border-stone-200/60 shrink-0">
                         {images[0]
                             ? <img src={images[0]} alt="" className="w-full h-full object-cover" />
@@ -339,7 +357,7 @@ export default function AdminSettlementsDetail() {
                                 value={selectedMonth}
                                 onValueChange={(v) => navigate(`/admin/settlements/${listing.id}?month=${v}`)}
                             >
-                                <SelectTrigger className="w-44 rounded-xl h-9">
+                                <SelectTrigger className="w-44 rounded-xl h-11">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -515,54 +533,56 @@ export default function AdminSettlementsDetail() {
                                 </div>
                             </CardHeader>
                             <CardContent className="p-0">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className="border-stone-100">
-                                            <TableHead className="pl-6">{t("settlements.tableWallet")}</TableHead>
-                                            <TableHead className="text-right">{t("settlements.tableTokens")}</TableHead>
-                                            <TableHead className="text-right">{t("settlements.tableRatio")}</TableHead>
-                                            <TableHead className="text-right">{t("settlements.tableDividend")}</TableHead>
-                                            <TableHead className="text-center pr-6">{t("settlements.tableStatus")}</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {investors.map((inv) => (
-                                            <TableRow key={inv.walletAddress}>
-                                                <TableCell className="pl-6">
-                                                    <span className="font-mono text-xs text-stone-600" title={inv.walletAddress}>
-                                                        {shortenWallet(inv.walletAddress)}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell className="text-right text-sm text-stone-700">
-                                                    {inv.tokenAmount.toLocaleString()}
-                                                </TableCell>
-                                                <TableCell className="text-right text-sm text-stone-500">
-                                                    {inv.sharePercent.toFixed(1)}%
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    {inv.dividendUsdc != null ? (
-                                                        <span className="text-sm font-medium text-stone-700">{usdcFmt(inv.dividendUsdc)} USDC</span>
-                                                    ) : (
-                                                        <span className="text-sm text-stone-300">--</span>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-center pr-6">
-                                                    {inv.dividendUsdc == null ? (
-                                                        <span className="text-xs text-stone-300">--</span>
-                                                    ) : inv.claimed ? (
-                                                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/10 text-xs font-bold rounded-full">
-                                                            {t("settlements.claimed")}
-                                                        </Badge>
-                                                    ) : (
-                                                        <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 hover:bg-amber-500/10 text-xs font-bold rounded-full">
-                                                            {t("settlements.unclaimed")}
-                                                        </Badge>
-                                                    )}
-                                                </TableCell>
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow className="border-stone-100">
+                                                <TableHead className="pl-6">{t("settlements.tableWallet")}</TableHead>
+                                                <TableHead className="text-right hidden sm:table-cell">{t("settlements.tableTokens")}</TableHead>
+                                                <TableHead className="text-right hidden sm:table-cell">{t("settlements.tableRatio")}</TableHead>
+                                                <TableHead className="text-right">{t("settlements.tableDividend")}</TableHead>
+                                                <TableHead className="text-center pr-6">{t("settlements.tableStatus")}</TableHead>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {investors.map((inv) => (
+                                                <TableRow key={inv.walletAddress}>
+                                                    <TableCell className="pl-6">
+                                                        <span className="font-mono text-xs text-stone-600" title={inv.walletAddress}>
+                                                            {shortenWallet(inv.walletAddress)}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell className="text-right text-sm text-stone-700 hidden sm:table-cell">
+                                                        {inv.tokenAmount.toLocaleString()}
+                                                    </TableCell>
+                                                    <TableCell className="text-right text-sm text-stone-500 hidden sm:table-cell">
+                                                        {inv.sharePercent.toFixed(1)}%
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        {inv.dividendUsdc != null ? (
+                                                            <span className="text-sm font-medium text-stone-700">{usdcFmt(inv.dividendUsdc)} USDC</span>
+                                                        ) : (
+                                                            <span className="text-sm text-stone-300">--</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-center pr-6">
+                                                        {inv.dividendUsdc == null ? (
+                                                            <span className="text-xs text-stone-300">--</span>
+                                                        ) : inv.claimed ? (
+                                                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/10 text-xs font-bold rounded-full">
+                                                                {t("settlements.claimed")}
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 hover:bg-amber-500/10 text-xs font-bold rounded-full">
+                                                                {t("settlements.unclaimed")}
+                                                            </Badge>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
                             </CardContent>
                         </Card>
                     )}

@@ -1,6 +1,6 @@
 # 00. Product Backlog & Implementation Status
 > Created: 2026-02-07 17:34
-> Last Updated: 2026-04-08 00:00
+> Last Updated: 2026-04-09 00:00
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
@@ -27,7 +27,6 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 | 여행자 | 디지털 키(QR) 체크인 | Phase 2 |
 | 투자자 | KYC 실제 신원 확인 (현재 시뮬레이션) | Phase 2 |
 | 투자자 | DAO 투표 온체인 연동 (현재 UI 목업) | Phase 1 |
-| 어드민 | 마을운영자 계정 생성 UI (Privy importUser) | Phase 1 |
 | 마을운영자 | 디지털 키 발송 연동 | Phase 2 |
 
 ---
@@ -64,7 +63,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] Configure Tailwind Theme (Colors, Fonts). → `app.css` :root를 Warm Heritage(05_UI_DESIGN)에 맞춤 (Primary #8D6E63, Secondary #D7CCC8, Accent #FFAB91, Background #FAF9F6). `tailwind.config.js` fontFamily Noto Sans KR 반영, `root.tsx` 폰트 링크 추가
 
 ### Roadmap NOW (04_ROADMAP)
-*   [ ] **PayPal/Stripe 결제 연동**: 예약 결제를 Mock에서 실제 글로벌 결제로 전환
+*   [x] **PayPal 결제 연동**: PayPal 인증 → 어드민 capture 구조 완료 (`api.paypal.create-order.ts`, `api.paypal.capture-auth.ts`, `book.tsx`)
 *   [ ] **Auto-Translation Chat**: 외국인 게스트용 자동 번역 채팅 (언어 장벽 제거)
 *   [ ] **Transport Request (수동)**: Last Mile 교통 요청 기능, 초기에는 관리자 수동 처리
 
@@ -81,9 +80,6 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] **경주 파일럿 seed**: `web/scripts/seed.ts` — SPV 5개, 운영자 5명, listings 5채, rwa_tokens 5개 (실데이터 기반)
 *   [x] **drizzle-kit push** (local.db 반영)
 
-#### 진행 중
-*   [ ] **`/invest` loader DB 전환**: `ALL_PROPERTIES` 하드코딩 제거 → listings JOIN rwa_tokens 쿼리 ← **지금**
-
 #### 완료 (2026-03-30)
 *   [x] **Anchor 프로그램 9개 instruction 구현**: initialize_property, open_position, purchase_tokens, release_funds, cancel_position, refund, activate_property, distribute_monthly_revenue, claim_dividend
 *   [x] **Anchor localnet 테스트 완료**: 34개 테스트 케이스 + E2E 스크립트 12개
@@ -92,11 +88,16 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] **배당 분배/수령 UI**: MonthlySettlementButton (온체인), ClaimButton
 *   [x] **3자 정산 아키텍처**: 지자체 40% + 운영자 30% + 투자자 30%
 
+#### 완료 (2026-04-09)
+*   [x] **`/invest` loader DB 전환**: listings JOIN rwa_tokens 쿼리 완료
+*   [x] **`/invest/:id` loader DB 전환**: 개별 토큰 상세 + 투자 현황 쿼리 완료
+*   [x] **`/my-investments` loader DB 전환**: 유저별 rwa_investments + rwa_dividends 쿼리 완료
+*   [x] **어드민 운영자 관리**: 목록·생성·이름수정·삭제 (`admin.operators.tsx`)
+*   [x] **어드민 정산 현황 목록**: 토큰화 매물별 정산 현황 페이지 (`admin.settlements.tsx`)
+
 #### 다음 단계
-*   [ ] **`/invest/:id` loader DB 전환**: 개별 토큰 상세 + 투자 현황 쿼리
-*   [ ] **`/my-investments` loader DB 전환**: 유저별 rwa_investments + rwa_dividends 쿼리
 *   [ ] **Anchor Devnet 배포**: devnet E2E 테스트 (발행→구매→수익→배당)
-*   [ ] **RWA Entry Hooks**: 숙소 상세에서 RWA 투자 배너/버튼
+*   [x] **RWA Entry Hooks**: 숙소 상세 "이 집의 한 조각 소유하기" 배너/버튼 → `/invest/:id` 연결 완료
 
 ### DAO (커스텀 Anchor -- Realms 대체, 08_DAO_IMPLEMENTATION_SPEC)
 *   [x] **Anchor DAO 프로그램**: `rural-rest-dao` 5개 instruction 구현 완료 (Program ID: `3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX`)

@@ -5,7 +5,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useExportWallet } from "@privy-io/react-auth/solana";
 import { cn } from "~/lib/utils";
 import { useToast } from "~/hooks/use-toast";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate, useRouteLoaderData } from "react-router";
 import { useKyc } from "./KycProvider";
 import { useTranslation } from "react-i18next";
 import {
@@ -130,7 +130,12 @@ export function Header() {
     const { isKycCompleted } = useKyc();
     const { t, i18n } = useTranslation("common");
 
-    const userRole = (session?.user as Record<string, unknown>)?.role as string | undefined;
+    // SSR에서 role을 즉시 사용 — client useSession() 로드 전 깜빡임 방지
+    const rootData = useRouteLoaderData("root") as { userRole?: string | null } | undefined;
+    const ssrRole = rootData?.userRole ?? null;
+    const clientRole = (session?.user as Record<string, unknown> | undefined)?.role as string | undefined;
+    const userRole = clientRole ?? ssrRole ?? undefined;
+
     const isAdmin = userRole === "admin";
     const isHost = userRole === "spv";
     const isOperator = userRole === "operator";
@@ -167,9 +172,25 @@ export function Header() {
                     <nav className="hidden md:flex items-center gap-5">
                         {isAdmin ? (
                             <>
-                                <a href="/operator" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.operatorDashboard")}</a>
-                                <a href="/admin" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.adminDashboard")}</a>
-                                <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
+                                {([
+                                    { label: t("nav.adminTab.dashboard"),   href: "/admin",              exact: true  },
+                                    { label: t("nav.adminTab.newListing"),  href: "/admin/listing/new",  exact: false },
+                                    { label: t("nav.adminTab.operators"),   href: "/admin/operators",    exact: false },
+                                    { label: t("nav.adminTab.settlements"), href: "/admin/settlements",  exact: false },
+                                ] as const).map(({ label, href, exact }) => {
+                                    const isActive = exact
+                                        ? location.pathname === href
+                                        : location.pathname.startsWith(href);
+                                    return (
+                                        <a
+                                            key={href}
+                                            href={href}
+                                            className={`text-sm font-medium transition-colors ${isActive ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"}`}
+                                        >
+                                            {label}
+                                        </a>
+                                    );
+                                })}
                             </>
                         ) : isOperator || isHost ? (
                             <>
