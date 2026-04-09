@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Input } from "./ui/input";
@@ -14,6 +15,9 @@ interface Message {
 }
 
 export function AiConcierge() {
+    const location = useLocation();
+    // invest/:id 페이지는 하단에 MobileInvestBar가 있어서 FAB을 위로 올림 (lg 이상에서는 bar가 없으므로 원위치)
+    const hasMobileBar = /^\/invest\/[^/]+/.test(location.pathname);
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
@@ -80,7 +84,7 @@ export function AiConcierge() {
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        <div className={cn("fixed right-6 z-50 flex flex-col items-end", hasMobileBar ? "bottom-24 lg:bottom-6" : "bottom-6")}>
             {/* Chat Window */}
             {isOpen && (
                 <Card className="mb-4 w-[350px] sm:w-[400px] h-[550px] shadow-2xl flex flex-col overflow-hidden border-none animate-in slide-in-from-bottom-5 duration-300">
