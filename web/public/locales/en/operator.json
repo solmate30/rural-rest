@@ -20,7 +20,8 @@
     "cancelled": "Cancelled",
     "completed": "Completed",
     "auto": "Auto-paid",
-    "processing": "Processing"
+    "processing": "Processing",
+    "released": "Released"
   },
   "section": {
     "pending": "Awaiting Approval",
@@ -30,6 +31,7 @@
     "noConfirmed": "No confirmed bookings.",
     "settlementHistory": "Settlement History",
     "noSettlements": "No settlement records yet.",
+    "pendingRelease": "Pending Release",
     "settlementWallet": "Settlement Wallet",
     "walletDesc": "Connect your Solana wallet to receive dividends and settlements.",
     "listings": "Assigned Properties",
@@ -38,8 +40,14 @@
   "action": {
     "approve": "Approve",
     "reject": "Reject & Refund",
+    "release": "Receive Settlement",
     "processing": "Processing...",
     "error": "Action failed"
+  },
+  "wallet": {
+    "addressLabel": "Settlement Wallet Address",
+    "autoIssued": "This wallet was automatically created when you signed up. Settlements will be sent to this address.",
+    "preparing": "Preparing your wallet. Please wait a moment."
   },
   "settlement": {
     "detail": "{{month}} · Revenue {{revenue}} · Profit {{profit}}"

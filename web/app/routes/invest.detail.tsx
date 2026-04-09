@@ -15,7 +15,7 @@ import { RefundButton } from "~/components/rwa/RefundButton";
 import { PropertyGallery } from "~/components/rwa/PropertyGallery";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { usePrivy } from "@privy-io/react-auth";
 import { useKyc } from "~/components/KycProvider";
 import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
@@ -43,7 +43,7 @@ function ShareBlinksButton({ listingId }: { listingId: string }) {
     return (
         <button
             onClick={handleShare}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-stone-200 text-xs font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-colors shrink-0"
         >
             <span className="material-symbols-outlined text-[16px]">
                 {copied ? "check_circle" : "share"}
@@ -308,8 +308,8 @@ function MobileInvestBar({ property }: { property: Awaited<ReturnType<typeof loa
     const { login, authenticated, ready } = usePrivy();
     const wallet = usePrivyAnchorWallet();
     const { isKycCompleted } = useKyc();
-    const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation("invest");
 
     const isSoldOut = property.fundingProgress >= 100;
     const isExpired = Date.now() > property.fundingDeadline;
@@ -332,20 +332,20 @@ function MobileInvestBar({ property }: { property: Awaited<ReturnType<typeof loa
         <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden border-t border-border bg-card/95 backdrop-blur-md safe-area-inset-bottom">
             <div className="flex items-center gap-3 px-4 py-3">
                 <div className="flex-1 min-w-0">
-                    <p className="text-xs uppercase font-bold text-stone-400 tracking-wider">Token Price</p>
+                    <p className="text-xs uppercase font-bold text-stone-400 tracking-wider">{t("purchase.tokenPrice")}</p>
                     <p className="text-sm font-bold text-foreground">
                         {fmtUsdc(property.usdcPrice)}
-                        <span className="text-xs text-stone-400 font-normal ml-1">/ token</span>
+                        <span className="text-xs text-stone-400 font-normal ml-1">{t("purchase.perToken")}</span>
                     </p>
                 </div>
                 {isNotMinted || isExpired || isSoldOut ? (
                     <Button disabled variant="secondary" className="shrink-0">
-                        {isSoldOut ? "Sold Out" : isExpired ? "마감" : "준비 중"}
+                        {isSoldOut ? t("purchase.soldOut") : isExpired ? t("purchase.expired") : t("purchase.preparing")}
                     </Button>
                 ) : step === "wallet-loading" ? (
                     <Button disabled variant="secondary" className="shrink-0">
-                        <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
-                        준비 중...
+                        <span className="material-symbols-outlined text-[16px] animate-spin" aria-hidden="true">progress_activity</span>
+                        {t("purchase.walletLoading")}
                     </Button>
                 ) : step === "need-wallet" ? (
                     <Button
@@ -353,15 +353,15 @@ function MobileInvestBar({ property }: { property: Awaited<ReturnType<typeof loa
                         className="shrink-0 shadow-lg shadow-invest/20"
                         onClick={login}
                     >
-                        로그인하기
+                        {t("purchase.login")}
                     </Button>
                 ) : step === "need-kyc" ? (
                     <Button
                         variant="success"
                         className="shrink-0 shadow-lg shadow-invest/20"
-                        onClick={() => navigate(`/kyc?return=${encodeURIComponent(location.pathname)}`)}
+                        onClick={() => window.open(`/kyc?return=${encodeURIComponent(location.pathname + location.search)}`, '_blank')}
                     >
-                        신원 확인하기
+                        {t("purchase.kycBtn")}
                     </Button>
                 ) : (
                     <Button
@@ -369,7 +369,7 @@ function MobileInvestBar({ property }: { property: Awaited<ReturnType<typeof loa
                         className="shrink-0 shadow-lg shadow-invest/20"
                         onClick={() => document.getElementById("purchase-card")?.scrollIntoView({ behavior: "smooth" })}
                     >
-                        투자하기
+                        {t("purchase.invest")}
                     </Button>
                 )}
             </div>
@@ -388,7 +388,7 @@ export default function InvestDetail() {
             <Header />
             <MobileInvestBar property={property} />
 
-            <main className="container mx-auto py-8 px-4 sm:px-8 max-w-6xl pb-24 lg:pb-8">
+            <main className="container mx-auto py-8 px-4 sm:px-8 max-w-6xl pb-20 lg:pb-8">
 
                 {/* Title & Badges */}
                 <div className="mb-6 space-y-2">

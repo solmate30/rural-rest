@@ -75,7 +75,7 @@ function CreateOperatorSheet({ open, onOpenChange }: { open: boolean; onOpenChan
                 body: JSON.stringify({ name: name.trim(), email: email.trim() }),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error ?? "운영자 생성 실패");
+            if (!res.ok) throw new Error(data.error ?? "계정을 만들지 못했어요");
             setStatus("done");
             setResultMsg(
                 data.created
@@ -92,8 +92,7 @@ function CreateOperatorSheet({ open, onOpenChange }: { open: boolean; onOpenChan
         <Sheet open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
             <SheetContent side="right" className="w-full sm:max-w-md bg-[#fcfaf7]">
                 <SheetHeader className="mb-6">
-                    <SheetTitle className="text-base font-bold text-[#4a3b2c] flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px] text-emerald-600">person_add</span>
+                    <SheetTitle className="text-base font-bold text-[#4a3b2c]">
                         마을운영자 계정 생성
                     </SheetTitle>
                     <SheetDescription>
@@ -129,7 +128,7 @@ function CreateOperatorSheet({ open, onOpenChange }: { open: boolean; onOpenChan
                             disabled={status === "loading" || !name.trim() || !email.trim()}
                             className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
                         >
-                            {status === "loading" ? "생성 중..." : "운영자 계정 생성"}
+                            {status === "loading" ? "만들고 있어요..." : "계정 만들기"}
                         </Button>
                     ) : (
                         <Button
@@ -699,8 +698,7 @@ function ListingSheet({
                             <SheetClose asChild>
                                 <Button variant="outline" size="sm" className="w-full" asChild>
                                     <Link to={`/invest/${listing.id}`}>
-                                        <span className="material-symbols-outlined text-[14px]">open_in_new</span>
-                                        {t("dashboard.sheet.viewInvestPage")}
+{t("dashboard.sheet.viewInvestPage")}
                                     </Link>
                                 </Button>
                             </SheetClose>
@@ -747,7 +745,7 @@ function ListingSheet({
                                                 key={h}
                                                 type="button"
                                                 onClick={() => quickSet(h)}
-                                                className="text-[11px] px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors"
+                                                className="text-[11px] px-2.5 min-h-11 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 transition-colors"
                                             >
                                                 {t("tokenize.quickSet", { hours: h })}
                                             </button>
@@ -833,7 +831,6 @@ function ListingSheet({
                     <SheetClose asChild>
                         <Button variant="outline" size="sm" className="w-full" asChild>
                             <Link to={`/host/edit/${listing.id}`}>
-                                <span className="material-symbols-outlined text-[14px]">edit</span>
                                 숙소 수정
                             </Link>
                         </Button>
@@ -1054,8 +1051,7 @@ function CouncilTokenSheet({ open, onOpenChange }: { open: boolean; onOpenChange
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent side="right" className="w-full sm:max-w-md bg-[#fcfaf7]">
                 <SheetHeader className="mb-6">
-                    <SheetTitle className="text-base font-bold text-[#4a3b2c] flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px] text-violet-500">token</span>
+                    <SheetTitle className="text-base font-bold text-[#4a3b2c]">
                         {t("rwa.council.title")}
                     </SheetTitle>
                     <SheetDescription>
@@ -1361,13 +1357,13 @@ export default function AdminDashboard() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="border-stone-100">
-                                    <TableHead className="pl-6 w-[320px]">
+                                    <TableHead className="pl-6 min-w-0">
                                         {t("dashboard.table.colProperty")}
                                     </TableHead>
-                                    <TableHead className="text-right">
+                                    <TableHead className="text-right hidden sm:table-cell">
                                         {t("dashboard.table.colPrice")}
                                     </TableHead>
-                                    <TableHead>{t("dashboard.table.colStatus")}</TableHead>
+                                    <TableHead className="hidden md:table-cell">{t("dashboard.table.colStatus")}</TableHead>
                                     <TableHead className="text-right pr-6">
                                         {t("dashboard.table.colActions")}
                                     </TableHead>
@@ -1427,12 +1423,12 @@ export default function AdminDashboard() {
                                             </TableCell>
 
                                             {/* Price */}
-                                            <TableCell className="text-right text-sm text-stone-700">
+                                            <TableCell className="text-right text-sm text-stone-700 hidden sm:table-cell">
                                                 {fmtKrw(listing.pricePerNight)}
                                             </TableCell>
 
                                             {/* Status badge */}
-                                            <TableCell>
+                                            <TableCell className="hidden md:table-cell">
                                                 <div className="flex items-center gap-1.5">
                                                     {listing.tokenMint ? (
                                                         <Badge
