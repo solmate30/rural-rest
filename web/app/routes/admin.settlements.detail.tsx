@@ -1,6 +1,5 @@
 import { useLoaderData, Link, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Header } from "../components/ui-mockup";
 import { requireUser } from "../lib/auth.server";
 import { db } from "../db/index.server";
 import {
@@ -321,8 +320,7 @@ export default function AdminSettlementsDetail() {
         (selectedData.investorTotalUsdc ?? 0);
 
     return (
-        <div className="min-h-screen bg-[#fcfaf7] font-sans">
-            <Header />
+        <div className="font-sans">
             <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8 flex-wrap">

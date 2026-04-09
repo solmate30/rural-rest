@@ -11,6 +11,12 @@
     "logoutDesc": "See you next time!",
     "admin": "Admin",
     "adminDashboard": "Admin Dashboard",
+    "adminTab": {
+      "dashboard": "Dashboard",
+      "newListing": "New Listing",
+      "operators": "Operators",
+      "settlements": "Settlements"
+    },
     "hostBookings": "Booking Management",
     "operatorDashboard": "Operator Dashboard",
     "myBookings": "My Bookings",

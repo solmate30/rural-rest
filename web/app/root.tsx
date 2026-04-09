@@ -17,6 +17,7 @@ import "./app.css";
 import { Toaster } from "./components/ui/toaster";
 import { Header, Button, Card } from "./components/ui-mockup";
 import { detectLocale } from "./lib/i18n.server";
+import { getSession } from "./lib/auth.server";
 import { initReactI18next } from "react-i18next";
 import { i18nConfig } from "./lib/i18n";
 
@@ -43,8 +44,12 @@ export async function loader({ request }: Route.LoaderArgs) {
     );
   }
 
+  // 서버에서 role 미리 읽기 — Header SSR 깜빡임 방지
+  const session = await getSession(request);
+  const userRole = (session?.user as Record<string, unknown> | undefined)?.role as string | null ?? null;
+
   // React Router 7: data() 유틸리티로 헤더 설정 + 타입 추론 동시 처리
-  return data({ locale, initialI18nStore }, { headers });
+  return data({ locale, initialI18nStore, userRole }, { headers });
 }
 
 // --- Links ---
