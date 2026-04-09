@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Form, useActionData, useNavigation, redirect } from "react-router";
 import type { Route } from "./+types/admin.listing.new";
 import { requireUser } from "~/lib/auth.server";
@@ -117,16 +118,16 @@ export async function action({ request }: Route.ActionArgs) {
 
     const errors: ActionErrors = {};
 
-    if (!title) errors.title = "숙소명을 입력해주세요";
-    else if (title.length > 100) errors.title = "숙소명은 100자 이하로 입력해주세요";
-    if (!description) errors.description = "숙소 설명을 입력해주세요";
-    if (!location) errors.location = "주소를 검색해주세요";
+    if (!title) errors.title = "validation.requiredTitle";
+    else if (title.length > 100) errors.title = "validation.titleTooLong";
+    if (!description) errors.description = "validation.requiredDescription";
+    if (!location) errors.location = "validation.requiredLocation";
     if (!region || !REGION_OPTIONS.some((r) => r.value === region))
-        errors.region = "지역 정보를 확인할 수 없습니다";
+        errors.region = "validation.invalidRegion";
     if (!Number.isFinite(pricePerNight) || pricePerNight <= 0)
-        errors.pricePerNight = "1박 가격을 입력해주세요";
+        errors.pricePerNight = "validation.requiredPrice";
     if (!Number.isFinite(maxGuests) || maxGuests <= 0 || !Number.isInteger(maxGuests))
-        errors.maxGuests = "최대 인원을 입력해주세요";
+        errors.maxGuests = "validation.requiredMaxGuests";
 
     if (Object.keys(errors).length > 0)
         return Response.json({ errors }, { status: 422 });
@@ -242,17 +243,15 @@ const INPUT_CLS = "w-full h-10 rounded-xl border border-input bg-background px-4
 // 진행 표시기
 // ────────────────────────────────────────────────────────────
 
-const STEPS = ["위치", "기본정보", "편의시설", "사진", "가격/옵션", "검토"];
-
-function StepIndicator({ current }: { current: number }) {
+function StepIndicator({ current, steps }: { current: number; steps: string[] }) {
     return (
         <div className="flex items-center justify-between mb-8">
-            {STEPS.map((label, i) => {
+            {steps.map((label, i) => {
                 const num = i + 1;
                 const done = num < current;
                 const active = num === current;
                 return (
-                    <div key={num} className={`flex items-center gap-1 ${i < STEPS.length - 1 ? "flex-1" : ""}`}>
+                    <div key={num} className={`flex items-center gap-1 ${i < steps.length - 1 ? "flex-1" : ""}`}>
                         <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-colors shrink-0 ${
                             done ? "bg-primary text-white" :
                             active ? "bg-primary/20 text-primary border border-primary" :
@@ -263,7 +262,7 @@ function StepIndicator({ current }: { current: number }) {
                         <span className={`text-xs whitespace-nowrap hidden sm:block ${active ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                             {label}
                         </span>
-                        {i < STEPS.length - 1 && (
+                        {i < steps.length - 1 && (
                             <div className={`flex-1 h-px mx-1 min-w-4 ${done ? "bg-primary" : "bg-border"}`} />
                         )}
                     </div>
@@ -284,6 +283,7 @@ function Step1Location({
     setDraft: React.Dispatch<React.SetStateAction<ListingDraft>>;
     errors?: ActionErrors;
 }) {
+    const { t } = useTranslation("admin");
     const addr = useAddressSearch((location, region, valuationKrw) => {
         setDraft((d) => ({ ...d, location, region, manualRegion: null, valuationKrw }));
     });
@@ -292,16 +292,16 @@ function Step1Location({
 
     return (
         <div className="space-y-4">
-            <Field label="주소" error={errors?.location} required>
+            <Field label={t("new.reviewAddr")} error={errors?.location ? t(errors.location as any) : undefined} required>
                 <div className="flex gap-2">
                     <div className="flex-1 h-10 rounded-xl border border-input bg-muted/30 px-4 flex items-center text-sm">
                         {draft.location
                             ? <span className="text-foreground">{draft.location}</span>
-                            : <span className="text-muted-foreground">주소 검색 버튼을 눌러 선택해주세요</span>
+                            : <span className="text-muted-foreground">{t("new.addrPlaceholder")}</span>
                         }
                     </div>
                     <Button type="button" variant="outline" onClick={addr.openPostcode} disabled={!addr.isScriptReady} className="shrink-0">
-                        {addr.isScriptReady ? "주소 검색" : "로딩 중..."}
+                        {addr.isScriptReady ? t("new.addrSearch") : t("new.addrLoading")}
                     </Button>
                 </div>
             </Field>
@@ -310,34 +310,34 @@ function Step1Location({
                 <div className="rounded-xl bg-primary/5 border border-primary/20 px-4 py-3 space-y-1.5 text-sm">
                     {resolvedRegion && (
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">지역</span>
+                            <span className="text-muted-foreground">{t("new.regionInfo")}</span>
                             <span className="font-medium">
                                 {REGION_OPTIONS.find((r) => r.value === resolvedRegion)?.label}
                             </span>
                         </div>
                     )}
                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">공시가격</span>
+                        <span className="text-muted-foreground">{t("new.valuationInfo")}</span>
                         {addr.isLookingUp
-                            ? <span className="text-xs text-muted-foreground">조회 중...</span>
+                            ? <span className="text-xs text-muted-foreground">{t("new.valuationLooking")}</span>
                             : addr.lookupError
                                 ? <span className="text-xs text-red-400">{addr.lookupError}</span>
                                 : draft.valuationKrw
-                                    ? <span className="font-medium">{draft.valuationKrw.toLocaleString()} 원</span>
-                                    : <span className="text-xs text-muted-foreground">조회 결과 없음</span>
+                                    ? <span className="font-medium">{t("new.krw", { amount: draft.valuationKrw.toLocaleString() })}</span>
+                                    : <span className="text-xs text-muted-foreground">{t("new.valuationNone")}</span>
                         }
                     </div>
                 </div>
             )}
 
             {draft.location && !draft.region && (
-                <Field label="지역 직접 선택" error={errors?.region} required>
+                <Field label={t("new.manualRegion")} error={errors?.region ? t(errors.region as any) : undefined} required>
                     <select
                         defaultValue=""
                         onChange={(e) => setDraft((d) => ({ ...d, manualRegion: e.target.value as RegionValue }))}
                         className={INPUT_CLS}
                     >
-                        <option value="" disabled>지역 선택</option>
+                        <option value="" disabled>{t("new.regionSelect")}</option>
                         {REGION_OPTIONS.map((r) => (
                             <option key={r.value} value={r.value}>{r.label}</option>
                         ))}
@@ -345,11 +345,11 @@ function Step1Location({
                 </Field>
             )}
 
-            <Field label="공시가격 (KRW)" hint="자동입력, 수정 가능">
+            <Field label={t("new.valuationField")} hint={t("new.valuationHint")}>
                 <input
                     type="number"
                     min="0"
-                    placeholder="예: 250000000"
+                    placeholder={t("new.valuationPlaceholder")}
                     value={draft.valuationKrw ?? ""}
                     onChange={(e) => setDraft((d) => ({
                         ...d, valuationKrw: e.target.value ? Number(e.target.value) : null,
@@ -368,28 +368,29 @@ function Step2BasicInfo({
     setDraft: React.Dispatch<React.SetStateAction<ListingDraft>>;
     errors?: ActionErrors;
 }) {
+    const { t } = useTranslation("admin");
     return (
         <div className="space-y-4">
-            <Field label="숙소명" error={errors?.title} required>
+            <Field label={t("new.titleField")} error={errors?.title ? t(errors.title as any) : undefined} required>
                 <input
                     type="text"
-                    placeholder="예: 황오동 청송재"
+                    placeholder={t("new.titlePlaceholder")}
                     maxLength={100}
                     value={draft.title}
                     onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
                     className={INPUT_CLS}
                 />
             </Field>
-            <Field label="숙소 설명" error={errors?.description} required>
+            <Field label={t("new.descField")} error={errors?.description ? t(errors.description as any) : undefined} required>
                 <textarea
                     rows={5}
-                    placeholder="숙소의 특징, 분위기, 주변 명소 등을 소개해주세요"
+                    placeholder={t("new.descPlaceholder")}
                     value={draft.description}
                     onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
                     className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
             </Field>
-            <Field label="최대 인원" error={errors?.maxGuests} required>
+            <Field label={t("new.maxGuestsField")} error={errors?.maxGuests ? t(errors.maxGuests as any) : undefined} required>
                 <input
                     type="number"
                     min="1"
@@ -464,7 +465,7 @@ function Step4Photos({
         onSuccess: (result) => {
             setDraft((d) => ({ ...d, images: [...d.images, result.secureUrl] }));
         },
-        onError: (err) => alert("업로드 실패: " + err),
+        onError: (err) => alert(err),
     });
 
     async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -479,6 +480,8 @@ function Step4Photos({
     function removeImage(url: string) {
         setDraft((d) => ({ ...d, images: d.images.filter((u) => u !== url) }));
     }
+
+    const { t } = useTranslation("admin");
 
     return (
         <div className="space-y-4">
@@ -495,11 +498,12 @@ function Step4Photos({
                 <div className="grid grid-cols-3 gap-3">
                     {draft.images.map((url, idx) => (
                         <div key={url} className="relative aspect-video rounded-xl overflow-hidden border group">
-                            <img src={url} alt={`사진 ${idx + 1}`} className="w-full h-full object-cover" />
+                            <img src={url} alt={`photo ${idx + 1}`} className="w-full h-full object-cover" />
                             <button
                                 type="button"
                                 onClick={() => removeImage(url)}
                                 className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-black/50 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                aria-label="Remove photo"
                             >
                                 ×
                             </button>
@@ -512,7 +516,7 @@ function Step4Photos({
                         className="aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/30 transition-colors"
                     >
                         <span className="text-xl">+</span>
-                        <span className="text-xs mt-1">추가</span>
+                        <span className="text-xs mt-1">{t("new.addMore")}</span>
                     </button>
                 </div>
             ) : (
@@ -522,9 +526,9 @@ function Step4Photos({
                     disabled={isUploading}
                     className="w-full rounded-xl border-2 border-dashed border-border p-10 flex flex-col items-center gap-2 text-muted-foreground hover:bg-muted/30 transition-colors"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                    <p className="text-sm font-medium">클릭해서 사진 추가</p>
-                    <p className="text-xs">JPG, PNG (최대 10MB)</p>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                    <p className="text-sm font-medium">{t("new.uploadClick")}</p>
+                    <p className="text-xs">{t("new.uploadFileHint")}</p>
                 </button>
             )}
 
@@ -533,7 +537,7 @@ function Step4Photos({
                     <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                         <div className="h-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
                     </div>
-                    <p className="text-xs text-center text-muted-foreground">업로드 중... {progress}%</p>
+                    <p className="text-xs text-center text-muted-foreground">{t("new.uploading", { pct: progress })}</p>
                 </div>
             )}
         </div>
@@ -547,9 +551,10 @@ function Step5Pricing({
     setDraft: React.Dispatch<React.SetStateAction<ListingDraft>>;
     errors?: ActionErrors;
 }) {
+    const { t } = useTranslation("admin");
     return (
         <div className="space-y-4">
-            <Field label="1박 가격 (KRW)" error={errors?.pricePerNight} required>
+            <Field label={t("new.priceField")} error={errors?.pricePerNight ? t(errors.pricePerNight as any) : undefined} required>
                 <input
                     type="number"
                     min="1"
@@ -563,8 +568,8 @@ function Step5Pricing({
             </Field>
             <div className="space-y-3">
                 {([
-                    { key: "transportSupport", label: "교통 지원", desc: "픽업/샌딩 서비스 제공" },
-                    { key: "smartLockEnabled", label: "스마트락", desc: "QR 코드 비대면 체크인" },
+                    { key: "transportSupport", label: t("new.transportLabel"), desc: t("new.transportDesc") },
+                    { key: "smartLockEnabled", label: t("new.smartLockLabel"), desc: t("new.smartLockDesc") },
                 ] as const).map(({ key, label, desc }) => (
                     <label
                         key={key}
@@ -596,19 +601,20 @@ function Step6Review({
     errors?: ActionErrors;
     isSubmitting: boolean;
 }) {
+    const { t } = useTranslation("admin");
     const resolvedRegion = draft.region ?? draft.manualRegion;
 
     const rows: [string, string][] = [
-        ["주소", draft.location || "-"],
-        ["지역", REGION_OPTIONS.find((r) => r.value === resolvedRegion)?.label ?? "-"],
-        ["공시가격", draft.valuationKrw ? `${draft.valuationKrw.toLocaleString()} 원` : "-"],
-        ["숙소명", draft.title || "-"],
-        ["설명", draft.description ? `${draft.description.slice(0, 50)}${draft.description.length > 50 ? "..." : ""}` : "-"],
-        ["최대 인원", draft.maxGuests ? `${draft.maxGuests}명` : "-"],
-        ["편의시설", draft.amenities.length > 0 ? draft.amenities.join(", ") : "없음"],
-        ["1박 가격", draft.pricePerNight ? `${draft.pricePerNight.toLocaleString()} 원` : "-"],
-        ["교통 지원", draft.transportSupport ? "예" : "아니오"],
-        ["스마트락", draft.smartLockEnabled ? "예" : "아니오"],
+        [t("new.reviewAddr"), draft.location || "-"],
+        [t("new.reviewRegion"), REGION_OPTIONS.find((r) => r.value === resolvedRegion)?.label ?? "-"],
+        [t("new.reviewValuation"), draft.valuationKrw ? t("new.krw", { amount: draft.valuationKrw.toLocaleString() }) : "-"],
+        [t("new.reviewTitle"), draft.title || "-"],
+        [t("new.reviewDesc"), draft.description ? `${draft.description.slice(0, 50)}${draft.description.length > 50 ? "..." : ""}` : "-"],
+        [t("new.reviewMaxGuests"), draft.maxGuests ? t("new.guests", { count: draft.maxGuests }) : "-"],
+        [t("new.reviewAmenities"), draft.amenities.length > 0 ? draft.amenities.join(", ") : t("new.noAmenities")],
+        [t("new.reviewPrice"), draft.pricePerNight ? t("new.krw", { amount: draft.pricePerNight.toLocaleString() }) : "-"],
+        [t("new.reviewTransport"), draft.transportSupport ? t("new.yes") : t("new.no")],
+        [t("new.reviewSmartLock"), draft.smartLockEnabled ? t("new.yes") : t("new.no")],
     ];
 
     return (
@@ -647,7 +653,7 @@ function Step6Review({
             ))}
 
             <Button type="submit" disabled={isSubmitting} className="w-full h-12 text-base">
-                {isSubmitting ? "등록 중..." : "숙소 등록"}
+                {isSubmitting ? t("new.submitting") : t("new.submit")}
             </Button>
         </div>
     );
@@ -660,6 +666,7 @@ function Step6Review({
 export default function AdminListingNew() {
     const actionData = useActionData<typeof action>();
     const navigation = useNavigation();
+    const { t } = useTranslation("admin");
     const isSubmitting = navigation.state === "submitting";
     const errors = (actionData as { errors?: ActionErrors } | undefined)?.errors;
 
@@ -675,13 +682,14 @@ export default function AdminListingNew() {
         return true;
     }
 
+    const STEPS = [
+        t("new.step1"), t("new.step2"), t("new.step3"),
+        t("new.step4"), t("new.step5"), t("new.step6"),
+    ];
+
     const STEP_TITLES = [
-        "어디에 있나요?",
-        "숙소를 소개해주세요",
-        "편의시설을 선택해주세요",
-        "사진을 추가해주세요",
-        "가격을 설정해주세요",
-        "등록 정보를 확인해주세요",
+        t("new.title1"), t("new.title2"), t("new.title3"),
+        t("new.title4"), t("new.title5"), t("new.title6"),
     ];
 
     return (
@@ -690,11 +698,11 @@ export default function AdminListingNew() {
 
             <main className="container mx-auto py-12 px-4 max-w-2xl">
                 <div className="mb-8 space-y-1">
-                    <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Admin · 숙소 등록</p>
+                    <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">{t("new.breadcrumb")}</p>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">{STEP_TITLES[step - 1]}</h1>
                 </div>
 
-                <StepIndicator current={step} />
+                <StepIndicator current={step} steps={STEPS} />
 
                 <Form method="post" className="space-y-6">
                     <div className="p-6 rounded-2xl border border-border bg-card min-h-[300px]">
@@ -712,7 +720,7 @@ export default function AdminListingNew() {
                             variant="outline"
                             onClick={() => step === 1 ? history.back() : setStep((s) => s - 1)}
                         >
-                            {step === 1 ? "취소" : "이전"}
+                            {step === 1 ? t("new.cancel") : t("new.prev")}
                         </Button>
                         {step < 6 && (
                             <Button
@@ -721,7 +729,7 @@ export default function AdminListingNew() {
                                 disabled={!canAdvance()}
                                 className="px-8"
                             >
-                                다음
+                                {t("new.next")}
                             </Button>
                         )}
                     </div>

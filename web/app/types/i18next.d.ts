@@ -1,34 +1,18 @@
-import type enCommon from "../../public/locales/en/common.json";
-import type enHome from "../../public/locales/en/home.json";
-import type enAuth from "../../public/locales/en/auth.json";
-import type enProperty from "../../public/locales/en/property.json";
-import type enBook from "../../public/locales/en/book.json";
-import type enInvest from "../../public/locales/en/invest.json";
-import type enKyc from "../../public/locales/en/kyc.json";
-import type enGovernance from "../../public/locales/en/governance.json";
-import type enOperator from "../../public/locales/en/operator.json";
-import type enAdmin from "../../public/locales/en/admin.json";
-import type enHost from "../../public/locales/en/host.json";
-import type enMyBookings from "../../public/locales/en/myBookings.json";
-import type enOperator from "../../public/locales/en/operator.json";
+/**
+ * i18next 전역 타입 선언
+ *
+ * CustomTypeOptions.resources 에 ko 번역 구조를 매핑하면:
+ *  - t("admin.edit.save") 등 리터럴 키 → 자동완성 + 오타 컴파일 에러
+ *  - 동적 키(서버 반환 에러 키 등)는 여전히 `as any` 또는 캐스트 필요
+ *
+ * 참조: https://www.i18next.com/overview/typescript
+ */
+
+import type { AllTranslations } from "~/lib/translations";
 
 declare module "i18next" {
     interface CustomTypeOptions {
         defaultNS: "common";
-        resources: {
-            common: typeof enCommon;
-            home: typeof enHome;
-            auth: typeof enAuth;
-            property: typeof enProperty;
-            book: typeof enBook;
-            invest: typeof enInvest;
-            kyc: typeof enKyc;
-            governance: typeof enGovernance;
-            operator: typeof enOperator;
-            admin: typeof enAdmin;
-            host: typeof enHost;
-            myBookings: typeof enMyBookings;
-            operator: typeof enOperator;
-        };
+        resources: AllTranslations["ko"];
     }
 }

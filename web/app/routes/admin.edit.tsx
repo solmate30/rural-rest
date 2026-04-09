@@ -9,6 +9,7 @@
  */
 
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Form, useLoaderData, useActionData, useNavigation, redirect } from "react-router";
 import type { Route } from "./+types/admin.edit";
 import { requireUser } from "~/lib/auth.server";
@@ -51,10 +52,10 @@ export async function action({ request, params }: Route.ActionArgs) {
     const images = fd.getAll("images").map(String).filter(Boolean);
 
     const errors: Record<string, string> = {};
-    if (!title) errors.title = "숙소명을 입력해주세요";
-    if (!description) errors.description = "숙소 설명을 입력해주세요";
-    if (!Number.isFinite(pricePerNight) || pricePerNight <= 0) errors.pricePerNight = "가격을 입력해주세요";
-    if (!Number.isFinite(maxGuests) || maxGuests <= 0) errors.maxGuests = "최대 인원을 입력해주세요";
+    if (!title) errors.title = "validation.requiredTitle";
+    if (!description) errors.description = "validation.requiredDescription";
+    if (!Number.isFinite(pricePerNight) || pricePerNight <= 0) errors.pricePerNight = "validation.requiredPrice";
+    if (!Number.isFinite(maxGuests) || maxGuests <= 0) errors.maxGuests = "validation.requiredMaxGuests";
 
     if (Object.keys(errors).length > 0)
         return Response.json({ errors }, { status: 422 });
@@ -77,8 +78,13 @@ export default function AdminEdit() {
     const { listing } = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const navigation = useNavigation();
+    const { t } = useTranslation("admin");
     const isSaving = navigation.state === "submitting";
-    const errors = (actionData as { errors?: Record<string, string> } | undefined)?.errors;
+    const rawErrors = (actionData as { errors?: Record<string, string> } | undefined)?.errors;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const errors = rawErrors
+        ? Object.fromEntries(Object.entries(rawErrors).map(([k, v]) => [k, (t as (k: string) => string)(v)]))
+        : undefined;
     const saved = (actionData as { ok?: boolean } | undefined)?.ok;
 
     const [title, setTitle] = useState(listing.title);
@@ -101,7 +107,7 @@ export default function AdminEdit() {
         type: "listing",
         listingId: listing.id,
         onSuccess: (result) => setImages((prev) => [...prev, result.secureUrl]),
-        onError: (err) => alert("업로드 실패: " + err),
+        onError: (err) => alert(`${t("edit.uploadError")}: ${err}`),
     });
 
     async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -132,7 +138,7 @@ export default function AdminEdit() {
                 <main className="container mx-auto py-12 px-4 max-w-4xl">
                     <div className="flex items-center justify-between mb-8">
                         <div className="space-y-1">
-                            <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Admin · 숙소 수정</p>
+                            <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">{t("edit.breadcrumb")}</p>
                             <h1 className="text-3xl font-bold tracking-tight text-foreground">{listing.title}</h1>
                             <p className="text-sm text-muted-foreground">{listing.location}</p>
                         </div>
@@ -141,7 +147,7 @@ export default function AdminEdit() {
                     <div className="space-y-10 pb-32">
                         {/* 사진 */}
                         <section className="space-y-4">
-                            <SectionTitle>사진 관리</SectionTitle>
+                            <SectionTitle>{t("edit.photoManager")}</SectionTitle>
                             <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleFiles} />
                             <Card className="p-6 relative overflow-hidden min-h-[200px]">
                                 {isUploading && (
@@ -149,7 +155,7 @@ export default function AdminEdit() {
                                         <div className="w-48 h-2 bg-stone-200 rounded-full overflow-hidden">
                                             <div className="h-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
                                         </div>
-                                        <p className="text-xs text-primary font-medium">업로드 중... {progress}%</p>
+                                        <p className="text-xs text-primary font-medium">{t("edit.uploading", { pct: progress })}</p>
                                     </div>
                                 )}
                                 {images.length > 0 ? (
@@ -170,7 +176,7 @@ export default function AdminEdit() {
                                             className="aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-stone-100 transition-colors"
                                         >
                                             <span className="text-xl">+</span>
-                                            <span className="text-xs mt-1">추가</span>
+                                            <span className="text-xs mt-1">{t("edit.addMore")}</span>
                                         </button>
                                     </div>
                                 ) : (
@@ -178,8 +184,8 @@ export default function AdminEdit() {
                                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                                         </div>
-                                        <p className="font-medium text-sm">사진을 업로드하세요</p>
-                                        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>파일 선택</Button>
+                                        <p className="font-medium text-sm">{t("edit.photoUploadPrompt")}</p>
+                                        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>{t("edit.browseFiles")}</Button>
                                     </div>
                                 )}
                             </Card>
@@ -187,12 +193,12 @@ export default function AdminEdit() {
 
                         {/* 기본 정보 */}
                         <section className="space-y-4">
-                            <SectionTitle>기본 정보</SectionTitle>
+                            <SectionTitle>{t("edit.basicInfoSection")}</SectionTitle>
                             <Card className="p-8 space-y-6">
-                                <Field label="숙소명" error={errors?.title} required>
+                                <Field label={t("edit.propertyTitle")} error={errors?.title} required>
                                     <input name="title" value={title} onChange={(e) => setTitle(e.target.value)} className={INPUT_CLS} maxLength={100} />
                                 </Field>
-                                <Field label="숙소 설명" error={errors?.description} required>
+                                <Field label={t("edit.description")} error={errors?.description} required>
                                     <textarea
                                         name="description"
                                         rows={6}
@@ -202,10 +208,10 @@ export default function AdminEdit() {
                                     />
                                 </Field>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <Field label="1박 가격 (KRW)" error={errors?.pricePerNight} required>
+                                    <Field label={t("edit.basePrice")} error={errors?.pricePerNight} required>
                                         <input name="pricePerNight" type="number" min="1" value={pricePerNight} onChange={(e) => setPricePerNight(Number(e.target.value))} className={INPUT_CLS} />
                                     </Field>
-                                    <Field label="최대 인원" error={errors?.maxGuests} required>
+                                    <Field label={t("edit.maxGuests")} error={errors?.maxGuests} required>
                                         <input name="maxGuests" type="number" min="1" max="20" value={maxGuests} onChange={(e) => setMaxGuests(Number(e.target.value))} className={INPUT_CLS} />
                                     </Field>
                                 </div>
@@ -214,7 +220,7 @@ export default function AdminEdit() {
 
                         {/* 편의시설 */}
                         <section className="space-y-4">
-                            <SectionTitle>편의시설</SectionTitle>
+                            <SectionTitle>{t("edit.listingDetails")}</SectionTitle>
                             <Card className="p-8">
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                     {AMENITY_OPTIONS.map((a) => (
@@ -237,17 +243,17 @@ export default function AdminEdit() {
 
                         {/* 옵션 */}
                         <section className="space-y-4">
-                            <SectionTitle>옵션</SectionTitle>
+                            <SectionTitle>{t("edit.availability")}</SectionTitle>
                             <Card className="p-8 space-y-4">
                                 <ToggleRow
-                                    label="교통 지원"
-                                    description="게스트 교통 편의 서비스 제공"
+                                    label={t("edit.transportLabel")}
+                                    description={t("edit.transportDesc")}
                                     value={transportSupport}
                                     onChange={setTransportSupport}
                                 />
                                 <ToggleRow
-                                    label="스마트락"
-                                    description="디지털 키로 체크인/체크아웃"
+                                    label={t("edit.smartLockLabel")}
+                                    description={t("edit.smartLockDesc")}
                                     value={smartLockEnabled}
                                     onChange={setSmartLockEnabled}
                                 />
@@ -256,7 +262,7 @@ export default function AdminEdit() {
 
                         {/* Availability — 정적 목업 */}
                         <section className="space-y-4">
-                            <SectionTitle>예약 가능일 (목업)</SectionTitle>
+                            <SectionTitle>{t("edit.availabilitySection")}</SectionTitle>
                             <Card className="p-8 flex flex-col items-center">
                                 <div className="w-full max-w-sm border rounded-2xl p-6 bg-white overflow-hidden shadow-inner">
                                     <div className="flex justify-between items-center mb-6">
@@ -278,7 +284,7 @@ export default function AdminEdit() {
                                         ))}
                                     </div>
                                 </div>
-                                <p className="mt-4 text-xs text-muted-foreground">예약 가능일 관리는 Phase 2에서 구현됩니다.</p>
+                                <p className="mt-4 text-xs text-muted-foreground">{t("edit.availabilityPhase")}</p>
                             </Card>
                         </section>
                     </div>
@@ -289,10 +295,10 @@ export default function AdminEdit() {
                     <div className="container mx-auto flex justify-between items-center max-w-4xl">
                         <div className="flex items-center gap-2 text-sm font-medium text-primary">
                             <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                            {saved ? "저장 완료" : "편집 중"}
+                            {saved ? t("edit.savedState") : t("edit.editingState")}
                         </div>
                         <Button type="submit" disabled={isSaving} className="px-8">
-                            {isSaving ? "저장 중..." : "저장"}
+                            {isSaving ? t("edit.saving") : t("edit.save")}
                         </Button>
                     </div>
                 </div>

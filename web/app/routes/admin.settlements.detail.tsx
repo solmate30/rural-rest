@@ -325,7 +325,7 @@ export default function AdminSettlementsDetail() {
             <Header />
             <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8">
                 {/* Header */}
-                <div className="flex items-center gap-4 mb-8">
+                <div className="flex items-center gap-4 mb-8 flex-wrap">
                     <Link
                         to="/admin"
                         aria-label="어드민 대시보드로 돌아가기"
