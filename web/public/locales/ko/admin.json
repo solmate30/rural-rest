@@ -233,6 +233,11 @@
     }
   },
   "settlements": {
+    "title": "정산 현황",
+    "subtitle": "토큰화된 매물의 운영자 정산 내역을 관리합니다",
+    "empty": "토큰화된 매물이 없습니다",
+    "settledCount": "{{count}}회 정산 완료",
+    "lastSettlement": "마지막 정산",
     "month": "{{month}}{{settled}}",
     "settled": " (완료)",
     "unsettled": " (미정산)",

@@ -232,6 +232,11 @@
     }
   },
   "settlements": {
+    "title": "Settlement Status",
+    "subtitle": "Manage operator settlements for tokenized properties",
+    "empty": "No tokenized properties",
+    "settledCount": "{{count}} settlement(s)",
+    "lastSettlement": "Last settled",
     "month": "{{month}}{{settled}}",
     "settled": " (Settled)",
     "unsettled": " (Unsettled)",

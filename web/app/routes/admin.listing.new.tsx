@@ -17,7 +17,6 @@ import type { Route } from "./+types/admin.listing.new";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
 import { listings } from "~/db/schema";
-import { Header } from "~/components/ui-mockup";
 import { Button } from "~/components/ui/button";
 import { REGION_OPTIONS, AMENITY_OPTIONS, deriveRegion } from "~/lib/listing-constants";
 import { useCloudinaryUpload } from "~/hooks/use-cloudinary-upload";
@@ -693,10 +692,8 @@ export default function AdminListingNew() {
     ];
 
     return (
-        <div className="min-h-screen bg-background">
-            <Header />
-
-            <main className="container mx-auto py-12 px-4 max-w-2xl">
+        <div>
+            <main className="max-w-5xl mx-auto px-4 py-12">
                 <div className="mb-8 space-y-1">
                     <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">{t("new.breadcrumb")}</p>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">{STEP_TITLES[step - 1]}</h1>
