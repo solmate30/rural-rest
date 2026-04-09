@@ -313,6 +313,12 @@ export default function AdminSettlementsDetail() {
             <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
+                    <Link
+                        to="/admin"
+                        className="shrink-0 w-9 h-9 rounded-xl border border-stone-200 flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                    </Link>
                     <div className="w-14 h-14 rounded-xl overflow-hidden bg-stone-100 border border-stone-200/60 shrink-0">
                         {images[0]
                             ? <img src={images[0]} alt="" className="w-full h-full object-cover" />

@@ -33,6 +33,7 @@ export default [
     route("api/admin/monthly-settlement", "routes/api.admin.monthly-settlement.ts"),
     route("api/admin/force-fund", "routes/api.admin.force-fund.ts"),
     route("api/admin/issue-council-token", "routes/api.admin.issue-council-token.ts"),
+    route("api/admin/create-operator", "routes/api.admin.create-operator.ts"),
     route("api/chat/concierge", "routes/api.chat.concierge.ts"),
     route("api/set-language", "routes/api.set-language.ts"),
     route("api/governance/issue", "routes/api.governance.issue.ts"),
