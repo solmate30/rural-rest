@@ -11,7 +11,7 @@ import { fetchPropertiesOnchain } from "~/lib/rwa.onchain.server";
 import { useTranslation } from "react-i18next";
 
 import { fetchPythKrwRate } from "~/lib/pyth";
-import { formatKrwLabel, fmtKrw, fmtUsdc } from "~/lib/formatters";
+import { formatKrwLabel, fmtKrw, fmtUsdc, cdnImg } from "~/lib/formatters";
 
 function statusToEnglish(status: string): string {
     switch (status) {
@@ -93,7 +93,7 @@ export async function loader() {
             title: row.title,
             location: row.location,
             region: row.region,
-            image: images[0] ?? "/house.png",
+            image: cdnImg(images[0] ?? "/house.png", 600),
             apy: row.estimatedApyBps! / 100,
             tokenPrice: tokenPriceKrw,
             usdcPrice,
@@ -230,7 +230,7 @@ export default function InvestDashboard() {
                                                     key={value}
                                                     onClick={() => setSelectedSort(value)}
                                                     className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${selectedSort === value
-                                                        ? "bg-[#17cf54] text-white shadow-md shadow-[#17cf54]/20"
+                                                        ? "bg-invest text-invest-foreground shadow-md shadow-invest/20"
                                                         : "bg-secondary text-foreground/70 hover:bg-secondary/80 hover:text-foreground border border-border/50"
                                                         }`}
                                                 >
@@ -254,7 +254,7 @@ export default function InvestDashboard() {
                                                     key={value}
                                                     onClick={() => setSelectedStatus(value)}
                                                     className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${selectedStatus === value
-                                                        ? "bg-[#17cf54] text-white shadow-md shadow-[#17cf54]/20"
+                                                        ? "bg-invest text-invest-foreground shadow-md shadow-invest/20"
                                                         : "bg-secondary text-foreground/70 hover:bg-secondary/80 hover:text-foreground border border-border/50"
                                                         }`}
                                                 >
@@ -267,28 +267,28 @@ export default function InvestDashboard() {
                                     <div className="border-t border-border pt-4">
                                         <label className="text-sm font-bold mb-3 flex justify-between text-foreground">
                                             <span>{t("filter.minApy")}</span>
-                                            <span className="text-[#17cf54]">{minApy}%+</span>
+                                            <span className="text-invest">{minApy}%+</span>
                                         </label>
                                         <input
                                             type="range"
                                             min="0" max="15" step="0.5"
                                             value={minApy}
                                             onChange={(e) => setMinApy(Number(e.target.value))}
-                                            className="w-full accent-[#17cf54]"
+                                            className="w-full accent-invest"
                                         />
                                     </div>
 
                                     <div className="border-t border-border pt-4">
                                         <label className="text-sm font-bold mb-3 flex justify-between text-foreground">
                                             <span>{t("filter.maxPrice")}</span>
-                                            <span className="text-[#17cf54]">₩{maxPrice.toLocaleString()}</span>
+                                            <span className="text-invest">₩{maxPrice.toLocaleString()}</span>
                                         </label>
                                         <input
                                             type="range"
                                             min="10000" max="200000" step="10000"
                                             value={maxPrice}
                                             onChange={(e) => setMaxPrice(Number(e.target.value))}
-                                            className="w-full accent-[#17cf54]"
+                                            className="w-full accent-invest"
                                         />
                                     </div>
 
@@ -300,7 +300,7 @@ export default function InvestDashboard() {
                                                     key={theme}
                                                     onClick={() => toggleTheme(theme)}
                                                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border ${selectedThemes.includes(theme)
-                                                        ? "bg-[#17cf54]/10 border-[#17cf54]/30 text-[#17cf54]"
+                                                        ? "bg-invest/10 border-invest/30 text-invest"
                                                         : "bg-transparent border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
                                                         }`}
                                                 >
@@ -329,7 +329,7 @@ export default function InvestDashboard() {
                                         {t("filter.reset")}
                                     </button>
                                     <button
-                                        className="flex-1 px-4 py-3 rounded-xl bg-[#17cf54] hover:bg-[#14b847] text-white font-bold transition-transform active:scale-[0.98] shadow-lg shadow-[#17cf54]/20"
+                                        className="flex-1 px-4 py-3 rounded-xl bg-invest hover:bg-invest-hover text-invest-foreground font-bold transition-transform active:scale-[0.98] shadow-lg shadow-invest/20"
                                         onClick={() => setShowFilter(false)}
                                     >
                                         {t("filter.apply", { count: filteredProperties.length })}
@@ -358,7 +358,7 @@ export default function InvestDashboard() {
                                             </div>
                                         )}
                                         {(property.status === "Funded" || property.status === "Active") && (
-                                            <div className="absolute top-3 left-3 z-10 rounded-full bg-[#17cf54]/90 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm shadow-sm">
+                                            <div className="absolute top-3 left-3 z-10 rounded-full bg-invest/90 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm shadow-sm">
                                                 {t("status.funded")}
                                             </div>
                                         )}
@@ -368,13 +368,15 @@ export default function InvestDashboard() {
                                             </div>
                                         )}
                                         <div className="absolute top-3 right-3 z-10 rounded-full bg-card/90 px-2.5 py-1 text-xs font-bold text-foreground backdrop-blur-sm shadow-sm flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-[14px] text-green-600">trending_up</span>
+                                            <span className="material-symbols-outlined text-[14px] text-invest">trending_up</span>
                                             APY {property.apy}%
                                         </div>
                                         <img
                                             alt={property.title}
                                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             src={property.image}
+                                            loading="lazy"
+                                            decoding="async"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent opacity-60"></div>
                                         <div className="absolute bottom-4 left-4 text-white z-10">
@@ -404,7 +406,7 @@ export default function InvestDashboard() {
                                                 <div className="space-y-2">
                                                     <div className="flex justify-between text-sm">
                                                         <span className="font-medium text-foreground/80">{t("card.tokensSold")}</span>
-                                                        <span className="font-bold text-green-600">
+                                                        <span className="font-bold text-invest">
                                                             {property.fundingProgress < 1 && property.tokensSold > 0
                                                                 ? t("card.sold", { count: property.tokensSold })
                                                                 : `${property.fundingProgress}%`}
@@ -412,7 +414,7 @@ export default function InvestDashboard() {
                                                     </div>
                                                     <div className="h-2.5 w-full rounded-full bg-background overflow-hidden border border-border/50">
                                                         <div
-                                                            className="h-full rounded-full bg-[#17cf54]"
+                                                            className="h-full rounded-full bg-invest"
                                                             style={{ width: property.tokensSold > 0 && property.fundingProgress === 0 ? "2px" : `${property.fundingProgress}%` }}
                                                         />
                                                     </div>
@@ -427,7 +429,7 @@ export default function InvestDashboard() {
                                                             e.stopPropagation();
                                                             navigate(`/invest/${property.id}`);
                                                         }}
-                                                        className="mt-5 w-full rounded-lg border border-[#17cf54] py-2.5 text-sm font-semibold text-[#17cf54] hover:bg-[#17cf54]/10 transition-colors"
+                                                        className="mt-5 w-full rounded-lg border border-invest py-2.5 text-sm font-semibold text-invest hover:bg-invest/10 transition-colors"
                                                     >
                                                         {t("card.view")}
                                                     </button>
@@ -437,7 +439,7 @@ export default function InvestDashboard() {
                                                             e.stopPropagation();
                                                             navigate(`/invest/${property.id}`);
                                                         }}
-                                                        className="mt-5 w-full rounded-lg bg-[#17cf54] hover:bg-[#14b847] py-2.5 text-sm font-semibold text-white transition-colors shadow-sm flex items-center justify-center gap-1"
+                                                        className="mt-5 w-full rounded-lg bg-invest hover:bg-invest-hover py-2.5 text-sm font-semibold text-white transition-colors shadow-sm flex items-center justify-center gap-1"
                                                     >
                                                         {t("card.investNow")}
                                                     </button>

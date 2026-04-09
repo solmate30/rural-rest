@@ -202,6 +202,7 @@ export default function App() {
         appearance: {
           theme: "#fcfaf7",
           accentColor: "#17cf54",
+          logo: "/house.png", // TODO: replace with actual logo URL
           landingHeader: "Welcome to Rural Rest",
           loginMessage: "한국의 고요한 시골집, 특별한 경험을 시작하세요",
         },

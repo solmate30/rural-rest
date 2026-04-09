@@ -40,6 +40,10 @@
 
     --radius: 0.75rem;
 
+    --invest: 142 76% 45%;        /* #17cf54 투자 액센트 그린 */
+    --invest-hover: 142 76% 39%;  /* #14b847 hover 상태 */
+    --invest-foreground: 0 0% 100%;
+
     --chart-1: 17 18% 47%;
     --chart-2: 12 28% 19%;
     --chart-3: 20 18% 81%;
@@ -76,6 +80,10 @@
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
+
+    --invest: 142 76% 45%;
+    --invest-hover: 142 76% 39%;
+    --invest-foreground: 0 0% 100%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
