@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 import { Card, Input } from "~/components/ui-mockup";
@@ -8,7 +8,7 @@ import { useToast } from "~/hooks/use-toast";
 import { useKyc } from "~/components/KycProvider";
 import { usePrivy } from "@privy-io/react-auth";
 
-type Step = "buy" | "need-wallet" | "need-kyc";
+type Step = "buy" | "need-wallet" | "wallet-loading" | "need-kyc";
 
 function useCountdown(deadlineMs: number) {
     const calc = () => {
@@ -57,20 +57,21 @@ export function PurchaseCard({
 }: Props) {
     const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
-    const navigate = useNavigate();
     const location = useLocation();
     const { toast } = useToast();
     const { isKycCompleted } = useKyc();
-    const { login } = usePrivy();
+    const { login, authenticated, ready } = usePrivy();
 
     const [tokenCount, setTokenCount] = useState(1);
     const [isProcessing, setIsProcessing] = useState(false);
 
     const step: Step = useMemo(() => {
+        if (!ready) return "wallet-loading";
+        if (!wallet && authenticated) return "wallet-loading";
         if (!wallet) return "need-wallet";
         if (!isKycCompleted) return "need-kyc";
         return "buy";
-    }, [wallet, isKycCompleted]);
+    }, [ready, wallet, authenticated, isKycCompleted]);
 
     const subtotalUsdc = usdcPrice * tokenCount;
     const subtotalKrw = tokenPrice * tokenCount;
@@ -186,7 +187,7 @@ export function PurchaseCard({
 
     return (
         <Card className="p-6 shadow-2xl border-none bg-white rounded-3xl space-y-4">
-            <h3 className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Purchase Tokens</h3>
+            <h3 className="text-xs uppercase font-bold text-stone-400 tracking-wider">Purchase Tokens</h3>
 
             {/* Token Input */}
             <div>
@@ -199,7 +200,7 @@ export function PurchaseCard({
                 </div>
                 <div className="flex items-center gap-2">
                     <button
-                        className="h-10 w-10 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50"
+                        className="h-11 w-11 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50"
                         onClick={() => setTokenCount((c) => Math.max(1, c - 1))}
                         disabled={isSoldOut || isNotMinted}
                     >−</button>
@@ -212,7 +213,7 @@ export function PurchaseCard({
                         disabled={isSoldOut || isNotMinted}
                     />
                     <button
-                        className="h-10 w-10 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50"
+                        className="h-11 w-11 rounded-xl bg-stone-100 hover:bg-stone-200 font-bold text-stone-700 transition-colors shrink-0 disabled:opacity-50"
                         onClick={() => setTokenCount((c) => Math.min(c + 1, maxBuyable))}
                         disabled={isSoldOut || isNotMinted || tokenCount >= maxBuyable}
                     >+</button>
@@ -230,7 +231,7 @@ export function PurchaseCard({
                         감정가가 낮게 설정되어 수익률이 과장될 수 있습니다.
                     </div>
                 )}
-                <div className={`flex justify-between text-xs ${apy > 1000 ? "text-amber-500" : "text-[#17cf54]"}`}>
+                <div className={`flex justify-between text-xs ${apy > 1000 ? "text-amber-500" : "text-invest"}`}>
                     <span>Est. Annual Return</span>
                     <span className="font-bold">
                         {estAnnualReturn >= 1 ? `₩${Math.round(estAnnualReturn).toLocaleString()}` : `₩${estAnnualReturn.toFixed(4)}`}
@@ -250,7 +251,7 @@ export function PurchaseCard({
             {/* Countdown */}
             {countdown ? (
                 <div className="bg-stone-50 border border-stone-100 rounded-2xl px-4 pt-3.5 pb-4">
-                    <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-2">Funding Ends In</p>
+                    <p className="text-xs uppercase font-bold text-stone-400 tracking-wider mb-2">Funding Ends In</p>
                     <div className="grid grid-cols-4 gap-2">
                         {[
                             { label: "Days", value: countdown.days },
@@ -263,14 +264,14 @@ export function PurchaseCard({
                                 <div className="bg-stone-100 rounded-xl py-2.5">
                                     <span className="text-2xl font-bold text-[#4a3b2c] tabular-nums">{String(value).padStart(2, "0")}</span>
                                 </div>
-                                <p className="text-[10px] text-stone-400 font-medium mt-1">{label}</p>
+                                <p className="text-xs text-stone-400 font-medium mt-1">{label}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             ) : isDeadlineExpired ? (
                 <div className="bg-stone-50 border border-stone-100 rounded-2xl px-4 pt-3.5 pb-4">
-                    <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-2">Funding Ended</p>
+                    <p className="text-xs uppercase font-bold text-stone-400 tracking-wider mb-2">Funding Ended</p>
                     <div className="grid grid-cols-4 gap-2">
                         {["Days", "Hrs", "Min", "Sec"].map((label, i) => (
                             <div key={label} className="text-center relative">
@@ -278,7 +279,7 @@ export function PurchaseCard({
                                 <div className="bg-stone-100 rounded-xl py-2.5">
                                     <span className="text-2xl font-bold text-stone-300 tabular-nums">00</span>
                                 </div>
-                                <p className="text-[10px] text-stone-400 font-medium mt-1">{label}</p>
+                                <p className="text-xs text-stone-400 font-medium mt-1">{label}</p>
                             </div>
                         ))}
                     </div>
@@ -311,29 +312,40 @@ export function PurchaseCard({
                         펀딩 목표가 달성되었습니다.<br />첫 배당은 운영 시작 익월에 지급됩니다.
                     </p>
                 </div>
+            ) : step === "wallet-loading" ? (
+                <Button disabled variant="secondary" size="xl" className="w-full">
+                    <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+                    지갑 준비 중...
+                </Button>
             ) : step === "need-wallet" ? (
                 <Button
                     variant="success"
                     size="xl"
-                    className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full shadow-xl shadow-invest/20 hover:scale-[1.02] active:scale-[0.98]"
                     onClick={login}
                 >
                     로그인하기
                 </Button>
             ) : step === "need-kyc" ? (
-                <Button
-                    variant="success"
-                    size="xl"
-                    className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={() => navigate(`/kyc?return=${encodeURIComponent(location.pathname + location.search)}`)}
-                >
-                    신원 확인하기
-                </Button>
+                <div className="space-y-3">
+                    <div className="bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-xs text-stone-600 leading-relaxed">
+                        <span className="font-semibold text-stone-800 block mb-1">신원 확인 필요</span>
+                        투자자 보호를 위해 KYC 인증이 필요합니다. 새 탭에서 완료 후 돌아오세요.
+                    </div>
+                    <Button
+                        variant="success"
+                        size="xl"
+                        className="w-full shadow-xl shadow-invest/20 hover:scale-[1.02] active:scale-[0.98]"
+                        onClick={() => window.open(`/kyc?return=${encodeURIComponent(location.pathname + location.search)}`, '_blank')}
+                    >
+                        신원 확인하기
+                    </Button>
+                </div>
             ) : (
                 <Button
                     variant="success"
                     size="xl"
-                    className="w-full shadow-xl shadow-[#17cf54]/20 hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full shadow-xl shadow-invest/20 hover:scale-[1.02] active:scale-[0.98]"
                     onClick={handleInvest}
                     disabled={isProcessing}
                 >
@@ -344,7 +356,7 @@ export function PurchaseCard({
                 </Button>
             )}
 
-            <p className="text-center text-[10px] text-stone-400 font-bold uppercase tracking-widest">
+            <p className="text-center text-xs text-stone-400 font-bold uppercase tracking-widest">
                 No charge until funding goal is met
             </p>
 
