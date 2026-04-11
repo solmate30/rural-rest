@@ -211,6 +211,7 @@ export default function SearchResults() {
                                             src={listing.image}
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             alt={listing.title}
+                                            loading="lazy"
                                         />
                                     </div>
                                     <div className="p-6 bg-white">

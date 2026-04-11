@@ -225,6 +225,7 @@ export default function PropertyDetail() {
                                 className="w-full h-full object-cover cursor-pointer transition-transform duration-500 group-hover:scale-105"
                                 alt={listing.title}
                                 onClick={() => setShowGallery(true)}
+                                fetchPriority="high"
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
                         </div>
@@ -235,6 +236,7 @@ export default function PropertyDetail() {
                                     className="w-full h-full object-cover cursor-pointer transition-transform duration-500 group-hover:scale-105"
                                     alt={`${listing.title} 1`}
                                     onClick={() => setShowGallery(true)}
+                                    loading="lazy"
                                 />
                             </div>
                             <button
@@ -295,6 +297,7 @@ export default function PropertyDetail() {
                                     src={listing.hostImage}
                                     className="h-20 w-20 rounded-full object-cover border-2 border-white shadow-md"
                                     alt={listing.hostName}
+                                    loading="lazy"
                                 />
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-3">
@@ -448,6 +451,7 @@ export default function PropertyDetail() {
                                                         src={review.authorImage}
                                                         className="h-12 w-12 rounded-full object-cover border border-stone-100"
                                                         alt={review.authorName}
+                                                        loading="lazy"
                                                     />
                                                     <div>
                                                         <div className="font-bold text-stone-800">{review.authorName}</div>
@@ -655,6 +659,7 @@ export default function PropertyDetail() {
                                     src={img}
                                     className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
                                     alt={`${listing.title} gallery ${i + 1}`}
+                                    loading="lazy"
                                 />
                                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
