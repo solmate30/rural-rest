@@ -56,6 +56,21 @@ function TransportIcon({ mode }: { mode: TransportMode }) {
 }
 
 
+export function meta({ data }: { data: Awaited<ReturnType<typeof loader>> | undefined }) {
+    if (!data?.listing) {
+        return [{ title: "숙소 | Rural Rest" }];
+    }
+    const { listing } = data;
+    return [
+        { title: `${listing.title} | Rural Rest` },
+        { name: "description", content: `${listing.location} · ${listing.description?.slice(0, 100)}` },
+        { property: "og:title", content: `${listing.title} | Rural Rest` },
+        { property: "og:description", content: listing.description?.slice(0, 200) },
+        { property: "og:image", content: listing.images?.[0] ?? "https://rural-rest.vercel.app/hero.png" },
+        { property: "og:type", content: "website" },
+    ];
+}
+
 export async function loader({ params, request }: Route.LoaderArgs) {
     const locale = await detectLocale(request);
     const row = await db

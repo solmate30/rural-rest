@@ -15,6 +15,17 @@ function toCityLabel(location: string): string {
 }
 
 
+export function meta() {
+    return [
+        { title: "Rural Rest — 한국 시골 빈집 리모델링 숙소" },
+        { name: "description", content: "한국 농촌의 아름다운 리모델링 빈집에서 특별한 여행을 경험하세요. 전통 한옥부터 감성 농가까지, Rural Rest에서 찾아보세요." },
+        { property: "og:title", content: "Rural Rest — 한국 시골 빈집 리모델링 숙소" },
+        { property: "og:description", content: "한국 농촌의 아름다운 리모델링 빈집에서 특별한 여행을 경험하세요." },
+        { property: "og:image", content: "https://rural-rest.vercel.app/hero.png" },
+        { property: "og:type", content: "website" },
+    ];
+}
+
 export async function loader({ request }: Route.LoaderArgs) {
     const locale = await detectLocale(request);
     const rows = await db

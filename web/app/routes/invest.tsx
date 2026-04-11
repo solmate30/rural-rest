@@ -23,6 +23,16 @@ function statusToEnglish(status: string): string {
     }
 }
 
+export function meta() {
+    return [
+        { title: "RWA 투자 | Rural Rest" },
+        { name: "description", content: "한국 농촌 부동산 토큰(RWA)에 투자하세요. 소액으로 시골 빈집 리모델링 프로젝트에 참여하고 임대 수익을 배당받으세요." },
+        { property: "og:title", content: "RWA 투자 | Rural Rest" },
+        { property: "og:description", content: "소액으로 시작하는 한국 농촌 부동산 토큰 투자." },
+        { property: "og:image", content: "https://rural-rest.vercel.app/hero.png" },
+    ];
+}
+
 export async function loader() {
     await throttledSync();
     const krwPerUsdc = await fetchPythKrwRate();
