@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /book/
+Disallow: /kyc
+Disallow: /my-investments
+
+Sitemap: https://rural-rest.vercel.app/sitemap.xml
