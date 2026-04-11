@@ -8,3 +8,6 @@
 # React Router
 /.react-router/
 /build/
+
+# Vercel
+/.vercel/
