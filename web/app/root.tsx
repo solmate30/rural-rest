@@ -59,7 +59,10 @@ const allTranslations = {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const locale = await detectLocale(request);
-  const initialI18nStore = allTranslations;
+  // 현재 언어만 전송 — 번들 크기 절반 감소 (언어 전환은 쿠키 변경 후 리로드)
+  const initialI18nStore = {
+    [locale]: allTranslations[locale as keyof typeof allTranslations] ?? allTranslations.en,
+  };
 
   // 쿠키가 현재 감지된 언어와 다를 경우만 Set-Cookie
   const cookie = request.headers.get("cookie") ?? "";
