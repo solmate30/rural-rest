@@ -21,6 +21,9 @@ export async function action({ request }: { request: Request }) {
         return Response.json({ error: "Method not allowed" }, { status: 405 });
     }
 
+    const { requireUser } = await import("../lib/auth.server");
+    await requireUser(request);
+
     const token = process.env.GITHUB_TOKEN;
     const repo = process.env.GITHUB_DAO_REPO;
 
