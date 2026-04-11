@@ -1,7 +1,7 @@
 # 10. 성능 감사 (Performance Audit)
 
 - **작성일**: 2026-04-12 17:00
-- **갱신일**: 2026-04-12 17:00
+- **갱신일**: 2026-04-12 18:30
 - **대상 URL**: https://rural-rest.vercel.app/
 - **측정 도구**: Lighthouse (Chrome DevTools)
 
@@ -77,9 +77,9 @@
 - `web/public/` — 이미지 파일 WebP 변환 또는 Cloudinary URL 사용
 - 매물 이미지를 표시하는 컴포넌트들
 
-- [ ] 6개 대용량 PNG를 WebP로 변환하거나 Cloudinary `f_auto,q_auto` URL로 교체
-- [ ] 매물 카드/상세 페이지 `<img>`에 `loading="lazy"` 추가
-- [ ] 히어로 이미지(LCP 대상)에 `fetchpriority="high"` 추가
+- [x] 6개 대용량 PNG를 WebP로 변환 (45MB → 3.7MB, 92% 절감)
+- [x] 매물 카드/상세 페이지 `<img>`에 `loading="lazy"` 추가
+- [x] 히어로 이미지(LCP 대상)에 `fetchpriority="high"` 추가
 - [ ] 수정 후 이미지 총 전송 크기 확인
 
 ---
@@ -99,9 +99,9 @@
 - `React.lazy` + `Suspense`로 PrivyProvider 지연 로드 검토
 - Vite의 `build.rollupOptions.output.manualChunks`로 청크 분리
 
-- [ ] `react-router` code splitting 현황 확인 (route별 lazy loading 여부)
-- [ ] PrivyProvider를 필요한 라우트로만 범위 축소 가능 여부 검토
-- [ ] Vite bundle analyzer 실행 (`npx vite-bundle-visualizer`) 후 큰 청크 확인
+- [x] `react-router` code splitting 현황 확인
+- [x] Vite manualChunks로 vendor-web3, vendor-react 청크 분리 (root.js 1.3MB → 39.8KB)
+- [ ] PrivyProvider를 필요한 라우트로만 범위 축소 가능 여부 검토 (구조 변경 필요, 장기 과제)
 - [ ] 개선 후 TBT 및 JS 파싱 시간 재측정
 
 ---
@@ -122,9 +122,9 @@ import enCommon from "../public/locales/en/common.json";
 - 현재 페이지의 언어에 해당하는 네임스페이스만 서버에서 내려줌
 - 라우트별 필요한 네임스페이스만 loader에서 선택적으로 포함
 
-- [ ] 라우트별 필요한 네임스페이스 목록 정리
-- [ ] root loader에서 현재 언어에 해당하는 네임스페이스만 전달하도록 수정
-- [ ] 번들 크기 변화 확인
+- [x] 라우트별 필요한 네임스페이스 목록 정리
+- [x] root loader에서 현재 언어에 해당하는 네임스페이스만 전달하도록 수정
+- [x] 초기 HTML 페이로드 ~50% 감소 확인
 
 ---
 
@@ -132,30 +132,30 @@ import enCommon from "../public/locales/en/common.json";
 
 Lighthouse 접근성 항목 주요 의심 원인:
 
-- [ ] 모든 `<img>`에 `alt` 속성 확인 및 보완
-- [ ] 버튼/아이콘에 `aria-label` 누락 여부 확인
-- [ ] 색상 대비율 (Warm Beige 배경 + 연한 텍스트 조합) 확인
-- [ ] `<html lang>` 속성 동적 설정 확인 (현재 root.tsx에서 locale로 설정 중 — 확인 필요)
-- [ ] 폼 요소 `<label>` 연결 확인
+- [x] 모든 `<img>`에 `alt` 속성 확인 — 전체 보유 확인
+- [x] `<html lang>` 속성 동적 설정 확인 — root.tsx에서 locale로 설정 중
+- [ ] 색상 대비율 (Warm Beige 배경 + 연한 텍스트 조합) 수동 확인 필요
+- [ ] 아이콘 전용 버튼 aria-label 수동 확인 필요
+- [ ] 폼 요소 `<label>` 연결 수동 확인 필요
 
 ---
 
 ## B-1. Best Practices 개선 (77 → 90+)
 
-- [ ] 콘솔 에러/경고 제거 확인 (Privy, Solana 관련 경고 포함)
-- [ ] `http://` 혼합 콘텐츠 없음 확인
+- [ ] 콘솔 에러/경고 제거 확인 (Privy, Solana 관련 경고 포함) — 브라우저 수동 확인 필요
+- [ ] `http://` 혼합 콘텐츠 없음 확인 — 수동 확인 필요
 - [ ] 지원 중단(deprecated) API 사용 여부 확인
-- [ ] `document.write()` 사용 없음 확인
+- [x] `document.write()` 사용 없음 확인
 
 ---
 
 ## S-1. SEO 개선 (82 → 90+)
 
-- [ ] 각 페이지에 고유한 `<meta name="description">` 추가
-- [ ] Open Graph 태그 (`og:title`, `og:description`, `og:image`) 추가
-- [ ] `robots.txt` 존재 여부 확인
-- [ ] sitemap.xml 존재 여부 확인
-- [ ] 구조화 데이터 (JSON-LD) 검토 — 숙박 매물 페이지에 `LodgingBusiness` 스키마
+- [x] 각 페이지에 고유한 `<meta name="description">` 추가 (home/search/invest/property)
+- [x] Open Graph 태그 (`og:title`, `og:description`, `og:image`) 추가
+- [x] `robots.txt` 추가 (/admin, /api/, /book/, /kyc 차단)
+- [x] sitemap.xml 동적 라우트 추가 (/sitemap.xml)
+- [ ] 구조화 데이터 (JSON-LD) 검토 — 숙박 매물 페이지에 `LodgingBusiness` 스키마 (장기 과제)
 
 ---
 
