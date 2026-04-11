@@ -37,6 +37,10 @@ const BLINKS_HEADERS = {
     "X-Blockchain-Ids": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1", // devnet
 };
 
+function auditLog(event: Record<string, unknown>) {
+    console.log("[AUDIT]", JSON.stringify({ ...event, ts: new Date().toISOString() }));
+}
+
 // Anchor VoteType enum → 객체 변환
 const VOTE_TYPE_MAP: Record<string, object> = {
     for:     { for: {} },
@@ -171,12 +175,14 @@ export async function action({ params, request }: Route.ActionArgs) {
         .where(eq(userTable.walletAddress, account));
 
     if (!voter) {
+        auditLog({ action: "blinks_vote_rejected", reason: "unregistered", wallet: account, proposalId });
         return Response.json(
             { message: "rural-rest.com에 회원가입 후 지갑을 연결해주세요." },
             { status: 403, headers: BLINKS_HEADERS }
         );
     }
     if (!voter.kycVerified) {
+        auditLog({ action: "blinks_vote_rejected", reason: "kyc_required", userId: voter.id, wallet: account, proposalId });
         return Response.json(
             { message: "KYC 인증이 필요합니다. rural-rest.com에서 인증 후 투표하세요." },
             { status: 403, headers: BLINKS_HEADERS }
@@ -261,6 +267,15 @@ export async function action({ params, request }: Route.ActionArgs) {
 
         const voteLabel = VOTE_LABEL_MAP[voteTypeStr] ?? voteTypeStr;
 
+        auditLog({
+            action: "blinks_vote_tx_built",
+            userId: voter.id,
+            wallet: account,
+            proposalId,
+            voteType: voteTypeStr,
+            positionCount: positions.length,
+        });
+
         return Response.json(
             {
                 transaction: base64Tx,
@@ -269,6 +284,7 @@ export async function action({ params, request }: Route.ActionArgs) {
             { headers: BLINKS_HEADERS }
         );
     } catch (err: any) {
+        auditLog({ action: "blinks_vote_error", userId: voter.id, wallet: account, proposalId, error: err?.message });
         console.error("[blinks/governance]", err?.message);
         return Response.json(
             { message: err?.message ?? "트랜잭션 생성 실패" },
