@@ -1,5 +1,6 @@
 import { requireUser } from "~/lib/auth.server";
 import { createPayPalOrder } from "~/lib/paypal.server";
+import { checkRateLimit, rateLimitResponse } from "~/lib/rate-limit.server";
 
 /**
  * POST /api/paypal/create-order
@@ -10,10 +11,21 @@ import { createPayPalOrder } from "~/lib/paypal.server";
  * Returns: { orderID }
  */
 export async function action({ request }: { request: Request }) {
-    await requireUser(request);
+    const user = await requireUser(request);
 
-    const { totalPrice } = (await request.json()) as { bookingId: string; totalPrice: number };
-    if (!totalPrice || totalPrice <= 0) return Response.json({ error: "totalPrice 필요" }, { status: 400 });
+    // Rate limit: 사용자당 10분에 10회
+    const rl = checkRateLimit(`paypal:${user.id}`, 10, 10 * 60_000);
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt);
+
+    const body = (await request.json()) as { bookingId: string; totalPrice: number };
+    const { totalPrice, bookingId } = body;
+
+    if (!bookingId || typeof bookingId !== "string" || bookingId.trim() === "") {
+        return Response.json({ error: "bookingId 필요" }, { status: 400 });
+    }
+    if (!totalPrice || typeof totalPrice !== "number" || totalPrice <= 0 || totalPrice > 50_000_000) {
+        return Response.json({ error: "totalPrice는 0 초과 5천만원 이하여야 합니다" }, { status: 400 });
+    }
 
     try {
         const orderID = await createPayPalOrder(totalPrice);
