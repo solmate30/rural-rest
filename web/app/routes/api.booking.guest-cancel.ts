@@ -1,6 +1,6 @@
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
-import { bookings, listings, user } from "~/db/schema";
+import { bookings, user } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import { voidPayPalAuth } from "~/lib/paypal.server";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
@@ -10,50 +10,46 @@ import bs58 from "bs58";
 import IDL from "~/anchor-idl/rural_rest_rwa.json";
 import { RPC_URL, SERVER_PROGRAM_ID, SERVER_USDC_MINT, CRANK_SECRET_KEY } from "~/lib/constants.server";
 
+/**
+ * POST /api/booking/guest-cancel
+ * Body: { bookingId }
+ *
+ * 게스트가 pending 상태 예약을 직접 취소.
+ * 카드: PayPal authorization void (자동 환불)
+ * USDC: cancelBookingEscrow CPI (crank 서명으로 에스크로 해제)
+ */
 export async function action({ request }: { request: Request }) {
-    const currentUser = await requireUser(request, ["admin", "spv", "operator"]);
+    const currentUser = await requireUser(request);
 
-    const { bookingId } = (await request.json()) as { bookingId: string; reason?: string };
+    const { bookingId } = (await request.json()) as { bookingId: string };
     if (!bookingId) return Response.json({ error: "bookingId 필요" }, { status: 400 });
 
     const [booking] = await db
         .select({
             id: bookings.id,
             status: bookings.status,
+            guestId: bookings.guestId,
             paypalAuthorizationId: bookings.paypalAuthorizationId,
             escrowPda: bookings.escrowPda,
-            guestId: bookings.guestId,
-            listingId: bookings.listingId,
         })
         .from(bookings)
         .where(eq(bookings.id, bookingId));
 
     if (!booking) return Response.json({ error: "예약 없음" }, { status: 404 });
-    if (booking.status !== "pending") return Response.json({ error: "대기 중인 예약이 아닙니다" }, { status: 400 });
+    if (booking.guestId !== currentUser.id) return Response.json({ error: "본인 예약만 취소할 수 있습니다" }, { status: 403 });
+    if (booking.status !== "pending") return Response.json({ error: "대기 중인 예약만 취소할 수 있습니다" }, { status: 400 });
 
-    // operator는 자신이 담당하는 매물의 예약만 거절 가능
-    if ((currentUser as any).role === "operator") {
-        const [listing] = await db
-            .select({ operatorId: listings.operatorId })
-            .from(listings)
-            .where(eq(listings.id, booking.listingId));
-
-        if (!listing || listing.operatorId !== currentUser.id) {
-            return Response.json({ error: "담당 매물이 아닙니다" }, { status: 403 });
-        }
-    }
-
-    // PayPal authorization void (자동 전액 환불)
+    // 카드 결제 환불
     if (booking.paypalAuthorizationId) {
         try {
             await voidPayPalAuth(booking.paypalAuthorizationId);
         } catch (err) {
-            console.error("[paypal void]", err);
-            return Response.json({ error: "환불 처리 실패" }, { status: 500 });
+            console.error("[guest-cancel] paypal void", err);
+            return Response.json({ error: "카드 환불 처리 실패" }, { status: 500 });
         }
     }
 
-    // USDC 에스크로 환불 — cancelBookingEscrow CPI (crank 서명)
+    // USDC 에스크로 환불
     if (booking.escrowPda) {
         if (!CRANK_SECRET_KEY) return Response.json({ error: "서버 crank 키 미설정" }, { status: 500 });
         if (!SERVER_USDC_MINT) return Response.json({ error: "USDC_MINT 미설정" }, { status: 500 });
@@ -71,8 +67,7 @@ export async function action({ request }: { request: Request }) {
             const connection = new Connection(RPC_URL, "confirmed");
             const crank = Keypair.fromSecretKey(bs58.decode(CRANK_SECRET_KEY));
             const usdcMint = new PublicKey(SERVER_USDC_MINT);
-            const guestPubkey = new PublicKey(guestUser.walletAddress);
-            const guestUsdc = getAssociatedTokenAddressSync(usdcMint, guestPubkey);
+            const guestUsdc = getAssociatedTokenAddressSync(usdcMint, new PublicKey(guestUser.walletAddress));
 
             const [rwaConfig] = PublicKey.findProgramAddressSync(
                 [Buffer.from("rwa_config")],
@@ -89,8 +84,6 @@ export async function action({ request }: { request: Request }) {
                 { commitment: "confirmed" },
             );
             const program = new Program(IDL as any, crankProvider);
-
-            // booking_id seed: UUID 하이픈 제거 (createBookingEscrow와 동일)
             const bookingIdSeed = bookingId.replace(/-/g, "");
 
             const tx = await (program.methods as any)
@@ -104,9 +97,9 @@ export async function action({ request }: { request: Request }) {
                 })
                 .rpc();
 
-            console.info(`[reject] USDC escrow cancelled booking=${bookingId} tx=${tx}`);
+            console.info(`[guest-cancel] USDC escrow cancelled booking=${bookingId} tx=${tx}`);
         } catch (err: any) {
-            console.error("[usdc cancel escrow]", err);
+            console.error("[guest-cancel] usdc cancel escrow", err);
             return Response.json({ error: "USDC 에스크로 환불 실패" }, { status: 500 });
         }
     }

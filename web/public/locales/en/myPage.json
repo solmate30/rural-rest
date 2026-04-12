@@ -1,0 +1,16 @@
+{
+  "sidebarTitle": "My Account",
+  "nav": {
+    "bookings": "My Bookings",
+    "payments": "Payments",
+    "portfolio": "Portfolio"
+  },
+  "payments": {
+    "empty": "No payment history yet",
+    "property": "Property",
+    "method": "Method",
+    "amount": "Amount",
+    "payStatus": "Status",
+    "card": "Card"
+  }
+}

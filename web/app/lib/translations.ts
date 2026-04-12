@@ -27,6 +27,8 @@ import koHost from "../../public/locales/ko/host.json";
 import enHost from "../../public/locales/en/host.json";
 import koMyBookings from "../../public/locales/ko/myBookings.json";
 import enMyBookings from "../../public/locales/en/myBookings.json";
+import koMyPage from "../../public/locales/ko/myPage.json";
+import enMyPage from "../../public/locales/en/myPage.json";
 
 export const allTranslations = {
     ko: {
@@ -42,6 +44,7 @@ export const allTranslations = {
         admin: koAdmin,
         host: koHost,
         myBookings: koMyBookings,
+        myPage: koMyPage,
     },
     en: {
         common: enCommon,
@@ -56,6 +59,7 @@ export const allTranslations = {
         admin: enAdmin,
         host: enHost,
         myBookings: enMyBookings,
+        myPage: enMyPage,
     },
 } as const;
 

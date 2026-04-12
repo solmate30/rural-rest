@@ -3,5 +3,11 @@
   "empty": "No bookings yet",
   "findStay": "Find a Stay",
   "nights": "{{count}} nights",
-  "pendingNote": "Awaiting host approval"
+  "pendingNote": "Awaiting host approval",
+  "cancelRequest": "Cancel request",
+  "cancelling": "Cancelling...",
+  "cancelConfirm": "Cancel this booking request? Your payment will be automatically refunded.",
+  "cancelError": "Something went wrong. Please try again.",
+  "refundedCard": "Card refund processed",
+  "refundedUsdc": "USDC escrow refunded"
 }

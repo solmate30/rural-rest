@@ -3,5 +3,11 @@
   "empty": "아직 예약한 숙소가 없어요",
   "findStay": "숙소 찾아보기",
   "nights": "{{count}}박",
-  "pendingNote": "호스트 승인 대기 중"
+  "pendingNote": "호스트 승인 대기 중",
+  "cancelRequest": "신청 취소",
+  "cancelling": "취소 중...",
+  "cancelConfirm": "예약 신청을 취소하시겠습니까? 결제 금액은 자동으로 환불됩니다.",
+  "cancelError": "취소 처리 중 오류가 발생했습니다. 다시 시도해주세요.",
+  "refundedCard": "카드 환불 완료",
+  "refundedUsdc": "USDC 에스크로 환불 완료"
 }

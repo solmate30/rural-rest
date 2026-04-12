@@ -136,7 +136,11 @@
     "savedState": "Saved",
     "saving": "Saving...",
     "save": "Save",
-    "uploadError": "Upload failed"
+    "uploadError": "Upload failed",
+    "blockerTitle": "Unsaved Changes",
+    "blockerMessage": "You have unsaved changes. Are you sure you want to leave?",
+    "blockerStay": "Keep Editing",
+    "blockerLeave": "Leave"
   },
   "tokenize": {
     "status": {
@@ -323,10 +327,14 @@
   },
   "validation": {
     "requiredTitle": "Please enter a property name",
+    "titleMin": "Property name must be at least 2 characters",
+    "titleMax": "Property name must be 100 characters or less",
     "titleTooLong": "Property name must be 100 characters or less",
     "requiredDescription": "Please enter a property description",
+    "descMin": "Description must be at least 10 characters",
     "requiredPrice": "Please enter a nightly price",
     "requiredMaxGuests": "Please enter the maximum number of guests",
+    "maxGuestsMax": "Maximum guests cannot exceed 20",
     "requiredLocation": "Please search for an address",
     "invalidRegion": "Could not determine region from address"
   },

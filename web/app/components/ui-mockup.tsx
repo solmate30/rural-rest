@@ -177,6 +177,7 @@ export function Header() {
                                     { label: t("nav.adminTab.newListing"),  href: "/admin/listing/new",  exact: false },
                                     { label: t("nav.adminTab.operators"),   href: "/admin/operators",    exact: false },
                                     { label: t("nav.adminTab.settlements"), href: "/admin/settlements",  exact: false },
+                                    { label: t("nav.governance"),           href: "/governance",         exact: false },
                                 ] as const).map(({ label, href, exact }) => {
                                     const isActive = exact
                                         ? location.pathname === href
@@ -201,13 +202,10 @@ export function Header() {
                             <>
                                 <a href="/" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.findStay")}</a>
                                 <a href="/invest" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.invest")}</a>
-                                {session && (
-                                    <>
-                                        <a href="/my-bookings" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.myBookings")}</a>
-                                        <a href="/my-investments" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.myPortfolio")}</a>
-                                    </>
-                                )}
                                 <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
+                                {session && (
+                                    <a href="/my/bookings" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.myPage")}</a>
+                                )}
                             </>
                         )}
                     </nav>
@@ -314,10 +312,10 @@ export function Header() {
                                     )}
                                     {!isOperator && !isAdmin && (
                                         <>
-                                            <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/my-bookings")}>
+                                            <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/my/bookings")}>
                                                 {t("nav.myBookings")}
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/my-investments")}>
+                                            <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/my/portfolio")}>
                                                 {t("nav.myPortfolio")}
                                             </DropdownMenuItem>
                                         </>

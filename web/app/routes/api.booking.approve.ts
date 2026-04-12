@@ -39,13 +39,16 @@ export async function action({ request }: { request: Request }) {
     }
 
     // PayPal authorization capture (카드 결제인 경우)
+    let platformFeeKrw: number | null = null;
     if (booking.paypalAuthorizationId) {
         try {
             await capturePayPalAuth(booking.paypalAuthorizationId);
-            const platformFee = Math.round(booking.totalPrice * PLATFORM_FEE_RATE);
-            const hostPayout = booking.totalPrice - platformFee;
+            platformFeeKrw = Math.round(booking.totalPrice * PLATFORM_FEE_RATE);
+            const hostPayout = booking.totalPrice - platformFeeKrw;
+            // PayPal Commerce Platform 파트너 승인 전까지 수수료는 DB에만 기록
+            // 실제 차감은 추후 파트너 계정 활성화 후 capturePayPalAuth에 payment_instruction.platform_fees 추가
             console.info(
-                `[approve] booking=${bookingId} total=₩${booking.totalPrice} platformFee=₩${platformFee} hostPayout=₩${hostPayout}`
+                `[approve] booking=${bookingId} total=₩${booking.totalPrice} platformFee=₩${platformFeeKrw} hostPayout=₩${hostPayout}`
             );
         } catch (err) {
             console.error("[paypal capture]", err);
@@ -54,7 +57,7 @@ export async function action({ request }: { request: Request }) {
     }
 
     await db.update(bookings)
-        .set({ status: "confirmed" })
+        .set({ status: "confirmed", ...(platformFeeKrw !== null && { platformFeeKrw }) })
         .where(eq(bookings.id, bookingId));
 
     return Response.json({ ok: true });

@@ -1,0 +1,16 @@
+{
+  "sidebarTitle": "마이페이지",
+  "nav": {
+    "bookings": "내 예약",
+    "payments": "결제 내역",
+    "portfolio": "포트폴리오"
+  },
+  "payments": {
+    "empty": "결제 내역이 없습니다",
+    "property": "숙소",
+    "method": "결제 수단",
+    "amount": "금액",
+    "payStatus": "상태",
+    "card": "카드"
+  }
+}

@@ -88,7 +88,7 @@ export default function BookSuccess() {
                         </div>
                     </Card>
                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <Link to="/my-bookings">
+                        <Link to="/my/bookings">
                             <Button className="w-full sm:w-auto px-8">{t("confirm.myBookings")}</Button>
                         </Link>
                         <Link to={`/property/${booking.listingId}`}>

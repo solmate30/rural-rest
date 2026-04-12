@@ -8,9 +8,10 @@
  * Availability 캘린더: 정적 목업 유지
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Form, useLoaderData, useActionData, useNavigation, redirect } from "react-router";
+import { Form, useLoaderData, useActionData, useNavigation, useBlocker } from "react-router";
+import { z } from "zod";
 import type { Route } from "./+types/admin.edit";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
@@ -19,6 +20,13 @@ import { eq } from "drizzle-orm";
 import { Header, Button, Card } from "../components/ui-mockup";
 import { useCloudinaryUpload } from "~/hooks/use-cloudinary-upload";
 import { AMENITY_OPTIONS } from "~/lib/listing-constants";
+
+const listingSchema = z.object({
+    title:        z.string().min(2, "validation.titleMin").max(100, "validation.titleMax"),
+    description:  z.string().min(10, "validation.descMin"),
+    pricePerNight: z.number({ error: "validation.requiredPrice" }).min(1, "validation.requiredPrice"),
+    maxGuests:    z.number({ error: "validation.requiredMaxGuests" }).min(1, "validation.requiredMaxGuests").max(20, "validation.maxGuestsMax"),
+});
 
 // ────────────────────────────────────────────────────────────
 // loader
@@ -80,26 +88,66 @@ export default function AdminEdit() {
     const navigation = useNavigation();
     const { t } = useTranslation("admin");
     const isSaving = navigation.state === "submitting";
-    const rawErrors = (actionData as { errors?: Record<string, string> } | undefined)?.errors;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const errors = rawErrors
-        ? Object.fromEntries(Object.entries(rawErrors).map(([k, v]) => [k, (t as (k: string) => string)(v)]))
-        : undefined;
+    const serverErrors = (actionData as { errors?: Record<string, string> } | undefined)?.errors;
     const saved = (actionData as { ok?: boolean } | undefined)?.ok;
+
+    const initialImages = (() => {
+        const raw = listing.images;
+        if (!raw) return [] as string[];
+        if (typeof raw === "string") { try { return JSON.parse(raw) as string[]; } catch { return [] as string[]; } }
+        return raw as unknown as string[];
+    })();
 
     const [title, setTitle] = useState(listing.title);
     const [description, setDescription] = useState(listing.description);
     const [pricePerNight, setPricePerNight] = useState(listing.pricePerNight);
     const [maxGuests, setMaxGuests] = useState(listing.maxGuests);
     const [amenities, setAmenities] = useState<string[]>((listing.amenities as unknown as string[]) ?? []);
-    const [images, setImages] = useState<string[]>(() => {
-        const raw = listing.images;
-        if (!raw) return [];
-        if (typeof raw === "string") { try { return JSON.parse(raw) as string[]; } catch { return []; } }
-        return raw as unknown as string[];
-    });
+    const [images, setImages] = useState<string[]>(initialImages);
     const [transportSupport, setTransportSupport] = useState(listing.transportSupport);
     const [smartLockEnabled, setSmartLockEnabled] = useState(listing.smartLockEnabled);
+
+    // ── 실시간 검증
+    const [fieldErrors, setFieldErrors] = useState<Partial<Record<string, string>>>({});
+
+    function validateField(name: string, value: unknown) {
+        const partial = listingSchema.pick({ [name]: true } as never).safeParse({ [name]: value });
+        if (!partial.success) {
+            const msg = partial.error.issues[0]?.message ?? "";
+            setFieldErrors((prev) => ({ ...prev, [name]: t(msg as any) }));
+        } else {
+            setFieldErrors((prev) => { const next = { ...prev }; delete next[name]; return next; });
+        }
+    }
+
+    // 서버 에러와 클라이언트 에러 병합 (클라이언트 우선)
+    const errors = {
+        ...(serverErrors ? Object.fromEntries(Object.entries(serverErrors).map(([k, v]) => [k, t(v as any)])) : {}),
+        ...fieldErrors,
+    };
+
+    // ── 미저장 감지
+    const isDirty =
+        title !== listing.title ||
+        description !== listing.description ||
+        pricePerNight !== listing.pricePerNight ||
+        maxGuests !== listing.maxGuests;
+
+    // 브라우저 새로고침/탭 닫기 경고
+    useEffect(() => {
+        function handleBeforeUnload(e: BeforeUnloadEvent) {
+            if (isDirty && !saved) {
+                e.preventDefault();
+            }
+        }
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [isDirty, saved]);
+
+    // React Router 내비게이션 차단
+    const blocker = useBlocker(isDirty && !saved && !isSaving);
+    const handleBlockerProceed = useCallback(() => blocker.proceed?.(), [blocker]);
+    const handleBlockerReset   = useCallback(() => blocker.reset?.(),   [blocker]);
 
     // ── 사진 업로드
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -126,6 +174,7 @@ export default function AdminEdit() {
     }
 
     return (
+        <>
         <Form method="post">
             {/* hidden fields */}
             {images.map((url) => <input key={url} type="hidden" name="images" value={url} />)}
@@ -196,23 +245,44 @@ export default function AdminEdit() {
                             <SectionTitle>{t("edit.basicInfoSection")}</SectionTitle>
                             <Card className="p-8 space-y-6">
                                 <Field label={t("edit.propertyTitle")} error={errors?.title} required>
-                                    <input name="title" value={title} onChange={(e) => setTitle(e.target.value)} className={INPUT_CLS} maxLength={100} />
+                                    <input
+                                        name="title"
+                                        value={title}
+                                        onChange={(e) => { setTitle(e.target.value); validateField("title", e.target.value); }}
+                                        className={INPUT_CLS}
+                                        maxLength={100}
+                                    />
                                 </Field>
                                 <Field label={t("edit.description")} error={errors?.description} required>
                                     <textarea
                                         name="description"
                                         rows={6}
                                         value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
+                                        onChange={(e) => { setDescription(e.target.value); validateField("description", e.target.value); }}
                                         className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                                     />
                                 </Field>
                                 <div className="grid grid-cols-2 gap-4">
                                     <Field label={t("edit.basePrice")} error={errors?.pricePerNight} required>
-                                        <input name="pricePerNight" type="number" min="1" value={pricePerNight} onChange={(e) => setPricePerNight(Number(e.target.value))} className={INPUT_CLS} />
+                                        <input
+                                            name="pricePerNight"
+                                            type="number"
+                                            min="1"
+                                            value={pricePerNight}
+                                            onChange={(e) => { setPricePerNight(Number(e.target.value)); validateField("pricePerNight", Number(e.target.value)); }}
+                                            className={INPUT_CLS}
+                                        />
                                     </Field>
                                     <Field label={t("edit.maxGuests")} error={errors?.maxGuests} required>
-                                        <input name="maxGuests" type="number" min="1" max="20" value={maxGuests} onChange={(e) => setMaxGuests(Number(e.target.value))} className={INPUT_CLS} />
+                                        <input
+                                            name="maxGuests"
+                                            type="number"
+                                            min="1"
+                                            max="20"
+                                            value={maxGuests}
+                                            onChange={(e) => { setMaxGuests(Number(e.target.value)); validateField("maxGuests", Number(e.target.value)); }}
+                                            className={INPUT_CLS}
+                                        />
                                     </Field>
                                 </div>
                             </Card>
@@ -304,6 +374,33 @@ export default function AdminEdit() {
                 </div>
             </div>
         </Form>
+
+        {/* 미저장 변경사항 내비게이션 차단 모달 */}
+        {blocker.state === "blocked" && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 space-y-4">
+                    <h2 className="text-lg font-bold text-foreground">{t("edit.blockerTitle")}</h2>
+                    <p className="text-sm text-muted-foreground">{t("edit.blockerMessage")}</p>
+                    <div className="flex justify-end gap-3 pt-2">
+                        <button
+                            type="button"
+                            onClick={handleBlockerReset}
+                            className="px-4 py-2 rounded-xl text-sm font-medium border border-border hover:bg-muted/40 transition-colors"
+                        >
+                            {t("edit.blockerStay")}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleBlockerProceed}
+                            className="px-4 py-2 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
+                        >
+                            {t("edit.blockerLeave")}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     );
 }
 
