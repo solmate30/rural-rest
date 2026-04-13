@@ -29,6 +29,10 @@ import type { Route } from "./+types/api.actions.invest.$listingId";
 const PROGRAM_ID = SERVER_PROGRAM_ID;
 const USDC_MINT_ADDR = SERVER_USDC_MINT;
 
+function auditLog(event: Record<string, unknown>) {
+    console.log("[AUDIT]", JSON.stringify({ ...event, ts: new Date().toISOString() }));
+}
+
 // Blinks 필수 CORS 헤더
 const BLINKS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
@@ -138,12 +142,14 @@ export async function action({ params, request }: Route.ActionArgs) {
         .where(eq(userTable.walletAddress, account));
 
     if (!investor) {
+        auditLog({ action: "blinks_invest_rejected", reason: "unregistered", wallet: account, listingId: params.listingId, tokens: tokenAmount });
         return Response.json(
             { message: "rural-rest.com에 회원가입 후 지갑을 연결해주세요." },
             { status: 403, headers: BLINKS_HEADERS }
         );
     }
     if (!investor.kycVerified) {
+        auditLog({ action: "blinks_invest_rejected", reason: "kyc_required", userId: investor.id, wallet: account, listingId: params.listingId, tokens: tokenAmount });
         return Response.json(
             { message: "KYC 인증이 필요합니다. rural-rest.com에서 인증 후 투자하세요." },
             { status: 403, headers: BLINKS_HEADERS }
@@ -238,6 +244,15 @@ export async function action({ params, request }: Route.ActionArgs) {
 
         const priceUsdc = ((token.pricePerTokenUsdc ?? 0) / 1_000_000 * tokenAmount).toFixed(2);
 
+        auditLog({
+            action: "blinks_invest_tx_built",
+            userId: investor.id,
+            wallet: account,
+            listingId: params.listingId,
+            tokens: tokenAmount,
+            amountUsdc: priceUsdc,
+        });
+
         return Response.json(
             {
                 transaction: base64Tx,
@@ -246,6 +261,7 @@ export async function action({ params, request }: Route.ActionArgs) {
             { headers: BLINKS_HEADERS }
         );
     } catch (err: any) {
+        auditLog({ action: "blinks_invest_error", userId: investor.id, wallet: account, listingId: params.listingId, error: err?.message });
         console.error("[blinks/invest]", err?.message);
         return Response.json(
             { message: err?.message ?? "트랜잭션 생성 실패" },

@@ -65,5 +65,5 @@ export default [
     route("governance", "routes/governance.tsx"),
     route("governance/new", "routes/governance.new.tsx"),
     route("governance/:id", "routes/governance.$id.tsx"),
-
+    route("sitemap.xml", "routes/sitemap[.xml].ts"),
 ] satisfies RouteConfig;

@@ -36,6 +36,16 @@ function toCityLabel(location: string, locale: string): string {
     return `${city} 근처`;
 }
 
+export function meta() {
+    return [
+        { title: "숙소 검색 | Rural Rest" },
+        { name: "description", content: "Rural Rest에서 한국 시골 리모델링 빈집 숙소를 지역, 가격, 날짜로 검색하세요." },
+        { property: "og:title", content: "숙소 검색 | Rural Rest" },
+        { property: "og:description", content: "한국 농촌의 특별한 숙소를 찾아보세요." },
+        { name: "robots", content: "noindex" },
+    ];
+}
+
 export async function loader({ request }: Route.LoaderArgs) {
     const locale = await detectLocale(request);
     const url = new URL(request.url);
@@ -211,6 +221,7 @@ export default function SearchResults() {
                                             src={listing.image}
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             alt={listing.title}
+                                            loading="lazy"
                                         />
                                     </div>
                                     <div className="p-6 bg-white">

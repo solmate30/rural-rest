@@ -20,7 +20,7 @@ const LISTINGS = [
         lat: 35.8320,
         lng: 129.2150,
         amenities: ["Wi-Fi", "에어컨", "온돌 난방", "개별 화장실", "간이 주방", "주차 1대"],
-        images: ["/hwango.png"],
+        images: ["/hwango.webp"],
         renovationHistory: [
             { date: "2024.03", desc: "지붕 기와 교체 및 방수 처리" },
             { date: "2024.06", desc: "온돌 난방 시스템 현대화" },
@@ -40,7 +40,7 @@ const LISTINGS = [
         lat: 35.8360,
         lng: 129.2270,
         amenities: ["Wi-Fi", "에어컨", "온돌 난방", "공용 화장실", "주차 1대"],
-        images: ["/seonggon.png"],
+        images: ["/seonggon.webp"],
         renovationHistory: [
             { date: "2023.11", desc: "종택 구조 안전 진단 및 보강" },
             { date: "2024.02", desc: "전통 한옥 외관 복원" },
@@ -60,7 +60,7 @@ const LISTINGS = [
         lat: 35.8550,
         lng: 129.2100,
         amenities: ["Wi-Fi", "에어컨", "공용 샤워실", "공용 주방", "세탁기", "주차 3대"],
-        images: ["/dongcheon.png"],
+        images: ["/dongcheon.webp"],
         renovationHistory: [
             { date: "2024.04", desc: "빈집 철거 후 도미토리 신축" },
             { date: "2024.07", desc: "공용 주방 및 불멍존 시공" },
@@ -79,7 +79,7 @@ const LISTINGS = [
         lat: 35.9250,
         lng: 129.1980,
         amenities: ["Wi-Fi", "에어컨", "온돌 난방", "개별 화장실", "주방", "작업 책상", "주차 2대"],
-        images: ["/geoncheon.png"],
+        images: ["/geoncheon.webp"],
         renovationHistory: [
             { date: "2024.01", desc: "농가주택 구조 보강 및 단열 공사" },
             { date: "2024.05", desc: "워케이션 전용 작업 공간 조성" },
@@ -99,7 +99,7 @@ const LISTINGS = [
         lat: 35.9500,
         lng: 129.1850,
         amenities: ["Wi-Fi", "에어컨", "온돌 난방", "개별 화장실", "주방", "바베큐 그릴", "주차 3대"],
-        images: ["/angang.png"],
+        images: ["/angang.webp"],
         renovationHistory: [
             { date: "2024.02", desc: "농가주택 리모델링 착공" },
             { date: "2024.06", desc: "마당 바베큐 시설 및 조경 공사" },

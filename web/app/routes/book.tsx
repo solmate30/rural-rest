@@ -690,7 +690,7 @@ export default function Book({ loaderData, actionData }: Route.ComponentProps) {
               <Card className="p-6 md:p-8 shadow-2xl border-none bg-white rounded-3xl">
                 <div className="flex gap-4 mb-6">
                   <div className="h-20 w-20 rounded-xl overflow-hidden shadow-sm flex-shrink-0">
-                    <img src={listing.image} className="w-full h-full object-cover" alt={listing.title} />
+                    <img src={listing.image} className="w-full h-full object-cover" alt={listing.title} loading="lazy" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">{listing.locationLabel}</p>

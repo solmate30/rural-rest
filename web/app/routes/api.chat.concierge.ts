@@ -1,6 +1,7 @@
 import { data } from "react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { getSession } from "~/lib/auth.server";
+import { checkRateLimit, rateLimitResponse } from "~/lib/rate-limit.server";
 import { runConcierge } from "~/services/ai/concierge.server";
 import { db } from "~/db/index.server";
 import { aiChatThreads, aiChatMessages } from "~/db/schema";
@@ -42,6 +43,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
     const session = await getSession(request);
     if (!session) return data({ error: "Unauthorized" }, { status: 401 });
+
+    // Rate limit: 사용자당 분당 10회
+    const rl = checkRateLimit(`concierge:${session.user.id}`, 10, 60_000);
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt);
 
     const formData = await request.formData();
     const content = formData.get("content") as string;

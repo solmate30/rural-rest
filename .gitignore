@@ -69,3 +69,6 @@ test-ledger/
 .vercel/
 web/build.log
 *.bak
+
+# Solmate hook scripts (project-local)
+.claude/hooks/

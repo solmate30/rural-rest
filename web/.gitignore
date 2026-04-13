@@ -10,7 +10,7 @@
 /build/
 
 # Vercel
-.vercel/
+/.vercel/
 
 # Build logs
 build.log

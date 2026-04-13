@@ -31,7 +31,10 @@ const enCommon = allTranslations.en.common;
 
 export async function loader({ request }: Route.LoaderArgs) {
   const locale = await detectLocale(request);
-  const initialI18nStore = allTranslations;
+  // 현재 언어만 전송 — 번들 크기 절반 감소 (언어 전환은 쿠키 변경 후 리로드)
+  const initialI18nStore = {
+    [locale]: allTranslations[locale as keyof typeof allTranslations] ?? allTranslations.en,
+  };
 
   // 쿠키가 현재 감지된 언어와 다를 경우만 Set-Cookie
   const cookie = request.headers.get("cookie") ?? "";
@@ -61,14 +64,6 @@ export const links: Route.LinksFunction = () => [
     href: "https://fonts.gstatic.com",
     crossOrigin: "anonymous",
   },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
-  },
 ];
 
 // --- Layout (HTML shell) ---
@@ -83,6 +78,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        {/* 렌더 블로킹 방지: preload → onLoad 시 rel=stylesheet 전환 */}
+        <link
+          rel="preload"
+          as="style"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+          onLoad={(e) => { (e.currentTarget as HTMLLinkElement).rel = "stylesheet"; }}
+        />
+        <link
+          rel="preload"
+          as="style"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+          onLoad={(e) => { (e.currentTarget as HTMLLinkElement).rel = "stylesheet"; }}
+        />
+        <noscript>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" />
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+        </noscript>
       </head>
       <body>
         {children}
