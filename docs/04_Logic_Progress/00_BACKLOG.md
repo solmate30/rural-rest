@@ -67,7 +67,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [ ] **Transport Request (수동)**: Last Mile 교통 요청 기능, 초기에는 관리자 수동 처리
 
 ### Admin / Editor 보강
-*   [ ] **Admin Edit: 실시간 검증 및 미저장 경고**: 가격·최대 인원 등 Zod 실시간 검증, 이탈 시 미저장 경고 모달. → [05_ADMIN_EDITOR_REVIEW](../02_UI_Screens/05_ADMIN_EDITOR_REVIEW.md) §3.2
+*   [x] **Admin Edit: 실시간 검증 및 미저장 경고**: 가격·최대 인원 등 Zod 실시간 검증, 이탈 시 미저장 경고 모달. → [05_ADMIN_EDITOR_REVIEW](../02_UI_Screens/05_ADMIN_EDITOR_REVIEW.md) §3.2
 
 ### RWA
 

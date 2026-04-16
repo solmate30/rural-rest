@@ -131,7 +131,11 @@ export default function AdminEdit() {
         title !== listing.title ||
         description !== listing.description ||
         pricePerNight !== listing.pricePerNight ||
-        maxGuests !== listing.maxGuests;
+        maxGuests !== listing.maxGuests ||
+        transportSupport !== listing.transportSupport ||
+        smartLockEnabled !== listing.smartLockEnabled ||
+        JSON.stringify([...amenities].sort()) !== JSON.stringify(((listing.amenities as unknown as string[]) ?? []).slice().sort()) ||
+        JSON.stringify(images) !== JSON.stringify(initialImages);
 
     // 브라우저 새로고침/탭 닫기 경고
     useEffect(() => {
