@@ -38,6 +38,7 @@ export default [
     route("api/admin/issue-council-token", "routes/api.admin.issue-council-token.ts"),
     route("api/admin/create-operator", "routes/api.admin.create-operator.ts"),
     route("api/chat/concierge", "routes/api.chat.concierge.ts"),
+    route("api/chat/messages", "routes/api.chat.messages.ts"),
     route("api/set-language", "routes/api.set-language.ts"),
     route("api/governance/issue", "routes/api.governance.issue.ts"),
     route("api/user/kyc-status", "routes/api.user.kyc-status.ts"),
@@ -60,9 +61,10 @@ export default [
     route("invest", "routes/invest.tsx"),
     route("invest/:listingId", "routes/invest.detail.tsx"),
     layout("routes/my._layout.tsx", [
-        route("my/bookings",  "routes/my.bookings.tsx"),
-        route("my/payments",  "routes/my.payments.tsx"),
-        route("my/portfolio", "routes/my.portfolio.tsx"),
+        route("my/bookings",               "routes/my.bookings.tsx"),
+        route("my/payments",               "routes/my.payments.tsx"),
+        route("my/portfolio",              "routes/my.portfolio.tsx"),
+        route("my/messages/:bookingId",    "routes/my.messages.$bookingId.tsx"),
     ]),
     // 구 URL → 신 URL 리다이렉트
     route("my-bookings",   "routes/my-bookings.tsx"),

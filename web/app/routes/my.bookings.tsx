@@ -176,6 +176,18 @@ export default function MyBookings() {
                                                 </p>
                                             )}
                                         </div>
+
+                                        {(effectiveStatus === "confirmed" || effectiveStatus === "completed") && (
+                                            <div className="mt-3 pt-3 border-t border-stone-100">
+                                                <Link
+                                                    to={`/my/messages/${b.id}`}
+                                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-[#4a3b2c] transition-colors"
+                                                >
+                                                    <span className="material-symbols-outlined text-[15px]">chat_bubble</span>
+                                                    호스트에게 메시지 보내기
+                                                </Link>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

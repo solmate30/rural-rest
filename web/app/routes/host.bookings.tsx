@@ -166,7 +166,8 @@ function BookingTable({
                     const isCheckedOut = b.checkOut != null && new Date(b.checkOut) < new Date();
 
                     return (
-                        <TableRow key={b.id} className="border-stone-100">
+                        <>
+                        <TableRow key={`row-${b.id}`} className="border-stone-100">
                             <TableCell className="pl-6">
                                 <p className="text-sm font-semibold text-[#4a3b2c]">{b.guestName}</p>
                                 <p className="text-xs text-stone-400">{b.guestEmail}</p>
@@ -230,26 +231,35 @@ function BookingTable({
                                 </TableCell>
                             ) : showComplete ? (
                                 <TableCell className="text-right pr-6">
-                                    {cState === "error" ? (
-                                        <span className="text-xs text-red-500">{t("bookings.actionError")}</span>
-                                    ) : isCheckedOut ? (
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-emerald-200 text-emerald-600 hover:bg-emerald-50"
-                                            disabled={isCompleting}
-                                            onClick={() => onComplete?.(b.id)}
+                                    <div className="flex items-center justify-end gap-2">
+                                        <Link
+                                            to={`/my/messages/${b.id}`}
+                                            className="flex items-center gap-1 text-xs text-stone-400 hover:text-[#4a3b2c] transition-colors"
                                         >
-                                            {isCompleting ? t("bookings.processing") : t("bookings.complete")}
-                                        </Button>
-                                    ) : (
-                                        <Badge
-                                            variant="outline"
-                                            className={cn("text-xs rounded-full", statusBadge[b.status] ?? "")}
-                                        >
-                                            {t(`bookings.status.${b.status}`)}
-                                        </Badge>
-                                    )}
+                                            <span className="material-symbols-outlined text-[14px]">chat_bubble</span>
+                                            메시지
+                                        </Link>
+                                        {cState === "error" ? (
+                                            <span className="text-xs text-red-500">{t("bookings.actionError")}</span>
+                                        ) : isCheckedOut ? (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                                                disabled={isCompleting}
+                                                onClick={() => onComplete?.(b.id)}
+                                            >
+                                                {isCompleting ? t("bookings.processing") : t("bookings.complete")}
+                                            </Button>
+                                        ) : (
+                                            <Badge
+                                                variant="outline"
+                                                className={cn("text-xs rounded-full", statusBadge[b.status] ?? "")}
+                                            >
+                                                {t(`bookings.status.${b.status}`)}
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </TableCell>
                             ) : (
                                 <TableCell>
@@ -262,6 +272,7 @@ function BookingTable({
                                 </TableCell>
                             )}
                         </TableRow>
+                        </>
                     );
                 })}
             </TableBody>

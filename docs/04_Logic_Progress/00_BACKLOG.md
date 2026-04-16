@@ -63,7 +63,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 
 ### Roadmap NOW (04_ROADMAP)
 *   [x] **PayPal 결제 연동**: PayPal 인증 → 어드민 capture 구조 완료 (`api.paypal.create-order.ts`, `api.paypal.capture-auth.ts`, `book.tsx`)
-*   [ ] **Auto-Translation Chat**: 외국인 게스트용 자동 번역 채팅 (언어 장벽 제거)
+*   [x] **Auto-Translation Chat**: 외국인 게스트용 자동 번역 채팅 (언어 장벽 제거) → Gemini 2.0 Flash 번역, `BookingChatPanel` 컴포넌트, `api/chat/messages` API 완료
 *   [ ] **Transport Request (수동)**: Last Mile 교통 요청 기능, 초기에는 관리자 수동 처리
 
 ### Admin / Editor 보강
