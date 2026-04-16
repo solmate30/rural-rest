@@ -8,7 +8,9 @@
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "seed": "tsx scripts/seed.ts",
-    "i18n:scan": "i18next-scanner --config i18next-scanner.config.js"
+    "i18n:scan": "i18next-scanner --config i18next-scanner.config.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
@@ -87,6 +89,7 @@
     "tsx": "^4.19.4",
     "typescript": "^5.9.2",
     "vite": "^7.1.7",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.1.4"
   }
 }
