@@ -137,7 +137,11 @@
     "savedState": "저장 완료",
     "saving": "저장 중...",
     "save": "저장",
-    "uploadError": "업로드 실패"
+    "uploadError": "업로드 실패",
+    "blockerTitle": "저장하지 않은 변경사항",
+    "blockerMessage": "저장하지 않은 변경사항이 있습니다. 페이지를 떠나시겠습니까?",
+    "blockerStay": "계속 편집",
+    "blockerLeave": "나가기"
   },
   "tokenize": {
     "status": {
@@ -324,10 +328,14 @@
   },
   "validation": {
     "requiredTitle": "숙소명을 입력해주세요",
+    "titleMin": "숙소명은 2자 이상 입력해주세요",
+    "titleMax": "숙소명은 100자 이하로 입력해주세요",
     "titleTooLong": "숙소명은 100자 이하로 입력해주세요",
     "requiredDescription": "숙소 설명을 입력해주세요",
+    "descMin": "숙소 설명은 10자 이상 입력해주세요",
     "requiredPrice": "1박 가격을 입력해주세요",
     "requiredMaxGuests": "최대 인원을 입력해주세요",
+    "maxGuestsMax": "최대 인원은 20명 이하로 입력해주세요",
     "requiredLocation": "주소를 검색해주세요",
     "invalidRegion": "지역 정보를 확인할 수 없습니다"
   },

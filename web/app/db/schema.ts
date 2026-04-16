@@ -90,6 +90,7 @@ export const bookings = sqliteTable("bookings", {
     status: text("status", { enum: ["pending", "confirmed", "cancelled", "completed"] }).notNull().default("pending"),
     paymentIntentId: text("payment_intent_id"),             // PayPal Order ID
     paypalAuthorizationId: text("paypal_authorization_id"), // PayPal Authorization ID (capture/void용)
+    platformFeeKrw: integer("platform_fee_krw"),            // 플랫폼 수수료 10% (KRW, 카드 결제 시 기록)
     qrCodeToken: text("qr_code_token"),
     qrCodeExpiresAt: integer("qr_code_expires_at", { mode: "timestamp" }),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),

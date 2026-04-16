@@ -244,7 +244,7 @@ function PaymentStep({ booking, listingId }: { booking: BookingPayload; listingI
   const wallet = usePrivyAnchorWallet();
   const { isKycCompleted } = useKyc();
   const [payMethod, setPayMethod] = useState<"card" | "usdc">("card");
-  const [txState, setTxState] = useState<"idle" | "paying" | "done" | "error">("idle");
+  const [txState, setTxState] = useState<"idle" | "paying" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const { rate: pythRate, loading: rateLoading } = usePythRate();
 
@@ -294,7 +294,7 @@ function PaymentStep({ booking, listingId }: { booking: BookingPayload; listingI
         })
         .rpc();
 
-      await fetch("/api/booking/confirm", {
+      const confirmRes = await fetch("/api/booking/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -310,56 +310,19 @@ function PaymentStep({ booking, listingId }: { booking: BookingPayload; listingI
         }),
       });
 
-      setTxState("done");
+      if (!confirmRes.ok) {
+        const errData = await confirmRes.json();
+        setErrorMsg(errData.error ?? t("payment.error"));
+        setTxState("error");
+        return;
+      }
+
+      window.location.href = `/book/success?booking_id=${booking.id}`;
     } catch (err: any) {
       const { parseAnchorError } = await import("~/lib/anchor-client");
       setErrorMsg(parseAnchorError(err));
       setTxState("error");
     }
-  }
-
-  if (txState === "done") {
-    return (
-      <div className="min-h-screen bg-background font-sans">
-        <Header />
-        <main className="container mx-auto py-12 px-4 max-w-2xl">
-          <div className="bg-primary/5 rounded-3xl p-8 md:p-12 text-center space-y-6">
-            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("confirm.title")}</h1>
-            <p className="text-muted-foreground">{t("confirm.message")}</p>
-            <Card className="p-6 text-left space-y-3 mx-auto max-w-md text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("confirm.bookingId")}</span>
-                <span className="font-mono text-xs">{booking.id.slice(0, 8).toUpperCase()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("confirm.checkin")}</span>
-                <span className="font-medium">{booking.checkIn}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("confirm.checkout")}</span>
-                <span className="font-medium">{booking.checkOut}</span>
-              </div>
-              <div className="flex justify-between border-t pt-3">
-                <span className="font-bold">{t("confirm.total")}</span>
-                <span className="font-bold">₩{booking.totalPrice.toLocaleString()}</span>
-              </div>
-            </Card>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/"><Button className="w-full sm:w-auto px-8">{t("confirm.backHome")}</Button></Link>
-              <Link to={`/property/${listingId}`}>
-                <Button variant="outline" className="w-full sm:w-auto px-8">{t("confirm.viewProperty")}</Button>
-              </Link>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
   }
 
   const usdcDisplay = rateLoading

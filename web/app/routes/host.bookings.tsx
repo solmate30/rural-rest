@@ -60,6 +60,7 @@ export async function loader({ request }: Route.LoaderArgs) {
             checkOut: bookings.checkOut,
             totalPrice: bookings.totalPrice,
             status: bookings.status,
+            escrowPda: bookings.escrowPda,
             paymentIntentId: bookings.paymentIntentId,
             onchainPayTx: bookings.onchainPayTx,
             createdAt: bookings.createdAt,
@@ -105,16 +106,22 @@ function BookingTable({
     rows,
     listingMap,
     showActions,
+    showComplete,
     onApprove,
     onReject,
+    onComplete,
     actionStates,
+    completeStates,
 }: {
     rows: BookingRow[];
     listingMap: Record<string, string>;
     showActions?: boolean;
+    showComplete?: boolean;
     onApprove?: (id: string) => void;
     onReject?: (id: string) => void;
+    onComplete?: (id: string) => void;
     actionStates?: Record<string, "idle" | "loading" | "error">;
+    completeStates?: Record<string, "idle" | "loading" | "error">;
 }) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { t, i18n } = useTranslation("host") as any;
@@ -143,7 +150,7 @@ function BookingTable({
                     <TableHead>{t("bookings.colDates")}</TableHead>
                     <TableHead className="text-right">{t("bookings.colAmount")}</TableHead>
                     <TableHead>{t("bookings.colMethod")}</TableHead>
-                    {showActions
+                    {(showActions || showComplete)
                         ? <TableHead className="text-right pr-6">{t("bookings.colActions")}</TableHead>
                         : <TableHead>{t("bookings.colStatus")}</TableHead>
                     }
@@ -153,7 +160,10 @@ function BookingTable({
                 {rows.map((b) => {
                     const state = actionStates?.[b.id] ?? "idle";
                     const isLoading = state === "loading";
+                    const cState = completeStates?.[b.id] ?? "idle";
+                    const isCompleting = cState === "loading";
                     const payMethod = b.paymentIntentId ? "card" : "usdc";
+                    const isCheckedOut = b.checkOut != null && new Date(b.checkOut) < new Date();
 
                     return (
                         <TableRow key={b.id} className="border-stone-100">
@@ -218,6 +228,29 @@ function BookingTable({
                                         </div>
                                     )}
                                 </TableCell>
+                            ) : showComplete ? (
+                                <TableCell className="text-right pr-6">
+                                    {cState === "error" ? (
+                                        <span className="text-xs text-red-500">{t("bookings.actionError")}</span>
+                                    ) : isCheckedOut ? (
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                                            disabled={isCompleting}
+                                            onClick={() => onComplete?.(b.id)}
+                                        >
+                                            {isCompleting ? t("bookings.processing") : t("bookings.complete")}
+                                        </Button>
+                                    ) : (
+                                        <Badge
+                                            variant="outline"
+                                            className={cn("text-xs rounded-full", statusBadge[b.status] ?? "")}
+                                        >
+                                            {t(`bookings.status.${b.status}`)}
+                                        </Badge>
+                                    )}
+                                </TableCell>
                             ) : (
                                 <TableCell>
                                     <Badge
@@ -247,7 +280,9 @@ export default function HostBookings() {
 
     const [activeTab, setActiveTab] = useState<Tab>("pending");
     const [pending, setPending] = useState(bookingsByStatus.pending);
+    const [confirmed, setConfirmed] = useState(bookingsByStatus.confirmed);
     const [actionStates, setActionStates] = useState<Record<string, "idle" | "loading" | "error">>({});
+    const [completeStates, setCompleteStates] = useState<Record<string, "idle" | "loading" | "error">>({});
 
     async function handleApprove(bookingId: string) {
         setActionStates((s) => ({ ...s, [bookingId]: "loading" }));
@@ -261,6 +296,21 @@ export default function HostBookings() {
             setActionStates((s) => { const n = { ...s }; delete n[bookingId]; return n; });
         } else {
             setActionStates((s) => ({ ...s, [bookingId]: "error" }));
+        }
+    }
+
+    async function handleComplete(bookingId: string) {
+        setCompleteStates((s) => ({ ...s, [bookingId]: "loading" }));
+        const res = await fetch("/api/booking/release-escrow", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ bookingId }),
+        });
+        if (res.ok) {
+            setConfirmed((l) => l.filter((b) => b.id !== bookingId));
+            setCompleteStates((s) => { const n = { ...s }; delete n[bookingId]; return n; });
+        } else {
+            setCompleteStates((s) => ({ ...s, [bookingId]: "error" }));
         }
     }
 
@@ -349,8 +399,11 @@ export default function HostBookings() {
                     {activeTab === "confirmed" && (
                         <CardContent className="p-0">
                             <BookingTable
-                                rows={bookingsByStatus.confirmed}
+                                rows={confirmed}
                                 listingMap={listingMap}
+                                showComplete
+                                onComplete={handleComplete}
+                                completeStates={completeStates}
                             />
                         </CardContent>
                     )}

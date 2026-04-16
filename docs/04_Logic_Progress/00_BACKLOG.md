@@ -26,7 +26,6 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 | 여행자 | 예약 승인 알림 (이메일/푸시) | Phase 1 |
 | 여행자 | 디지털 키(QR) 체크인 | Phase 2 |
 | 투자자 | KYC 실제 신원 확인 (현재 시뮬레이션) | Phase 2 |
-| 투자자 | DAO 투표 온체인 연동 (현재 UI 목업) | Phase 1 |
 | 마을운영자 | 디지털 키 발송 연동 | Phase 2 |
 
 ---
@@ -56,7 +55,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] **Task 2.12**: Implement AI Global Concierge Chat UI. → 구현 완료 (Floating Chat UI, Global Layout 연동)
 *   [x] Implement Admin Dashboard Data Fetching (Revenue/Occupancy). → 코드 구현 완료 (`admin-dashboard.server.ts`, `admin.dashboard.tsx` loader 연동)
 *   [x] **Listing Create to DB**: `/admin/listing/new` — Daum 주소 검색, region 자동추출, DB INSERT, `/host/edit/:id` redirect. (`admin.listing.new.tsx`)
-*   [ ] **Listing Update to DB**: Admin Edit 페이지에서 폼 제출 시 `listings` 테이블에 update. (현재 admin.edit.tsx는 UI만 있으며 action·loader 미구현)
+*   [x] **Listing Update to DB**: Admin Edit 페이지에서 폼 제출 시 `listings` 테이블에 update. (`admin.edit.tsx` loader + action + DB update 완료)
 
 ### Design System
 *   [x] **Task 2.13**: Setup Shadcn/UI Components (Button, Card, Input, Dialog, ScrollArea, Avatar). → Button, Card, Input, Dialog, ScrollArea, Avatar, Toast 설치 완료 (`app/components/ui/`)
@@ -68,7 +67,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [ ] **Transport Request (수동)**: Last Mile 교통 요청 기능, 초기에는 관리자 수동 처리
 
 ### Admin / Editor 보강
-*   [ ] **Admin Edit: 실시간 검증 및 미저장 경고**: 가격·최대 인원 등 Zod 실시간 검증, 이탈 시 미저장 경고 모달. → [05_ADMIN_EDITOR_REVIEW](../02_UI_Screens/05_ADMIN_EDITOR_REVIEW.md) §3.2
+*   [x] **Admin Edit: 실시간 검증 및 미저장 경고**: 가격·최대 인원 등 Zod 실시간 검증, 이탈 시 미저장 경고 모달. → [05_ADMIN_EDITOR_REVIEW](../02_UI_Screens/05_ADMIN_EDITOR_REVIEW.md) §3.2
 
 ### RWA
 
@@ -87,6 +86,14 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] **투자 매수/취소/환불 UI**: PurchaseCard, CancelPositionButton, RefundButton
 *   [x] **배당 분배/수령 UI**: MonthlySettlementButton (온체인), ClaimButton
 *   [x] **3자 정산 아키텍처**: 지자체 40% + 운영자 30% + 투자자 30%
+
+#### 완료 (2026-04-09) — 예약 플로우 버그 수정
+*   [x] **USDC 예약 거절 시 에스크로 환불**: `api.booking.reject.ts` — `cancelBookingEscrow` CPI 추가 (기존: DB만 cancelled, 에스크로 자금 방치)
+*   [x] **USDC 결제 완료 후 redirect**: `book.tsx` — `txState="done"` 인라인 화면 제거, `/book/success` redirect로 통일
+*   [x] **게스트 pending 취소**: `api.booking.guest-cancel.ts` 신규 + `my-bookings.tsx` "신청 취소" 버튼 추가
+*   [x] **취소 상태 환불 안내**: `my-bookings.tsx` — cancelled 예약에 "카드 환불 완료" / "USDC 에스크로 환불 완료" 표시
+*   [x] **카드 예약 completed 전환**: `api.booking.release-escrow.ts` — 카드 결제도 처리 (기존: USDC 전용, 카드 예약은 confirmed에서 stuck)
+*   [x] **정산 완료 버튼**: `host.bookings.tsx` confirmed 탭 — 체크아웃 지난 예약에 "정산 완료" 버튼 추가
 
 #### 완료 (2026-04-09)
 *   [x] **`/invest` loader DB 전환**: listings JOIN rwa_tokens 쿼리 완료

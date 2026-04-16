@@ -1,4 +1,5 @@
 import { Link, useLoaderData } from "react-router";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Header } from "../components/ui-mockup";
 import { requireUser } from "../lib/auth.server";
@@ -23,7 +24,8 @@ export async function loader({ request }: Route.LoaderArgs) {
             checkOut: bookings.checkOut,
             totalPrice: bookings.totalPrice,
             status: bookings.status,
-            paymentIntentId: bookings.paymentIntentId,
+            escrowPda: bookings.escrowPda,
+            paypalAuthorizationId: bookings.paypalAuthorizationId,
             createdAt: bookings.createdAt,
         })
         .from(bookings)
@@ -35,6 +37,7 @@ export async function loader({ request }: Route.LoaderArgs) {
         myBookings: rows.map((r) => ({
             ...r,
             listingImage: (r.listingImage as string[])?.[0] ?? null,
+            isUsdc: !!r.escrowPda,
         })),
     };
 }
@@ -53,6 +56,30 @@ export default function MyBookings() {
     const { i18n } = useTranslation();
     const { t } = useTranslation("myBookings");
     const locale = i18n.language;
+    const [cancellingId, setCancellingId] = useState<string | null>(null);
+    const [cancelledIds, setCancelledIds] = useState<Set<string>>(new Set());
+
+    async function handleGuestCancel(bookingId: string) {
+        if (!confirm(t("cancelConfirm"))) return;
+        setCancellingId(bookingId);
+        try {
+            const res = await fetch("/api/booking/guest-cancel", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ bookingId }),
+            });
+            if (res.ok) {
+                setCancelledIds((prev) => new Set(prev).add(bookingId));
+            } else {
+                const data = await res.json();
+                alert(data.error ?? t("cancelError"));
+            }
+        } catch {
+            alert(t("cancelError"));
+        } finally {
+            setCancellingId(null);
+        }
+    }
 
     function fmtDay(d: Date | null) {
         if (!d) return "—";
@@ -84,9 +111,11 @@ export default function MyBookings() {
                 ) : (
                     <div className="space-y-4">
                         {myBookings.map((b) => {
-                            const cfg = statusConfig[b.status] ?? statusConfig.pending;
+                            const effectiveStatus = cancelledIds.has(b.id) ? "cancelled" : b.status;
+                            const cfg = statusConfig[effectiveStatus] ?? statusConfig.pending;
                             const label = locale === "ko" ? cfg.label : cfg.labelEn;
                             const n = nights(b.checkIn, b.checkOut);
+                            const isCancelling = cancellingId === b.id;
 
                             return (
                                 <div key={b.id} className="bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
@@ -130,11 +159,29 @@ export default function MyBookings() {
                                                 <span>{t("nights", { count: n })}</span>
                                             </div>
 
-                                            <div className="mt-2 flex items-center justify-between">
+                                            <div className="mt-2 flex items-center justify-between gap-2">
                                                 <span className="font-bold text-[#4a3b2c]">{fmtKrw(b.totalPrice)}</span>
-                                                {b.status === "pending" && (
-                                                    <p className="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">
-                                                        {t("pendingNote")}
+
+                                                {/* pending: 승인 대기 안내 + 취소 버튼 */}
+                                                {effectiveStatus === "pending" && (
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">
+                                                            {t("pendingNote")}
+                                                        </p>
+                                                        <button
+                                                            onClick={() => handleGuestCancel(b.id)}
+                                                            disabled={isCancelling}
+                                                            className="text-xs text-stone-400 hover:text-red-500 underline underline-offset-2 transition-colors disabled:opacity-50"
+                                                        >
+                                                            {isCancelling ? t("cancelling") : t("cancelRequest")}
+                                                        </button>
+                                                    </div>
+                                                )}
+
+                                                {/* cancelled: 환불 완료 안내 */}
+                                                {effectiveStatus === "cancelled" && (
+                                                    <p className="text-xs text-stone-400 bg-stone-50 px-2.5 py-1 rounded-lg">
+                                                        {b.isUsdc ? t("refundedUsdc") : t("refundedCard")}
                                                     </p>
                                                 )}
                                             </div>

@@ -50,6 +50,7 @@ export default [
     route("api/booking/approve", "routes/api.booking.approve.ts"),
     route("api/booking/reject", "routes/api.booking.reject.ts"),
     route("api/booking/release-escrow", "routes/api.booking.release-escrow.ts"),
+    route("api/booking/guest-cancel", "routes/api.booking.guest-cancel.ts"),
     route("api/actions/invest/:listingId", "routes/api.actions.invest.$listingId.ts"),
     route("api/actions/governance/:proposalId", "routes/api.actions.governance.$proposalId.ts"),
     route("api/webhooks/helius", "routes/api.webhooks.helius.ts"),
@@ -58,8 +59,14 @@ export default [
     route("search", "routes/search.tsx"),
     route("invest", "routes/invest.tsx"),
     route("invest/:listingId", "routes/invest.detail.tsx"),
+    layout("routes/my._layout.tsx", [
+        route("my/bookings",  "routes/my.bookings.tsx"),
+        route("my/payments",  "routes/my.payments.tsx"),
+        route("my/portfolio", "routes/my.portfolio.tsx"),
+    ]),
+    // 구 URL → 신 URL 리다이렉트
+    route("my-bookings",   "routes/my-bookings.tsx"),
     route("my-investments", "routes/my-investments.tsx"),
-    route("my-bookings", "routes/my-bookings.tsx"),
     route("host/bookings", "routes/host.bookings.tsx"),
     route("kyc", "routes/kyc.tsx"),
     route("governance", "routes/governance.tsx"),

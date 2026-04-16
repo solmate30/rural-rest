@@ -73,8 +73,8 @@ export default function AdminSettlements() {
                         >
                             {/* 썸네일 */}
                             <div className="w-12 h-12 rounded-xl overflow-hidden bg-stone-100 shrink-0">
-                                {(row.images as string[])[0] ? (
-                                    <img src={(row.images as string[])[0]} alt="" className="w-full h-full object-cover" />
+                                {(row.images as unknown as string[])?.[0] ? (
+                                    <img src={(row.images as unknown as string[])[0]} alt="" className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-stone-300 text-xs">
                                         없음
