@@ -34,11 +34,11 @@ export async function action({ request }: { request: Request }) {
     // operator는 자신이 담당하는 매물의 예약만 거절 가능
     if ((currentUser as any).role === "operator") {
         const [listing] = await db
-            .select({ operatorId: listings.operatorId })
+            .select({ hostId: listings.hostId })
             .from(listings)
             .where(eq(listings.id, booking.listingId));
 
-        if (!listing || listing.operatorId !== currentUser.id) {
+        if (!listing || listing.hostId !== currentUser.id) {
             return Response.json({ error: "담당 매물이 아닙니다" }, { status: 403 });
         }
     }

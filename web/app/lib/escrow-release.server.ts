@@ -119,7 +119,17 @@ export async function releaseBooking(bookingId: string): Promise<ReleaseResult> 
             })
             .rpc();
 
-        await db.update(bookings).set({ status: "completed" }).where(eq(bookings.id, bookingId));
+        // 온체인 CPI 성공 — USDC 이체 완료.
+        // DB 업데이트는 별도 try/catch: 여기서 실패해도 ok:true 반환해야 함.
+        // 이유: catch 블록이 ok:false → 크론 재시도 → 온체인 BookingNotPending 에러로 영구 루프.
+        try {
+            await db.update(bookings).set({ status: "completed" }).where(eq(bookings.id, bookingId));
+        } catch (dbErr: any) {
+            console.error(
+                `[release-booking] CRITICAL: tx=${tx} 성공이나 DB status 업데이트 실패. 수동 처리 필요. booking=${bookingId}`,
+                dbErr?.message ?? dbErr,
+            );
+        }
 
         console.info(`[release-booking] booking=${bookingId} tx=${tx}`);
         return { ok: true, tx };

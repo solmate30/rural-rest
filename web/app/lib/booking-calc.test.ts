@@ -21,6 +21,14 @@ describe("calcNights", () => {
     it("시간 차이가 정확히 24h 미만이어도 ceil로 1박 처리", () => {
         expect(calcNights("2026-05-01T14:00:00", "2026-05-02T11:00:00")).toBe(1);
     });
+
+    it("체크아웃 < 체크인 → 에러", () => {
+        expect(() => calcNights("2026-05-05", "2026-05-01")).toThrow("체크아웃은 체크인 이후여야 합니다");
+    });
+
+    it("같은 날짜 (0박) → 에러", () => {
+        expect(() => calcNights("2026-05-01", "2026-05-01")).toThrow("체크아웃은 체크인 이후여야 합니다");
+    });
 });
 
 // ──────────────────────────────────────────────
@@ -52,6 +60,14 @@ describe("calcPreviewUsdc", () => {
     it("커스텀 환율 적용", () => {
         // 1,400 KRW/USDC, 700,000 KRW → 500 USDC → 500,000,000 micro-USDC
         expect(calcPreviewUsdc(700_000, 1400)).toBe(500_000_000);
+    });
+
+    it("krwPerUsdc = 0 → 에러", () => {
+        expect(() => calcPreviewUsdc(100_000, 0)).toThrow("krwPerUsdc는 양수여야 합니다");
+    });
+
+    it("krwPerUsdc 음수 → 에러", () => {
+        expect(() => calcPreviewUsdc(100_000, -1350)).toThrow("krwPerUsdc는 양수여야 합니다");
     });
 });
 

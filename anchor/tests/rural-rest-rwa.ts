@@ -45,7 +45,10 @@ describe("rural-rest-rwa", () => {
 
   // 테스트 전용 Keypair: 실제 브라우저 지갑 대신 코드에서 생성한 지갑
   // authority = 매물 등록자 (운영자), investor = 투자자
-  const authority = Keypair.generate();
+  // provider.wallet.payer를 authority로 사용.
+  // rural-rest-dao.ts도 같은 키를 쓰므로, 두 테스트 파일이 같은 validator에서
+  // 순차 실행될 때 rwaConfig.authority가 항상 동일하게 유지된다.
+  const authority = (provider.wallet as any).payer as Keypair;
   const investor = Keypair.generate();
 
   // before()에서 생성할 가짜 USDC 민트 주소 (실제 mainnet USDC 불필요)
@@ -123,6 +126,28 @@ describe("rural-rest-rwa", () => {
   let investorPosition5: PublicKey;
   let fundingVault5: PublicKey;
   let usdcVault5: PublicKey;
+
+  // -------------------------------------------------------
+  // 시나리오 F: BookingEscrow (create / release / cancel / partial-cancel)
+  // 목표: 예약 에스크로 생성 및 취소 정책별 USDC 분배 검증
+  // -------------------------------------------------------
+  const bookingId  = "bkg-f001-0000-0000-000000000001"; // 32바이트 이하
+  const bookingId2 = "bkg-f002-0000-0000-000000000002";
+  const bookingId3 = "bkg-f003-0000-0000-000000000003";
+  const listingIdF = "gyeongju-f01";
+
+  let guest: Keypair;
+  let host: Keypair;
+  let guestUsdcAccount: PublicKey;
+  let hostUsdcAccount: PublicKey;
+  let bookingEscrowPda: PublicKey;
+  let bookingEscrowPda2: PublicKey;
+  let bookingEscrowPda3: PublicKey;
+  let escrowVault: PublicKey;
+  let escrowVault2: PublicKey;
+  let escrowVault3: PublicKey;
+  let propertyTokenF: PublicKey; // F 시나리오: host가 authority인 propertyToken PDA
+  const ESCROW_AMOUNT_KRW = new anchor.BN(100_000); // 10만원 → skip-oracle: 74 USDC(1350 KRW/USD)
 
   // ── before(): 모든 it() 테스트 실행 전 딱 1번 실행되는 전역 셋업 ──────────────
   before(async () => {
@@ -237,22 +262,93 @@ describe("rural-rest-rwa", () => {
     usdcVault5 = getAssociatedTokenAddressSync(usdcMint, propertyToken5, true, TOKEN_PROGRAM_ID);
     tokenMintKeypair5 = Keypair.generate();
 
+    // 시나리오 F: 게스트 / 호스트 계좌 셋업
+    guest = Keypair.generate();
+    host  = Keypair.generate();
+    await fundAccount(guest.publicKey, 0.5 * LAMPORTS_PER_SOL);
+    await fundAccount(host.publicKey,  1.0 * LAMPORTS_PER_SOL); // initializeProperty 렌트 비용 포함
+
+    guestUsdcAccount = await createAssociatedTokenAccount(
+      connection, guest, usdcMint, guest.publicKey
+    );
+    await mintTo(connection, authority, usdcMint, guestUsdcAccount, authority, 500_000_000); // 500 USDC
+
+    hostUsdcAccount = await createAssociatedTokenAccount(
+      connection, host, usdcMint, host.publicKey
+    );
+
+    // 예약 PDA 주소 사전 계산 (UUID 하이픈 제거 버전이 seed)
+    const bookingSeed  = Buffer.from(bookingId.replace(/-/g, ""));
+    const bookingSeed2 = Buffer.from(bookingId2.replace(/-/g, ""));
+    const bookingSeed3 = Buffer.from(bookingId3.replace(/-/g, ""));
+
+    [bookingEscrowPda]  = PublicKey.findProgramAddressSync([Buffer.from("booking_escrow"), bookingSeed],  program.programId);
+    [bookingEscrowPda2] = PublicKey.findProgramAddressSync([Buffer.from("booking_escrow"), bookingSeed2], program.programId);
+    [bookingEscrowPda3] = PublicKey.findProgramAddressSync([Buffer.from("booking_escrow"), bookingSeed3], program.programId);
+
+    escrowVault  = getAssociatedTokenAddressSync(usdcMint, bookingEscrowPda,  true, TOKEN_PROGRAM_ID);
+    escrowVault2 = getAssociatedTokenAddressSync(usdcMint, bookingEscrowPda2, true, TOKEN_PROGRAM_ID);
+    escrowVault3 = getAssociatedTokenAddressSync(usdcMint, bookingEscrowPda3, true, TOKEN_PROGRAM_ID);
+
+    // 시나리오 F: propertyTokenF 초기화 (host를 authority로 사용)
+    // create_booking_escrow가 property_token 계좌를 요구하므로 사전에 초기화 필요.
+    // host = authority → booking_escrow.host = host.publicKey → F-3의 host_usdc.owner 검증 통과
+    const tokenMintKeypairF = Keypair.generate();
+    [propertyTokenF] = PublicKey.findProgramAddressSync(
+      [Buffer.from("property"), Buffer.from(listingIdF)], program.programId
+    );
+    const [fundingVaultF] = PublicKey.findProgramAddressSync(
+      [Buffer.from("funding_vault"), Buffer.from(listingIdF)], program.programId
+    );
+    const usdcVaultF = getAssociatedTokenAddressSync(usdcMint, propertyTokenF, true, TOKEN_PROGRAM_ID);
+    const deadlineF = new anchor.BN(Math.floor(Date.now() / 1000) + 30 * 24 * 3600);
+    try {
+      await program.methods
+        .initializeProperty(listingIdF, new anchor.BN(10), VALUATION_KRW, PRICE_PER_TOKEN, deadlineF, MIN_FUNDING_BPS)
+        .accounts({
+          authority: host.publicKey,
+          propertyToken: propertyTokenF,
+          tokenMint: tokenMintKeypairF.publicKey,
+          fundingVault: fundingVaultF,
+          usdcVault: usdcVaultF,
+          usdcMint,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([host, tokenMintKeypairF])
+        .rpc();
+    } catch (err: any) {
+      // "already in use" → 이전 테스트 실행에서 생성된 계좌. 무시.
+      if (!err.toString().includes("already in use") && !err.toString().includes("0x0")) {
+        throw err;
+      }
+    }
+
     // RwaConfig PDA
     [rwaConfig] = PublicKey.findProgramAddressSync(
       [Buffer.from("rwa_config")],
       program.programId
     );
 
-    // RwaConfig 초기화
-    await program.methods
-      .initializeConfig()
-      .accounts({
-        authority: authority.publicKey,
-        rwaConfig,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      })
-      .signers([authority])
-      .rpc();
+    // RwaConfig 초기화 (멱등: 이미 존재하면 스킵)
+    try {
+      await program.methods
+        .initializeConfig()
+        .accounts({
+          authority: authority.publicKey,
+          rwaConfig,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([authority])
+        .rpc();
+    } catch (err: any) {
+      // "already in use" → 이전 테스트 실행에서 생성된 계좌. 무시.
+      if (!err.toString().includes("already in use") && !err.toString().includes("0x0")) {
+        throw err;
+      }
+    }
   });
 
   // -------------------------------------------------------
@@ -1505,6 +1601,55 @@ describe("rural-rest-rwa", () => {
     console.log("    수령:", received / 1_000_000, "USDC, status = Funded, fundsReleased = true");
   });
 
+  // -------------------------------------------------------
+  // 35. NonTransferable — RWA 토큰 전송 차단 확인
+  // -------------------------------------------------------
+  it("35. NonTransferable — RWA 토큰 다른 지갑으로 전송 시도 → 실패", async () => {
+    // investor가 gyeongju-004에서 1토큰 보유 중 (테스트 27에서 구매)
+    // 새 지갑에 ATA를 만들고 전송 시도 → NonTransferable 에러 확인
+    const recipient = Keypair.generate();
+    await fundAccount(recipient.publicKey, 0.1 * LAMPORTS_PER_SOL);
+
+    const { createAssociatedTokenAccountInstruction } = await import("@solana/spl-token");
+    const recipientRwa = getAssociatedTokenAddressSync(
+      tokenMintKeypair4.publicKey, recipient.publicKey, false, TOKEN_2022_PROGRAM_ID
+    );
+
+    // 수신자 ATA 생성
+    const createAtaIx = createAssociatedTokenAccountInstruction(
+      investor.publicKey,
+      recipientRwa,
+      recipient.publicKey,
+      tokenMintKeypair4.publicKey,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const { createTransferCheckedInstruction } = await import("@solana/spl-token");
+    const investorRwa4 = getAssociatedTokenAddressSync(
+      tokenMintKeypair4.publicKey, investor.publicKey, false, TOKEN_2022_PROGRAM_ID
+    );
+    const transferIx = createTransferCheckedInstruction(
+      investorRwa4,
+      tokenMintKeypair4.publicKey,
+      recipientRwa,
+      investor.publicKey,
+      1,  // 1토큰
+      0,  // decimals
+      [],
+      TOKEN_2022_PROGRAM_ID,
+    );
+
+    const tx = new anchor.web3.Transaction().add(createAtaIx, transferIx);
+    try {
+      await provider.sendAndConfirm(tx, [investor]);
+      assert.fail("NonTransferable 토큰 전송이 성공하면 안 됨");
+    } catch (err: any) {
+      // Token-2022 NonTransferable extension에 의해 전송 시뮬레이션 실패
+      assert.include(err.toString(), "Simulation failed");
+      console.log("    NonTransferable 전송 차단 정상 확인");
+    }
+  });
+
   // ===============================================================
   // Crank Authority 테스트
   // ===============================================================
@@ -1540,7 +1685,14 @@ describe("rural-rest-rwa", () => {
         .rpc();
       assert.fail("비권한자가 crank 설정에 성공하면 안 됨");
     } catch (e: any) {
-      assert.ok(e.toString());
+      // rwaConfig.authority != investor → has_one constraint 실패
+      // Anchor ConstraintHasOne = 2000, 또는 커스텀 Unauthorized 에러
+      assert.isTrue(
+        e.toString().includes("Unauthorized") ||
+        e.toString().includes("ConstraintHasOne") ||
+        e.toString().includes("2000"),
+        `예상치 못한 에러: ${e.toString()}`
+      );
       console.log("    비권한자 crank 설정 차단 확인");
     }
   });
@@ -1735,58 +1887,240 @@ describe("rural-rest-rwa", () => {
         .rpc();
       assert.fail("crank으로 distribute가 성공하면 안 됨");
     } catch (e: any) {
-      // has_one = authority constraint 실패
-      assert.ok(e.toString());
+      // propertyToken.authority != crankKeypair → has_one = authority constraint 실패
+      // Anchor ConstraintHasOne = 2000
+      assert.isTrue(
+        e.toString().includes("ConstraintHasOne") ||
+        e.toString().includes("2000") ||
+        e.toString().includes("has_one"),
+        `예상치 못한 에러: ${e.toString()}`
+      );
       console.log("    crank distribute_monthly_revenue 차단 확인");
     }
   });
 
-  // -------------------------------------------------------
-  // 35. NonTransferable — RWA 토큰 전송 차단 확인
-  // -------------------------------------------------------
-  it("35. NonTransferable — RWA 토큰 다른 지갑으로 전송 시도 → 실패", async () => {
-    // investor가 gyeongju-004에서 1토큰 보유 중 (테스트 27에서 구매)
-    // 새 지갑에 ATA를 만들고 전송 시도 → NonTransferable 에러 확인
-    const recipient = Keypair.generate();
-    await fundAccount(recipient.publicKey, 0.1 * LAMPORTS_PER_SOL);
+  // ═══════════════════════════════════════════════════════════
+  // 시나리오 F: BookingEscrow — 예약 에스크로 생성 및 취소 정책
+  // ═══════════════════════════════════════════════════════════
 
-    const { createAssociatedTokenAccountInstruction } = await import("@solana/spl-token");
-    const recipientRwa = getAssociatedTokenAddressSync(
-      tokenMintKeypair4.publicKey, recipient.publicKey, false, TOKEN_2022_PROGRAM_ID
-    );
+  it("F-1. create_booking_escrow — 게스트 USDC → 에스크로 볼트 이체", async () => {
+    const guestBefore = BigInt((await connection.getTokenAccountBalance(guestUsdcAccount)).value.amount);
 
-    // 수신자 ATA 생성
-    const createAtaIx = createAssociatedTokenAccountInstruction(
-      investor.publicKey,
-      recipientRwa,
-      recipient.publicKey,
-      tokenMintKeypair4.publicKey,
-      TOKEN_2022_PROGRAM_ID,
-    );
+    const checkIn  = new anchor.BN(Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 10); // 10일 후
+    const checkOut = new anchor.BN(Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 12); // 12일 후
 
-    const { createTransferCheckedInstruction } = await import("@solana/spl-token");
-    const investorRwa4 = getAssociatedTokenAddressSync(
-      tokenMintKeypair4.publicKey, investor.publicKey, false, TOKEN_2022_PROGRAM_ID
-    );
-    const transferIx = createTransferCheckedInstruction(
-      investorRwa4,
-      tokenMintKeypair4.publicKey,
-      recipientRwa,
-      investor.publicKey,
-      1,  // 1토큰
-      0,  // decimals
-      [],
-      TOKEN_2022_PROGRAM_ID,
-    );
+    await (program.methods as any)
+      .createBookingEscrow(listingIdF, bookingId.replace(/-/g, ""), ESCROW_AMOUNT_KRW, checkIn, checkOut)
+      .accounts({
+        guest: guest.publicKey,
+        guestUsdc: guestUsdcAccount,
+        bookingEscrow: bookingEscrowPda,
+        escrowVault,
+        usdcMint,
+        // skip-oracle 모드에서도 IDL이 계좌를 요구 → 더미 pubkey 전달 (검증 우회됨)
+        pythPriceFeed: anchor.web3.SystemProgram.programId,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([guest])
+      .rpc();
 
-    const tx = new anchor.web3.Transaction().add(createAtaIx, transferIx);
+    const guestAfter = BigInt((await connection.getTokenAccountBalance(guestUsdcAccount)).value.amount);
+    const vaultAfter = BigInt((await connection.getTokenAccountBalance(escrowVault)).value.amount);
+
+    // 게스트 잔액 감소, 에스크로 볼트 증가
+    assert.isTrue(guestBefore > guestAfter, "게스트 USDC 감소 확인");
+    assert.isTrue(vaultAfter > 0n, "에스크로 볼트에 USDC 입금 확인");
+    // skip-oracle: 100_000 KRW / 1350 = 74.07 USDC → 74_074_074 micro-USDC (floor)
+    assert.equal(vaultAfter, 74_074_074n, "74,074,074 micro-USDC (floor)");
+
+    const escrowAccount = await (program.account as any).bookingEscrow.fetch(bookingEscrowPda);
+    assert.equal(escrowAccount.status.pending !== undefined, true, "status = Pending");
+    assert.equal(escrowAccount.guest.toBase58(), guest.publicKey.toBase58());
+    console.log("    에스크로 생성 완료, 볼트 잔액:", vaultAfter.toString(), "micro-USDC");
+  });
+
+  it("F-2. cancel_booking_escrow — 100% 환불 (체크인 전, 게스트 본인 호출)", async () => {
+    // F-1과 별개의 bookingId2 사용
+    const checkIn  = new anchor.BN(Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 14); // 14일 후
+    const checkOut = new anchor.BN(Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 16);
+
+    await (program.methods as any)
+      .createBookingEscrow(listingIdF, bookingId2.replace(/-/g, ""), ESCROW_AMOUNT_KRW, checkIn, checkOut)
+      .accounts({
+        guest: guest.publicKey,
+        guestUsdc: guestUsdcAccount,
+        bookingEscrow: bookingEscrowPda2,
+        escrowVault: escrowVault2,
+        usdcMint,
+        pythPriceFeed: anchor.web3.SystemProgram.programId,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([guest])
+      .rpc();
+
+    const guestBefore = BigInt((await connection.getTokenAccountBalance(guestUsdcAccount)).value.amount);
+    const vaultBefore = BigInt((await connection.getTokenAccountBalance(escrowVault2)).value.amount);
+
+    // 게스트 본인이 취소 (체크인 전이므로 허용)
+    await (program.methods as any)
+      .cancelBookingEscrow(bookingId2.replace(/-/g, ""))
+      .accounts({
+        caller: guest.publicKey,
+        bookingEscrow: bookingEscrowPda2,
+        escrowVault: escrowVault2,
+        guestUsdc: guestUsdcAccount,
+        rwaConfig,
+        usdcMint,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([guest])
+      .rpc();
+
+    const guestAfter = BigInt((await connection.getTokenAccountBalance(guestUsdcAccount)).value.amount);
+    const refunded = guestAfter - guestBefore;
+
+    assert.equal(refunded, vaultBefore, "100% 환불 확인: 볼트 전액 반환");
+
+    const escrowAccount = await (program.account as any).bookingEscrow.fetch(bookingEscrowPda2);
+    assert.equal(escrowAccount.status.refunded !== undefined, true, "status = Refunded");
+    console.log("    100% 환불 완료, 환불액:", refunded.toString(), "micro-USDC");
+  });
+
+  it("F-3. cancel_booking_escrow_partial — 50% 게스트, 50% 호스트 분배", async () => {
+    // F-1의 bookingEscrowPda 재사용 (이미 생성됨, status=Pending)
+    const vaultBefore = BigInt((await connection.getTokenAccountBalance(escrowVault)).value.amount);
+    const guestBefore = BigInt((await connection.getTokenAccountBalance(guestUsdcAccount)).value.amount);
+
+    // authority(crank)가 50% 부분 취소 호출
+    await (program.methods as any)
+      .cancelBookingEscrowPartial(bookingId.replace(/-/g, ""), 5000)
+      .accounts({
+        caller: authority.publicKey,
+        bookingEscrow: bookingEscrowPda,
+        escrowVault,
+        guestUsdc: guestUsdcAccount,
+        hostUsdc: hostUsdcAccount,
+        rwaConfig,
+        usdcMint,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([authority])
+      .rpc();
+
+    const guestAfter = BigInt((await connection.getTokenAccountBalance(guestUsdcAccount)).value.amount);
+    const hostAfter  = BigInt((await connection.getTokenAccountBalance(hostUsdcAccount)).value.amount);
+
+    const guestReceived = guestAfter - guestBefore;
+    const hostReceived  = hostAfter;
+
+    // 게스트 50% + 호스트 50% = 볼트 전액
+    assert.equal(guestReceived + hostReceived, vaultBefore, "총합 = 볼트 전액");
+    // 각각 50% (floor 기준으로 1 차이 허용)
+    const diff = guestReceived > hostReceived ? guestReceived - hostReceived : hostReceived - guestReceived;
+    assert.isTrue(diff <= 1n, "게스트/호스트 각 50% (±1 micro-USDC 오차 허용)");
+
+    const escrowAccount = await (program.account as any).bookingEscrow.fetch(bookingEscrowPda);
+    assert.equal(escrowAccount.status.refunded !== undefined, true, "status = Refunded");
+    console.log(`    50% 분배 — 게스트: ${guestReceived}, 호스트: ${hostReceived} micro-USDC`);
+  });
+
+  it("F-4. cancel_booking_escrow_partial — bps=0 → InvalidRefundBps 에러", async () => {
+    // bookingId3 새로 생성
+    const checkIn  = new anchor.BN(Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 5);
+    const checkOut = new anchor.BN(Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7);
+
+    await (program.methods as any)
+      .createBookingEscrow(listingIdF, bookingId3.replace(/-/g, ""), ESCROW_AMOUNT_KRW, checkIn, checkOut)
+      .accounts({
+        guest: guest.publicKey,
+        guestUsdc: guestUsdcAccount,
+        bookingEscrow: bookingEscrowPda3,
+        escrowVault: escrowVault3,
+        usdcMint,
+        pythPriceFeed: anchor.web3.SystemProgram.programId,
+        usdcTokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([guest])
+      .rpc();
+
     try {
-      await provider.sendAndConfirm(tx, [investor]);
-      assert.fail("NonTransferable 토큰 전송이 성공하면 안 됨");
+      await (program.methods as any)
+        .cancelBookingEscrowPartial(bookingId3.replace(/-/g, ""), 0) // bps=0 → 에러
+        .accounts({
+          caller: authority.publicKey,
+          bookingEscrow: bookingEscrowPda3,
+          escrowVault: escrowVault3,
+          guestUsdc: guestUsdcAccount,
+          hostUsdc: hostUsdcAccount,
+          rwaConfig,
+          usdcMint,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([authority])
+        .rpc();
+      assert.fail("bps=0 시 에러가 발생해야 함");
     } catch (err: any) {
-      // Token-2022 NonTransferable extension에 의해 전송 시뮬레이션 실패
-      assert.include(err.toString(), "Simulation failed");
-      console.log("    NonTransferable 전송 차단 정상 확인");
+      assert.include(err.toString(), "InvalidRefundBps");
+      console.log("    bps=0 → InvalidRefundBps 정상 차단");
+    }
+  });
+
+  it("F-5. cancel_booking_escrow_partial — bps=10000 → InvalidRefundBps 에러", async () => {
+    try {
+      await (program.methods as any)
+        .cancelBookingEscrowPartial(bookingId3.replace(/-/g, ""), 10000) // bps=10000 → 에러
+        .accounts({
+          caller: authority.publicKey,
+          bookingEscrow: bookingEscrowPda3,
+          escrowVault: escrowVault3,
+          guestUsdc: guestUsdcAccount,
+          hostUsdc: hostUsdcAccount,
+          rwaConfig,
+          usdcMint,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([authority])
+        .rpc();
+      assert.fail("bps=10000 시 에러가 발생해야 함");
+    } catch (err: any) {
+      assert.include(err.toString(), "InvalidRefundBps");
+      console.log("    bps=10000 → InvalidRefundBps 정상 차단");
+    }
+  });
+
+  it("F-6. cancel_booking_escrow_partial — 비권한자 호출 → 에러", async () => {
+    const stranger = Keypair.generate();
+    await fundAccount(stranger.publicKey, 0.1 * LAMPORTS_PER_SOL);
+
+    try {
+      await (program.methods as any)
+        .cancelBookingEscrowPartial(bookingId3.replace(/-/g, ""), 5000)
+        .accounts({
+          caller: stranger.publicKey,
+          bookingEscrow: bookingEscrowPda3,
+          escrowVault: escrowVault3,
+          guestUsdc: guestUsdcAccount,
+          hostUsdc: hostUsdcAccount,
+          rwaConfig,
+          usdcMint,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([stranger])
+        .rpc();
+      assert.fail("비권한자 호출이 성공하면 안 됨");
+    } catch (err: any) {
+      // Anchor constraint 또는 Unauthorized 에러
+      assert.isTrue(
+        err.toString().includes("Unauthorized") || err.toString().includes("ConstraintRaw") || err.toString().includes("2003"),
+        "비권한자 접근 차단 확인"
+      );
+      console.log("    비권한자 → 접근 차단 정상 확인");
     }
   });
 });

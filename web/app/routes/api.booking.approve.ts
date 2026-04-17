@@ -57,13 +57,22 @@ export async function action({ request }: { request: Request }) {
         }
     }
 
-    await db.update(bookings)
-        .set({
-            status: "confirmed",
-            ...(platformFeeKrw !== null && { platformFeeKrw }),
-            ...(paypalCaptureId !== null && { paypalCaptureId }),
-        })
-        .where(eq(bookings.id, bookingId));
+    // PayPal capture 성공 후 DB 업데이트는 별도 try/catch.
+    // DB 실패 시 capture는 이미 완료됐으므로 ok:true 반환해야 재승인 시 PayPal 이중 capture 시도를 막는다.
+    try {
+        await db.update(bookings)
+            .set({
+                status: "confirmed",
+                ...(platformFeeKrw !== null && { platformFeeKrw }),
+                ...(paypalCaptureId !== null && { paypalCaptureId }),
+            })
+            .where(eq(bookings.id, bookingId));
+    } catch (dbErr: any) {
+        console.error(
+            `[approve] CRITICAL: paypalCaptureId=${paypalCaptureId} 성공이나 DB status 업데이트 실패. 수동 처리 필요. booking=${bookingId}`,
+            dbErr?.message ?? dbErr,
+        );
+    }
 
     return Response.json({ ok: true });
 }

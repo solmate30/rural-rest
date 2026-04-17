@@ -8,7 +8,9 @@
 export function calcNights(checkIn: string | Date, checkOut: string | Date): number {
     const inMs  = new Date(checkIn).getTime();
     const outMs = new Date(checkOut).getTime();
-    return Math.ceil((outMs - inMs) / (1000 * 60 * 60 * 24));
+    const nights = Math.ceil((outMs - inMs) / (1000 * 60 * 60 * 24));
+    if (nights <= 0) throw new Error("체크아웃은 체크인 이후여야 합니다");
+    return nights;
 }
 
 /** 총 숙박료 (KRW) */
@@ -24,6 +26,7 @@ export function calcTotalPrice(pricePerNight: number, nights: number): number {
  * @returns micro-USDC (소수점 6자리, e.g. 1000 USDC = 1_000_000_000)
  */
 export function calcPreviewUsdc(totalKrw: number, krwPerUsdc = 1350): number {
+    if (krwPerUsdc <= 0) throw new Error("krwPerUsdc는 양수여야 합니다");
     return Math.round((totalKrw / krwPerUsdc) * 1_000_000);
 }
 

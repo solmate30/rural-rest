@@ -19,6 +19,11 @@ export async function translateText(
     text: string,
     targetLang: string,
 ): Promise<{ translated: string; success: boolean }> {
+    if (!process.env.DEEPL_API_KEY) {
+        console.error("[translation] DEEPL_API_KEY 환경변수 미설정 — 번역 비활성화");
+        return { translated: text, success: false };
+    }
+
     const targetCode = LANG_CODES[targetLang] ?? targetLang.toUpperCase();
 
     try {

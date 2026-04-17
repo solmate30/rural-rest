@@ -11,8 +11,12 @@ import { releaseBooking } from "~/lib/escrow-release.server";
  * Authorization: Bearer <CRON_SECRET> 헤더로 인증
  */
 export async function loader({ request }: { request: Request }) {
+    if (!process.env.CRON_SECRET) {
+        console.error("[cron/release-escrow] CRON_SECRET 환경변수 미설정");
+        return Response.json({ error: "서버 설정 오류" }, { status: 500 });
+    }
     const auth = request.headers.get("authorization");
-    if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 

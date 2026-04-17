@@ -3,6 +3,7 @@ import { db } from "~/db/index.server";
 import { bookings, listings, user as userTable } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import { refundPayPalCapture } from "~/lib/paypal.server";
+import { calcRefundBps } from "~/lib/refund-policy";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import {
@@ -64,8 +65,7 @@ export async function action({ request }: { request: Request }) {
 
     // 취소 정책: 체크인까지 남은 일수로 환불율 결정
     const now = new Date();
-    const daysUntilCheckIn = (booking.checkIn.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-    const refundBps = daysUntilCheckIn >= 7 ? 10000 : daysUntilCheckIn >= 3 ? 5000 : 0;
+    const refundBps = calcRefundBps(booking.checkIn, now);
 
     // USDC 에스크로 처리
     if (booking.escrowPda) {
