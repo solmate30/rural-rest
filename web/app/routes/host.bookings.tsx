@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Link, useLoaderData } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Header } from "../components/ui-mockup";
 import { requireUser } from "../lib/auth.server";
 import { db } from "../db/index.server";
 import { bookings, listings, user as userTable } from "../db/schema";
-import { eq, inArray, or } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import type { Route } from "./+types/host.bookings";
 import { fmtKrw } from "~/lib/formatters";
 import { cn } from "~/lib/utils";
@@ -28,16 +27,10 @@ import {
 export async function loader({ request }: Route.LoaderArgs) {
     const user = await requireUser(request, ["spv", "operator", "admin"]);
 
-    // operator는 operatorId로, host는 hostId로 매물 조회 (admin은 둘 다)
     const hostListings = await db
         .select({ id: listings.id, title: listings.title })
         .from(listings)
-        .where(
-            or(
-                eq(listings.hostId, user.id),
-                eq(listings.operatorId, user.id)
-            )
-        );
+        .where(eq(listings.hostId, user.id));
 
     if (hostListings.length === 0) {
         return {
@@ -110,8 +103,10 @@ function BookingTable({
     onApprove,
     onReject,
     onComplete,
+    onCancelConfirmed,
     actionStates,
     completeStates,
+    cancelConfirmedStates,
 }: {
     rows: BookingRow[];
     listingMap: Record<string, string>;
@@ -120,8 +115,10 @@ function BookingTable({
     onApprove?: (id: string) => void;
     onReject?: (id: string) => void;
     onComplete?: (id: string) => void;
+    onCancelConfirmed?: (id: string) => void;
     actionStates?: Record<string, "idle" | "loading" | "error">;
     completeStates?: Record<string, "idle" | "loading" | "error">;
+    cancelConfirmedStates?: Record<string, "idle" | "loading" | "error">;
 }) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { t, i18n } = useTranslation("host") as any;
@@ -146,13 +143,13 @@ function BookingTable({
             <TableHeader>
                 <TableRow className="border-stone-100">
                     <TableHead className="pl-6">{t("bookings.colGuest")}</TableHead>
-                    <TableHead>{t("bookings.colProperty")}</TableHead>
-                    <TableHead>{t("bookings.colDates")}</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t("bookings.colProperty")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("bookings.colDates")}</TableHead>
                     <TableHead className="text-right">{t("bookings.colAmount")}</TableHead>
-                    <TableHead>{t("bookings.colMethod")}</TableHead>
+                    <TableHead className="hidden lg:table-cell">{t("bookings.colMethod")}</TableHead>
                     {(showActions || showComplete)
                         ? <TableHead className="text-right pr-6">{t("bookings.colActions")}</TableHead>
-                        : <TableHead>{t("bookings.colStatus")}</TableHead>
+                        : <TableHead className="hidden sm:table-cell">{t("bookings.colStatus")}</TableHead>
                     }
                 </TableRow>
             </TableHeader>
@@ -162,6 +159,8 @@ function BookingTable({
                     const isLoading = state === "loading";
                     const cState = completeStates?.[b.id] ?? "idle";
                     const isCompleting = cState === "loading";
+                    const ccState = cancelConfirmedStates?.[b.id] ?? "idle";
+                    const isCancellingConfirmed = ccState === "loading";
                     const payMethod = b.paymentIntentId ? "card" : "usdc";
                     const isCheckedOut = b.checkOut != null && new Date(b.checkOut) < new Date();
 
@@ -170,9 +169,13 @@ function BookingTable({
                         <TableRow key={`row-${b.id}`} className="border-stone-100">
                             <TableCell className="pl-6">
                                 <p className="text-sm font-semibold text-[#4a3b2c]">{b.guestName}</p>
-                                <p className="text-xs text-stone-400">{b.guestEmail}</p>
+                                <p className="text-xs text-stone-400 truncate max-w-[120px]">{b.guestEmail}</p>
+                                {/* 모바일에서만 숙소명 인라인 표시 */}
+                                <p className="text-xs text-stone-400 mt-0.5 sm:hidden">
+                                    {listingMap[b.listingId] ?? b.listingId}
+                                </p>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden sm:table-cell">
                                 <Link
                                     to={`/property/${b.listingId}`}
                                     className="text-sm text-[#4a3b2c] hover:underline font-medium"
@@ -180,17 +183,17 @@ function BookingTable({
                                     {listingMap[b.listingId] ?? b.listingId}
                                 </Link>
                             </TableCell>
-                            <TableCell>
-                                <span className="text-sm text-stone-600">
+                            <TableCell className="hidden md:table-cell">
+                                <span className="text-sm text-stone-600 whitespace-nowrap">
                                     {fmtDay(b.checkIn)} — {fmtDay(b.checkOut)}
                                 </span>
                             </TableCell>
                             <TableCell className="text-right">
-                                <span className="text-sm font-semibold text-[#4a3b2c]">
+                                <span className="text-sm font-semibold text-[#4a3b2c] whitespace-nowrap">
                                     {fmtKrw(b.totalPrice)}
                                 </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden lg:table-cell">
                                 <Badge
                                     variant="outline"
                                     className={cn(
@@ -208,14 +211,14 @@ function BookingTable({
                                     {state === "error" ? (
                                         <span className="text-xs text-red-500">{t("bookings.actionError")}</span>
                                     ) : (
-                                        <div className="flex items-center justify-end gap-2">
+                                        <div className="flex items-center justify-end gap-1.5">
                                             <Button
                                                 size="sm"
                                                 variant="success"
                                                 disabled={isLoading}
                                                 onClick={() => onApprove?.(b.id)}
                                             >
-                                                {isLoading ? t("bookings.processing") : t("bookings.approve")}
+                                                {isLoading ? "…" : t("bookings.approve")}
                                             </Button>
                                             <Button
                                                 size="sm"
@@ -233,36 +236,49 @@ function BookingTable({
                                 <TableCell className="text-right pr-6">
                                     <div className="flex items-center justify-end gap-2">
                                         <Link
-                                            to={`/my/messages/${b.id}`}
+                                            to={`/admin/messages/${b.id}`}
                                             className="flex items-center gap-1 text-xs text-stone-400 hover:text-[#4a3b2c] transition-colors"
                                         >
                                             <span className="material-symbols-outlined text-[14px]">chat_bubble</span>
-                                            메시지
+                                            <span className="hidden sm:inline">메시지</span>
                                         </Link>
-                                        {cState === "error" ? (
+                                        {cState === "error" || ccState === "error" ? (
                                             <span className="text-xs text-red-500">{t("bookings.actionError")}</span>
-                                        ) : isCheckedOut ? (
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="border-emerald-200 text-emerald-600 hover:bg-emerald-50"
-                                                disabled={isCompleting}
-                                                onClick={() => onComplete?.(b.id)}
-                                            >
-                                                {isCompleting ? t("bookings.processing") : t("bookings.complete")}
-                                            </Button>
                                         ) : (
-                                            <Badge
-                                                variant="outline"
-                                                className={cn("text-xs rounded-full", statusBadge[b.status] ?? "")}
-                                            >
-                                                {t(`bookings.status.${b.status}`)}
-                                            </Badge>
+                                            <>
+                                                {isCheckedOut ? (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                                                        disabled={isCompleting}
+                                                        onClick={() => onComplete?.(b.id)}
+                                                    >
+                                                        {isCompleting ? "…" : t("bookings.complete")}
+                                                    </Button>
+                                                ) : (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={cn("text-xs rounded-full", statusBadge[b.status] ?? "")}
+                                                    >
+                                                        {t(`bookings.status.${b.status}`)}
+                                                    </Badge>
+                                                )}
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="border-red-200 text-red-500 hover:bg-red-50"
+                                                    disabled={isCancellingConfirmed}
+                                                    onClick={() => onCancelConfirmed?.(b.id)}
+                                                >
+                                                    {isCancellingConfirmed ? "…" : "취소"}
+                                                </Button>
+                                            </>
                                         )}
                                     </div>
                                 </TableCell>
                             ) : (
-                                <TableCell>
+                                <TableCell className="hidden sm:table-cell">
                                     <Badge
                                         variant="outline"
                                         className={cn("text-xs rounded-full", statusBadge[b.status] ?? "")}
@@ -294,6 +310,7 @@ export default function HostBookings() {
     const [confirmed, setConfirmed] = useState(bookingsByStatus.confirmed);
     const [actionStates, setActionStates] = useState<Record<string, "idle" | "loading" | "error">>({});
     const [completeStates, setCompleteStates] = useState<Record<string, "idle" | "loading" | "error">>({});
+    const [cancelConfirmedStates, setCancelConfirmedStates] = useState<Record<string, "idle" | "loading" | "error">>({});
 
     async function handleApprove(bookingId: string) {
         setActionStates((s) => ({ ...s, [bookingId]: "loading" }));
@@ -325,6 +342,22 @@ export default function HostBookings() {
         }
     }
 
+    async function handleCancelConfirmed(bookingId: string) {
+        if (!confirm("확정된 예약을 취소하시겠습니까? 취소 정책에 따라 환불이 처리됩니다.")) return;
+        setCancelConfirmedStates((s) => ({ ...s, [bookingId]: "loading" }));
+        const res = await fetch("/api/booking/cancel-confirmed", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ bookingId }),
+        });
+        if (res.ok) {
+            setConfirmed((l) => l.filter((b) => b.id !== bookingId));
+            setCancelConfirmedStates((s) => { const n = { ...s }; delete n[bookingId]; return n; });
+        } else {
+            setCancelConfirmedStates((s) => ({ ...s, [bookingId]: "error" }));
+        }
+    }
+
     async function handleReject(bookingId: string) {
         setActionStates((s) => ({ ...s, [bookingId]: "loading" }));
         const res = await fetch("/api/booking/reject", {
@@ -349,18 +382,13 @@ export default function HostBookings() {
     const historyRows = [...bookingsByStatus.cancelled, ...bookingsByStatus.completed];
 
     return (
-        <div className="min-h-screen bg-[#fcfaf7] font-sans">
-            <Header />
-            <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8 max-w-5xl">
+        <div>
                 {/* 헤더 */}
                 <div className="flex items-end justify-between mb-8">
                     <div>
                         <h1 className="text-2xl font-bold text-[#4a3b2c]">{t("bookings.title")}</h1>
                         <p className="text-sm text-stone-400 mt-1">{t("bookings.subtitle")}</p>
                     </div>
-                    <Button variant="outline" size="sm" asChild>
-                        <Link to="/host/edit/new">{t("bookings.newListing")}</Link>
-                    </Button>
                 </div>
 
                 {/* 탭 네비게이션 */}
@@ -415,6 +443,8 @@ export default function HostBookings() {
                                 showComplete
                                 onComplete={handleComplete}
                                 completeStates={completeStates}
+                                onCancelConfirmed={handleCancelConfirmed}
+                                cancelConfirmedStates={cancelConfirmedStates}
                             />
                         </CardContent>
                     )}
@@ -427,7 +457,6 @@ export default function HostBookings() {
                         </CardContent>
                     )}
                 </Card>
-            </main>
         </div>
     );
 }

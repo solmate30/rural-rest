@@ -235,6 +235,159 @@
       ]
     },
     {
+      "name": "cancel_booking_escrow_partial",
+      "discriminator": [
+        17,
+        129,
+        43,
+        56,
+        131,
+        146,
+        77,
+        226
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "booking_escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  111,
+                  107,
+                  105,
+                  110,
+                  103,
+                  95,
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "booking_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "escrow_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "booking_escrow"
+              },
+              {
+                "kind": "account",
+                "path": "usdc_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "usdc_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "guest_usdc",
+          "writable": true
+        },
+        {
+          "name": "host_usdc",
+          "writable": true
+        },
+        {
+          "name": "rwa_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  119,
+                  97,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "usdc_mint"
+        },
+        {
+          "name": "usdc_token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "booking_id",
+          "type": "string"
+        },
+        {
+          "name": "guest_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
       "name": "cancel_position",
       "discriminator": [
         238,
@@ -2038,6 +2191,11 @@
       "code": 6024,
       "name": "CheckInNotPassed",
       "msg": "Check-in time has not passed yet; cannot release escrow."
+    },
+    {
+      "code": 6025,
+      "name": "InvalidRefundBps",
+      "msg": "guest_bps must be between 1 and 9999."
     }
   ],
   "types": [

@@ -58,8 +58,8 @@ export const verification = sqliteTable("verification", {
 
 export const listings = sqliteTable("listings", {
     id: text("id").primaryKey(), // UUID v4
-    hostId: text("host_id").notNull().references(() => user.id), // SPV 계정 (법적 주체)
-    operatorId: text("operator_id").references(() => user.id),   // 마을 운영자 계정 (실제 운영·정산)
+    nodeNumber: integer("node_number").unique(), // localhost://3000 형태의 노드 번호 (자동 채번)
+    hostId: text("host_id").notNull().references(() => user.id), // 마을 운영자 계정 (실제 운영·정산)
     title: text("title").notNull(),
     description: text("description").notNull(),
     pricePerNight: integer("price_per_night").notNull(), // Stored in KRW/USD base unit (e.g., Won)
@@ -71,6 +71,8 @@ export const listings = sqliteTable("listings", {
     images: text("images", { mode: "json" }).notNull().default("[]"), // Array of URLs
     lat: real("lat"),  // GPS 위도 (nullable)
     lng: real("lng"),  // GPS 경도 (nullable)
+    titleEn: text("title_en"),              // 영어 제목 (DeepL 자동 번역)
+    descriptionEn: text("description_en"), // 영어 설명 (DeepL 자동 번역)
     renovationHistory: text("renovation_history", { mode: "json" }).default("[]"), // [{ date: "2025.06", desc: "..." }]
     transportSupport: integer("transport_support", { mode: "boolean" }).notNull().default(false),
     smartLockEnabled: integer("smart_lock_enabled", { mode: "boolean" }).notNull().default(false),
@@ -90,6 +92,7 @@ export const bookings = sqliteTable("bookings", {
     status: text("status", { enum: ["pending", "confirmed", "cancelled", "completed"] }).notNull().default("pending"),
     paymentIntentId: text("payment_intent_id"),             // PayPal Order ID
     paypalAuthorizationId: text("paypal_authorization_id"), // PayPal Authorization ID (capture/void용)
+    paypalCaptureId: text("paypal_capture_id"),              // PayPal Capture ID (환불용)
     platformFeeKrw: integer("platform_fee_krw"),            // 플랫폼 수수료 10% (KRW, 카드 결제 시 기록)
     qrCodeToken: text("qr_code_token"),
     qrCodeExpiresAt: integer("qr_code_expires_at", { mode: "timestamp" }),

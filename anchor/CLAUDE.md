@@ -123,8 +123,9 @@ pub struct BookingEscrow {
 | Instruction | 서명자 | 조건 | CPI |
 |-------------|--------|------|-----|
 | `create_booking_escrow(listing_id, booking_id, amount_krw, check_in, check_out)` | guest | check_in > now, amount_krw > 0 | guest_usdc → escrow_vault |
-| `release_booking_escrow(booking_id)` | authority or crank_authority | status==Pending, now >= check_out | escrow_vault → authority_usdc |
-| `cancel_booking_escrow(booking_id)` | guest | status==Pending, now < check_in | escrow_vault → guest_usdc |
+| `release_booking_escrow(booking_id)` | authority or crank_authority | status==Pending, now >= check_out | escrow_vault → host 90% + treasury 10% |
+| `cancel_booking_escrow(booking_id)` | guest / authority / crank | status==Pending, (guest: now < check_in) | escrow_vault → guest_usdc 100% |
+| `cancel_booking_escrow_partial(booking_id, guest_bps)` | authority or crank_authority | status==Pending, guest_bps 1~9999 | escrow_vault → guest guest_bps% + host 나머지 |
 
 ### Pyth KRW→USDC 변환 수학
 
@@ -178,6 +179,7 @@ skip-oracle = []  # Pyth 우회, amount_usdc = amount_krw * 1_000_000 / 1350
 | 6022 | InvalidPythPrice | 가격 음수 또는 zero |
 | 6023 | BookingNotPending | status != Pending |
 | 6024 | CheckInNotPassed | now < check_out (체크아웃 전 release 시도) |
+| 6025 | InvalidRefundBps | guest_bps가 1~9999 범위 밖 |
 
 ---
 

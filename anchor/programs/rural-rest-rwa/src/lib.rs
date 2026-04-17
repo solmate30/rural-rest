@@ -73,6 +73,8 @@ pub enum RwaError {
     BookingNotPending,               // 6023
     #[msg("Check-in time has not passed yet; cannot release escrow.")]
     CheckInNotPassed,                // 6024
+    #[msg("guest_bps must be between 1 and 9999.")]
+    InvalidRefundBps,                // 6025
 }
 
 // =====================
@@ -774,6 +776,58 @@ pub struct CancelBookingEscrow<'info> {
     pub guest_usdc: InterfaceAccount<'info, TokenAccount>,
 
     // authority/crank 취소(호스트 거절) 검증용
+    #[account(
+        seeds = [b"rwa_config"],
+        bump = rwa_config.bump,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
+
+    #[account(address = booking_escrow.usdc_mint)]
+    pub usdc_mint: InterfaceAccount<'info, Mint>,
+    pub usdc_token_program: Interface<'info, TokenInterface>,
+}
+
+// =====================
+// cancel_booking_escrow_partial
+// =====================
+#[derive(Accounts)]
+#[instruction(booking_id: String)]
+pub struct CancelBookingEscrowPartial<'info> {
+    pub caller: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"booking_escrow", booking_id.as_bytes()],
+        bump = booking_escrow.bump,
+    )]
+    pub booking_escrow: Account<'info, BookingEscrow>,
+
+    #[account(
+        mut,
+        associated_token::mint = usdc_mint,
+        associated_token::authority = booking_escrow,
+        associated_token::token_program = usdc_token_program,
+    )]
+    pub escrow_vault: InterfaceAccount<'info, TokenAccount>,
+
+    // 게스트 환불 수령 계좌
+    #[account(
+        mut,
+        token::mint = usdc_mint,
+        token::token_program = usdc_token_program,
+        constraint = guest_usdc.owner == booking_escrow.guest @ RwaError::Unauthorized,
+    )]
+    pub guest_usdc: InterfaceAccount<'info, TokenAccount>,
+
+    // 호스트 수령 계좌 (나머지)
+    #[account(
+        mut,
+        token::mint = usdc_mint,
+        token::token_program = usdc_token_program,
+        constraint = host_usdc.owner == booking_escrow.host @ RwaError::Unauthorized,
+    )]
+    pub host_usdc: InterfaceAccount<'info, TokenAccount>,
+
     #[account(
         seeds = [b"rwa_config"],
         bump = rwa_config.bump,
@@ -1531,6 +1585,73 @@ pub mod rural_rest_rwa {
             signer_seeds,
         );
         transfer_checked(transfer_ctx, amount, 6)?;
+
+        ctx.accounts.booking_escrow.status = EscrowStatus::Refunded;
+        Ok(())
+    }
+
+    // 에스크로 부분 취소 → guest_bps% 게스트 환불, 나머지 호스트 (authority 또는 crank만 가능)
+    pub fn cancel_booking_escrow_partial(
+        ctx: Context<CancelBookingEscrowPartial>,
+        booking_id: String,
+        guest_bps: u16, // 1~9999 (basis points, 5000 = 50%)
+    ) -> Result<()> {
+        require!(guest_bps > 0 && guest_bps < 10000, RwaError::InvalidRefundBps);
+
+        let caller = ctx.accounts.caller.key();
+        require!(
+            caller == ctx.accounts.rwa_config.authority
+                || caller == ctx.accounts.rwa_config.crank_authority,
+            RwaError::Unauthorized
+        );
+
+        let escrow = &ctx.accounts.booking_escrow;
+        require!(escrow.status == EscrowStatus::Pending, RwaError::BookingNotPending);
+
+        let amount = escrow.amount_usdc;
+        let guest_amount = (amount as u128)
+            .checked_mul(guest_bps as u128)
+            .ok_or(RwaError::MathOverflow)?
+            .checked_div(10000)
+            .ok_or(RwaError::MathOverflow)? as u64;
+        let host_amount = amount
+            .checked_sub(guest_amount)
+            .ok_or(RwaError::MathOverflow)?;
+
+        let booking_id_bytes = booking_id.as_bytes();
+        let bump = escrow.bump;
+        let seeds: &[&[u8]] = &[b"booking_escrow", booking_id_bytes, &[bump]];
+        let signer_seeds = &[seeds];
+
+        // escrow_vault → guest_usdc (guest_bps%)
+        if guest_amount > 0 {
+            let guest_transfer_ctx = CpiContext::new_with_signer(
+                ctx.accounts.usdc_token_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.escrow_vault.to_account_info(),
+                    mint: ctx.accounts.usdc_mint.to_account_info(),
+                    to: ctx.accounts.guest_usdc.to_account_info(),
+                    authority: ctx.accounts.booking_escrow.to_account_info(),
+                },
+                signer_seeds,
+            );
+            transfer_checked(guest_transfer_ctx, guest_amount, 6)?;
+        }
+
+        // escrow_vault → host_usdc (나머지)
+        if host_amount > 0 {
+            let host_transfer_ctx = CpiContext::new_with_signer(
+                ctx.accounts.usdc_token_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.escrow_vault.to_account_info(),
+                    mint: ctx.accounts.usdc_mint.to_account_info(),
+                    to: ctx.accounts.host_usdc.to_account_info(),
+                    authority: ctx.accounts.booking_escrow.to_account_info(),
+                },
+                signer_seeds,
+            );
+            transfer_checked(host_transfer_ctx, host_amount, 6)?;
+        }
 
         ctx.accounts.booking_escrow.status = EscrowStatus::Refunded;
         Ok(())

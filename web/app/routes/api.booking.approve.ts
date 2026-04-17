@@ -29,20 +29,21 @@ export async function action({ request }: { request: Request }) {
     // operator는 자신이 담당하는 매물의 예약만 승인 가능
     if ((currentUser as any).role === "operator") {
         const [listing] = await db
-            .select({ operatorId: listings.operatorId })
+            .select({ hostId: listings.hostId })
             .from(listings)
             .where(eq(listings.id, booking.listingId));
 
-        if (!listing || listing.operatorId !== currentUser.id) {
+        if (!listing || listing.hostId !== currentUser.id) {
             return Response.json({ error: "담당 매물이 아닙니다" }, { status: 403 });
         }
     }
 
     // PayPal authorization capture (카드 결제인 경우)
     let platformFeeKrw: number | null = null;
+    let paypalCaptureId: string | null = null;
     if (booking.paypalAuthorizationId) {
         try {
-            await capturePayPalAuth(booking.paypalAuthorizationId);
+            paypalCaptureId = await capturePayPalAuth(booking.paypalAuthorizationId);
             platformFeeKrw = Math.round(booking.totalPrice * PLATFORM_FEE_RATE);
             const hostPayout = booking.totalPrice - platformFeeKrw;
             // PayPal Commerce Platform 파트너 승인 전까지 수수료는 DB에만 기록
@@ -57,7 +58,11 @@ export async function action({ request }: { request: Request }) {
     }
 
     await db.update(bookings)
-        .set({ status: "confirmed", ...(platformFeeKrw !== null && { platformFeeKrw }) })
+        .set({
+            status: "confirmed",
+            ...(platformFeeKrw !== null && { platformFeeKrw }),
+            ...(paypalCaptureId !== null && { paypalCaptureId }),
+        })
         .where(eq(bookings.id, bookingId));
 
     return Response.json({ ok: true });

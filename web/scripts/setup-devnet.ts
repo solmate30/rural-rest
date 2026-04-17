@@ -3,7 +3,7 @@
  *
  * 한 번에 처리:
  *   1. Fake USDC Mint 생성 (SPL Token, decimals=6)
- *   2. RwaConfig 초기화
+ *   2. RwaConfig 초기화 (crank_authority + treasury 설정 포함)
  *   3. Council Mint 생성 + DaoConfig 초기화
  *   4. .env의 VITE_USDC_MINT / VITE_COUNCIL_MINT 자동 업데이트
  *
@@ -33,6 +33,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
 const RPC_URL = "https://api.devnet.solana.com";
+const TREASURY_PUBKEY = new PublicKey("9uAQniNkxo4zvxLVgrardFUnJdrafMod76GJiNG5T3Zc");
 const ENV_PATH = path.join(__dirname, "../.env");
 const KEYPAIR_PATH = path.join(process.env.HOME!, ".config/solana/id.json");
 
@@ -166,6 +167,21 @@ async function main() {
         console.log(`  tx: ${tx}`);
     } else {
         console.log(`  crank_authority 이미 설정됨: ${crankKeypair.publicKey.toBase58()}`);
+    }
+
+    // treasury 설정 (Pubkey::default() 또는 다른 주소로 설정된 경우)
+    if (rwaData.treasury.toBase58() !== TREASURY_PUBKEY.toBase58()) {
+        const tx = await (rwaProgram.methods as any)
+            .setTreasury(TREASURY_PUBKEY)
+            .accounts({
+                rwaConfig: rwaConfigPda,
+                authority: authority.publicKey,
+            })
+            .rpc();
+        console.log(`  treasury 설정: ${TREASURY_PUBKEY.toBase58()}`);
+        console.log(`  tx: ${tx}`);
+    } else {
+        console.log(`  treasury 이미 설정됨: ${TREASURY_PUBKEY.toBase58()}`);
     }
     console.log();
 

@@ -86,8 +86,8 @@ export async function authorizePayPalOrder(orderID: string): Promise<string> {
     return authId;
 }
 
-/** 호스트 승인 시 authorization capture (실결제) */
-export async function capturePayPalAuth(authorizationId: string): Promise<void> {
+/** 호스트 승인 시 authorization capture (실결제) — capture ID 반환 */
+export async function capturePayPalAuth(authorizationId: string): Promise<string> {
     const token = await getAccessToken();
 
     const res = await fetch(
@@ -105,6 +105,36 @@ export async function capturePayPalAuth(authorizationId: string): Promise<void> 
     if (!res.ok) {
         const err = await res.text();
         throw new Error(`PayPal capture failed: ${err}`);
+    }
+
+    const data = (await res.json()) as { id: string };
+    if (!data.id) throw new Error("PayPal capture ID not found in response");
+    return data.id;
+}
+
+/** 카드 결제 환불 (capture 이후) — amountUsd 미지정 시 전액 환불 */
+export async function refundPayPalCapture(captureId: string, amountUsd?: string): Promise<void> {
+    const token = await getAccessToken();
+
+    const body = amountUsd
+        ? JSON.stringify({ amount: { currency_code: "USD", value: amountUsd } })
+        : JSON.stringify({});
+
+    const res = await fetch(
+        `${PAYPAL_BASE}/v2/payments/captures/${captureId}/refund`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body,
+        }
+    );
+
+    if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`PayPal refund failed: ${err}`);
     }
 }
 

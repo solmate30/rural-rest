@@ -55,6 +55,7 @@ export default function MyBookings() {
     const locale = i18n.language;
     const [cancellingId, setCancellingId] = useState<string | null>(null);
     const [cancelledIds, setCancelledIds] = useState<Set<string>>(new Set());
+    const [cancellingConfirmedId, setCancellingConfirmedId] = useState<string | null>(null);
 
     function fmtDay(d: Date | null) {
         if (!d) return "—";
@@ -64,6 +65,37 @@ export default function MyBookings() {
     function nights(checkIn: Date | null, checkOut: Date | null) {
         if (!checkIn || !checkOut) return 0;
         return Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000);
+    }
+
+    function getRefundLabel(checkIn: Date | null): string {
+        if (!checkIn) return "";
+        const days = (new Date(checkIn).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+        if (days >= 7) return "취소 시 전액 환불";
+        if (days >= 3) return "취소 시 50% 환불";
+        return "취소 시 환불 없음";
+    }
+
+    async function handleConfirmedCancel(bookingId: string, checkIn: Date | null) {
+        const refundLabel = getRefundLabel(checkIn);
+        if (!confirm(`예약을 취소하시겠습니까?\n${refundLabel}`)) return;
+        setCancellingConfirmedId(bookingId);
+        try {
+            const res = await fetch("/api/booking/cancel-confirmed", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ bookingId }),
+            });
+            if (res.ok) {
+                setCancelledIds((prev) => new Set(prev).add(bookingId));
+            } else {
+                const data = await res.json();
+                alert(data.error ?? "취소 처리 중 오류가 발생했습니다.");
+            }
+        } catch {
+            alert("취소 처리 중 오류가 발생했습니다.");
+        } finally {
+            setCancellingConfirmedId(null);
+        }
     }
 
     async function handleGuestCancel(bookingId: string) {
@@ -111,6 +143,7 @@ export default function MyBookings() {
                         const label = locale === "ko" ? cfg.label : cfg.labelEn;
                         const n = nights(b.checkIn, b.checkOut);
                         const isCancelling = cancellingId === b.id;
+                        const isCancellingConfirmed = cancellingConfirmedId === b.id;
 
                         return (
                             <div key={b.id} className="bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
@@ -170,7 +203,22 @@ export default function MyBookings() {
                                                 </div>
                                             )}
 
-                                            {effectiveStatus === "cancelled" && (
+                                            {effectiveStatus === "confirmed" && (
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-xs text-stone-400 bg-stone-50 px-2.5 py-1 rounded-lg">
+                                                    {getRefundLabel(b.checkIn)}
+                                                </p>
+                                                <button
+                                                    onClick={() => handleConfirmedCancel(b.id, b.checkIn)}
+                                                    disabled={isCancellingConfirmed}
+                                                    className="text-xs text-stone-400 hover:text-red-500 underline underline-offset-2 transition-colors disabled:opacity-50"
+                                                >
+                                                    {isCancellingConfirmed ? "처리 중…" : "예약 취소"}
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {effectiveStatus === "cancelled" && (
                                                 <p className="text-xs text-stone-400 bg-stone-50 px-2.5 py-1 rounded-lg">
                                                     {b.isUsdc ? t("refundedUsdc") : t("refundedCard")}
                                                 </p>
