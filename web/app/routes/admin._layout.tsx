@@ -18,7 +18,6 @@ const NAV_ITEM_DEFS = [
     { to: "/admin/listing/new",   key: "newListing",   icon: "add_home",        end: false },
     { to: "/admin/operators",     key: "operators",    icon: "manage_accounts", end: false },
     { to: "/admin/settlements",   key: "settlements",  icon: "account_balance", end: false },
-    { to: "/admin/council-token", key: "councilToken", icon: "token",           end: false },
     { to: "/admin/treasury",      key: "treasury",     icon: "savings",         end: false },
     { to: "/governance",          key: "community",    icon: "forum",           end: false },
 ] as const;

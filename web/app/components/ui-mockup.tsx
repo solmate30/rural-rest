@@ -171,9 +171,7 @@ export function Header({ onMenuOpen }: { onMenuOpen?: () => void } = {}) {
                         </button>
                     )}
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
-                        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                            <span className="text-white font-bold">R</span>
-                        </div>
+                        <img src="/ruralrest-logo-icon.png" alt="Rural Rest" className="h-8 w-auto" />
                         <span className="text-xl font-bold tracking-tight text-primary">Rural Rest</span>
                     </div>
                 </div>

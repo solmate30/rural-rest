@@ -56,7 +56,7 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
                 const councilBalance = await checkCouncilTokenBalance(connection, councilMint, wallet?.publicKey);
                 setRwaCount(positions.length);
                 setHasCouncilToken(councilBalance > 0);
-                setVotingPower(positions.length + (councilBalance > 0 ? 1 : 0));
+                setVotingPower(positions.length);
             }
         } catch {
             // 무시
@@ -170,7 +170,7 @@ export function VotePanel({ proposal, activeListingIds, councilMint, onVoted }: 
     if (votingPower === 0) {
         return (
             <div className="text-center py-5">
-                <p className="text-sm text-[#8D6E63] font-medium">투표권이 없습니다 (RWA / Council 토큰 미보유)</p>
+                <p className="text-sm text-[#8D6E63] font-medium">투표권이 없습니다 (RWA 토큰 미보유)</p>
                 <a href="/invest" className="text-xs text-[#FFAB91] hover:text-[#8D6E63] font-bold hover:underline mt-2 inline-block transition-colors">
                     투자하여 거버넌스에 참여하세요
                 </a>

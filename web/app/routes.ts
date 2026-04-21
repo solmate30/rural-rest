@@ -17,7 +17,6 @@ export default [
         route("admin/operators", "routes/admin.operators.tsx"),
         route("admin/settlements", "routes/admin.settlements.tsx"),
         route("admin/settlements/:listingId", "routes/admin.settlements.detail.tsx"),
-        route("admin/council-token", "routes/admin.council-token.tsx"),
         route("admin/treasury", "routes/admin.treasury.tsx"),
     ]),
     route("api/auth/session", "routes/api.auth.session.ts"),
