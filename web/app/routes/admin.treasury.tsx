@@ -4,6 +4,7 @@
  */
 
 import { useLoaderData } from "react-router";
+import { useTranslation } from "react-i18next";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
 import { bookings, listings } from "~/db/schema";
@@ -44,48 +45,49 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function AdminTreasury() {
     const { treasuryPubkey, totalUsdcMicro, totalKrw, rows } = useLoaderData<typeof loader>();
+    const { t } = useTranslation("admin");
 
     return (
         <div className="space-y-6 pb-10">
             <div>
-                <h1 className="text-2xl font-bold text-[#4a3b2c]">Treasury 관리</h1>
-                <p className="text-sm text-[#a0856c] mt-1">플랫폼 수수료 수익 현황</p>
+                <h1 className="text-2xl font-bold text-[#4a3b2c]">{t("treasury.title")}</h1>
+                <p className="text-sm text-[#a0856c] mt-1">{t("treasury.subtitle")}</p>
             </div>
 
             {/* Treasury 주소 */}
             <div className="bg-[#fcfaf7] border border-[#e8e0d6] rounded-2xl p-4 sm:p-5">
-                <p className="text-xs font-semibold text-[#a0856c] uppercase tracking-wide mb-1">Treasury 주소</p>
+                <p className="text-xs font-semibold text-[#a0856c] uppercase tracking-wide mb-1">{t("treasury.addressLabel")}</p>
                 <p className="font-mono text-sm text-[#4a3b2c] break-all">{treasuryPubkey}</p>
             </div>
 
             {/* 누적 수수료 요약 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-[#fcfaf7] border border-[#e8e0d6] rounded-2xl p-5">
-                    <p className="text-xs font-semibold text-[#a0856c] uppercase tracking-wide mb-1">누적 USDC 수수료</p>
+                    <p className="text-xs font-semibold text-[#a0856c] uppercase tracking-wide mb-1">{t("treasury.usdcTotal")}</p>
                     <p className="text-2xl font-bold text-[#4a3b2c]">{fmtUsdc(totalUsdcMicro / 1_000_000)}</p>
-                    <p className="text-xs text-[#c4aa92] mt-1">에스크로 결제 10%</p>
+                    <p className="text-xs text-[#c4aa92] mt-1">{t("treasury.usdcHint")}</p>
                 </div>
                 <div className="bg-[#fcfaf7] border border-[#e8e0d6] rounded-2xl p-5">
-                    <p className="text-xs font-semibold text-[#a0856c] uppercase tracking-wide mb-1">누적 KRW 수수료</p>
+                    <p className="text-xs font-semibold text-[#a0856c] uppercase tracking-wide mb-1">{t("treasury.krwTotal")}</p>
                     <p className="text-2xl font-bold text-[#4a3b2c]">{fmtKrw(totalKrw)}</p>
-                    <p className="text-xs text-[#c4aa92] mt-1">카드 결제 10%</p>
+                    <p className="text-xs text-[#c4aa92] mt-1">{t("treasury.krwHint")}</p>
                 </div>
             </div>
 
             {/* 수수료 내역 */}
             <div>
-                <h2 className="text-sm font-semibold text-[#4a3b2c] mb-3">수수료 내역 (최근 50건)</h2>
+                <h2 className="text-sm font-semibold text-[#4a3b2c] mb-3">{t("treasury.historyTitle")}</h2>
                 {rows.length === 0 ? (
                     <div className="text-center py-16 text-[#c4aa92] text-sm">
-                        완료된 예약이 없습니다.
+                        {t("treasury.empty")}
                     </div>
                 ) : (
                     <div className="divide-y divide-[#e8e0d6] border border-[#e8e0d6] rounded-2xl bg-[#fcfaf7] overflow-hidden">
                         <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto] gap-4 px-5 py-2.5 text-xs font-semibold text-[#a0856c] uppercase tracking-wide">
-                            <span>매물</span>
-                            <span className="text-right">수수료</span>
-                            <span className="text-right">결제 방식</span>
-                            <span className="text-right">완료일</span>
+                            <span>{t("treasury.colProperty")}</span>
+                            <span className="text-right">{t("treasury.colFee")}</span>
+                            <span className="text-right">{t("treasury.colMethod")}</span>
+                            <span className="text-right">{t("treasury.colDate")}</span>
                         </div>
                         {rows.map((row) => {
                             const isUsdc = row.escrowPda != null;
@@ -103,7 +105,7 @@ export default function AdminTreasury() {
                                         {feeDisplay}
                                     </p>
                                     <span className={`hidden sm:inline text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${isUsdc ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"}`}>
-                                        {isUsdc ? "USDC" : "카드"}
+                                        {isUsdc ? t("treasury.methodUsdc") : t("treasury.methodCard")}
                                     </span>
                                     <p className="hidden sm:block text-xs text-[#a0856c] text-right whitespace-nowrap">
                                         {row.createdAt

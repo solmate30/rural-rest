@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Input } from "./ui/input";
@@ -15,6 +16,7 @@ interface Message {
 }
 
 export function AiConcierge() {
+    const { t } = useTranslation("concierge");
     const location = useLocation();
     // invest/:id 페이지는 하단에 MobileInvestBar가 있어서 FAB을 위로 올림 (lg 이상에서는 bar가 없으므로 원위치)
     const hasMobileBar = /^\/invest\/[^/]+/.test(location.pathname);
@@ -75,7 +77,7 @@ export function AiConcierge() {
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: "죄송합니다, 일시적인 오류가 발생했어요. 다시 시도해주세요.",
+                content: t("errorMsg"),
             };
             setMessages((prev) => [...prev, errorMessage]);
         } finally {
@@ -113,8 +115,8 @@ export function AiConcierge() {
                                         <Bot className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-stone-800">반가워요! 전 당신의 시골 친구예요.</p>
-                                        <p className="text-xs text-stone-500">숙소 예약, 주변 맛집, 교통편 등 무엇이든 물어보세요.</p>
+                                        <p className="font-bold text-stone-800">{t("greeting")}</p>
+                                        <p className="text-xs text-stone-500">{t("greetingDesc")}</p>
                                     </div>
                                 </div>
                             )}
@@ -174,7 +176,7 @@ export function AiConcierge() {
                             className="flex gap-2"
                         >
                             <Input
-                                placeholder="Type your question..."
+                                placeholder={t("placeholder")}
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 className="flex-1 rounded-xl border-stone-200 focus-visible:ring-primary h-11"

@@ -342,6 +342,23 @@
       "txGovPayout": "지자체 USDC 전송 (40%)"
     }
   },
+  "treasury": {
+    "title": "Treasury 관리",
+    "subtitle": "플랫폼 수수료 수익 현황",
+    "addressLabel": "Treasury 주소",
+    "usdcTotal": "누적 USDC 수수료",
+    "usdcHint": "에스크로 결제 10%",
+    "krwTotal": "누적 KRW 수수료",
+    "krwHint": "카드 결제 10%",
+    "historyTitle": "수수료 내역 (최근 50건)",
+    "empty": "완료된 예약이 없습니다.",
+    "colProperty": "매물",
+    "colFee": "수수료",
+    "colMethod": "결제 방식",
+    "colDate": "완료일",
+    "methodCard": "카드",
+    "methodUsdc": "USDC"
+  },
   "validation": {
     "requiredTitle": "숙소명을 입력해주세요",
     "titleMin": "숙소명은 2자 이상 입력해주세요",

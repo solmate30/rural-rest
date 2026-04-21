@@ -341,6 +341,23 @@
       "txGovPayout": "Municipality USDC transfer (40%)"
     }
   },
+  "treasury": {
+    "title": "Treasury",
+    "subtitle": "Platform fee revenue",
+    "addressLabel": "Treasury Address",
+    "usdcTotal": "Total USDC Fees",
+    "usdcHint": "10% of escrow payments",
+    "krwTotal": "Total KRW Fees",
+    "krwHint": "10% of card payments",
+    "historyTitle": "Fee History (last 50)",
+    "empty": "No completed bookings.",
+    "colProperty": "Property",
+    "colFee": "Fee",
+    "colMethod": "Payment",
+    "colDate": "Date",
+    "methodCard": "Card",
+    "methodUsdc": "USDC"
+  },
   "validation": {
     "requiredTitle": "Please enter a property name",
     "titleMin": "Property name must be at least 2 characters",

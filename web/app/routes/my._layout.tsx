@@ -23,7 +23,7 @@ export default function MyLayout() {
         <div className="min-h-screen bg-[#fcfaf7] font-sans">
             <Header />
 
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
+            <div className="container mx-auto px-4 sm:px-8 py-8">
                 {/* 모바일: 상단 탭 */}
                 <nav className="md:hidden flex gap-1 mb-6 bg-white rounded-2xl p-1 border border-stone-100 shadow-sm">
                     {NAV_ITEMS.map(({ to, labelKey, icon }) => (

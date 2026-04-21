@@ -81,7 +81,7 @@ export default function AdminLayout() {
                 </SheetContent>
             </Sheet>
 
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-6xl">
+            <div className="container mx-auto px-4 sm:px-8 py-6">
                 <div className="flex gap-8">
                     {/* 데스크탑 사이드바 */}
                     <aside className="hidden md:block w-52 shrink-0">
