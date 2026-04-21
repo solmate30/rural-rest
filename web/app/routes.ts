@@ -5,8 +5,9 @@ export default [
     route("auth", "routes/auth.tsx"),
     route("property/:id", "routes/property.tsx"),
     route("book/:id", "routes/book.tsx"),
-    route("operator", "routes/operator.dashboard.tsx"),
+    route("host", "routes/operator.dashboard.tsx"),
     route("host/edit/:id", "routes/admin.edit.tsx"),
+    route("host/messages/:bookingId", "routes/host.messages.$bookingId.tsx"),
     route("api/building/lookup", "routes/api.building.lookup.ts"),
     layout("routes/admin._layout.tsx", [
         route("admin", "routes/admin.dashboard.tsx"),
@@ -18,7 +19,6 @@ export default [
         route("admin/settlements/:listingId", "routes/admin.settlements.detail.tsx"),
         route("admin/council-token", "routes/admin.council-token.tsx"),
         route("admin/treasury", "routes/admin.treasury.tsx"),
-        route("admin/messages/:bookingId", "routes/admin.messages.$bookingId.tsx"),
     ]),
     route("api/auth/session", "routes/api.auth.session.ts"),
     route("api/user/me", "routes/api.user.me.ts"),
@@ -76,7 +76,6 @@ export default [
         route("my/messages/:bookingId",    "routes/my.messages.$bookingId.tsx"),
     ]),
     // 구 URL → 신 URL 리다이렉트
-    route("my-bookings",   "routes/my-bookings.tsx"),
     route("my-investments", "routes/my-investments.tsx"),
     route("host/bookings", "routes/redirect.host-bookings.ts"),
     route("kyc", "routes/kyc.tsx"),

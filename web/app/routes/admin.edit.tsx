@@ -11,12 +11,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { RichTextEditor } from "~/components/ui/rich-text-editor";
-import { Form, useLoaderData, useActionData, useNavigation, useBlocker } from "react-router";
+import { Form, useLoaderData, useActionData, useNavigation, useBlocker, redirect } from "react-router";
 import { z } from "zod";
 import type { Route } from "./+types/admin.edit";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
-import { listings } from "~/db/schema";
+import { listings, user as userTable } from "~/db/schema";
 import { translateText } from "~/lib/translation.server";
 import { eq } from "drizzle-orm";
 import { Header, Button, Card } from "../components/ui-mockup";
@@ -41,7 +41,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         .from(listings)
         .where(eq(listings.id, params.id));
     if (!listing) throw new Response("Not Found", { status: 404 });
-    return { listing };
+    const operators = await db
+        .select({ id: userTable.id, name: userTable.name, email: userTable.email })
+        .from(userTable)
+        .where(eq(userTable.role, "operator"))
+        .orderBy(userTable.name);
+    return { listing, operators };
 }
 
 // ────────────────────────────────────────────────────────────
@@ -60,6 +65,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     const smartLockEnabled = fd.get("smartLockEnabled") === "true";
     const amenities = fd.getAll("amenities").map(String);
     const images = fd.getAll("images").map(String).filter(Boolean);
+    const operatorId = fd.get("operatorId")?.toString().trim() ?? "";
 
     const errors: Record<string, string> = {};
     if (!title) errors.title = "validation.requiredTitle";
@@ -89,10 +95,11 @@ export async function action({ request, params }: Route.ActionArgs) {
             images,
             transportSupport,
             smartLockEnabled,
+            ...(operatorId ? { hostId: operatorId } : {}),
         })
         .where(eq(listings.id, params.id));
 
-    return Response.json({ ok: true });
+    return redirect("/admin");
 }
 
 // ────────────────────────────────────────────────────────────
@@ -102,7 +109,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 const INPUT_CLS = "w-full h-10 rounded-xl border border-input bg-background px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default function AdminEdit() {
-    const { listing } = useLoaderData<typeof loader>();
+    const { listing, operators } = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const navigation = useNavigation();
     const { t } = useTranslation("admin");
@@ -117,6 +124,7 @@ export default function AdminEdit() {
         return raw as unknown as string[];
     })();
 
+    const [operatorId, setOperatorId] = useState(listing.hostId ?? "");
     const [title, setTitle] = useState(listing.title);
     const [description, setDescription] = useState(listing.description);
     const [pricePerNight, setPricePerNight] = useState(listing.pricePerNight);
@@ -145,16 +153,33 @@ export default function AdminEdit() {
         ...fieldErrors,
     };
 
-    // ── 미저장 감지
+    // ── 미저장 감지: 저장 성공 시 베이스라인을 현재 상태로 갱신
+    const savedBaseline = useRef({
+        title: listing.title,
+        description: listing.description,
+        pricePerNight: listing.pricePerNight,
+        maxGuests: listing.maxGuests,
+        transportSupport: listing.transportSupport,
+        smartLockEnabled: listing.smartLockEnabled,
+        amenities: (listing.amenities as unknown as string[]) ?? [],
+        images: initialImages,
+    });
+    useEffect(() => {
+        if (saved) {
+            savedBaseline.current = { title, description, pricePerNight, maxGuests, transportSupport, smartLockEnabled, amenities: [...amenities], images: [...images] };
+        }
+    }, [saved]);
+
+    const bl = savedBaseline.current;
     const isDirty =
-        title !== listing.title ||
-        description !== listing.description ||
-        pricePerNight !== listing.pricePerNight ||
-        maxGuests !== listing.maxGuests ||
-        transportSupport !== listing.transportSupport ||
-        smartLockEnabled !== listing.smartLockEnabled ||
-        JSON.stringify([...amenities].sort()) !== JSON.stringify(((listing.amenities as unknown as string[]) ?? []).slice().sort()) ||
-        JSON.stringify(images) !== JSON.stringify(initialImages);
+        title !== bl.title ||
+        description !== bl.description ||
+        pricePerNight !== bl.pricePerNight ||
+        maxGuests !== bl.maxGuests ||
+        transportSupport !== bl.transportSupport ||
+        smartLockEnabled !== bl.smartLockEnabled ||
+        JSON.stringify([...amenities].sort()) !== JSON.stringify([...bl.amenities].sort()) ||
+        JSON.stringify(images) !== JSON.stringify(bl.images);
 
     // 브라우저 새로고침/탭 닫기 경고
     useEffect(() => {
@@ -167,10 +192,13 @@ export default function AdminEdit() {
         return () => window.removeEventListener("beforeunload", handleBeforeUnload);
     }, [isDirty, saved]);
 
-    // React Router 내비게이션 차단
-    const blocker = useBlocker(isDirty && !saved && !isSaving);
-    const handleBlockerProceed = useCallback(() => blocker.proceed?.(), [blocker]);
-    const handleBlockerReset   = useCallback(() => blocker.reset?.(),   [blocker]);
+    // React Router 내비게이션 차단 (같은 경로 POST = 저장 액션은 제외)
+    const blocker = useBlocker(({ nextLocation, currentLocation }) => {
+        if (nextLocation.pathname === currentLocation.pathname) return false;
+        return isDirty && !saved;
+    });
+    const handleBlockerProceed = useCallback(() => { blocker.proceed(); }, [blocker]);
+    const handleBlockerReset   = useCallback(() => { blocker.reset(); },   [blocker]);
 
     // ── 사진 업로드
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -204,6 +232,8 @@ export default function AdminEdit() {
             {amenities.map((a) => <input key={a} type="hidden" name="amenities" value={a} />)}
             <input type="hidden" name="transportSupport" value={String(transportSupport)} />
             <input type="hidden" name="smartLockEnabled" value={String(smartLockEnabled)} />
+            <input type="hidden" name="operatorId" value={operatorId} />
+            <input type="hidden" name="description" value={description} />
 
             <div className="min-h-screen bg-stone-50/50">
                 <Header />
@@ -260,6 +290,39 @@ export default function AdminEdit() {
                                         <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>{t("edit.browseFiles")}</Button>
                                     </div>
                                 )}
+                            </Card>
+                        </section>
+
+                        {/* 담당 운영자 */}
+                        <section className="space-y-4">
+                            <SectionTitle>담당 운영자</SectionTitle>
+                            <Card className="p-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-foreground">
+                                        운영자 계정
+                                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                            예약 승인·거절, 월 정산 수령
+                                        </span>
+                                    </label>
+                                    <select
+                                        value={operatorId}
+                                        onChange={(e) => setOperatorId(e.target.value)}
+                                        className="w-full h-10 rounded-xl border border-input bg-background px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    >
+                                        <option value="">미지정 (운영자 없음)</option>
+                                        {operators.map((op) => (
+                                            <option key={op.id} value={op.id}>
+                                                {op.name ?? op.email} — {op.email}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {operators.length === 0 && (
+                                        <p className="text-xs text-amber-600">
+                                            등록된 운영자가 없습니다.{" "}
+                                            <a href="/admin/operators" className="underline">운영자 관리</a>에서 먼저 계정을 생성하세요.
+                                        </p>
+                                    )}
+                                </div>
                             </Card>
                         </section>
 
@@ -351,33 +414,6 @@ export default function AdminEdit() {
                             </Card>
                         </section>
 
-                        {/* Availability — 정적 목업 */}
-                        <section className="space-y-4">
-                            <SectionTitle>{t("edit.availabilitySection")}</SectionTitle>
-                            <Card className="p-8 flex flex-col items-center">
-                                <div className="w-full max-w-sm border rounded-2xl p-6 bg-white overflow-hidden shadow-inner">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <span className="font-bold">May 2026</span>
-                                        <div className="flex gap-2">
-                                            <Button type="button" variant="ghost" className="h-8 w-8 p-0 border">←</Button>
-                                            <Button type="button" variant="ghost" className="h-8 w-8 p-0 border">→</Button>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-bold text-muted-foreground uppercase mb-2">
-                                        {["일","월","화","수","목","금","토"].map((d) => <span key={d}>{d}</span>)}
-                                    </div>
-                                    <div className="grid grid-cols-7 gap-2">
-                                        {Array.from({ length: 31 }).map((_, i) => (
-                                            <div key={i} className={`h-10 rounded-lg flex flex-col items-center justify-center text-xs ${i + 1 === 15 ? "bg-primary text-white" : "hover:bg-primary/5 cursor-pointer border border-transparent hover:border-primary/20"}`}>
-                                                <span>{i + 1}</span>
-                                                <span className="text-[8px] opacity-70">120k</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <p className="mt-4 text-xs text-muted-foreground">{t("edit.availabilityPhase")}</p>
-                            </Card>
-                        </section>
                     </div>
                 </main>
 
@@ -398,22 +434,24 @@ export default function AdminEdit() {
 
         {/* 미저장 변경사항 내비게이션 차단 모달 */}
         {blocker.state === "blocked" && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 space-y-4">
-                    <h2 className="text-lg font-bold text-foreground">{t("edit.blockerTitle")}</h2>
-                    <p className="text-sm text-muted-foreground">{t("edit.blockerMessage")}</p>
-                    <div className="flex justify-end gap-3 pt-2">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+                <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-[360px] space-y-5">
+                    <div className="space-y-1.5">
+                        <h2 className="text-base font-bold text-foreground">{t("edit.blockerTitle")}</h2>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{t("edit.blockerMessage")}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
                         <button
                             type="button"
                             onClick={handleBlockerReset}
-                            className="px-4 py-2 rounded-xl text-sm font-medium border border-border hover:bg-muted/40 transition-colors"
+                            className="h-10 rounded-xl text-sm font-medium border border-border hover:bg-muted/40 transition-colors"
                         >
                             {t("edit.blockerStay")}
                         </button>
                         <button
                             type="button"
                             onClick={handleBlockerProceed}
-                            className="px-4 py-2 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
+                            className="h-10 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
                         >
                             {t("edit.blockerLeave")}
                         </button>
@@ -465,9 +503,9 @@ function ToggleRow({ label, description, value, onChange }: {
             <button
                 type="button"
                 onClick={() => onChange(!value)}
-                className={`relative h-6 w-11 rounded-full transition-colors ${value ? "bg-primary" : "bg-muted"}`}
+                className={`relative h-6 w-11 rounded-full transition-colors ${value ? "bg-[#4a3b2c]" : "bg-muted"}`}
             >
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${value ? "translate-x-5" : "translate-x-0.5"}`} />
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all duration-200 ${value ? "left-[22px]" : "left-0.5"}`} />
             </button>
         </div>
     );

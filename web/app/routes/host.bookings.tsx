@@ -236,7 +236,7 @@ function BookingTable({
                                 <TableCell className="text-right pr-6">
                                     <div className="flex items-center justify-end gap-2">
                                         <Link
-                                            to={`/admin/messages/${b.id}`}
+                                            to={`/host/messages/${b.id}`}
                                             className="flex items-center gap-1 text-xs text-stone-400 hover:text-[#4a3b2c] transition-colors"
                                         >
                                             <span className="material-symbols-outlined text-[14px]">chat_bubble</span>

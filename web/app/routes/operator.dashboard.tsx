@@ -234,9 +234,18 @@ export default function OperatorDashboard() {
                                                 {b.guestName} &middot; {formatDate(b.checkIn)} — {formatDate(b.checkOut)}
                                             </p>
                                         </div>
-                                        <span className="text-xs font-semibold text-[#17cf54] bg-[#17cf54]/10 px-2.5 py-1 rounded-full shrink-0">
-                                            {fmtKrw(b.totalPrice)}
-                                        </span>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <a
+                                                href={`/host/messages/${b.id}`}
+                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium border border-stone-200 hover:bg-stone-100 transition-colors text-stone-600"
+                                            >
+                                                <span className="material-symbols-outlined text-[15px]">chat</span>
+                                                채팅
+                                            </a>
+                                            <span className="text-xs font-semibold text-[#17cf54] bg-[#17cf54]/10 px-2.5 py-1 rounded-full">
+                                                {fmtKrw(b.totalPrice)}
+                                            </span>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

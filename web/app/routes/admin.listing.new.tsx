@@ -5,21 +5,18 @@
  * 단계: 위치 → 기본정보 → 편의시설 → 사진 → 가격/옵션 → 검토/제출
  * 단계 이동은 클라이언트 상태(step)로 관리, 서버 요청 없음.
  * 최종 제출(6단계)에서만 action 호출 → DB INSERT → /host/edit/:id redirect.
- *
- * hostId = admin.id (데모 한정)
- * TODO: 실운영 전 실제 SPV 계정으로 교체 필요
  */
 
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Form, useActionData, useNavigation, redirect } from "react-router";
+import { Form, useActionData, useNavigation, redirect, useLoaderData } from "react-router";
 import { RichTextEditor } from "~/components/ui/rich-text-editor";
 import type { Route } from "./+types/admin.listing.new";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
-import { listings } from "~/db/schema";
+import { listings, user as userTable } from "~/db/schema";
 import { translateText } from "~/lib/translation.server";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { Button } from "~/components/ui/button";
 import { REGION_OPTIONS, AMENITY_OPTIONS, deriveRegion } from "~/lib/listing-constants";
 import { useCloudinaryUpload } from "~/hooks/use-cloudinary-upload";
@@ -63,6 +60,7 @@ interface ListingDraft {
     pricePerNight: number | null;
     transportSupport: boolean;
     smartLockEnabled: boolean;
+    operatorId: string;
 }
 
 const INITIAL_DRAFT: ListingDraft = {
@@ -78,6 +76,7 @@ const INITIAL_DRAFT: ListingDraft = {
     pricePerNight: null,
     transportSupport: false,
     smartLockEnabled: false,
+    operatorId: "",
 };
 
 // ────────────────────────────────────────────────────────────
@@ -86,7 +85,12 @@ const INITIAL_DRAFT: ListingDraft = {
 
 export async function loader({ request }: Route.LoaderArgs) {
     await requireUser(request, ["admin"]);
-    return {};
+    const operators = await db
+        .select({ id: userTable.id, name: userTable.name, email: userTable.email })
+        .from(userTable)
+        .where(eq(userTable.role, "operator"))
+        .orderBy(userTable.name);
+    return { operators };
 }
 
 // ────────────────────────────────────────────────────────────
@@ -100,6 +104,7 @@ interface ActionErrors {
     maxGuests?: string;
     location?: string;
     region?: string;
+    operatorId?: string;
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -117,9 +122,11 @@ export async function action({ request }: Route.ActionArgs) {
     const smartLockEnabled = fd.get("smartLockEnabled") === "true";
     const amenities = fd.getAll("amenities").map(String);
     const images = fd.getAll("images").map(String).filter(Boolean);
+    const operatorId = fd.get("operatorId")?.toString().trim() ?? "";
 
     const errors: ActionErrors = {};
 
+    if (!operatorId) errors.operatorId = "운영자를 선택해 주세요.";
     if (!title) errors.title = "validation.requiredTitle";
     else if (title.length > 100) errors.title = "validation.titleTooLong";
     if (!description) errors.description = "validation.requiredDescription";
@@ -152,7 +159,7 @@ export async function action({ request }: Route.ActionArgs) {
     await db.insert(listings).values({
         id,
         nodeNumber,
-        hostId: admin.id, // TODO: 실운영 전 실제 operator 계정으로 교체
+        hostId: operatorId,
         title,
         description,
         titleEn: titleEnResult.translated,
@@ -293,12 +300,15 @@ function StepIndicator({ current, steps }: { current: number; steps: string[] })
 // 각 스텝 컴포넌트
 // ────────────────────────────────────────────────────────────
 
+type OperatorOption = { id: string; name: string | null; email: string };
+
 function Step1Location({
-    draft, setDraft, errors,
+    draft, setDraft, errors, operators,
 }: {
     draft: ListingDraft;
     setDraft: React.Dispatch<React.SetStateAction<ListingDraft>>;
     errors?: ActionErrors;
+    operators: OperatorOption[];
 }) {
     const { t } = useTranslation("admin");
     const addr = useAddressSearch((location, region, valuationKrw) => {
@@ -309,6 +319,25 @@ function Step1Location({
 
     return (
         <div className="space-y-4">
+            <Field label="담당 운영자" error={errors?.operatorId} required>
+                <select
+                    value={draft.operatorId}
+                    onChange={(e) => setDraft((d) => ({ ...d, operatorId: e.target.value }))}
+                    className={INPUT_CLS}
+                >
+                    <option value="">운영자를 선택하세요</option>
+                    {operators.map((op) => (
+                        <option key={op.id} value={op.id}>
+                            {op.name ?? op.email} ({op.email})
+                        </option>
+                    ))}
+                </select>
+                {operators.length === 0 && (
+                    <p className="text-xs text-amber-600">
+                        등록된 운영자가 없습니다. 먼저 <a href="/admin/operators" className="underline">운영자 관리</a>에서 계정을 생성하세요.
+                    </p>
+                )}
+            </Field>
             <Field label={t("new.reviewAddr")} error={errors?.location ? t(errors.location as any) : undefined} required>
                 <div className="flex gap-2">
                     <div className="flex-1 h-10 rounded-xl border border-input bg-muted/30 px-4 flex items-center text-sm">
@@ -616,16 +645,19 @@ function Step5Pricing({
 }
 
 function Step6Review({
-    draft, errors, isSubmitting,
+    draft, errors, isSubmitting, operators,
 }: {
     draft: ListingDraft;
     errors?: ActionErrors;
     isSubmitting: boolean;
+    operators: OperatorOption[];
 }) {
     const { t } = useTranslation("admin");
     const resolvedRegion = draft.region ?? draft.manualRegion;
+    const selectedOperator = operators.find((op) => op.id === draft.operatorId);
 
     const rows: [string, string][] = [
+        ["담당 운영자", selectedOperator ? `${selectedOperator.name ?? selectedOperator.email} (${selectedOperator.email})` : "-"],
         [t("new.reviewAddr"), draft.location || "-"],
         [t("new.reviewRegion"), REGION_OPTIONS.find((r) => r.value === resolvedRegion)?.label ?? "-"],
         [t("new.reviewValuation"), draft.valuationKrw ? t("new.krw", { amount: draft.valuationKrw.toLocaleString() }) : "-"],
@@ -657,6 +689,7 @@ function Step6Review({
             )}
 
             {/* action으로 전송할 hidden fields */}
+            <input type="hidden" name="operatorId" value={draft.operatorId} />
             <input type="hidden" name="location" value={draft.location} />
             <input type="hidden" name="region" value={resolvedRegion ?? ""} />
             <input type="hidden" name="valuationKrw" value={draft.valuationKrw ?? ""} />
@@ -685,6 +718,7 @@ function Step6Review({
 // ────────────────────────────────────────────────────────────
 
 export default function AdminListingNew() {
+    const { operators } = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const navigation = useNavigation();
     const { t } = useTranslation("admin");
@@ -698,7 +732,7 @@ export default function AdminListingNew() {
     const resolvedRegion = draft.region ?? draft.manualRegion;
 
     function canAdvance(): boolean {
-        if (step === 1) return !!draft.location && !!resolvedRegion;
+        if (step === 1) return !!draft.operatorId && !!draft.location && !!resolvedRegion;
         if (step === 2) return !!draft.title && !!draft.description && !!draft.maxGuests;
         if (step === 4) return !isPhotoUploading;
         if (step === 5) return !!draft.pricePerNight;
@@ -727,12 +761,12 @@ export default function AdminListingNew() {
 
                 <Form method="post" className="space-y-6">
                     <div className="p-6 rounded-2xl border border-border bg-card min-h-[300px]">
-                        {step === 1 && <Step1Location draft={draft} setDraft={setDraft} errors={errors} />}
+                        {step === 1 && <Step1Location draft={draft} setDraft={setDraft} errors={errors} operators={operators} />}
                         {step === 2 && <Step2BasicInfo draft={draft} setDraft={setDraft} errors={errors} />}
                         {step === 3 && <Step3Amenities draft={draft} setDraft={setDraft} />}
                         {step === 4 && <Step4Photos draft={draft} setDraft={setDraft} onUploadingChange={setIsPhotoUploading} />}
                         {step === 5 && <Step5Pricing draft={draft} setDraft={setDraft} errors={errors} />}
-                        {step === 6 && <Step6Review draft={draft} errors={errors} isSubmitting={isSubmitting} />}
+                        {step === 6 && <Step6Review draft={draft} errors={errors} isSubmitting={isSubmitting} operators={operators} />}
                     </div>
 
                     <div className="flex justify-between gap-3">

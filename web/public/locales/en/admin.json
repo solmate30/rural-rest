@@ -120,7 +120,7 @@
     "basePriceEx": "120000",
     "maxGuests": "Max Guests",
     "maxGuestsEx": "4",
-    "availability": "Availability & Dynamic Pricing",
+    "availability": "Pricing & Options",
     "days": {
       "sun": "Sun", "mon": "Mon", "tue": "Tue", "wed": "Wed",
       "thu": "Thu", "fri": "Fri", "sat": "Sat"

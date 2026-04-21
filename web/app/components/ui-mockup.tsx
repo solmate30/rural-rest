@@ -188,7 +188,7 @@ export function Header({ onMenuOpen }: { onMenuOpen?: () => void } = {}) {
                             </>
                         ) : isOperator || isHost ? (
                             <>
-                                <a href="/operator" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.operatorDashboard")}</a>
+                                <a href="/host" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.operatorDashboard")}</a>
                                 <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
                             </>
                         ) : (
@@ -291,7 +291,7 @@ export function Header({ onMenuOpen }: { onMenuOpen?: () => void } = {}) {
                                         </DropdownMenuItem>
                                     )}
                                     {isOperator && (
-                                        <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/operator")}>
+                                        <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/host")}>
                                             {t("nav.operatorDashboard")}
                                         </DropdownMenuItem>
                                     )}

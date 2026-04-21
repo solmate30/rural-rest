@@ -1,16 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useLoaderData } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { data } from "react-router";
 import { eq, asc } from "drizzle-orm";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
 import { bookings, listings, messages, user as userTable } from "~/db/schema";
 import { cn } from "~/lib/utils";
-import type { Route } from "./+types/admin.messages.$bookingId";
-
-/* ------------------------------------------------------------------ */
-/*  Loader                                                             */
-/* ------------------------------------------------------------------ */
+import { Header, Footer } from "~/components/ui-mockup";
+import type { Route } from "./+types/host.messages.$bookingId";
 
 export async function loader({ request, params }: Route.LoaderArgs) {
     const currentUser = await requireUser(request, ["admin", "operator", "spv"]);
@@ -58,10 +55,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     };
 }
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-
 interface ChatMessage {
     id: string;
     senderId: string;
@@ -71,12 +64,9 @@ interface ChatMessage {
     createdAt: Date | null;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
-
-export default function AdminMessagesPage() {
+export default function HostMessagesPage() {
     const { booking, partnerName, initialMessages, currentUserId } = useLoaderData<typeof loader>();
+    const navigate = useNavigate();
 
     const [msgs, setMsgs] = useState<ChatMessage[]>(initialMessages as ChatMessage[]);
     const [input, setInput] = useState("");
@@ -137,15 +127,17 @@ export default function AdminMessagesPage() {
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px]">
-            {/* Header */}
+        <div className="min-h-screen bg-[#fcfaf7] font-sans flex flex-col">
+            <Header />
+            <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-3xl w-full flex flex-col">
+            <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px]">
             <div className="flex items-center gap-3 mb-4">
-                <Link
-                    to="/admin/bookings"
+                <button
+                    onClick={() => navigate(-1)}
                     className="flex items-center justify-center w-8 h-8 rounded-xl hover:bg-stone-100 transition-colors"
                 >
                     <span className="material-symbols-outlined text-[20px] text-stone-400">arrow_back</span>
-                </Link>
+                </button>
                 <div className="flex-1 min-w-0">
                     <h2 className="text-base font-bold text-[#4a3b2c] truncate">{booking.listingTitle}</h2>
                     <p className="text-xs text-stone-400">
@@ -158,7 +150,6 @@ export default function AdminMessagesPage() {
                 </div>
             </div>
 
-            {/* Message area */}
             <div className="flex-1 overflow-y-auto bg-white rounded-3xl border border-stone-100 shadow-sm px-5 py-5 space-y-4">
                 {msgs.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
@@ -212,7 +203,6 @@ export default function AdminMessagesPage() {
                 <div ref={bottomRef} />
             </div>
 
-            {/* Input bar */}
             <div className="mt-3 flex items-center gap-3 bg-white rounded-2xl border border-stone-100 shadow-sm px-4 py-3">
                 <input
                     ref={inputRef}
@@ -239,6 +229,9 @@ export default function AdminMessagesPage() {
                     }
                 </button>
             </div>
+            </div>
+            </main>
+            <Footer />
         </div>
     );
 }

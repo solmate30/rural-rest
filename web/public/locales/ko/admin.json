@@ -121,7 +121,7 @@
     "basePriceEx": "120000",
     "maxGuests": "최대 인원",
     "maxGuestsEx": "4",
-    "availability": "가용 일정 및 가격",
+    "availability": "가격 및 운영 설정",
     "days": {
       "sun": "일", "mon": "월", "tue": "화", "wed": "수",
       "thu": "목", "fri": "금", "sat": "토"
