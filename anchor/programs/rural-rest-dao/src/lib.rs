@@ -109,11 +109,6 @@ pub mod rural_rest_dao {
                 .ok_or(DaoError::MathOverflow)?;
         }
 
-        // Council Token 총 공급량도 total_eligible_weight에 포함
-        total_eligible_weight = total_eligible_weight
-            .checked_add(ctx.accounts.council_mint.supply)
-            .ok_or(DaoError::MathOverflow)?;
-
         let config = &mut ctx.accounts.dao_config;
         let proposal_id = config.proposal_count;
         config.proposal_count = config
@@ -245,21 +240,6 @@ pub mod rural_rest_dao {
 
             raw_weight = raw_weight
                 .checked_add(position.amount)
-                .ok_or(DaoError::MathOverflow)?;
-        }
-
-        // Council Token 잔액 합산 (Optional — council member가 아니면 None)
-        if let Some(ref council_ata) = ctx.accounts.voter_council_ata {
-            require!(
-                council_ata.mint == ctx.accounts.dao_config.council_mint,
-                DaoError::InvalidCouncilAta
-            );
-            require!(
-                council_ata.owner == voter_key,
-                DaoError::InvalidCouncilAtaOwner
-            );
-            raw_weight = raw_weight
-                .checked_add(council_ata.amount)
                 .ok_or(DaoError::MathOverflow)?;
         }
 

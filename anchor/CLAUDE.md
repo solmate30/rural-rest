@@ -266,7 +266,7 @@ approval = votes_for >= (votes_for + votes_against) * approval_threshold_bps / 1
 
 | 결정 | 내용 | 이유 |
 |------|------|------|
-| Council Token 투표권 | Council Token 보유자도 cast_vote로 투표 가능 (1:1 가중치) | 마을/지자체는 RWA 미보유, 운영 주체의 공식 의사 표현 필요 |
+| Council Token 투표권 | Council Token = 제안 생성 자격만. 투표권은 RWA 보유량만 (기획서 14번 원칙) | 마을대표/지자체도 RWA 직접 보유로 투표권 확보. Council supply는 total_eligible_weight 미포함 |
 | RWA 토큰 양도 불가 | `non_transferable` extension 적용 | 2차 시장 미지원, investor_position PDA 불일치 버그 방지 |
 | `open_position` 분리 | `init_if_needed` → `open_position` + `purchase_tokens` 분리 | 재초기화 공격 방지, 명시적 constraint |
 | `funds_released: bool` | `PropertyToken`에 필드 추가 | `release_funds` 중복 호출 방지 |
