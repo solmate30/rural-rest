@@ -77,6 +77,7 @@ Stores rural accommodation details.
 *   **images**: Text (JSON Array of URLs) [Default: '[]']
 *   **transport_support**: Integer (Boolean 0/1) [Default: 0]
 *   **smart_lock_enabled**: Integer (Boolean 0/1) [Default: 0]
+*   **gov_wallet_address**: Text [Nullable] — 지자체 USDC 지갑. Null이면 환경변수 `DEFAULT_GOV_WALLET` fallback (see `15_REFUND_AND_TREASURY_POLICY.md`)
 *   **created_at**: Integer (Timestamp)
 
 ### 2.7. `bookings` Table
@@ -88,7 +89,13 @@ Manages reservations and payments.
 *   **check_out**: Integer (Timestamp/Date) [Not Null]
 *   **total_price**: Integer [Not Null]
 *   **status**: Text ('pending', 'confirmed', 'cancelled', 'completed') [Default: 'pending']
+    - `completed`: 체크아웃 완료 OR 확정 예약 취소 시 0% 환불 케이스 (매출 인식)
 *   **payment_intent_id**: Text [Nullable] (Stripe/PayPal Transaction ID)
+*   **paypal_capture_id**: Text [Nullable] (PayPal 환불용 capture ID)
+*   **escrow_pda**: Text [Nullable] (USDC 예약 시 booking_escrow PDA)
+*   **platform_fee_krw**: Integer [Nullable] — 플랫폼 수수료 10% (KRW). USDC 예약도 저장(환산값)
+*   **platform_fee_usdc**: Integer [Nullable] — USDC 예약의 실제 10% 수수료 (micro-USDC). audit trail
+*   **listing_revenue_krw**: Integer [Nullable] — 90% 금액 (KRW). 카드 결제 월정산 입력값
 *   **qr_code_token**: Text [Nullable] (Digital Key)
 *   **qr_code_expires_at**: Integer [Nullable]
 *   **created_at**: Integer (Timestamp)
@@ -149,6 +156,22 @@ Shuttle service and airport/terminal pickup requests.
 *   **settlement_usdc**: Integer [Not Null] — 운영자 몫 micro-USDC (영업이익 × 30%)
 *   **claim_tx**: Text [Nullable] — Solana 트랜잭션 서명 (null = 미수령)
 *   **claimed_at**: Integer (Timestamp) [Nullable]
+*   **created_at**: Integer (Timestamp)
+
+### 2.13. `settlements` Table
+월정산 감사(audit) 테이블. `settle_listing_monthly` CPI 실행 기록을 1행 1매물-1월 단위로 저장한다.
+상세 정책: `docs/04_Logic_Progress/15_REFUND_AND_TREASURY_POLICY.md`
+
+*   **id**: Text (UUID v4) [Primary Key]
+*   **listing_id**: Text [Foreign Key -> listings.id, Not Null]
+*   **month**: Text [Not Null] — "2026-03" 형식. (listing_id, month) unique
+*   **total_revenue_usdc**: Integer [Not Null] — listing_vault 잔고 기준 매출 (micro-USDC)
+*   **operating_cost_usdc**: Integer [Default: 0] — 어드민 수동 입력 운영비
+*   **gov_share_usdc**: Integer [Not Null] — 40% 지자체 몫
+*   **operator_share_usdc**: Integer [Not Null] — 30% 운영자 몫
+*   **investor_share_usdc**: Integer [Not Null] — 30% 투자자 배당 풀
+*   **gov_payout_status**: Text ('paid', 'pending') [Default: 'paid'] — 지자체 지갑 미등록 시 'pending'
+*   **onchain_tx_signature**: Text [Nullable] — Solana 트랜잭션 서명
 *   **created_at**: Integer (Timestamp)
 
 ## 3. Drizzle Schema Example (TypeScript)

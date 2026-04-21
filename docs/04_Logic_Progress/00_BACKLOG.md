@@ -1,6 +1,6 @@
 # 00. Product Backlog & Implementation Status
 > Created: 2026-02-07 17:34
-> Last Updated: 2026-04-17 00:00
+> Last Updated: 2026-04-21 00:00
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
@@ -28,7 +28,8 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 | 투자자 | KYC 실제 신원 확인 (현재 시뮬레이션) | Phase 2 |
 | 마을운영자 | 디지털 키 발송 연동 | Phase 2 |
 | 어드민 | 숙소 등록 시 Google Geocoding API로 lat/lng 자동 저장 (현재 null → 지도 기본 좌표 표시) | Phase 1 |
-| 인프라 | devnet 배포 시 CRANK_SECRET_KEY 등 서버 키 관리 전략 수립 (Vercel/Railway 환경변수 or AWS Secrets Manager, mainnet 전 Squads multisig 전환 포함) | devnet 배포 전 |
+| 어드민 | `api.admin.monthly-settlement.ts` 실제 `settle_listing_monthly` CPI 호출 + `settlements` 레코드 저장 | Phase 1 |
+| 인프라 | devnet 배포 시 CRANK_SECRET_KEY 등 서버 키 관리 전략 수립 (mainnet 전 Squads multisig 전환 포함) | devnet 배포 전 |
 
 ---
 
@@ -122,6 +123,41 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [ ] **Anchor Devnet 배포**: devnet E2E 테스트 (발행→구매→수익→배당)
 *   [ ] **Vercel 배포 후 Cron Job 등록 확인**: Vercel 대시보드 → Settings → Cron Jobs
 *   [x] **RWA Entry Hooks**: 숙소 상세 "이 집의 한 조각 소유하기" 배너/버튼 → `/invest/:id` 연결 완료
+
+#### Phase 1 — Treasury 구조 전환 (정책: `15_REFUND_AND_TREASURY_POLICY.md`)
+
+**완료 (2026-04-21)**
+*   [x] **`cancel-confirmed.ts` 0% 환불 status 버그**: `refundBps===0`일 때 `completed`로 저장
+*   [x] **Anchor `ListingVault` PDA + `settle_listing_monthly`**: 90% → listing_vault 전송, 월정산 시 40/30/30 분배. IDL 재생성
+*   [x] **`release_booking_escrow` 체크아웃 시점 버그**: `check_in` → `check_out` 비교로 수정
+*   [x] **`cancel_booking_escrow_partial` listing_vault 전환**: 호스트 직접 수령 → `listing_vault_ata`로 교체 (40/30/30 분배 포함)
+*   [x] **`escrow-release.server.ts` listing_vault 전환**: `hostUsdc` → `listingVault` + `listingVaultAta`
+*   [x] **`cancel-confirmed.ts` listing_vault 전환**: 50% 부분취소 호스트 몫도 `listing_vault_ata`로 교체
+*   [x] **DB 마이그레이션**: `listings.govWalletAddress`, `settlements` 테이블 신규 (`drizzle-kit push` 완료)
+*   [x] **Anchor 테스트 G 시나리오**: `settle_listing_monthly` 5개 케이스 (정상/AlreadySettled/InsufficientVault/Unauthorized/InvalidBpsSum)
+*   [x] **시나리오 스크립트 06-booking.ts**: listing_vault 전환 + `initializeListingVault` 추가
+
+**남은 작업 (Phase 1 완료 조건)**
+*   [ ] **Anchor 빌드·테스트 통과**: `anchor build && anchor test -- --features skip-oracle`
+*   [ ] **`api.admin.monthly-settlement.ts` 실 CPI 호출**: 현재 계산만 존재 → 실제 `settle_listing_monthly` 호출 + `settlements` 레코드 저장
+*   [ ] **환불 3단계 E2E**: 100%/50%/0% USDC 경로 검증 (`06-booking.ts` 재실행)
+*   [ ] **월정산 E2E**: `settlements` 레코드 생성 + 투자자 `claim_dividend` 수령 금액 일치 확인
+
+---
+
+## Phase 2 — devnet 이후 (MVP 이후 확장)
+
+| 항목 | 설명 |
+|------|------|
+| 디지털 키(QR) 체크인 | 스마트락 연동, 마을운영자 발송 UI |
+| KYC 실제 신원 확인 | 현재 시뮬레이션 → 실제 인증 서비스 연동 |
+| Squads Multisig | Authority → M-of-N multisig 전환 (mainnet 전) |
+| Transport Request | 라스트 마일 교통 수동 요청 기능 |
+| 예약 승인 알림 | 이메일/푸시 알림 (게스트 체크인 알림 포함) |
+| Helius Webhook | Blinks 투자 DB 자동 기록 (현재 수동 동기화) |
+| 지자체 KRW 정산 | USDC → KRW 출금 프로세스 (거래소 연동 or 수동) |
+
+---
 
 ### DAO (커스텀 Anchor -- Realms 대체, 08_DAO_IMPLEMENTATION_SPEC)
 *   [x] **Anchor DAO 프로그램**: `rural-rest-dao` 5개 instruction 구현 완료 (Program ID: `3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX`)

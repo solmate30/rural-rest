@@ -1,11 +1,29 @@
 # 13. 정산 아키텍처 — 3자 분배 설계
 
 > Created: 2026-03-25
-> Updated: 2026-03-28
+> Updated: 2026-04-21
+
+> **선행 문서**: `docs/04_Logic_Progress/15_REFUND_AND_TREASURY_POLICY.md`
+> — 이 문서는 "영업이익 3자 분배" 단계만 다룬다. 예약금 10%/90% 분리,
+>   `listing_vault` PDA, 환불 정책은 15번 문서에서 정의한다.
 
 ---
 
 ## 0. 분배 구조 요약
+
+### 자금 흐름 전체 (15번 문서 요약)
+
+```
+예약금 100% → booking_escrow
+체크아웃 release → 10% treasury (플랫폼 수수료, 즉시)
+                 → 90% listing_vault (월정산 대기)
+월정산 → listing_vault − 운영비 = 영업이익 → 아래 3자 분배
+```
+
+**주의**: 이 문서의 "매출"과 "영업이익"은 **`listing_vault`에 쌓인 90% 기준**이다.
+플랫폼 10% 수수료는 release 시점에 이미 선제외됐으므로 월정산 계산에 포함되지 않는다.
+
+### 영업이익 3자 분배
 
 Rural Rest 플랫폼은 월 숙박 영업이익을 3자에게 분배한다:
 
@@ -29,7 +47,7 @@ Rural Rest 플랫폼은 월 숙박 영업이익을 3자에게 분배한다:
     ↓
 미정산 매물에 [정산하기] 클릭
     ↓
-Step 1: 운영비 입력 (숙박 매출은 bookings DB 자동 계산)
+Step 1: 운영비 입력 (숙박 매출 = listing_vault 온체인 잔고 + 카드 매출 KRW credit)
     ↓
 Step 2: dryRun API 호출 → 분배 미리보기
     영업이익 = 매출 - 운영비
