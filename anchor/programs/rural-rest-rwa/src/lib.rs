@@ -71,10 +71,18 @@ pub enum RwaError {
     InvalidPythPrice,                // 6022
     #[msg("Booking escrow is not in Pending status.")]
     BookingNotPending,               // 6023
-    #[msg("Check-in time has not passed yet; cannot release escrow.")]
-    CheckInNotPassed,                // 6024
+    #[msg("Check-out time has not passed yet; cannot release escrow.")]
+    CheckOutNotPassed,               // 6024
     #[msg("guest_bps must be between 1 and 9999.")]
     InvalidRefundBps,                // 6025
+    #[msg("Listing already settled for this month.")]
+    AlreadySettled,                  // 6026
+    #[msg("bps split must sum to 10000.")]
+    InvalidBpsSum,                   // 6027
+    #[msg("Operating cost exceeds vault balance.")]
+    InsufficientVaultBalance,        // 6028
+    #[msg("year_month format invalid (expected YYYYMM).")]
+    InvalidYearMonth,                // 6029
 }
 
 // =====================
@@ -136,6 +144,17 @@ pub enum EscrowStatus {
     Pending,
     Released,
     Refunded,
+}
+
+// =====================
+// ListingVault: 매물별 예약 수익(90%) 보관 PDA. 월정산 출발점.
+#[account]
+#[derive(InitSpace)]
+pub struct ListingVault {
+    #[max_len(32)]
+    pub listing_id: String,
+    pub last_settled_year_month: u32,  // YYYYMM; 0 = 미정산
+    pub bump: u8,
 }
 
 // =====================
@@ -714,14 +733,21 @@ pub struct ReleaseBookingEscrow<'info> {
     )]
     pub escrow_vault: InterfaceAccount<'info, TokenAccount>,
 
-    // 호스트 정산 수령 계좌 (90%)
+    // 매물 수익(90%) 보관 볼트 state PDA
+    #[account(
+        seeds = [b"listing_vault", booking_escrow.listing_id.as_bytes()],
+        bump = listing_vault.bump,
+    )]
+    pub listing_vault: Account<'info, ListingVault>,
+
+    // 매물 수익 USDC 저장 ATA (listing_vault_pda 소유)
     #[account(
         mut,
-        token::mint = usdc_mint,
-        token::authority = booking_escrow.host,
-        token::token_program = usdc_token_program,
+        associated_token::mint = usdc_mint,
+        associated_token::authority = listing_vault,
+        associated_token::token_program = usdc_token_program,
     )]
-    pub host_usdc: InterfaceAccount<'info, TokenAccount>,
+    pub listing_vault_ata: InterfaceAccount<'info, TokenAccount>,
 
     // 플랫폼 수수료 수령 계좌 (10%)
     #[account(
@@ -740,6 +766,122 @@ pub struct ReleaseBookingEscrow<'info> {
 
     #[account(address = booking_escrow.usdc_mint)]
     pub usdc_mint: InterfaceAccount<'info, Mint>,
+    pub usdc_token_program: Interface<'info, TokenInterface>,
+}
+
+// =====================
+// initialize_listing_vault
+// =====================
+#[derive(Accounts)]
+#[instruction(listing_id: String)]
+pub struct InitializeListingVault<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    #[account(
+        seeds = [b"rwa_config"],
+        bump = rwa_config.bump,
+        has_one = authority,
+    )]
+    pub rwa_config: Account<'info, RwaConfig>,
+
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + ListingVault::INIT_SPACE,
+        seeds = [b"listing_vault", listing_id.as_bytes()],
+        bump,
+    )]
+    pub listing_vault: Account<'info, ListingVault>,
+
+    #[account(
+        init,
+        payer = authority,
+        associated_token::mint = usdc_mint,
+        associated_token::authority = listing_vault,
+        associated_token::token_program = usdc_token_program,
+    )]
+    pub listing_vault_ata: InterfaceAccount<'info, TokenAccount>,
+
+    pub usdc_mint: InterfaceAccount<'info, Mint>,
+    pub usdc_token_program: Interface<'info, TokenInterface>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+}
+
+// =====================
+// settle_listing_monthly
+// =====================
+#[derive(Accounts)]
+#[instruction(listing_id: String)]
+pub struct SettleListingMonthly<'info> {
+    #[account(mut)]
+    pub operator: Signer<'info>,
+
+    #[account(
+        seeds = [b"rwa_config"],
+        bump = rwa_config.bump,
+    )]
+    pub rwa_config: Box<Account<'info, RwaConfig>>,
+
+    #[account(
+        mut,
+        seeds = [b"listing_vault", listing_id.as_bytes()],
+        bump = listing_vault.bump,
+    )]
+    pub listing_vault: Box<Account<'info, ListingVault>>,
+
+    #[account(
+        mut,
+        associated_token::mint = usdc_mint,
+        associated_token::authority = listing_vault,
+        associated_token::token_program = usdc_token_program,
+    )]
+    pub listing_vault_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    #[account(
+        mut,
+        seeds = [b"property", listing_id.as_bytes()],
+        bump = property_token.bump,
+    )]
+    pub property_token: Box<Account<'info, PropertyToken>>,
+
+    // 지자체 수령 계좌 (40%)
+    #[account(
+        mut,
+        token::mint = usdc_mint,
+        token::token_program = usdc_token_program,
+    )]
+    pub gov_usdc: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    // 운영자 수령 계좌 (30%)
+    #[account(
+        mut,
+        token::mint = usdc_mint,
+        token::token_program = usdc_token_program,
+    )]
+    pub operator_usdc: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    // 투자자 배당 풀 (30%) — 기존 property_token 소유 배당 vault
+    #[account(
+        mut,
+        associated_token::mint = usdc_mint,
+        associated_token::authority = property_token,
+        associated_token::token_program = usdc_token_program,
+    )]
+    pub usdc_vault: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    // 운영비 회수 계좌 (플랫폼 authority)
+    #[account(
+        mut,
+        token::mint = usdc_mint,
+        token::authority = rwa_config.authority,
+        token::token_program = usdc_token_program,
+    )]
+    pub authority_usdc: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    #[account(address = property_token.usdc_mint)]
+    pub usdc_mint: Box<InterfaceAccount<'info, Mint>>,
     pub usdc_token_program: Interface<'info, TokenInterface>,
 }
 
@@ -819,14 +961,20 @@ pub struct CancelBookingEscrowPartial<'info> {
     )]
     pub guest_usdc: InterfaceAccount<'info, TokenAccount>,
 
-    // 호스트 수령 계좌 (나머지)
+    // 취소 시 호스트 귀속분 → listing_vault (월정산 포함)
+    #[account(
+        seeds = [b"listing_vault", booking_escrow.listing_id.as_bytes()],
+        bump = listing_vault.bump,
+    )]
+    pub listing_vault: Account<'info, ListingVault>,
+
     #[account(
         mut,
-        token::mint = usdc_mint,
-        token::token_program = usdc_token_program,
-        constraint = host_usdc.owner == booking_escrow.host @ RwaError::Unauthorized,
+        associated_token::mint = usdc_mint,
+        associated_token::authority = listing_vault,
+        associated_token::token_program = usdc_token_program,
     )]
-    pub host_usdc: InterfaceAccount<'info, TokenAccount>,
+    pub listing_vault_ata: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
         seeds = [b"rwa_config"],
@@ -1497,8 +1645,8 @@ pub mod rural_rest_rwa {
         require!(escrow.status == EscrowStatus::Pending, RwaError::BookingNotPending);
 
         let clock = Clock::get()?;
-        // 체크인 시점 이후에만 정산 가능
-        require!(clock.unix_timestamp >= escrow.check_in, RwaError::CheckInNotPassed);
+        // 체크아웃 이후에만 정산 가능
+        require!(clock.unix_timestamp >= escrow.check_out, RwaError::CheckOutNotPassed);
 
         let amount = escrow.amount_usdc;
 
@@ -1513,18 +1661,19 @@ pub mod rural_rest_rwa {
         let seeds: &[&[u8]] = &[b"booking_escrow", booking_id_bytes, &[bump]];
         let signer_seeds = &[seeds];
 
-        // escrow_vault → host_usdc 90% (booking_escrow PDA 서명)
-        let host_transfer_ctx = CpiContext::new_with_signer(
+        // escrow_vault → listing_vault_ata 90% (booking_escrow PDA 서명)
+        // 월정산 전까지 매물별 vault에 귀속. 운영자 개인 지갑 직송 없음.
+        let listing_transfer_ctx = CpiContext::new_with_signer(
             ctx.accounts.usdc_token_program.to_account_info(),
             TransferChecked {
                 from: ctx.accounts.escrow_vault.to_account_info(),
                 mint: ctx.accounts.usdc_mint.to_account_info(),
-                to: ctx.accounts.host_usdc.to_account_info(),
+                to: ctx.accounts.listing_vault_ata.to_account_info(),
                 authority: ctx.accounts.booking_escrow.to_account_info(),
             },
             signer_seeds,
         );
-        transfer_checked(host_transfer_ctx, host_amount, 6)?;
+        transfer_checked(listing_transfer_ctx, host_amount, 6)?;
 
         // escrow_vault → treasury_usdc 10% (booking_escrow PDA 서명)
         let treasury_transfer_ctx = CpiContext::new_with_signer(
@@ -1540,6 +1689,162 @@ pub mod rural_rest_rwa {
         transfer_checked(treasury_transfer_ctx, treasury_amount, 6)?;
 
         ctx.accounts.booking_escrow.status = EscrowStatus::Released;
+        Ok(())
+    }
+
+    // ListingVault 초기화 (매물당 1회). 매물 등록 후 최초 예약 release 전에 호출 필요.
+    pub fn initialize_listing_vault(
+        ctx: Context<InitializeListingVault>,
+        listing_id: String,
+    ) -> Result<()> {
+        require!(listing_id.len() <= 32, RwaError::MathOverflow);
+        let vault = &mut ctx.accounts.listing_vault;
+        vault.listing_id = listing_id;
+        vault.last_settled_year_month = 0;
+        vault.bump = ctx.bumps.listing_vault;
+        Ok(())
+    }
+
+    // 매물 월정산: listing_vault − 운영비 = 영업이익을 40/30/30 분배 + 운영비 authority 회수
+    pub fn settle_listing_monthly(
+        ctx: Context<SettleListingMonthly>,
+        listing_id: String,
+        year_month: u32,
+        operating_cost_usdc: u64,
+        gov_bps: u16,
+        operator_bps: u16,
+        investor_bps: u16,
+    ) -> Result<()> {
+        // 1. 권한 검증
+        let op = ctx.accounts.operator.key();
+        require!(
+            op == ctx.accounts.rwa_config.authority
+                || op == ctx.accounts.rwa_config.crank_authority,
+            RwaError::Unauthorized
+        );
+
+        // 2. 파라미터 검증
+        let sum = (gov_bps as u32)
+            .checked_add(operator_bps as u32)
+            .and_then(|s| s.checked_add(investor_bps as u32))
+            .ok_or(RwaError::MathOverflow)?;
+        require!(sum == 10_000, RwaError::InvalidBpsSum);
+
+        // YYYYMM sanity (예: 202001 ~ 209912)
+        let yy = year_month / 100;
+        let mm = year_month % 100;
+        require!(
+            year_month > ctx.accounts.listing_vault.last_settled_year_month,
+            RwaError::AlreadySettled
+        );
+        require!(
+            (2020..=2099).contains(&yy) && (1..=12).contains(&mm),
+            RwaError::InvalidYearMonth
+        );
+
+        // 3. Active 상태 검증 (투자자 배당은 Active에서만 — distribute_monthly_revenue와 동일 규칙)
+        require!(
+            ctx.accounts.property_token.status == PropertyStatus::Active,
+            RwaError::InvalidStatus
+        );
+
+        // 4. 잔고 및 영업이익 계산
+        let total = ctx.accounts.listing_vault_ata.amount;
+        require!(operating_cost_usdc <= total, RwaError::InsufficientVaultBalance);
+        let operating_profit = total
+            .checked_sub(operating_cost_usdc)
+            .ok_or(RwaError::MathOverflow)?;
+
+        let op_u128 = operating_profit as u128;
+        let gov_amt: u64 = op_u128
+            .checked_mul(gov_bps as u128).ok_or(RwaError::MathOverflow)?
+            .checked_div(10_000).ok_or(RwaError::MathOverflow)?
+            .try_into().map_err(|_| RwaError::MathOverflow)?;
+        let operator_amt: u64 = op_u128
+            .checked_mul(operator_bps as u128).ok_or(RwaError::MathOverflow)?
+            .checked_div(10_000).ok_or(RwaError::MathOverflow)?
+            .try_into().map_err(|_| RwaError::MathOverflow)?;
+        // 반올림 잔여는 투자자 풀에 귀속 (dust 방지)
+        let investor_amt: u64 = operating_profit
+            .checked_sub(gov_amt).ok_or(RwaError::MathOverflow)?
+            .checked_sub(operator_amt).ok_or(RwaError::MathOverflow)?;
+
+        // 5. CPI 4건 (listing_vault PDA 서명)
+        let listing_id_bytes = listing_id.as_bytes();
+        let bump = ctx.accounts.listing_vault.bump;
+        let seeds: &[&[u8]] = &[b"listing_vault", listing_id_bytes, &[bump]];
+        let signer_seeds = &[seeds];
+
+        if operating_cost_usdc > 0 {
+            let cost_ctx = CpiContext::new_with_signer(
+                ctx.accounts.usdc_token_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.listing_vault_ata.to_account_info(),
+                    mint: ctx.accounts.usdc_mint.to_account_info(),
+                    to: ctx.accounts.authority_usdc.to_account_info(),
+                    authority: ctx.accounts.listing_vault.to_account_info(),
+                },
+                signer_seeds,
+            );
+            transfer_checked(cost_ctx, operating_cost_usdc, 6)?;
+        }
+
+        if gov_amt > 0 {
+            let gov_ctx = CpiContext::new_with_signer(
+                ctx.accounts.usdc_token_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.listing_vault_ata.to_account_info(),
+                    mint: ctx.accounts.usdc_mint.to_account_info(),
+                    to: ctx.accounts.gov_usdc.to_account_info(),
+                    authority: ctx.accounts.listing_vault.to_account_info(),
+                },
+                signer_seeds,
+            );
+            transfer_checked(gov_ctx, gov_amt, 6)?;
+        }
+
+        if operator_amt > 0 {
+            let operator_ctx = CpiContext::new_with_signer(
+                ctx.accounts.usdc_token_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.listing_vault_ata.to_account_info(),
+                    mint: ctx.accounts.usdc_mint.to_account_info(),
+                    to: ctx.accounts.operator_usdc.to_account_info(),
+                    authority: ctx.accounts.listing_vault.to_account_info(),
+                },
+                signer_seeds,
+            );
+            transfer_checked(operator_ctx, operator_amt, 6)?;
+        }
+
+        if investor_amt > 0 {
+            let investor_ctx = CpiContext::new_with_signer(
+                ctx.accounts.usdc_token_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.listing_vault_ata.to_account_info(),
+                    mint: ctx.accounts.usdc_mint.to_account_info(),
+                    to: ctx.accounts.usdc_vault.to_account_info(),
+                    authority: ctx.accounts.listing_vault.to_account_info(),
+                },
+                signer_seeds,
+            );
+            transfer_checked(investor_ctx, investor_amt, 6)?;
+
+            // 6. acc_dividend_per_share 업데이트 (distribute_monthly_revenue와 동일 패턴)
+            let property = &mut ctx.accounts.property_token;
+            require!(property.tokens_sold > 0, RwaError::ZeroAmount);
+            let added = (investor_amt as u128)
+                .checked_mul(PRECISION).ok_or(RwaError::MathOverflow)?
+                .checked_div(property.tokens_sold as u128).ok_or(RwaError::MathOverflow)?;
+            property.acc_dividend_per_share = property
+                .acc_dividend_per_share
+                .checked_add(added)
+                .ok_or(RwaError::MathOverflow)?;
+        }
+
+        // 7. 마지막 정산 월 기록 (중복 정산 방지)
+        ctx.accounts.listing_vault.last_settled_year_month = year_month;
+
         Ok(())
     }
 
@@ -1638,19 +1943,19 @@ pub mod rural_rest_rwa {
             transfer_checked(guest_transfer_ctx, guest_amount, 6)?;
         }
 
-        // escrow_vault → host_usdc (나머지)
+        // escrow_vault → listing_vault_ata (나머지, 월정산 포함)
         if host_amount > 0 {
-            let host_transfer_ctx = CpiContext::new_with_signer(
+            let vault_transfer_ctx = CpiContext::new_with_signer(
                 ctx.accounts.usdc_token_program.to_account_info(),
                 TransferChecked {
                     from: ctx.accounts.escrow_vault.to_account_info(),
                     mint: ctx.accounts.usdc_mint.to_account_info(),
-                    to: ctx.accounts.host_usdc.to_account_info(),
+                    to: ctx.accounts.listing_vault_ata.to_account_info(),
                     authority: ctx.accounts.booking_escrow.to_account_info(),
                 },
                 signer_seeds,
             );
-            transfer_checked(host_transfer_ctx, host_amount, 6)?;
+            transfer_checked(vault_transfer_ctx, host_amount, 6)?;
         }
 
         ctx.accounts.booking_escrow.status = EscrowStatus::Refunded;

@@ -66,7 +66,7 @@ async function main() {
         console.log(`  ${label}: SOL ${sol} 충전 완료`);
     };
     await fund(adminKp, "admin (확인)", 0); // admin은 이미 충전됨
-    for (const [kp, label] of [[investor1,"investor1"],[investor2,"investor2"],[investor3,"investor3"],[guest,"guest"],[treasury,"treasury"]] as [Keypair,string][]) {
+    for (const [kp, label] of [[investor1,"investor1"],[investor2,"investor2"],[investor3,"investor3"],[guest,"guest"]] as [Keypair,string][]) {
         await fund(kp, label);
     }
 

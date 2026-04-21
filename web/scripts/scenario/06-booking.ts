@@ -160,14 +160,14 @@ async function main() {
     const { ep: epC, ev: evC, vaultBal: vaultC } = await create(BKG_C, 60*60*24*5, 60*60*24*7, "F-3");
 
     const guestBefore3 = BigInt((await connection.getTokenAccountBalance(guestUsdc)).value.amount);
-    const hostBefore3  = BigInt((await connection.getTokenAccountBalance(adminUsdc)).value.amount);
+    const lvBefore3    = BigInt((await connection.getTokenAccountBalance(lvAta)).value.amount);
     await (adminProgram.methods as any)
         .cancelBookingEscrowPartial(BKG_C, 5000)
-        .accounts({ caller: adminKp.publicKey, bookingEscrow: epC, escrowVault: evC, guestUsdc, hostUsdc: adminUsdc, rwaConfig, usdcMint: USDC_MINT, usdcTokenProgram: TOKEN_PROGRAM_ID })
+        .accounts({ caller: adminKp.publicKey, bookingEscrow: epC, escrowVault: evC, guestUsdc, listingVault: lvPda, listingVaultAta: lvAta, rwaConfig, usdcMint: USDC_MINT, usdcTokenProgram: TOKEN_PROGRAM_ID })
         .rpc();
     const guestAfter3 = BigInt((await connection.getTokenAccountBalance(guestUsdc)).value.amount);
-    const hostAfter3  = BigInt((await connection.getTokenAccountBalance(adminUsdc)).value.amount);
-    console.log(`  [F-3] 50% 부분취소: 게스트 ${guestAfter3 - guestBefore3} / 호스트 ${hostAfter3 - hostBefore3}  (총: ${vaultC})`);
+    const lvAfter3    = BigInt((await connection.getTokenAccountBalance(lvAta)).value.amount);
+    console.log(`  [F-3] 50% 부분취소: 게스트 ${guestAfter3 - guestBefore3} / listing_vault ${lvAfter3 - lvBefore3}  (총: ${vaultC})`);
 
     // F-4: release_booking_escrow (체크아웃 5초 경과 대기)
     console.log("  [F-4] 체크아웃 경과 대기 (5초)...");

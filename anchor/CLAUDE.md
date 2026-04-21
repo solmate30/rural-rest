@@ -178,7 +178,7 @@ skip-oracle = []  # Pyth 우회, amount_usdc = amount_krw * 1_000_000 / 1350
 | 6021 | PythConfidenceTooWide | 신뢰도 구간 > 2% (불안정한 시장) |
 | 6022 | InvalidPythPrice | 가격 음수 또는 zero |
 | 6023 | BookingNotPending | status != Pending |
-| 6024 | CheckInNotPassed | now < check_out (체크아웃 전 release 시도) |
+| 6024 | CheckOutNotPassed | now < check_out (체크아웃 전 release 시도) |
 | 6025 | InvalidRefundBps | guest_bps가 1~9999 범위 밖 |
 
 ---

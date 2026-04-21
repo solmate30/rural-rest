@@ -147,6 +147,8 @@ describe("rural-rest-rwa", () => {
   let escrowVault2: PublicKey;
   let escrowVault3: PublicKey;
   let propertyTokenF: PublicKey; // F 시나리오: host가 authority인 propertyToken PDA
+  let listingVaultF: PublicKey;
+  let listingVaultAtaF: PublicKey;
   const ESCROW_AMOUNT_KRW = new anchor.BN(100_000); // 10만원 → skip-oracle: 74 USDC(1350 KRW/USD)
 
   // ── before(): 모든 it() 테스트 실행 전 딱 1번 실행되는 전역 셋업 ──────────────
@@ -326,6 +328,13 @@ describe("rural-rest-rwa", () => {
       }
     }
 
+    // 시나리오 F: listing_vault 주소 계산
+    [listingVaultF] = PublicKey.findProgramAddressSync(
+      [Buffer.from("listing_vault"), Buffer.from(listingIdF)],
+      program.programId
+    );
+    listingVaultAtaF = getAssociatedTokenAddressSync(usdcMint, listingVaultF, true, TOKEN_PROGRAM_ID);
+
     // RwaConfig PDA
     [rwaConfig] = PublicKey.findProgramAddressSync(
       [Buffer.from("rwa_config")],
@@ -345,6 +354,28 @@ describe("rural-rest-rwa", () => {
         .rpc();
     } catch (err: any) {
       // "already in use" → 이전 테스트 실행에서 생성된 계좌. 무시.
+      if (!err.toString().includes("already in use") && !err.toString().includes("0x0")) {
+        throw err;
+      }
+    }
+
+    // 시나리오 F용 listing_vault 초기화 (rwaConfig 초기화 이후)
+    try {
+      await program.methods
+        .initializeListingVault(listingIdF)
+        .accounts({
+          authority: authority.publicKey,
+          rwaConfig,
+          listingVault: listingVaultF,
+          listingVaultAta: listingVaultAtaF,
+          usdcMint,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([authority])
+        .rpc();
+    } catch (err: any) {
       if (!err.toString().includes("already in use") && !err.toString().includes("0x0")) {
         throw err;
       }
@@ -1990,12 +2021,12 @@ describe("rural-rest-rwa", () => {
     console.log("    100% 환불 완료, 환불액:", refunded.toString(), "micro-USDC");
   });
 
-  it("F-3. cancel_booking_escrow_partial — 50% 게스트, 50% 호스트 분배", async () => {
+  it("F-3. cancel_booking_escrow_partial — 50% 게스트 환불, 50% listing_vault 귀속", async () => {
     // F-1의 bookingEscrowPda 재사용 (이미 생성됨, status=Pending)
-    const vaultBefore = BigInt((await connection.getTokenAccountBalance(escrowVault)).value.amount);
-    const guestBefore = BigInt((await connection.getTokenAccountBalance(guestUsdcAccount)).value.amount);
+    const vaultBefore      = BigInt((await connection.getTokenAccountBalance(escrowVault)).value.amount);
+    const guestBefore      = BigInt((await connection.getTokenAccountBalance(guestUsdcAccount)).value.amount);
+    const listingVaultBefore = BigInt((await connection.getTokenAccountBalance(listingVaultAtaF)).value.amount);
 
-    // authority(crank)가 50% 부분 취소 호출
     await (program.methods as any)
       .cancelBookingEscrowPartial(bookingId.replace(/-/g, ""), 5000)
       .accounts({
@@ -2003,7 +2034,8 @@ describe("rural-rest-rwa", () => {
         bookingEscrow: bookingEscrowPda,
         escrowVault,
         guestUsdc: guestUsdcAccount,
-        hostUsdc: hostUsdcAccount,
+        listingVault: listingVaultF,
+        listingVaultAta: listingVaultAtaF,
         rwaConfig,
         usdcMint,
         usdcTokenProgram: TOKEN_PROGRAM_ID,
@@ -2011,21 +2043,19 @@ describe("rural-rest-rwa", () => {
       .signers([authority])
       .rpc();
 
-    const guestAfter = BigInt((await connection.getTokenAccountBalance(guestUsdcAccount)).value.amount);
-    const hostAfter  = BigInt((await connection.getTokenAccountBalance(hostUsdcAccount)).value.amount);
+    const guestAfter        = BigInt((await connection.getTokenAccountBalance(guestUsdcAccount)).value.amount);
+    const listingVaultAfter = BigInt((await connection.getTokenAccountBalance(listingVaultAtaF)).value.amount);
 
-    const guestReceived = guestAfter - guestBefore;
-    const hostReceived  = hostAfter;
+    const guestReceived  = guestAfter - guestBefore;
+    const vaultReceived  = listingVaultAfter - listingVaultBefore;
 
-    // 게스트 50% + 호스트 50% = 볼트 전액
-    assert.equal(guestReceived + hostReceived, vaultBefore, "총합 = 볼트 전액");
-    // 각각 50% (floor 기준으로 1 차이 허용)
-    const diff = guestReceived > hostReceived ? guestReceived - hostReceived : hostReceived - guestReceived;
-    assert.isTrue(diff <= 1n, "게스트/호스트 각 50% (±1 micro-USDC 오차 허용)");
+    assert.equal(guestReceived + vaultReceived, vaultBefore, "총합 = 볼트 전액");
+    const diff = guestReceived > vaultReceived ? guestReceived - vaultReceived : vaultReceived - guestReceived;
+    assert.isTrue(diff <= 1n, "게스트/listing_vault 각 50% (±1 micro-USDC 오차 허용)");
 
     const escrowAccount = await (program.account as any).bookingEscrow.fetch(bookingEscrowPda);
     assert.equal(escrowAccount.status.refunded !== undefined, true, "status = Refunded");
-    console.log(`    50% 분배 — 게스트: ${guestReceived}, 호스트: ${hostReceived} micro-USDC`);
+    console.log(`    50% 분배 — 게스트: ${guestReceived}, listing_vault: ${vaultReceived} micro-USDC`);
   });
 
   it("F-4. cancel_booking_escrow_partial — bps=0 → InvalidRefundBps 에러", async () => {
@@ -2057,7 +2087,8 @@ describe("rural-rest-rwa", () => {
           bookingEscrow: bookingEscrowPda3,
           escrowVault: escrowVault3,
           guestUsdc: guestUsdcAccount,
-          hostUsdc: hostUsdcAccount,
+          listingVault: listingVaultF,
+          listingVaultAta: listingVaultAtaF,
           rwaConfig,
           usdcMint,
           usdcTokenProgram: TOKEN_PROGRAM_ID,
@@ -2080,7 +2111,8 @@ describe("rural-rest-rwa", () => {
           bookingEscrow: bookingEscrowPda3,
           escrowVault: escrowVault3,
           guestUsdc: guestUsdcAccount,
-          hostUsdc: hostUsdcAccount,
+          listingVault: listingVaultF,
+          listingVaultAta: listingVaultAtaF,
           rwaConfig,
           usdcMint,
           usdcTokenProgram: TOKEN_PROGRAM_ID,
@@ -2106,7 +2138,8 @@ describe("rural-rest-rwa", () => {
           bookingEscrow: bookingEscrowPda3,
           escrowVault: escrowVault3,
           guestUsdc: guestUsdcAccount,
-          hostUsdc: hostUsdcAccount,
+          listingVault: listingVaultF,
+          listingVaultAta: listingVaultAtaF,
           rwaConfig,
           usdcMint,
           usdcTokenProgram: TOKEN_PROGRAM_ID,

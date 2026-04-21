@@ -1,6 +1,6 @@
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
-import { bookings, listings, user as userTable } from "~/db/schema";
+import { bookings, user as userTable } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import { refundPayPalCapture } from "~/lib/paypal.server";
 import { calcRefundBps } from "~/lib/refund-policy";
@@ -9,7 +9,6 @@ import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import {
     TOKEN_PROGRAM_ID,
     getAssociatedTokenAddressSync,
-    getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
 import bs58 from "bs58";
 import IDL from "~/anchor-idl/rural_rest_rwa.json";
@@ -110,27 +109,17 @@ export async function action({ request }: { request: Request }) {
                     .rpc();
 
             } else if (refundBps === 5000) {
-                // 50% 환불: cancelBookingEscrowPartial
-                const [listingRow] = await db
-                    .select({ hostId: listings.hostId })
-                    .from(listings)
-                    .where(eq(listings.id, booking.listingId));
-                const [hostUser] = listingRow
-                    ? await db.select({ walletAddress: userTable.walletAddress }).from(userTable).where(eq(userTable.id, listingRow.hostId))
-                    : [];
-                if (!hostUser?.walletAddress) return Response.json({ error: "호스트 지갑 미연결" }, { status: 400 });
-
-                const hostUsdc = await getOrCreateAssociatedTokenAccount(
-                    connection, crank, usdcMint,
-                    new PublicKey(hostUser.walletAddress),
-                    false, "confirmed", undefined, TOKEN_PROGRAM_ID,
-                );
-
+                // 50% 환불: cancelBookingEscrowPartial (나머지 50% → listing_vault)
                 const [bookingEscrowPda] = PublicKey.findProgramAddressSync(
                     [Buffer.from("booking_escrow"), Buffer.from(bookingIdSeed)],
                     programId,
                 );
                 const escrowVault = getAssociatedTokenAddressSync(usdcMint, bookingEscrowPda, true, TOKEN_PROGRAM_ID);
+                const [listingVault] = PublicKey.findProgramAddressSync(
+                    [Buffer.from("listing_vault"), Buffer.from(booking.listingId)],
+                    programId,
+                );
+                const listingVaultAta = getAssociatedTokenAddressSync(usdcMint, listingVault, true, TOKEN_PROGRAM_ID);
 
                 await (program.methods as any)
                     .cancelBookingEscrowPartial(bookingIdSeed, 5000)
@@ -139,7 +128,8 @@ export async function action({ request }: { request: Request }) {
                         bookingEscrow: bookingEscrowPda,
                         escrowVault,
                         guestUsdc,
-                        hostUsdc: hostUsdc.address,
+                        listingVault,
+                        listingVaultAta,
                         rwaConfig,
                         usdcMint,
                         usdcTokenProgram: TOKEN_PROGRAM_ID,
