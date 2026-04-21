@@ -2123,4 +2123,212 @@ describe("rural-rest-rwa", () => {
       console.log("    비권한자 → 접근 차단 정상 확인");
     }
   });
+
+  // =====================================================
+  // 시나리오 G: settle_listing_monthly (월정산 배분)
+  // 목표: listing_vault 잔액의 40/30/30 배분 및 에러 처리 검증
+  // 전제: 시나리오 A (gyeongju-001)이 Active 상태로 완료된 후 실행
+  // =====================================================
+  describe("G: settle_listing_monthly", () => {
+    const listingIdG = "gyeongju-001"; // 시나리오 A의 Active propertyToken 재사용
+
+    let listingVaultG: PublicKey;
+    let listingVaultAtaG: PublicKey;
+    let govKey: Keypair;
+    let govUsdcAccount: PublicKey;
+    let operatorUser: Keypair;
+    let operatorUsdcAccount: PublicKey;
+
+    const VAULT_AMOUNT = 1_000_000; // 1 USDC
+
+    before(async () => {
+      govKey = Keypair.generate();
+      operatorUser = Keypair.generate();
+      await fundAccount(govKey.publicKey, 0.1 * LAMPORTS_PER_SOL);
+      await fundAccount(operatorUser.publicKey, 0.1 * LAMPORTS_PER_SOL);
+
+      [listingVaultG] = PublicKey.findProgramAddressSync(
+        [Buffer.from("listing_vault"), Buffer.from(listingIdG)],
+        program.programId
+      );
+      listingVaultAtaG = getAssociatedTokenAddressSync(usdcMint, listingVaultG, true, TOKEN_PROGRAM_ID);
+
+      govUsdcAccount = await createAssociatedTokenAccount(
+        connection, govKey, usdcMint, govKey.publicKey
+      );
+      operatorUsdcAccount = await createAssociatedTokenAccount(
+        connection, operatorUser, usdcMint, operatorUser.publicKey
+      );
+
+      try {
+        await program.methods
+          .initializeListingVault(listingIdG)
+          .accounts({
+            authority: authority.publicKey,
+            rwaConfig,
+            listingVault: listingVaultG,
+            listingVaultAta: listingVaultAtaG,
+            usdcMint,
+            usdcTokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            systemProgram: anchor.web3.SystemProgram.programId,
+          })
+          .signers([authority])
+          .rpc();
+      } catch (err: any) {
+        if (!err.toString().includes("already in use") && !err.toString().includes("0x0")) {
+          throw err;
+        }
+      }
+
+      // listing_vault_ata에 USDC 직접 충전 (예약 수익 시뮬레이션)
+      await mintTo(connection, authority, usdcMint, listingVaultAtaG, authority, VAULT_AMOUNT);
+    });
+
+    it("G-1. 정상 분배 — authority 호출, 운영비 100_000 차감 후 40/30/30", async () => {
+      const OPERATING_COST = 100_000; // 0.1 USDC
+      const PROFIT = VAULT_AMOUNT - OPERATING_COST; // 900_000
+      const GOV_EXPECTED    = Math.floor(PROFIT * 4000 / 10_000); // 360_000
+      const OPERATOR_EXPECTED = Math.floor(PROFIT * 3000 / 10_000); // 270_000
+      const INVESTOR_EXPECTED = PROFIT - GOV_EXPECTED - OPERATOR_EXPECTED; // 270_000
+
+      const usdcVaultBefore = Number((await connection.getTokenAccountBalance(usdcVault)).value.amount);
+
+      await program.methods
+        .settleListingMonthly(listingIdG, 202501, new anchor.BN(OPERATING_COST), 4000, 3000, 3000)
+        .accounts({
+          operator: authority.publicKey,
+          rwaConfig,
+          listingVault: listingVaultG,
+          listingVaultAta: listingVaultAtaG,
+          propertyToken,
+          govUsdc: govUsdcAccount,
+          operatorUsdc: operatorUsdcAccount,
+          usdcVault,
+          authorityUsdc: authorityUsdcAccount,
+          usdcMint,
+          usdcTokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([authority])
+        .rpc();
+
+      const govBalance      = Number((await connection.getTokenAccountBalance(govUsdcAccount)).value.amount);
+      const operatorBalance = Number((await connection.getTokenAccountBalance(operatorUsdcAccount)).value.amount);
+      const usdcVaultAfter  = Number((await connection.getTokenAccountBalance(usdcVault)).value.amount);
+      const vaultBalance    = Number((await connection.getTokenAccountBalance(listingVaultAtaG)).value.amount);
+
+      assert.equal(govBalance, GOV_EXPECTED, "지자체 40% 수령 확인");
+      assert.equal(operatorBalance, OPERATOR_EXPECTED, "운영자 30% 수령 확인");
+      assert.equal(usdcVaultAfter - usdcVaultBefore, INVESTOR_EXPECTED, "투자자 배당풀 30% 입금 확인");
+      assert.equal(vaultBalance, 0, "listing_vault 잔액 소진 확인");
+      console.log(`    분배 완료: gov=${GOV_EXPECTED}, op=${OPERATOR_EXPECTED}, inv=${INVESTOR_EXPECTED}`);
+    });
+
+    it("G-2. AlreadySettled — 같은 달(202501) 재호출 차단", async () => {
+      try {
+        await program.methods
+          .settleListingMonthly(listingIdG, 202501, new anchor.BN(0), 4000, 3000, 3000)
+          .accounts({
+            operator: authority.publicKey,
+            rwaConfig,
+            listingVault: listingVaultG,
+            listingVaultAta: listingVaultAtaG,
+            propertyToken,
+            govUsdc: govUsdcAccount,
+            operatorUsdc: operatorUsdcAccount,
+            usdcVault,
+            authorityUsdc: authorityUsdcAccount,
+            usdcMint,
+            usdcTokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .signers([authority])
+          .rpc();
+        assert.fail("AlreadySettled 에러가 발생해야 함");
+      } catch (err: any) {
+        assert.include(err.toString(), "AlreadySettled");
+        console.log("    같은 달 재호출 → AlreadySettled 정상 차단");
+      }
+    });
+
+    it("G-3. InsufficientVaultBalance — 운영비 > 잔액(0)", async () => {
+      try {
+        await program.methods
+          .settleListingMonthly(listingIdG, 202502, new anchor.BN(1), 4000, 3000, 3000)
+          .accounts({
+            operator: authority.publicKey,
+            rwaConfig,
+            listingVault: listingVaultG,
+            listingVaultAta: listingVaultAtaG,
+            propertyToken,
+            govUsdc: govUsdcAccount,
+            operatorUsdc: operatorUsdcAccount,
+            usdcVault,
+            authorityUsdc: authorityUsdcAccount,
+            usdcMint,
+            usdcTokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .signers([authority])
+          .rpc();
+        assert.fail("InsufficientVaultBalance 에러가 발생해야 함");
+      } catch (err: any) {
+        assert.include(err.toString(), "InsufficientVaultBalance");
+        console.log("    운영비 > 잔액 → InsufficientVaultBalance 정상 차단");
+      }
+    });
+
+    it("G-4. Unauthorized — 무관한 서명자 호출 차단", async () => {
+      const stranger = Keypair.generate();
+      await fundAccount(stranger.publicKey, 0.1 * LAMPORTS_PER_SOL);
+
+      try {
+        await program.methods
+          .settleListingMonthly(listingIdG, 202502, new anchor.BN(0), 4000, 3000, 3000)
+          .accounts({
+            operator: stranger.publicKey,
+            rwaConfig,
+            listingVault: listingVaultG,
+            listingVaultAta: listingVaultAtaG,
+            propertyToken,
+            govUsdc: govUsdcAccount,
+            operatorUsdc: operatorUsdcAccount,
+            usdcVault,
+            authorityUsdc: authorityUsdcAccount,
+            usdcMint,
+            usdcTokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .signers([stranger])
+          .rpc();
+        assert.fail("Unauthorized 에러가 발생해야 함");
+      } catch (err: any) {
+        assert.include(err.toString(), "Unauthorized");
+        console.log("    무관한 서명자 → Unauthorized 정상 차단");
+      }
+    });
+
+    it("G-5. InvalidBpsSum — bps 합계 != 10000 차단", async () => {
+      try {
+        await program.methods
+          .settleListingMonthly(listingIdG, 202502, new anchor.BN(0), 4000, 3000, 2999) // 합계 9999
+          .accounts({
+            operator: authority.publicKey,
+            rwaConfig,
+            listingVault: listingVaultG,
+            listingVaultAta: listingVaultAtaG,
+            propertyToken,
+            govUsdc: govUsdcAccount,
+            operatorUsdc: operatorUsdcAccount,
+            usdcVault,
+            authorityUsdc: authorityUsdcAccount,
+            usdcMint,
+            usdcTokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .signers([authority])
+          .rpc();
+        assert.fail("InvalidBpsSum 에러가 발생해야 함");
+      } catch (err: any) {
+        assert.include(err.toString(), "InvalidBpsSum");
+        console.log("    bps 합계 9999 → InvalidBpsSum 정상 차단");
+      }
+    });
+  });
 });

@@ -214,12 +214,12 @@ export default function AdminOperators() {
 
     return (
         <div>
-            <div className="max-w-5xl mx-auto px-4 py-10 space-y-6">
+            <div className="space-y-6 pb-10">
                 {/* 헤더 */}
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold text-[#4a3b2c]">운영자 관리</h1>
                     <div className="flex items-center gap-3">
-                        <span className="text-sm text-[#a0856c]">총 {operators.length}명</span>
+                        <span className="text-sm text-[#a0856c] hidden sm:inline">총 {operators.length}명</span>
                         <Button
                             size="sm"
                             onClick={() => setCreateSheetOpen(true)}
@@ -245,49 +245,52 @@ export default function AdminOperators() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>이름</TableHead>
-                                        <TableHead>이메일</TableHead>
-                                        <TableHead>지갑</TableHead>
-                                        <TableHead>등록일</TableHead>
+                                        <TableHead className="hidden sm:table-cell">이메일</TableHead>
+                                        <TableHead className="hidden md:table-cell">지갑</TableHead>
+                                        <TableHead className="hidden lg:table-cell">등록일</TableHead>
                                         <TableHead className="text-right">관리</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {operators.map((op) => (
                                         <TableRow key={op.id}>
-                                            <TableCell className="font-medium text-[#4a3b2c]">
-                                                {op.name}
+                                            <TableCell className="font-medium text-[#4a3b2c] max-w-[120px] sm:max-w-[180px]">
+                                                <p className="truncate">{op.name}</p>
+                                                <p className="text-xs text-stone-400 sm:hidden truncate">{op.email}</p>
                                             </TableCell>
-                                            <TableCell className="text-sm text-[#6b5744]">
+                                            <TableCell className="text-sm text-[#6b5744] hidden sm:table-cell">
                                                 {op.email}
                                             </TableCell>
-                                            <TableCell className="text-xs text-[#a0856c] font-mono">
+                                            <TableCell className="text-xs text-[#a0856c] font-mono hidden md:table-cell">
                                                 {op.walletAddress
                                                     ? `${op.walletAddress.slice(0, 6)}…${op.walletAddress.slice(-4)}`
                                                     : <span className="text-gray-400">없음</span>}
                                             </TableCell>
-                                            <TableCell className="text-sm text-[#a0856c]">
+                                            <TableCell className="text-sm text-[#a0856c] hidden lg:table-cell">
                                                 {op.createdAt
                                                     ? DateTime.fromJSDate(new Date(op.createdAt)).toFormat("yyyy.MM.dd")
                                                     : "-"}
                                             </TableCell>
-                                            <TableCell className="text-right space-x-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => {
-                                                        setEditTarget(op);
-                                                        setEditName(op.name);
-                                                    }}
-                                                >
-                                                    이름 수정
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="destructive"
-                                                    onClick={() => setDeleteTarget(op)}
-                                                >
-                                                    삭제
-                                                </Button>
+                                            <TableCell className="text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => {
+                                                            setEditTarget(op);
+                                                            setEditName(op.name);
+                                                        }}
+                                                    >
+                                                        수정
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="destructive"
+                                                        onClick={() => setDeleteTarget(op)}
+                                                    >
+                                                        삭제
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}

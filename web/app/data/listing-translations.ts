@@ -71,14 +71,26 @@ export function applyListingLocale<T extends {
     title: string;
     description: string;
     cityLabel?: string;
+    titleEn?: string;
+    descriptionEn?: string;
 }>(listing: T, locale: string): T {
     if (locale !== "en") return listing;
-    const en = listingTranslationsEn[listing.id];
-    if (!en) return listing;
+
+    // DB 번역 컬럼 우선, 없으면 정적맵 fallback
+    const dbTitleEn = listing.titleEn;
+    const dbDescriptionEn = listing.descriptionEn;
+    const staticEn = listingTranslationsEn[listing.id];
+
+    const resolvedTitle = dbTitleEn ?? staticEn?.title ?? listing.title;
+    const resolvedDescription = dbDescriptionEn ?? staticEn?.description ?? listing.description;
+    const resolvedCityLabel = listing.cityLabel !== undefined
+        ? (staticEn?.cityLabel ?? listing.cityLabel)
+        : undefined;
+
     return {
         ...listing,
-        title: en.title,
-        description: en.description,
-        ...(listing.cityLabel !== undefined ? { cityLabel: en.cityLabel } : {}),
+        title: resolvedTitle,
+        description: resolvedDescription,
+        ...(listing.cityLabel !== undefined ? { cityLabel: resolvedCityLabel } : {}),
     };
 }

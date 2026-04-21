@@ -42,7 +42,9 @@ const BLINKS_HEADERS = {
     "X-Blockchain-Ids": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1", // devnet
 };
 
-async function getListingWithToken(listingId: string) {
+async function getListingWithToken(param: string) {
+    // param은 nodeNumber(숫자) 또는 UUID — 양쪽 지원
+    const isNumeric = /^\d+$/.test(param);
     const rows = await db
         .select({
             id: listings.id,
@@ -59,7 +61,7 @@ async function getListingWithToken(listingId: string) {
         })
         .from(listings)
         .innerJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
-        .where(eq(listings.id, listingId));
+        .where(isNumeric ? eq(listings.nodeNumber, Number(param)) : eq(listings.id, param));
 
     return rows[0] ?? null;
 }
@@ -168,13 +170,17 @@ export async function action({ params, request }: Route.ActionArgs) {
         const usdcMint = new PublicKey(USDC_MINT_ADDR);
         const tokenMintPubkey = new PublicKey(token.tokenMint);
 
+        // PDA seed: UUID 하이픈 제거 (36 → 32 bytes)
+        // params.listingId가 nodeNumber(3001)일 수도 있으므로 token.id(UUID)를 사용
+        const seedId = token.id.replace(/-/g, "");
+
         // PDA 계산
         const [propertyToken] = PublicKey.findProgramAddressSync(
-            [Buffer.from("property"), Buffer.from(params.listingId)],
+            [Buffer.from("property"), Buffer.from(seedId)],
             programId
         );
         const [fundingVault] = PublicKey.findProgramAddressSync(
-            [Buffer.from("funding_vault"), Buffer.from(params.listingId)],
+            [Buffer.from("funding_vault"), Buffer.from(seedId)],
             programId
         );
         const [investorPosition] = PublicKey.findProgramAddressSync(
@@ -211,7 +217,7 @@ export async function action({ params, request }: Route.ActionArgs) {
         if (!positionInfo) {
             preIxs.push(
                 await (program.methods as any)
-                    .openPosition(params.listingId)
+                    .openPosition(seedId)
                     .accounts({ investor: userPubkey, propertyToken, investorPosition })
                     .instruction()
             );
@@ -219,7 +225,7 @@ export async function action({ params, request }: Route.ActionArgs) {
 
         // purchase_tokens 트랜잭션 빌드 (미서명)
         const tx: Transaction = await (program.methods as any)
-            .purchaseTokens(params.listingId, new BN(tokenAmount))
+            .purchaseTokens(seedId, new BN(tokenAmount))
             .accounts({
                 investor: userPubkey,
                 propertyToken,

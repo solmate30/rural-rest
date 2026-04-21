@@ -41,6 +41,8 @@ export default [
     route("api/admin/force-fund", "routes/api.admin.force-fund.ts"),
     route("api/admin/issue-council-token", "routes/api.admin.issue-council-token.ts"),
     route("api/admin/create-operator", "routes/api.admin.create-operator.ts"),
+    route("dev/faucet", "routes/dev.faucet.tsx"),
+    route("api/dev/faucet", "routes/api.dev.faucet.ts"),
     route("api/chat/concierge", "routes/api.chat.concierge.ts"),
     route("api/chat/messages", "routes/api.chat.messages.ts"),
     route("api/set-language", "routes/api.set-language.ts"),

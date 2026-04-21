@@ -29,7 +29,7 @@ const EMPTY = {
 };
 
 function buildOwnedTokens(
-    investmentRows: { rwaTokenId: string; tokenAmount: number; investedUsdc: number; pricePerTokenUsdc: number; estimatedApyBps: number; listingId: string; listingTitle: string; tokenMint: string; tokenStatus: string; totalSupply: number; minFundingBps: number; fundingDeadline: Date | number | null }[],
+    investmentRows: { rwaTokenId: string; tokenAmount: number; investedUsdc: number; pricePerTokenUsdc: number; estimatedApyBps: number; listingId: string; listingNodeNumber: number | null; listingTitle: string; tokenMint: string; tokenStatus: string; totalSupply: number; minFundingBps: number; fundingDeadline: Date | number | null }[],
     pendingByToken: Map<string, number>
 ) {
     const tokenMap = new Map<string, typeof investmentRows[0] & { totalTokenAmount: number; totalInvestedMicro: number }>();
@@ -50,10 +50,11 @@ function buildOwnedTokens(
             : Number(row.fundingDeadline) * 1000;
         return {
             id: row.listingId,
+            nodeNumber: row.listingNodeNumber ?? null,
             rwaTokenId: row.rwaTokenId,
             tokenMint: row.tokenMint,
             propertyName: row.listingTitle,
-            tokenName: `RWA-${row.listingId.slice(-4).toUpperCase()}`,
+            tokenName: row.listingNodeNumber ? `RURAL-${row.listingNodeNumber}` : `RWA-${row.listingId.slice(-4).toUpperCase()}`,
             tokensOwned: row.totalTokenAmount,
             totalValue: row.totalTokenAmount * row.pricePerTokenUsdc / 1_000_000,
             dividendStatus: dividendAmountUsdc > 0 ? "pending" as const : "claimed" as const,
@@ -120,6 +121,7 @@ export async function loader({ request }: Route.LoaderArgs) {
             minFundingBps: rwaTokens.minFundingBps,
             fundingDeadline: rwaTokens.fundingDeadline,
             listingId: listings.id,
+            listingNodeNumber: listings.nodeNumber,
             listingTitle: listings.title,
         })
         .from(rwaInvestments)

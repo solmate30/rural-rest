@@ -13,10 +13,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Form, useActionData, useNavigation, redirect } from "react-router";
+import { RichTextEditor } from "~/components/ui/rich-text-editor";
 import type { Route } from "./+types/admin.listing.new";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
 import { listings } from "~/db/schema";
+import { translateText } from "~/lib/translation.server";
+import { sql } from "drizzle-orm";
 import { Button } from "~/components/ui/button";
 import { REGION_OPTIONS, AMENITY_OPTIONS, deriveRegion } from "~/lib/listing-constants";
 import { useCloudinaryUpload } from "~/hooks/use-cloudinary-upload";
@@ -133,12 +136,27 @@ export async function action({ request }: Route.ActionArgs) {
 
     const id = crypto.randomUUID();
 
+    // DeepL 자동 번역 (실패 시 원문 저장)
+    const [titleEnResult, descriptionEnResult] = await Promise.all([
+        translateText(title, "en"),
+        translateText(description, "en"),
+    ]);
+
+    // 다음 nodeNumber 채번: 기존 최대값 + 1, 빈 DB면 3001부터 시작
+    const maxNodeResult = await db
+        .select({ max: sql<number>`coalesce(max(${listings.nodeNumber}), 3000)` })
+        .from(listings)
+        .get();
+    const nodeNumber = (maxNodeResult?.max ?? 3004) + 1;
+
     await db.insert(listings).values({
         id,
-        hostId: admin.id, // TODO: SPV 계정으로 교체
-        operatorId: null,
+        nodeNumber,
+        hostId: admin.id, // TODO: 실운영 전 실제 operator 계정으로 교체
         title,
         description,
+        titleEn: titleEnResult.translated,
+        descriptionEn: descriptionEnResult.translated,
         pricePerNight,
         maxGuests,
         location,
@@ -381,12 +399,11 @@ function Step2BasicInfo({
                 />
             </Field>
             <Field label={t("new.descField")} error={errors?.description ? t(errors.description as any) : undefined} required>
-                <textarea
-                    rows={5}
-                    placeholder={t("new.descPlaceholder")}
+                <RichTextEditor
                     value={draft.description}
-                    onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-                    className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                    onChange={(html) => setDraft((d) => ({ ...d, description: html }))}
+                    placeholder={t("new.descPlaceholder")}
+                    className="w-full"
                 />
             </Field>
             <Field label={t("new.maxGuestsField")} error={errors?.maxGuests ? t(errors.maxGuests as any) : undefined} required>
@@ -449,10 +466,11 @@ function Step3Amenities({
 }
 
 function Step4Photos({
-    draft, setDraft,
+    draft, setDraft, onUploadingChange,
 }: {
     draft: ListingDraft;
     setDraft: React.Dispatch<React.SetStateAction<ListingDraft>>;
+    onUploadingChange?: (uploading: boolean) => void;
 }) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     // 임시 listing ID — Cloudinary 폴더 구분용 (DB INSERT 전)
@@ -466,6 +484,10 @@ function Step4Photos({
         },
         onError: (err) => alert(err),
     });
+
+    useEffect(() => {
+        onUploadingChange?.(isUploading);
+    }, [isUploading, onUploadingChange]);
 
     async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
         const files = e.target.files;
@@ -494,7 +516,7 @@ function Step4Photos({
             />
 
             {draft.images.length > 0 ? (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {draft.images.map((url, idx) => (
                         <div key={url} className="relative aspect-video rounded-xl overflow-hidden border group">
                             <img src={url} alt={`photo ${idx + 1}`} className="w-full h-full object-cover" />
@@ -608,7 +630,7 @@ function Step6Review({
         [t("new.reviewRegion"), REGION_OPTIONS.find((r) => r.value === resolvedRegion)?.label ?? "-"],
         [t("new.reviewValuation"), draft.valuationKrw ? t("new.krw", { amount: draft.valuationKrw.toLocaleString() }) : "-"],
         [t("new.reviewTitle"), draft.title || "-"],
-        [t("new.reviewDesc"), draft.description ? `${draft.description.slice(0, 50)}${draft.description.length > 50 ? "..." : ""}` : "-"],
+        [t("new.reviewDesc"), draft.description ? (() => { const text = draft.description.replace(/<[^>]*>/g, "").trim(); return text.length > 50 ? `${text.slice(0, 50)}...` : text || "-"; })() : "-"],
         [t("new.reviewMaxGuests"), draft.maxGuests ? t("new.guests", { count: draft.maxGuests }) : "-"],
         [t("new.reviewAmenities"), draft.amenities.length > 0 ? draft.amenities.join(", ") : t("new.noAmenities")],
         [t("new.reviewPrice"), draft.pricePerNight ? t("new.krw", { amount: draft.pricePerNight.toLocaleString() }) : "-"],
@@ -671,12 +693,14 @@ export default function AdminListingNew() {
 
     const [step, setStep] = useState(1);
     const [draft, setDraft] = useState<ListingDraft>(INITIAL_DRAFT);
+    const [isPhotoUploading, setIsPhotoUploading] = useState(false);
 
     const resolvedRegion = draft.region ?? draft.manualRegion;
 
     function canAdvance(): boolean {
         if (step === 1) return !!draft.location && !!resolvedRegion;
         if (step === 2) return !!draft.title && !!draft.description && !!draft.maxGuests;
+        if (step === 4) return !isPhotoUploading;
         if (step === 5) return !!draft.pricePerNight;
         return true;
     }
@@ -693,7 +717,7 @@ export default function AdminListingNew() {
 
     return (
         <div>
-            <main className="max-w-5xl mx-auto px-4 py-12">
+            <main className="pb-12">
                 <div className="mb-8 space-y-1">
                     <p className="text-xs uppercase font-bold tracking-widest text-muted-foreground">{t("new.breadcrumb")}</p>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">{STEP_TITLES[step - 1]}</h1>
@@ -706,7 +730,7 @@ export default function AdminListingNew() {
                         {step === 1 && <Step1Location draft={draft} setDraft={setDraft} errors={errors} />}
                         {step === 2 && <Step2BasicInfo draft={draft} setDraft={setDraft} errors={errors} />}
                         {step === 3 && <Step3Amenities draft={draft} setDraft={setDraft} />}
-                        {step === 4 && <Step4Photos draft={draft} setDraft={setDraft} />}
+                        {step === 4 && <Step4Photos draft={draft} setDraft={setDraft} onUploadingChange={setIsPhotoUploading} />}
                         {step === 5 && <Step5Pricing draft={draft} setDraft={setDraft} errors={errors} />}
                         {step === 6 && <Step6Review draft={draft} errors={errors} isSubmitting={isSubmitting} />}
                     </div>

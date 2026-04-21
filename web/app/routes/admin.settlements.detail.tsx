@@ -79,7 +79,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
             title: listings.title,
             location: listings.location,
             images: listings.images,
-            operatorId: listings.operatorId,
+            hostId: listings.hostId,
         })
         .from(listings)
         .where(eq(listings.id, listingId));
@@ -321,7 +321,7 @@ export default function AdminSettlementsDetail() {
 
     return (
         <div className="font-sans">
-            <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8">
+            <main className="pb-16">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8 flex-wrap">
                     <Link

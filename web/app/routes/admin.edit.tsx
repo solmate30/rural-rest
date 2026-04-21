@@ -10,12 +10,14 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { RichTextEditor } from "~/components/ui/rich-text-editor";
 import { Form, useLoaderData, useActionData, useNavigation, useBlocker } from "react-router";
 import { z } from "zod";
 import type { Route } from "./+types/admin.edit";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
 import { listings } from "~/db/schema";
+import { translateText } from "~/lib/translation.server";
 import { eq } from "drizzle-orm";
 import { Header, Button, Card } from "../components/ui-mockup";
 import { useCloudinaryUpload } from "~/hooks/use-cloudinary-upload";
@@ -68,9 +70,26 @@ export async function action({ request, params }: Route.ActionArgs) {
     if (Object.keys(errors).length > 0)
         return Response.json({ errors }, { status: 422 });
 
+    // DeepL 자동 번역 (실패 시 원문 저장)
+    const [titleEnResult, descriptionEnResult] = await Promise.all([
+        translateText(title, "en"),
+        translateText(description, "en"),
+    ]);
+
     await db
         .update(listings)
-        .set({ title, description, pricePerNight, maxGuests, amenities, images, transportSupport, smartLockEnabled })
+        .set({
+            title,
+            description,
+            titleEn: titleEnResult.translated,
+            descriptionEn: descriptionEnResult.translated,
+            pricePerNight,
+            maxGuests,
+            amenities,
+            images,
+            transportSupport,
+            smartLockEnabled,
+        })
         .where(eq(listings.id, params.id));
 
     return Response.json({ ok: true });
@@ -258,12 +277,10 @@ export default function AdminEdit() {
                                     />
                                 </Field>
                                 <Field label={t("edit.description")} error={errors?.description} required>
-                                    <textarea
-                                        name="description"
-                                        rows={6}
+                                    <RichTextEditor
                                         value={description}
-                                        onChange={(e) => { setDescription(e.target.value); validateField("description", e.target.value); }}
-                                        className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                                        onChange={(html) => { setDescription(html); validateField("description", html); }}
+                                        className="w-full"
                                     />
                                 </Field>
                                 <div className="grid grid-cols-2 gap-4">

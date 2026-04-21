@@ -127,7 +127,6 @@ async function main() {
         await db.insert(listings).values({
             id: listing.id,
             hostId: admin.id,
-            operatorId: admin.id,
             title: listing.title,
             description: listing.description,
             location: listing.location,

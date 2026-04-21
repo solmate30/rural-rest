@@ -76,6 +76,7 @@ export const listings = sqliteTable("listings", {
     renovationHistory: text("renovation_history", { mode: "json" }).default("[]"), // [{ date: "2025.06", desc: "..." }]
     transportSupport: integer("transport_support", { mode: "boolean" }).notNull().default(false),
     smartLockEnabled: integer("smart_lock_enabled", { mode: "boolean" }).notNull().default(false),
+    govWalletAddress: text("gov_wallet_address"),  // 지자체 USDC 지갑. null이면 환경변수 전역값 사용
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });
 
@@ -224,6 +225,20 @@ export const operatorSettlements = sqliteTable("operator_settlements", {
     settlementUsdc: integer("settlement_usdc").notNull(),    // 운영자 몫 micro-USDC (영업이익 × 30%)
     payoutTx: text("payout_tx"),                             // Solana 전송 tx 서명 (null = 미전송)
     paidAt: integer("paid_at", { mode: "timestamp" }),       // 자동 지급 시각
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+});
+
+// 온체인 settle_listing_monthly 실행 감사 기록 (USDC 기반, 매물×월 단위)
+export const settlements = sqliteTable("settlements", {
+    id: text("id").primaryKey(), // UUID v4
+    listingId: text("listing_id").notNull().references(() => listings.id),
+    month: text("month").notNull(),                            // "2026-03" 형식 (YYYY-MM)
+    totalRevenueUsdc: integer("total_revenue_usdc").notNull(), // 정산 전 listing_vault 잔액 (micro-USDC)
+    operatingCostUsdc: integer("operating_cost_usdc").notNull().default(0),
+    govShareUsdc: integer("gov_share_usdc").notNull(),         // 지자체 40%
+    operatorShareUsdc: integer("operator_share_usdc").notNull(), // 운영자 30%
+    investorShareUsdc: integer("investor_share_usdc").notNull(), // 투자자 30%
+    onchainTxSignature: text("onchain_tx_signature"),          // settle_listing_monthly tx 서명
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });
 

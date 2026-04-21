@@ -13,7 +13,7 @@ import {
 import bs58 from "bs58";
 import IDL from "~/anchor-idl/rural_rest_rwa.json";
 import { db } from "~/db/index.server";
-import { bookings, listings, user as userTable } from "~/db/schema";
+import { bookings } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import {
     RPC_URL,
@@ -28,7 +28,7 @@ export type ReleaseResult = { ok: true; tx?: string } | { ok: false; error: stri
 /**
  * 단일 예약 에스크로 릴리스
  * - 카드 결제: DB status만 completed 전환 (플랫폼이 PayPal로 전액 수령 중, 운영자 몫은 월정산에서 지급)
- * - USDC 결제: 온체인 releaseBookingEscrow → 90% 운영자 / 10% treasury 자동 분배
+ * - USDC 결제: 온체인 releaseBookingEscrow → 90% listing_vault(월정산 대기) / 10% treasury
  *
  * 전제: 호출 전에 status=confirmed, checkOut < now 검증 완료
  */
@@ -50,26 +50,13 @@ export async function releaseBooking(bookingId: string): Promise<ReleaseResult> 
     if (!CRANK_SECRET_KEY) return { ok: false, error: "CRANK_SECRET_KEY 미설정" };
     if (!SERVER_USDC_MINT) return { ok: false, error: "SERVER_USDC_MINT 미설정" };
 
-    const [listingRow] = await db
-        .select({ hostId: listings.hostId })
-        .from(listings)
-        .where(eq(listings.id, booking.listingId));
-
-    const [hostUser] = listingRow
-        ? await db
-            .select({ walletAddress: userTable.walletAddress })
-            .from(userTable)
-            .where(eq(userTable.id, listingRow.hostId))
-        : [];
-
-    if (!hostUser?.walletAddress) return { ok: false, error: "호스트 지갑 미연결" };
-
     try {
         const connection = new Connection(RPC_URL, "confirmed");
         const crank = Keypair.fromSecretKey(bs58.decode(CRANK_SECRET_KEY));
         const programId = new PublicKey(SERVER_PROGRAM_ID);
         const usdcMint = new PublicKey(SERVER_USDC_MINT);
         const bookingIdSeed = bookingId.replace(/-/g, "");
+        const listingId = booking.listingId;
 
         const [bookingEscrowPda] = PublicKey.findProgramAddressSync(
             [Buffer.from("booking_escrow"), Buffer.from(bookingIdSeed)],
@@ -82,11 +69,13 @@ export async function releaseBooking(bookingId: string): Promise<ReleaseResult> 
             [Buffer.from("rwa_config")],
             programId,
         );
-
-        const hostUsdcAccount = await getOrCreateAssociatedTokenAccount(
-            connection, crank, usdcMint,
-            new PublicKey(hostUser.walletAddress),
-            false, "confirmed", undefined, TOKEN_PROGRAM_ID,
+        // 90%가 누적되는 매물별 월정산 vault
+        const [listingVault] = PublicKey.findProgramAddressSync(
+            [Buffer.from("listing_vault"), Buffer.from(listingId)],
+            programId,
+        );
+        const listingVaultAta = getAssociatedTokenAddressSync(
+            usdcMint, listingVault, true, TOKEN_PROGRAM_ID,
         );
         const treasuryUsdcAccount = await getOrCreateAssociatedTokenAccount(
             connection, crank, usdcMint,
@@ -111,7 +100,8 @@ export async function releaseBooking(bookingId: string): Promise<ReleaseResult> 
                 operator: crank.publicKey,
                 bookingEscrow: bookingEscrowPda,
                 escrowVault,
-                hostUsdc: hostUsdcAccount.address,
+                listingVault,
+                listingVaultAta,
                 treasuryUsdc: treasuryUsdcAccount.address,
                 rwaConfig,
                 usdcMint,

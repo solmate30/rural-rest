@@ -53,7 +53,7 @@ export default function AdminSettlements() {
     const { t } = useTranslation("admin");
 
     return (
-        <div className="max-w-5xl mx-auto px-4 py-10 space-y-6">
+        <div className="space-y-6 pb-10">
             <div>
                 <h1 className="text-2xl font-bold text-[#4a3b2c]">{t("settlements.title")}</h1>
                 <p className="text-sm text-[#a0856c] mt-1">{t("settlements.subtitle")}</p>
@@ -69,10 +69,10 @@ export default function AdminSettlements() {
                         <Link
                             key={row.id}
                             to={`/admin/settlements/${row.id}`}
-                            className="flex items-center gap-4 px-6 py-4 hover:bg-[#f5f0ea] transition-colors"
+                            className="flex items-center gap-3 px-4 sm:px-6 py-4 hover:bg-[#f5f0ea] transition-colors"
                         >
                             {/* 썸네일 */}
-                            <div className="w-12 h-12 rounded-xl overflow-hidden bg-stone-100 shrink-0">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-stone-100 shrink-0">
                                 {(row.images as unknown as string[])?.[0] ? (
                                     <img src={(row.images as unknown as string[])[0]} alt="" className="w-full h-full object-cover" />
                                 ) : (
@@ -84,27 +84,35 @@ export default function AdminSettlements() {
 
                             {/* 정보 */}
                             <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-0.5">
+                                <div className="flex items-center gap-2 mb-0.5 min-w-0">
                                     <p className="text-sm font-semibold text-[#4a3b2c] truncate">{row.title}</p>
                                     {row.tokenSymbol && (
-                                        <span className="text-xs text-[#c4aa92] font-mono shrink-0">{row.tokenSymbol}</span>
+                                        <span className="text-xs text-[#c4aa92] font-mono shrink-0 hidden sm:inline">{row.tokenSymbol}</span>
                                     )}
                                 </div>
-                                <p className="text-xs text-[#a0856c]">{row.region}</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="text-xs text-[#a0856c]">{row.region}</p>
+                                    {/* 모바일에서 상태 인라인 표시 */}
+                                    <span className={cn("text-xs font-medium px-1.5 py-0.5 rounded-full sm:hidden", STATUS_CLASS[row.tokenStatus ?? "draft"])}>
+                                        {t(`settlements.status.${row.tokenStatus ?? "draft"}` as any)}
+                                    </span>
+                                </div>
                             </div>
 
-                            {/* 상태 */}
-                            <span className={cn("text-xs font-medium px-2 py-1 rounded-full shrink-0", STATUS_CLASS[row.tokenStatus ?? "draft"])}>
+                            {/* 상태 — sm 이상 */}
+                            <span className={cn("text-xs font-medium px-2 py-1 rounded-full shrink-0 hidden sm:inline", STATUS_CLASS[row.tokenStatus ?? "draft"])}>
                                 {t(`settlements.status.${row.tokenStatus ?? "draft"}` as any)}
                             </span>
 
                             {/* 정산 횟수 */}
-                            <div className="text-right shrink-0 w-28">
-                                <p className="text-sm font-semibold text-[#4a3b2c]">{t("settlements.settledCount", { count: Number(row.settlementCount) })}</p>
+                            <div className="text-right shrink-0">
+                                <p className="text-sm font-semibold text-[#4a3b2c] whitespace-nowrap">
+                                    {t("settlements.settledCount", { count: Number(row.settlementCount) })}
+                                </p>
                             </div>
 
-                            {/* 마지막 정산일 */}
-                            <div className="text-right shrink-0 w-28">
+                            {/* 마지막 정산일 — md 이상 */}
+                            <div className="text-right shrink-0 hidden md:block">
                                 <p className="text-sm text-[#4a3b2c]">
                                     {row.lastSettlementAt
                                         ? DateTime.fromJSDate(new Date(row.lastSettlementAt)).toFormat("yyyy.MM.dd")

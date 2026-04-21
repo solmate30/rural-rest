@@ -38,6 +38,7 @@ export function CancelPositionButton({ listingId, rwaTokenId, propertyName, toke
             } = await import("@solana/spl-token");
 
             const program = await getProgram(connection, wallet);
+            const seedId = listingId.replace(/-/g, "");
             const { propertyToken, fundingVault, investorPosition } = await derivePdas(listingId, investor);
 
             const usdcMint = new PublicKey(USDC_MINT);
@@ -53,7 +54,7 @@ export function CancelPositionButton({ listingId, rwaTokenId, propertyName, toke
             );
 
             const signature = await program.methods
-                .cancelPosition(listingId)
+                .cancelPosition(seedId)
                 .accounts({
                     investor,
                     propertyToken,

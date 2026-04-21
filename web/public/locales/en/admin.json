@@ -1,4 +1,14 @@
 {
+  "nav": {
+    "dashboard": "Dashboard",
+    "bookings": "Bookings",
+    "newListing": "New Listing",
+    "operators": "Operators",
+    "settlements": "Settlements",
+    "councilToken": "Issue Token",
+    "treasury": "Treasury",
+    "community": "Community"
+  },
   "dashboard": {
     "status": {
       "funding": "Funding",
@@ -232,7 +242,13 @@
       "issuing": "Issuing...",
       "issue": "Issue Token",
       "error": "Issuance failed",
-      "success": "Issued — tx: {{sig}}"
+      "success": "Issued — tx: {{sig}}",
+      "cardTitle": "Issue Token",
+      "cardDesc": "Token will be sent to the operator's connected wallet address",
+      "operatorLabel": "Select Operator",
+      "operatorPlaceholder": "Select an operator",
+      "operatorEmpty": "No operators registered",
+      "noWallet": "No wallet connected"
     }
   },
   "settlements": {

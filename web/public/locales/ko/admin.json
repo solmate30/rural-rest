@@ -1,4 +1,14 @@
 {
+  "nav": {
+    "dashboard": "대시보드",
+    "bookings": "예약 관리",
+    "newListing": "매물 등록",
+    "operators": "운영자 관리",
+    "settlements": "정산 현황",
+    "councilToken": "토큰 발급",
+    "treasury": "Treasury",
+    "community": "커뮤니티"
+  },
   "dashboard": {
     "status": {
       "funding": "펀딩 중",
@@ -233,7 +243,13 @@
       "issuing": "발급 중...",
       "issue": "발급하기",
       "error": "발급 실패",
-      "success": "발급 완료 — tx: {{sig}}"
+      "success": "발급 완료 — tx: {{sig}}",
+      "cardTitle": "토큰 발급",
+      "cardDesc": "운영자를 선택하면 연결된 지갑 주소로 발급됩니다",
+      "operatorLabel": "운영자 선택",
+      "operatorPlaceholder": "운영자를 선택하세요",
+      "operatorEmpty": "등록된 운영자가 없습니다",
+      "noWallet": "지갑 미연결"
     }
   },
   "settlements": {

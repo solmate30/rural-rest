@@ -14,6 +14,7 @@ export interface DashboardStats {
 
 export interface HostListingRow {
     id: string;
+    nodeNumber: number | null;
     title: string;
     location: string;
     pricePerNight: number;
@@ -21,7 +22,6 @@ export interface HostListingRow {
     tokenStatus: string | null;
     tokenMint: string | null;
     rwaTokenId: string | null;
-    operatorId: string | null;
     valuationKrw: number;
     tokensSold: number;
     totalSupply: number;
@@ -145,11 +145,11 @@ export async function getHostListings(hostId: string, role: string): Promise<Hos
     const rows = await db
         .select({
             id: listings.id,
+            nodeNumber: listings.nodeNumber,
             title: listings.title,
             location: listings.location,
             pricePerNight: listings.pricePerNight,
             images: listings.images,
-            operatorId: listings.operatorId,
             valuationKrw: listings.valuationKrw,
             tokenStatus: rwaTokens.status,
             tokenMint: rwaTokens.tokenMint,
@@ -180,11 +180,11 @@ export async function getHostListings(hostId: string, role: string): Promise<Hos
         const onchain = onchainMap.get(r.id);
         return {
             id: r.id,
+            nodeNumber: r.nodeNumber ?? null,
             title: r.title,
             location: r.location,
             pricePerNight: r.pricePerNight,
             image,
-            operatorId: r.operatorId ?? null,
             valuationKrw: r.valuationKrw ?? 0,
             tokenStatus: onchain?.status ?? r.tokenStatus ?? null,
             tokenMint: r.tokenMint ?? null,
@@ -210,16 +210,16 @@ export interface OperatorBookingRow {
     escrowPda: string | null;
 }
 
-/** operator가 담당하는 매물 목록 (operatorId 기준) */
+/** operator가 담당하는 매물 목록 (hostId 기준) */
 export async function getOperatorListings(operatorId: string): Promise<HostListingRow[]> {
     const rows = await db
         .select({
             id: listings.id,
+            nodeNumber: listings.nodeNumber,
             title: listings.title,
             location: listings.location,
             pricePerNight: listings.pricePerNight,
             images: listings.images,
-            operatorId: listings.operatorId,
             valuationKrw: listings.valuationKrw,
             tokenStatus: rwaTokens.status,
             tokenMint: rwaTokens.tokenMint,
@@ -232,7 +232,7 @@ export async function getOperatorListings(operatorId: string): Promise<HostListi
         })
         .from(listings)
         .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
-        .where(eq(listings.operatorId, operatorId))
+        .where(eq(listings.hostId, operatorId))
         .orderBy(desc(listings.createdAt));
 
     const initializedIds = rows.filter(r => r.tokenMint).map(r => r.id);
@@ -247,11 +247,11 @@ export async function getOperatorListings(operatorId: string): Promise<HostListi
         const onchain = onchainMap.get(r.id);
         return {
             id: r.id,
+            nodeNumber: r.nodeNumber ?? null,
             title: r.title,
             location: r.location,
             pricePerNight: r.pricePerNight,
             image,
-            operatorId: r.operatorId ?? null,
             valuationKrw: r.valuationKrw ?? 0,
             tokenStatus: onchain?.status ?? r.tokenStatus ?? null,
             tokenMint: r.tokenMint ?? null,
@@ -270,7 +270,7 @@ export async function getOperatorBookings(operatorId: string): Promise<OperatorB
     const operatorListings = await db
         .select({ id: listings.id, title: listings.title })
         .from(listings)
-        .where(eq(listings.operatorId, operatorId));
+        .where(eq(listings.hostId, operatorId));
 
     if (operatorListings.length === 0) return [];
 
@@ -329,7 +329,7 @@ export async function getOperatorSettlements(operatorId: string): Promise<Operat
     const opListings = await db
         .select({ id: listings.id, title: listings.title })
         .from(listings)
-        .where(eq(listings.operatorId, operatorId));
+        .where(eq(listings.hostId, operatorId));
 
     if (opListings.length === 0) return [];
 

@@ -173,7 +173,7 @@ export default function AdminTokenize() {
 
         return (
             <div className="font-sans">
-                <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8 max-w-6xl">
+                <main className="pb-16">
                     {/* Page header */}
                     <div className="flex items-center gap-4 mb-8">
                         <div className="w-16 h-12 rounded-xl overflow-hidden bg-stone-100 border border-stone-200/60 shrink-0">
@@ -226,7 +226,7 @@ export default function AdminTokenize() {
                                     )}
 
                                     {/* Stats grid */}
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                         <div className="bg-stone-50 rounded-xl p-4 text-center">
                                             <p className="text-[11px] text-stone-400 mb-1">{t("tokenize.investors")}</p>
                                             <p className="text-xl font-bold text-[#4a3b2c]">
@@ -328,7 +328,7 @@ export default function AdminTokenize() {
     /* ================================================================ */
     return (
         <div className="font-sans">
-            <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8">
+            <main className="pb-16">
                 {/* Back link + page header */}
                 <div className="mb-8">
                     <Link

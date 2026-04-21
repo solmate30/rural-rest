@@ -54,6 +54,7 @@ web/test-ledger/
 **/*-keypair.json
 **/*keypair*.json
 web/scripts/*.json
+web/scripts/scenario/state.json
 anchor/scripts/*.json
 anchor/keypairs/*.json
 web/test-wallets.json

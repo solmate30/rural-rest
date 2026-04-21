@@ -885,7 +885,10 @@ describe("rural-rest-dao", () => {
       // VotingEnded 또는 시뮬레이션 실패 (투표 기간 만료로 인한 거부)
       const errStr = err.toString();
       assert.ok(
-        errStr.includes("VotingEnded") || errStr.includes("6008") || errStr.includes("Unknown action"),
+        errStr.includes("VotingEnded") ||
+        errStr.includes("6008") ||
+        errStr.includes("Unknown action") ||
+        errStr.includes("Voting period has ended"),
         `Expected VotingEnded error, got: ${errStr}`
       );
       console.log("    투표 기간 만료 후 투표 차단 확인");

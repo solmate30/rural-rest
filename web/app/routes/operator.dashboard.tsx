@@ -360,7 +360,7 @@ export default function OperatorDashboard() {
                                             <p className="text-xs text-stone-400 mt-0.5">{listing.location} &middot; {fmtKrw(listing.pricePerNight)}{t("listing.perNight")}</p>
                                         </div>
                                         <Link
-                                            to={`/property/${listing.id}`}
+                                            to={`/property/${listing.nodeNumber ?? listing.id}`}
                                             className="text-xs font-medium text-stone-400 hover:text-[#4a3b2c] px-3 py-1.5 rounded-xl hover:bg-stone-100 transition-colors"
                                         >
                                             {t("listing.view")}

@@ -10,7 +10,7 @@ import { db } from "~/db/index.server";
 import { listings, user, rwaTokens, bookings } from "~/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { detectLocale } from "~/lib/i18n.server";
-import { applyListingLocale, translateAmenities } from "~/data/listing-translations";
+import { translateAmenities } from "~/data/listing-translations";
 import { InvestmentUpsellCard } from "~/components/InvestmentUpsellCard";
 import { fetchPropertyOnchain } from "~/lib/rwa.onchain.server";
 import { toLocalDateStr } from "~/lib/date-utils";
@@ -76,8 +76,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const row = await db
         .select({
             id: listings.id,
+            nodeNumber: listings.nodeNumber,
             title: listings.title,
             description: listings.description,
+            titleEn: listings.titleEn,
+            descriptionEn: listings.descriptionEn,
             location: listings.location,
             region: listings.region,
             pricePerNight: listings.pricePerNight,
@@ -95,26 +98,36 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         })
         .from(listings)
         .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
-        .where(eq(listings.id, params.id!))
+        .where(
+            /^\d+$/.test(params.id!)
+                ? eq(listings.nodeNumber, Number(params.id))
+                : eq(listings.id, params.id!)
+        )
         .then((rows) => rows[0] ?? null);
 
     if (!row) throw new Response("Not Found", { status: 404 });
 
     // 온체인 상태가 진실 — DB는 fallback
     if (row.tokenStatus) {
-        const onchain = await fetchPropertyOnchain(params.id!);
+        const onchain = await fetchPropertyOnchain(row.id);
         if (onchain) {
             row.tokenStatus = onchain.status as typeof row.tokenStatus;
             row.tokensSold = onchain.tokensSold;
         }
-        // invest.tsx와 동일한 데드라인 보정: 기간 경과 + 목표 미달 → failed
+        // invest.tsx와 동일한 데드라인 보정
         if (row.tokenStatus === "funding" && row.fundingDeadline) {
-            const deadlineMs = new Date(row.fundingDeadline).getTime();
+            const deadlineMs = row.fundingDeadline instanceof Date
+                ? row.fundingDeadline.getTime()
+                : Number(row.fundingDeadline) * 1000;
             if (Date.now() > deadlineMs) {
                 const totalSupply = row.totalSupply ?? 0;
                 const tokensSold = row.tokensSold ?? 0;
-                const progressBps = totalSupply > 0 ? (tokensSold / totalSupply) * 10000 : 0;
-                if (progressBps < (row.minFundingBps ?? 6000)) {
+                const minRequired = Math.floor((totalSupply * (row.minFundingBps ?? 6000)) / 10000);
+                if (tokensSold >= minRequired) {
+                    // 기간 경과 + 목표 달성 → releaseFunds 전이라도 funded로 표시
+                    row.tokenStatus = "funded" as typeof row.tokenStatus;
+                } else {
+                    // 기간 경과 + 목표 미달 → failed
                     row.tokenStatus = "failed" as typeof row.tokenStatus;
                 }
             }
@@ -132,24 +145,22 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
     const images = row.images as string[];
 
-    const listingBase = applyListingLocale({
-        id: row.id,
-        title: row.title,
-        description: row.description,
-        cityLabel: toCityLabel(row.location),
-    }, locale);
+    // locale에 따라 DB 번역 컬럼 우선, 없으면 원문(한국어) fallback
+    const resolvedTitle = locale === "en" && row.titleEn ? row.titleEn : row.title;
+    const resolvedDescription = locale === "en" && row.descriptionEn ? row.descriptionEn : row.description;
 
     const hostBio = locale === "en"
         ? "We breathe new life into abandoned rural homes and share the culture and nature of our village with travelers from around the world."
         : "우리 마을의 빈집을 되살려 여행자에게 특별한 경험을 제공하고 있습니다. 마을 주민들과 함께 숙소를 운영하며, 지역 문화와 자연을 나누는 일을 하고 있습니다.";
 
     const listing = {
-        id: listingBase.id,
-        title: listingBase.title,
-        description: listingBase.description,
-        about: listingBase.description,
+        id: row.id,
+        nodeNumber: row.nodeNumber ?? null,
+        title: resolvedTitle,
+        description: resolvedDescription,
+        about: resolvedDescription,
         location: row.location,
-        locationLabel: listingBase.cityLabel,
+        locationLabel: toCityLabel(row.location),
         pricePerNight: row.pricePerNight,
         maxGuests: row.maxGuests,
         amenities: translateAmenities(row.amenities as string[], locale),
@@ -173,16 +184,16 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         .from(bookings)
         .where(
             and(
-                eq(bookings.listingId, params.id!),
+                eq(bookings.listingId, row.id),
                 eq(bookings.status, "confirmed"),
             )
         );
 
-    return { listing, bookingAllowed, bookedRanges };
+    return { listing, bookingAllowed, tokenStatus: row.tokenStatus ?? null, bookedRanges };
 }
 
 export default function PropertyDetail() {
-    const { listing, bookingAllowed, bookedRanges } = useLoaderData<typeof loader>();
+    const { listing, bookingAllowed, tokenStatus, bookedRanges } = useLoaderData<typeof loader>();
     const navigate = useNavigate();
     const { t } = useTranslation("property");
     const [showGallery, setShowGallery] = useState(false);
@@ -283,9 +294,10 @@ export default function PropertyDetail() {
                         {/* About Section */}
                         <section className="space-y-4">
                             <h2 className="text-2xl font-bold text-foreground">{t("section.about")}</h2>
-                            <p className="text-muted-foreground leading-relaxed whitespace-pre-line text-lg">
-                                {listing.about || listing.description}
-                            </p>
+                            <div
+                                className="text-muted-foreground leading-relaxed text-lg prose prose-stone max-w-none"
+                                dangerouslySetInnerHTML={{ __html: listing.about || listing.description || "" }}
+                            />
                         </section>
 
                         {/* Amenities Section */}
@@ -597,7 +609,7 @@ export default function PropertyDetail() {
                                                     if (checkIn) p.set("checkIn", checkIn);
                                                     if (checkOut) p.set("checkOut", checkOut);
                                                     p.set("guests", String(guests));
-                                                    navigate(`/book/${listing.id}?${p.toString()}`);
+                                                    navigate(`/book/${listing.nodeNumber ?? listing.id}?${p.toString()}`);
                                                 }}
                                             >
                                                 {t("booking.reserve")}
@@ -608,8 +620,22 @@ export default function PropertyDetail() {
                                         </>
                                     ) : (
                                         <div className="w-full h-14 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center gap-0.5">
-                                            <span className="text-sm font-bold text-stone-400">{t("booking.fundingPending")}</span>
-                                            <span className="text-[10px] text-stone-300">{t("booking.fundingPendingNote")}</span>
+                                            {tokenStatus === "funded" ? (
+                                                <>
+                                                    <span className="text-sm font-bold text-stone-400">{t("booking.fundingComplete")}</span>
+                                                    <span className="text-[10px] text-stone-300">{t("booking.fundingCompleteNote")}</span>
+                                                </>
+                                            ) : tokenStatus === "failed" ? (
+                                                <>
+                                                    <span className="text-sm font-bold text-stone-400">{t("booking.fundingFailed")}</span>
+                                                    <span className="text-[10px] text-stone-300">{t("booking.fundingFailedNote")}</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="text-sm font-bold text-stone-400">{t("booking.fundingPending")}</span>
+                                                    <span className="text-[10px] text-stone-300">{t("booking.fundingPendingNote")}</span>
+                                                </>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -643,7 +669,7 @@ export default function PropertyDetail() {
                                 </div>
 
                             </Card>
-                            <InvestmentUpsellCard listingId={listing.id} />
+                            <InvestmentUpsellCard listingId={String(listing.nodeNumber ?? listing.id)} />
                         </div>
                     </div>
                 </div>

@@ -7,7 +7,8 @@ import { fmtUsdc, fmtKrw } from "~/lib/formatters";
 import { usePythRate } from "~/hooks/usePythRate";
 
 interface Holding {
-    id: string;          // listingId
+    id: string;          // listingId (UUID)
+    nodeNumber?: number | null;  // 3001, 3002 … — URL에 사용
     rwaTokenId: string;
     tokenMint: string;
     propertyName: string;
@@ -59,7 +60,7 @@ export function HoldingsTable({ holdings, walletAddress }: Props) {
                     </thead>
                     <tbody className="divide-y divide-stone-100">
                         {holdings.map((h) => (
-                            <tr key={h.id} className="hover:bg-stone-50/40 transition-colors cursor-pointer" onClick={() => window.location.href = `/invest/${h.id}`}>
+                            <tr key={h.id} className="hover:bg-stone-50/40 transition-colors cursor-pointer" onClick={() => window.location.href = `/invest/${h.nodeNumber ?? h.id}`}>
                                 <td className="py-4 px-5 font-semibold text-stone-800 text-sm hover:text-primary transition-colors">{h.propertyName}</td>
                                 <td className="py-4 px-5">
                                     <span className="px-2 py-0.5 rounded bg-stone-100 text-stone-500 text-[11px] font-bold font-mono">

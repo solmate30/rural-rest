@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router";
+import { useTranslation } from "react-i18next";
 import { requireUser } from "~/lib/auth.server";
 import type { Route } from "./+types/admin._layout";
 import { Header } from "~/components/ui-mockup";
@@ -11,21 +12,26 @@ export async function loader({ request }: Route.LoaderArgs) {
     return null;
 }
 
-const NAV_ITEMS = [
-    { to: "/admin",               label: "대시보드",    icon: "dashboard",       end: true  },
-    { to: "/admin/bookings",      label: "예약 관리",   icon: "calendar_month",  end: false },
-    { to: "/admin/listing/new",   label: "매물 등록",   icon: "add_home",        end: false },
-    { to: "/admin/operators",     label: "운영자 관리", icon: "manage_accounts", end: false },
-    { to: "/admin/settlements",   label: "정산 현황",   icon: "account_balance", end: false },
-    { to: "/admin/council-token", label: "토큰 발급",   icon: "token",           end: false },
-    { to: "/admin/treasury",      label: "Treasury",   icon: "savings",         end: false },
-    { to: "/governance",          label: "커뮤니티",    icon: "forum",           end: false },
+const NAV_ITEM_DEFS = [
+    { to: "/admin",               key: "dashboard",    icon: "dashboard",       end: true  },
+    { to: "/admin/bookings",      key: "bookings",     icon: "calendar_month",  end: false },
+    { to: "/admin/listing/new",   key: "newListing",   icon: "add_home",        end: false },
+    { to: "/admin/operators",     key: "operators",    icon: "manage_accounts", end: false },
+    { to: "/admin/settlements",   key: "settlements",  icon: "account_balance", end: false },
+    { to: "/admin/council-token", key: "councilToken", icon: "token",           end: false },
+    { to: "/admin/treasury",      key: "treasury",     icon: "savings",         end: false },
+    { to: "/governance",          key: "community",    icon: "forum",           end: false },
 ] as const;
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+    const { t } = useTranslation("admin");
+    const navItems = NAV_ITEM_DEFS.map((item) => ({
+        ...item,
+        label: t(`nav.${item.key}`),
+    }));
     return (
         <nav className="space-y-0.5">
-            {NAV_ITEMS.map(({ to, label, icon, end }) => (
+            {navItems.map(({ to, label, icon, end }) => (
                 <NavLink
                     key={to}
                     to={to}
@@ -59,6 +65,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
 export default function AdminLayout() {
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const { t } = useTranslation("admin");
 
     return (
         <div className="min-h-screen bg-[#f5f2ee] font-sans">
@@ -68,7 +75,7 @@ export default function AdminLayout() {
             <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
                 <SheetContent side="left" className="w-64 p-6 bg-[#f5f2ee] border-stone-200">
                     <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3 px-3">
-                        어드민
+                        {t("dashboard.title")}
                     </p>
                     <SidebarNav onNavigate={() => setDrawerOpen(false)} />
                 </SheetContent>
@@ -80,7 +87,7 @@ export default function AdminLayout() {
                     <aside className="hidden md:block w-52 shrink-0">
                         <div className="sticky top-8">
                             <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3 px-3">
-                                어드민
+                                {t("dashboard.title")}
                             </p>
                             <SidebarNav />
                         </div>

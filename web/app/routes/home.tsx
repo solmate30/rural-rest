@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { db } from "~/db/index.server";
 import { listings, rwaTokens } from "~/db/schema";
 import { detectLocale } from "~/lib/i18n.server";
-import { applyListingLocale } from "~/data/listing-translations";
 import type { Route } from "./+types/home";
 import { eq, and, inArray, isNotNull } from "drizzle-orm";
 
@@ -31,8 +30,11 @@ export async function loader({ request }: Route.LoaderArgs) {
     const rows = await db
         .select({
             id: listings.id,
+            nodeNumber: listings.nodeNumber,
             title: listings.title,
             description: listings.description,
+            titleEn: listings.titleEn,
+            descriptionEn: listings.descriptionEn,
             location: listings.location,
             region: listings.region,
             pricePerNight: listings.pricePerNight,
@@ -48,10 +50,11 @@ export async function loader({ request }: Route.LoaderArgs) {
         ));
 
     return {
-        featuredListings: rows.map((row) => applyListingLocale({
+        featuredListings: rows.map((row) => ({
             id: row.id,
-            title: row.title,
-            description: row.description,
+            nodeNumber: row.nodeNumber ?? null,
+            title: locale === "en" && row.titleEn ? row.titleEn : row.title,
+            description: locale === "en" && row.descriptionEn ? row.descriptionEn : row.description,
             location: row.location,
             region: row.region,
             cityLabel: toCityLabel(row.location),
@@ -59,7 +62,7 @@ export async function loader({ request }: Route.LoaderArgs) {
             maxGuests: row.maxGuests,
             image: (row.images as string[])[0] ?? "/house.png",
             rating: null as number | null,
-        }, locale)),
+        })),
     };
 }
 
@@ -213,12 +216,14 @@ export default function Home() {
                       )}
                     </div>
                     <h3 className="text-xl font-bold mb-2">{listing.title}</h3>
-                    <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{listing.description}</p>
+                    <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
+                        {listing.description?.replace(/<[^>]*>/g, "").trim()}
+                    </p>
                     <div className="flex items-center justify-between pt-4 border-t">
                       <span className="text-lg font-bold">₩{listing.pricePerNight.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">{t("featured.perNight")}</span></span>
                       <Button onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/property/${listing.id}`);
+                        navigate(`/property/${listing.nodeNumber ?? listing.id}`);
                       }}>{t("featured.viewDetail")}</Button>
                     </div>
                   </div>

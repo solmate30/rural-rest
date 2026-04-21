@@ -30,6 +30,7 @@ import { applyListingLocale, translateAmenities } from "~/data/listing-translati
 
 function ShareBlinksButton({ listingId }: { listingId: string }) {
     const [copied, setCopied] = useState(false);
+    const { t } = useTranslation("invest");
 
     function handleShare() {
         const actionUrl = `${window.location.origin}/api/actions/invest/${listingId}`;
@@ -48,23 +49,28 @@ function ShareBlinksButton({ listingId }: { listingId: string }) {
             <span className="material-symbols-outlined text-[16px]">
                 {copied ? "check_circle" : "share"}
             </span>
-            {copied ? "복사됨!" : "공유"}
+            {copied ? t("share.copied") : t("share.label")}
         </button>
     );
 }
 
-const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_LABELS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_LABELS_KO = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
+function getMonthLabels(lang: string) {
+    return lang.startsWith("ko") ? MONTH_LABELS_KO : MONTH_LABELS_EN;
+}
 
 function buildDividendChartData(
     actual: { month: string; totalUsdc: number }[],
     pricePerTokenUsdc: number, // micro-USDC
     apyBps: number,
+    monthLabels: string[],
 ) {
     // 실제 배당 내역이 있으면 사용
     if (actual.length > 0) {
         const byMonth = new Map(actual.map(r => [r.month.slice(5), r.totalUsdc / 1_000_000]));
         let cumulative = 0;
-        return MONTH_LABELS.map((label, i) => {
+        return monthLabels.map((label, i) => {
             const mm = String(i + 1).padStart(2, "0");
             const dividend = byMonth.get(mm) ?? 0;
             cumulative += dividend;
@@ -79,7 +85,7 @@ function buildDividendChartData(
     const weights = [0.7, 0.7, 1.0, 1.2, 1.0, 0.8, 0.8, 0.9, 1.2, 1.1, 0.9, 0.7];
     const weightSum = weights.reduce((a, b) => a + b, 0);
     let cumulative = 0;
-    return MONTH_LABELS.map((label, i) => {
+    return monthLabels.map((label, i) => {
         const dividend = Math.round(monthlyPer1000 * (weights[i] / weightSum) * 12 * 10) / 10;
         cumulative = Math.round((cumulative + dividend) * 10) / 10;
         return { month: label, dividend, cumulative };
@@ -107,8 +113,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         db
             .select({
                 id: listings.id,
+                nodeNumber: listings.nodeNumber,
                 title: listings.title,
                 description: listings.description,
+                titleEn: listings.titleEn,
+                descriptionEn: listings.descriptionEn,
                 location: listings.location,
                 images: listings.images,
                 maxGuests: listings.maxGuests,
@@ -130,7 +139,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
             })
             .from(listings)
             .innerJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
-            .where(eq(listings.id, listingId!))
+            .where(
+                // nodeNumber(숫자) 또는 UUID 양쪽 지원 — 예: /invest/3001 또는 /invest/uuid
+                /^\d+$/.test(listingId!)
+                    ? eq(listings.nodeNumber, Number(listingId))
+                    : eq(listings.id, listingId!)
+            )
             .then(rows => rows[0] ?? null),
         fetchPythKrwRate(),
     ]);
@@ -142,7 +156,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     // 온체인 조회 + 나머지 DB 쿼리 병렬 실행 (온체인은 3초 타임아웃)
     const [onchain, holdersRow, bookingRows, dividendHistory] = await Promise.all([
         Promise.race([
-            fetchPropertyOnchain(listingId!),
+            fetchPropertyOnchain(row.id), // PDA 시드는 UUID 기준 — params.listingId가 nodeNumber일 수 있으므로 row.id 사용
             new Promise<null>(resolve => setTimeout(() => resolve(null), 3000)),
         ]),
         db
@@ -220,11 +234,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const rawAmenities = row.amenities as string[];
 
     const localizedKo = applyListingLocale(
-        { id: row.id, title: row.title, description: row.description ?? "" },
+        { id: row.id, title: row.title, description: row.description ?? "", titleEn: row.titleEn ?? undefined, descriptionEn: row.descriptionEn ?? undefined },
         "ko",
     );
     const localizedEn = applyListingLocale(
-        { id: row.id, title: row.title, description: row.description ?? "" },
+        { id: row.id, title: row.title, description: row.description ?? "", titleEn: row.titleEn ?? undefined, descriptionEn: row.descriptionEn ?? undefined },
         "en",
     );
 
@@ -243,7 +257,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         location: row.location,
         images,
         apy: estimatedApyBps / 100,
-        tokenName: `RWA-${row.id.slice(-4).toUpperCase()}`,
+        tokenName: `RWA-${row.nodeNumber ?? row.id.slice(-4).toUpperCase()}`,
         tokenPrice: tokenPriceKrw,
         usdcPrice,
         totalSupply: row.totalSupply,
@@ -298,7 +312,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
             ? row.fundingDeadline.getTime()
             : Number(row.fundingDeadline) * 1000,
         minFundingBps: row.minFundingBps,
-        dividendChartData: buildDividendChartData(dividendHistoryAgg, row.pricePerTokenUsdc, row.estimatedApyBps),
+        dividendChartData: buildDividendChartData(dividendHistoryAgg, row.pricePerTokenUsdc, row.estimatedApyBps, getMonthLabels(locale)),
         lastDividend: lastDividendMonth,
         occupancyRate,
     };
@@ -448,7 +462,10 @@ export default function InvestDetail() {
                         {/* About */}
                         <section className="space-y-4 mt-10 pt-8 border-t">
                             <h2 className="text-2xl font-bold text-foreground">{t("detail.aboutHome")}</h2>
-                            <p className="text-muted-foreground leading-relaxed text-lg">{loc.about}</p>
+                            <div
+                                className="text-muted-foreground leading-relaxed text-lg prose prose-stone max-w-none"
+                                dangerouslySetInnerHTML={{ __html: loc.about }}
+                            />
                         </section>
 
                         {/* Renovation History */}

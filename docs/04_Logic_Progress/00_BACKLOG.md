@@ -1,6 +1,6 @@
 # 00. Product Backlog & Implementation Status
 > Created: 2026-02-07 17:34
-> Last Updated: 2026-04-09 00:00
+> Last Updated: 2026-04-17 00:00
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
@@ -27,6 +27,8 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 | 여행자 | 디지털 키(QR) 체크인 | Phase 2 |
 | 투자자 | KYC 실제 신원 확인 (현재 시뮬레이션) | Phase 2 |
 | 마을운영자 | 디지털 키 발송 연동 | Phase 2 |
+| 어드민 | 숙소 등록 시 Google Geocoding API로 lat/lng 자동 저장 (현재 null → 지도 기본 좌표 표시) | Phase 1 |
+| 인프라 | devnet 배포 시 CRANK_SECRET_KEY 등 서버 키 관리 전략 수립 (Vercel/Railway 환경변수 or AWS Secrets Manager, mainnet 전 Squads multisig 전환 포함) | devnet 배포 전 |
 
 ---
 
@@ -102,8 +104,23 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] **어드민 운영자 관리**: 목록·생성·이름수정·삭제 (`admin.operators.tsx`)
 *   [x] **어드민 정산 현황 목록**: 토큰화 매물별 정산 현황 페이지 (`admin.settlements.tsx`)
 
+#### 완료 (2026-04-17) — Treasury / 에스크로 정산 / 환불 정책
+*   [x] **setup-devnet.ts `setTreasury()` 누락 수정 (P0)**: `rwa_config.treasury` 미설정으로 에스크로 릴리스 불가 버그 수정
+*   [x] **Admin Treasury UI** (`/admin/treasury`): Treasury pubkey, 누적 수수료, 내역 테이블
+*   [x] **Anchor `cancelBookingEscrowPartial` instruction**: 50% 부분환불 온체인 분배 (guest_bps, error 6025 InvalidRefundBps)
+*   [x] **확정 예약 취소 환불 정책**: 7일↑ 100% / 3~7일 50% / 3일↓ 0% (`api.booking.cancel-confirmed.ts`)
+*   [x] **USDC 에스크로 취소**: cancelBookingEscrow(100%) / cancelBookingEscrowPartial(50%) / releaseBookingEscrow(0%)
+*   [x] **카드(PayPal) 부분환불**: `paypalCaptureId` DB 저장 + `refundPayPalCapture()` 전액/부분 환불 API
+*   [x] **게스트 / 호스트 확정 예약 취소 버튼 UI**: `my.bookings.tsx`, `host.bookings.tsx`
+*   [x] **`escrow-release.server.ts` 공통 함수**: 수동 API + Cron 공유
+*   [x] **Vercel Cron Jobs**: 매일 12:00 KST 에스크로 자동 릴리스 + RWA 활성화 (`vercel.json`)
+*   [x] **Vitest 환불 정책 테스트**: 16개 경계값 포함 100% 통과
+*   [x] **Anchor 시나리오 F 테스트**: create / cancel(100%) / cancelPartial(50%) / 에러케이스 추가
+
 #### 다음 단계
+*   [ ] **Anchor 테스트 F-1~F-6 통과 확인**: `rm -rf test-ledger && anchor test -- --features rural-rest-rwa/skip-oracle`
 *   [ ] **Anchor Devnet 배포**: devnet E2E 테스트 (발행→구매→수익→배당)
+*   [ ] **Vercel 배포 후 Cron Job 등록 확인**: Vercel 대시보드 → Settings → Cron Jobs
 *   [x] **RWA Entry Hooks**: 숙소 상세 "이 집의 한 조각 소유하기" 배너/버튼 → `/invest/:id` 연결 완료
 
 ### DAO (커스텀 Anchor -- Realms 대체, 08_DAO_IMPLEMENTATION_SPEC)

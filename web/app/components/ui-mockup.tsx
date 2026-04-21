@@ -116,7 +116,7 @@ export function Slider({
     );
 }
 
-export function Header() {
+export function Header({ onMenuOpen }: { onMenuOpen?: () => void } = {}) {
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
 
@@ -159,12 +159,23 @@ export function Header() {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-8">
-                {/* 로고 */}
-                <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
-                    <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                        <span className="text-white font-bold">R</span>
+                {/* 왼쪽: 햄버거(어드민 모바일) + 로고 */}
+                <div className="flex items-center gap-3">
+                    {onMenuOpen && (
+                        <button
+                            onClick={onMenuOpen}
+                            className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl hover:bg-stone-100 transition-colors"
+                            aria-label="메뉴 열기"
+                        >
+                            <span className="material-symbols-outlined text-[22px] text-stone-500">menu</span>
+                        </button>
+                    )}
+                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
+                        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                            <span className="text-white font-bold">R</span>
+                        </div>
+                        <span className="text-xl font-bold tracking-tight text-primary">Rural Rest</span>
                     </div>
-                    <span className="text-xl font-bold tracking-tight text-primary">Rural Rest</span>
                 </div>
 
                 {/* 우측: 네비 + 유저 */}
@@ -172,26 +183,8 @@ export function Header() {
                     <nav className="hidden md:flex items-center gap-5">
                         {isAdmin ? (
                             <>
-                                {([
-                                    { label: t("nav.adminTab.dashboard"),   href: "/admin",              exact: true  },
-                                    { label: t("nav.adminTab.newListing"),  href: "/admin/listing/new",  exact: false },
-                                    { label: t("nav.adminTab.operators"),   href: "/admin/operators",    exact: false },
-                                    { label: t("nav.adminTab.settlements"), href: "/admin/settlements",  exact: false },
-                                    { label: t("nav.governance"),           href: "/governance",         exact: false },
-                                ] as const).map(({ label, href, exact }) => {
-                                    const isActive = exact
-                                        ? location.pathname === href
-                                        : location.pathname.startsWith(href);
-                                    return (
-                                        <a
-                                            key={href}
-                                            href={href}
-                                            className={`text-sm font-medium transition-colors ${isActive ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"}`}
-                                        >
-                                            {label}
-                                        </a>
-                                    );
-                                })}
+                                <a href="/admin" className="text-sm font-medium hover:text-primary transition-colors">대시보드</a>
+                                <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
                             </>
                         ) : isOperator || isHost ? (
                             <>
@@ -292,17 +285,17 @@ export function Header() {
                                     )}
                                     <DropdownMenuSeparator />
                                     {/* 역할별 메뉴 */}
-                                    {(isOperator || isAdmin) && (
-                                        <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/operator")}>
-                                            {t("nav.operatorDashboard")}
-                                        </DropdownMenuItem>
-                                    )}
                                     {isAdmin && (
                                         <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/admin")}>
                                             {t("nav.adminDashboard")}
                                         </DropdownMenuItem>
                                     )}
-                                    {!isOperator && !isKycCompleted && (
+                                    {isOperator && (
+                                        <DropdownMenuItem className="cursor-pointer" onClick={() => navigate("/operator")}>
+                                            {t("nav.operatorDashboard")}
+                                        </DropdownMenuItem>
+                                    )}
+                                    {!isOperator && !isAdmin && !isKycCompleted && (
                                         <DropdownMenuItem
                                             className="text-amber-600 focus:text-amber-600 focus:bg-amber-50 cursor-pointer"
                                             onClick={() => navigate(`/kyc?return=${location.pathname}`)}

@@ -1,4 +1,8 @@
 {
+  "share": {
+    "label": "공유",
+    "copied": "복사됨!"
+  },
   "tagline": "빈집의 재탄생에 함께하세요.",
   "filter": {
     "button": "필터",
@@ -97,8 +101,12 @@
   "purchase": {
     "title": "토큰 구매",
     "amount": "수량",
-    "available": "구매 가능: {{count}}개",
+    "available": "잔여 수량: {{count}}개",
     "maxPerWallet": "지갑당 최대: {{count}}개",
+    "myHoldings": "내 보유: {{count}}개",
+    "additionalBuyable": "추가 구매 가능: {{count}}개",
+    "successTitle": "구매 완료!",
+    "successDesc": "{{count}}개 토큰이 구매되었습니다. (tx: {{tx}}...)",
     "estReturn": "예상 연 수익",
     "total": "합계",
     "fundingEndsIn": "펀딩 마감까지",
@@ -124,7 +132,24 @@
     "tokenPrice": "토큰 가격",
     "perToken": "/ 토큰",
     "expired": "마감",
-    "preparing": "준비 중"
+    "preparing": "준비 중",
+    "balance": "잔액",
+    "balanceLoading": "조회 중...",
+    "maxAffordable": "최대 구매 가능",
+    "insufficientBalance": "USDC 잔액 부족",
+    "tokenCount": "{{count}}개",
+    "walletCapReached": "지갑 한도 초과",
+    "walletCapDesc": "지갑당 최대 {{max}}개까지 구매할 수 있습니다.",
+    "holding": "보유 중",
+    "walletCapToastTitle": "이미 최대 수량을 보유하고 있어요",
+    "walletCapToastDesc": "지갑당 최대 {{max}}개까지 구매할 수 있습니다.",
+    "myPosition": "내 보유 현황",
+    "posHoldings": "보유 수량",
+    "posTokenUnit": "개",
+    "posValue": "평가액",
+    "posAnnualReturn": "예상 연수익",
+    "sharePosition": "Blinks로 공유하기",
+    "shareCopied": "복사됨!"
   },
   "upsell": {
     "title": "이 따스한 공간의\n공동 주인이 되어주세요",

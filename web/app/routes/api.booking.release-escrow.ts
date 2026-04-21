@@ -9,7 +9,7 @@ import { releaseBooking } from "~/lib/escrow-release.server";
  * Body: { bookingId }
  *
  * 체크아웃 후 예약을 completed 처리.
- * - USDC 예약: 온체인 releaseBookingEscrow → 90% 운영자 / 10% treasury
+ * - USDC 예약: 온체인 releaseBookingEscrow → 90% listing_vault(월정산 대기) / 10% treasury
  * - 카드 예약: DB 상태만 completed 전환 (PayPal은 승인 시 이미 capture됨)
  * admin / spv / operator 만 호출 가능.
  */

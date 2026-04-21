@@ -32,6 +32,7 @@ async function getListingById(id: string | undefined) {
     const row = await db
         .select({
             id: listings.id,
+            nodeNumber: listings.nodeNumber,
             title: listings.title,
             location: listings.location,
             pricePerNight: listings.pricePerNight,
@@ -41,7 +42,11 @@ async function getListingById(id: string | undefined) {
         })
         .from(listings)
         .leftJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
-        .where(eq(listings.id, id))
+        .where(
+            /^\d+$/.test(id)
+                ? eq(listings.nodeNumber, Number(id))
+                : eq(listings.id, id)
+        )
         .then((rows) => rows[0] ?? null);
 
     if (!row) return null;

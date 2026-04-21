@@ -147,7 +147,7 @@ export async function action({ request }: { request: Request }) {
                     .rpc();
 
             } else {
-                // 0% 환불: releaseBookingEscrow (운영자 90% + treasury 10%)
+                // 0% 환불: releaseBookingEscrow (listing_vault 90% + treasury 10%)
                 const { releaseBooking } = await import("~/lib/escrow-release.server");
                 const result = await releaseBooking(bookingId);
                 if (!result.ok) return Response.json({ error: result.error }, { status: 500 });
@@ -177,8 +177,11 @@ export async function action({ request }: { request: Request }) {
         }
     }
 
+    // 0% 환불: 플랫폼/호스트가 전액 수익 인식 → completed
+    // 100% / 50% 환불: cancelled
+    const finalStatus = refundBps === 0 ? "completed" : "cancelled";
     await db.update(bookings)
-        .set({ status: "cancelled" })
+        .set({ status: finalStatus })
         .where(eq(bookings.id, bookingId));
 
     return Response.json({ ok: true, refundBps });

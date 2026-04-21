@@ -1,4 +1,8 @@
 {
+  "share": {
+    "label": "Share",
+    "copied": "Copied!"
+  },
   "tagline": "Invest in Korea's rural revival.",
   "filter": {
     "button": "Filter",
@@ -97,8 +101,12 @@
   "purchase": {
     "title": "Purchase Tokens",
     "amount": "Amount",
-    "available": "Available: {{count}}",
+    "available": "Remaining: {{count}}",
     "maxPerWallet": "Max per wallet: {{count}}",
+    "myHoldings": "My holdings: {{count}}",
+    "additionalBuyable": "Can buy {{count}} more",
+    "successTitle": "Investment Complete!",
+    "successDesc": "{{count}} tokens purchased. (tx: {{tx}}...)",
     "estReturn": "Est. Annual Return",
     "total": "Total",
     "fundingEndsIn": "Funding Ends In",
@@ -124,7 +132,24 @@
     "tokenPrice": "Token Price",
     "perToken": "/ token",
     "expired": "Expired",
-    "preparing": "Preparing"
+    "preparing": "Preparing",
+    "balance": "Balance",
+    "balanceLoading": "Loading...",
+    "maxAffordable": "Max Affordable",
+    "insufficientBalance": "Insufficient USDC",
+    "tokenCount": "{{count}} tokens",
+    "walletCapReached": "Wallet Limit Reached",
+    "walletCapDesc": "Max {{max}} tokens per wallet.",
+    "holding": "Holding",
+    "walletCapToastTitle": "You already hold the maximum amount",
+    "walletCapToastDesc": "Max {{max}} tokens allowed per wallet.",
+    "myPosition": "My Position",
+    "posHoldings": "Holdings",
+    "posTokenUnit": "tokens",
+    "posValue": "Current Value",
+    "posAnnualReturn": "Est. Annual Return",
+    "sharePosition": "Share via Blinks",
+    "shareCopied": "Copied!"
   },
   "upsell": {
     "title": "Become a co-owner of\nthis warm retreat",
