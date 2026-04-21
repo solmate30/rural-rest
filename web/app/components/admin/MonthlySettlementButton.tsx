@@ -12,15 +12,14 @@ interface Props {
     listingId: string;
     listingTitle: string;
     month: string;
+    onSuccess?: () => void;
 }
 
 type Step = "input" | "preview" | "done";
 type TxStatus = "idle" | "pending" | "done" | "error";
 
 interface TxProgress {
-    distribute: TxStatus;
-    operatorPayout: TxStatus;
-    govPayout: TxStatus;
+    combined: TxStatus;
 }
 
 interface PreviewData {
@@ -52,7 +51,7 @@ function krwFmt(krw: number) {
     return krw.toLocaleString("ko-KR");
 }
 
-export function MonthlySettlementButton({ listingId, listingTitle, month }: Props) {
+export function MonthlySettlementButton({ listingId, listingTitle, month, onSuccess }: Props) {
     const { t } = useTranslation("admin");
     const { connection } = useConnection();
     const wallet = usePrivyAnchorWallet();
@@ -76,8 +75,8 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
     const [done, setDone] = useState<DoneData | null>(null);
     const [revenueInfo, setRevenueInfo] = useState<{ grossRevenueKrw: number; bookingCount: number } | null>(null);
     const [revenueLoading, setRevenueLoading] = useState(false);
-    const [txProgress, setTxProgress] = useState<TxProgress>({ distribute: "idle", operatorPayout: "idle", govPayout: "idle" });
-    const [savedTxs, setSavedTxs] = useState<{ distributeTx?: string; opPayoutTx?: string; govPayoutTx?: string }>({});
+    const [txProgress, setTxProgress] = useState<TxProgress>({ combined: "idle" });
+    const [savedTxs, setSavedTxs] = useState<{ combinedTx?: string }>({});
     const [usdcBalance, setUsdcBalance] = useState<number | null>(null);
 
     useEffect(() => {
@@ -102,7 +101,7 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
         setDone(null);
         setLoading(false);
         setUploadedFile(null);
-        setTxProgress({ distribute: "idle", operatorPayout: "idle", govPayout: "idle" });
+        setTxProgress({ combined: "idle" });
         setSavedTxs({});
     }
 
@@ -156,8 +155,6 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
         setLoading(true);
         setError("");
 
-        const currentSaved = savedTxs;
-
         try {
             const { BN } = await import("@coral-xyz/anchor");
             const { PublicKey, Transaction } = await import("@solana/web3.js");
@@ -180,78 +177,55 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
                 ASSOCIATED_TOKEN_PROGRAM_ID
             );
 
-            let distributeTx: string | undefined = currentSaved.distributeTx;
-            let opPayoutTx: string | undefined = currentSaved.opPayoutTx;
-            let govPayoutTx: string | undefined = currentSaved.govPayoutTx;
+            setTxProgress({ combined: "pending" });
 
-            // TX1: distribute_monthly_revenue (투자자 30% → usdc_vault)
-            if (!distributeTx && preview.hasActiveToken && preview.investorUsdc > 0) {
-                setTxProgress((p) => ({ ...p, distribute: "pending" }));
-                try {
-                    distributeTx = await program.methods
-                        .distributeMonthlyRevenue(listingId, new BN(preview.investorUsdc))
-                        .accounts({
-                            propertyToken,
-                            authority,
-                            authorityUsdcAccount,
-                            usdcVault,
-                            usdcMint,
-                            usdcTokenProgram: TOKEN_PROGRAM_ID,
-                            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-                        })
-                        .rpc();
-                    setSavedTxs((s) => ({ ...s, distributeTx }));
-                    setTxProgress((p) => ({ ...p, distribute: "done" }));
-                } catch (err: any) {
-                    setTxProgress((p) => ({ ...p, distribute: "error" }));
-                    throw new Error("[TX1] distribute 실패: " + (err.message?.slice(0, 80) ?? ""));
-                }
-            } else if (distributeTx) {
-                setTxProgress((p) => ({ ...p, distribute: "done" }));
+            const tx = new Transaction();
+
+            // 투자자 30% → usdc_vault (Anchor 인스트럭션)
+            if (preview.hasActiveToken && preview.investorUsdc > 0) {
+                const distributeTxObj = await program.methods
+                    .distributeMonthlyRevenue(listingId, new BN(preview.investorUsdc))
+                    .accounts({
+                        propertyToken,
+                        authority,
+                        authorityUsdcAccount,
+                        usdcVault,
+                        usdcMint,
+                        usdcTokenProgram: TOKEN_PROGRAM_ID,
+                        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+                    })
+                    .transaction();
+                tx.add(...distributeTxObj.instructions);
             }
 
-            // TX2+TX3: 운영자(30%) + 지자체(40%) 한 트랜잭션으로 묶음
+            // 운영자 30% 이체
             const effectiveOpWallet = preview.operatorWalletAddress || OPERATOR_WALLET_STR;
-            const needPayout = !opPayoutTx && (
-                (effectiveOpWallet && preview.operatorUsdc > 0) ||
-                (LOCAL_GOV_WALLET_STR && preview.localGovUsdc > 0)
-            );
-            if (needPayout) {
-                setTxProgress((p) => ({ ...p, operatorPayout: "pending", govPayout: LOCAL_GOV_WALLET_STR ? "pending" : "idle" }));
-                try {
-                    const combinedTx = new Transaction();
-                    if (effectiveOpWallet && preview.operatorUsdc > 0) {
-                        const operatorPubkey = new PublicKey(effectiveOpWallet);
-                        const operatorUsdcAccount = getAssociatedTokenAddressSync(usdcMint, operatorPubkey, false, TOKEN_PROGRAM_ID);
-                        combinedTx.add(createAssociatedTokenAccountIdempotentInstruction(authority, operatorUsdcAccount, operatorPubkey, usdcMint, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID));
-                        combinedTx.add(createTransferCheckedInstruction(authorityUsdcAccount, usdcMint, operatorUsdcAccount, authority, preview.operatorUsdc, 6, [], TOKEN_PROGRAM_ID));
-                    }
-                    if (LOCAL_GOV_WALLET_STR && preview.localGovUsdc > 0) {
-                        const govPubkey = new PublicKey(LOCAL_GOV_WALLET_STR);
-                        const govUsdcAccount = getAssociatedTokenAddressSync(usdcMint, govPubkey, false, TOKEN_PROGRAM_ID);
-                        combinedTx.add(createAssociatedTokenAccountIdempotentInstruction(authority, govUsdcAccount, govPubkey, usdcMint, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID));
-                        combinedTx.add(createTransferCheckedInstruction(authorityUsdcAccount, usdcMint, govUsdcAccount, authority, preview.localGovUsdc, 6, [], TOKEN_PROGRAM_ID));
-                    }
-                    // sign + send (wallet adapter의 sendTransaction 대체)
-                    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-                    combinedTx.recentBlockhash = blockhash;
-                    combinedTx.feePayer = wallet!.publicKey;
-                    const signedTx = await wallet!.signTransaction(combinedTx);
-                    const payoutSig = await connection.sendRawTransaction(signedTx.serialize());
-                    await connection.confirmTransaction({ signature: payoutSig, blockhash, lastValidBlockHeight });
-                    opPayoutTx = payoutSig;
-                    govPayoutTx = payoutSig;
-                    setSavedTxs((s) => ({ ...s, opPayoutTx: payoutSig, govPayoutTx: payoutSig }));
-                    setTxProgress((p) => ({ ...p, operatorPayout: "done", govPayout: LOCAL_GOV_WALLET_STR ? "done" : "idle" }));
-                } catch (err: any) {
-                    setTxProgress((p) => ({ ...p, operatorPayout: "error", govPayout: LOCAL_GOV_WALLET_STR ? "error" : "idle" }));
-                    throw new Error("[TX Payout] 전송 실패: " + (err.message?.slice(0, 80) ?? ""));
-                }
-            } else if (opPayoutTx) {
-                setTxProgress((p) => ({ ...p, operatorPayout: "done", govPayout: govPayoutTx ? "done" : "idle" }));
+            if (effectiveOpWallet && preview.operatorUsdc > 0) {
+                const operatorPubkey = new PublicKey(effectiveOpWallet);
+                const operatorUsdcAccount = getAssociatedTokenAddressSync(usdcMint, operatorPubkey, false, TOKEN_PROGRAM_ID);
+                tx.add(createAssociatedTokenAccountIdempotentInstruction(authority, operatorUsdcAccount, operatorPubkey, usdcMint, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID));
+                tx.add(createTransferCheckedInstruction(authorityUsdcAccount, usdcMint, operatorUsdcAccount, authority, preview.operatorUsdc, 6, [], TOKEN_PROGRAM_ID));
             }
 
-            // DB 기록 (실제 tx 서명 전달)
+            // 지자체 40% 이체
+            if (LOCAL_GOV_WALLET_STR && preview.localGovUsdc > 0) {
+                const govPubkey = new PublicKey(LOCAL_GOV_WALLET_STR);
+                const govUsdcAccount = getAssociatedTokenAddressSync(usdcMint, govPubkey, false, TOKEN_PROGRAM_ID);
+                tx.add(createAssociatedTokenAccountIdempotentInstruction(authority, govUsdcAccount, govPubkey, usdcMint, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID));
+                tx.add(createTransferCheckedInstruction(authorityUsdcAccount, usdcMint, govUsdcAccount, authority, preview.localGovUsdc, 6, [], TOKEN_PROGRAM_ID));
+            }
+
+            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+            tx.recentBlockhash = blockhash;
+            tx.feePayer = authority;
+            const signedTx = await wallet!.signTransaction(tx);
+            const sig = await connection.sendRawTransaction(signedTx.serialize());
+            await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight });
+
+            setSavedTxs({ combinedTx: sig });
+            setTxProgress({ combined: "done" });
+
+            // DB 기록
             const res = await fetch("/api/admin/monthly-settlement", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -260,16 +234,18 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
                     month,
                     operatingCostKrw: parseInt(costKrw) || 0,
                     dryRun: false,
-                    distributeTx: distributeTx ?? null,
-                    opPayoutTx: opPayoutTx ?? null,
-                    govPayoutTx: govPayoutTx ?? null,
+                    distributeTx: (preview.hasActiveToken && preview.investorUsdc > 0) ? sig : null,
+                    opPayoutTx: (effectiveOpWallet && preview.operatorUsdc > 0) ? sig : null,
+                    govPayoutTx: (LOCAL_GOV_WALLET_STR && preview.localGovUsdc > 0) ? sig : null,
                 }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error ?? "DB 기록 실패");
             setDone(data as DoneData);
             setStep("done");
+            onSuccess?.();
         } catch (e: unknown) {
+            setTxProgress({ combined: "error" });
             setError(e instanceof Error ? e.message : "오류 발생");
         } finally {
             setLoading(false);
@@ -283,14 +259,8 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
         return <span className="text-stone-300 text-xs">대기</span>;
     };
 
-    const hasPartialFailure = Object.values(txProgress).some((s) => s === "error");
-    const hasSavedTx = Object.values(savedTxs).some(Boolean);
-
-    const TX_STEPS = [
-        { key: "distribute" as const, label: t("settlements.modal.txDistribute") },
-        { key: "operatorPayout" as const, label: t("settlements.modal.txOperatorPayout") },
-        { key: "govPayout" as const, label: t("settlements.modal.txGovPayout") },
-    ];
+    const hasPartialFailure = txProgress.combined === "error";
+    const hasSavedTx = Boolean(savedTxs.combinedTx);
 
     if (!open) {
         return (
@@ -400,23 +370,14 @@ export function MonthlySettlementButton({ listingId, listingTitle, month }: Prop
                                 </div>
                             )}
                             {loading && (
-                                <div className="bg-stone-50 rounded-xl p-4 space-y-2">
-                                    <p className="text-xs font-semibold text-stone-500 mb-2">{t("settlements.modal.onchainRunning")}</p>
-                                    {TX_STEPS.map(({ key, label }) => (
-                                        <div key={key} className="flex items-center justify-between text-xs text-stone-600">
-                                            <span>{label}</span>{txStatusIcon(txProgress[key])}
-                                        </div>
-                                    ))}
+                                <div className="bg-stone-50 rounded-xl p-4 flex items-center justify-between text-xs text-stone-600">
+                                    <span>{t("settlements.modal.onchainRunning")}</span>
+                                    {txStatusIcon(txProgress.combined)}
                                 </div>
                             )}
-                            {hasPartialFailure && hasSavedTx && !loading && (
+                            {hasPartialFailure && !loading && (
                                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
                                     <p className="text-xs text-amber-700 font-medium">{t("settlements.modal.partialFailure")}</p>
-                                    {TX_STEPS.map(({ key, label }) => (
-                                        <div key={key} className="flex items-center justify-between text-xs text-stone-600">
-                                            <span>{label}</span>{txStatusIcon(txProgress[key])}
-                                        </div>
-                                    ))}
                                     <button onClick={() => handleConfirm()} className="w-full mt-1 py-2 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-colors">
                                         {t("settlements.modal.retry")}
                                     </button>
