@@ -1,3 +1,4 @@
+PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE `account` (
 	`id` text PRIMARY KEY NOT NULL,
 	`account_id` text NOT NULL,
@@ -172,8 +173,8 @@ CREATE TABLE `verification` (
 	`updated_at` integer
 );
 --> statement-breakpoint
+INSERT INTO `user` ("id", "name", "email", "email_verified", "image", "role", "preferred_lang", "wallet_address", "wallet_connected_at", "kyc_verified", "kyc_verified_at", "wallet_nonce", "wallet_nonce_issued_at", "privy_did", "created_at", "updated_at") SELECT "id", "name", "email", "email_verified", "image", "role", "preferred_lang", "wallet_address", "wallet_connected_at", false, null, "wallet_nonce", "wallet_nonce_issued_at", "privy_did", "created_at", "updated_at" FROM `users`;--> statement-breakpoint
 DROP TABLE `users`;--> statement-breakpoint
-PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE `__new_bookings` (
 	`id` text PRIMARY KEY NOT NULL,
 	`listing_id` text NOT NULL,
@@ -257,4 +258,5 @@ CREATE TABLE `__new_reviews` (
 --> statement-breakpoint
 INSERT INTO `__new_reviews`("id", "booking_id", "author_id", "rating", "comment", "created_at") SELECT "id", "booking_id", "author_id", "rating", "comment", "created_at" FROM `reviews`;--> statement-breakpoint
 DROP TABLE `reviews`;--> statement-breakpoint
-ALTER TABLE `__new_reviews` RENAME TO `reviews`;
+ALTER TABLE `__new_reviews` RENAME TO `reviews`;--> statement-breakpoint
+PRAGMA foreign_keys=ON;
