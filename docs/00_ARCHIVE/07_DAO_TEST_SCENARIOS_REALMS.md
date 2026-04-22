@@ -3,7 +3,7 @@
 > Created: 2026-03-10 03:00
 > Last Updated: 2026-03-10 04:00
 
-본 문서는 `08_DAO_IMPLEMENTATION_SPEC.md` 및 `14_DAO_GOVERNANCE_PLAN.md`에 정의된 Rural Rest 단일 DAO의 1단계를 검증하기 위한 통합 및 E2E(End-to-End) 테스트 시나리오를 정의한다.
+본 문서는 `08_DAO_IMPLEMENTATION_SPEC.md` 및 `09_DAO_GOVERNANCE_PLAN.md`에 정의된 Rural Rest 단일 DAO의 1단계를 검증하기 위한 통합 및 E2E(End-to-End) 테스트 시나리오를 정의한다.
 
 ---
 
@@ -190,5 +190,5 @@
 
 ## 10. Related Documents
 
-- **Concept_Design**: [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md) - DAO 기획서
+- **Concept_Design**: [09_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/09_DAO_GOVERNANCE_PLAN.md) - DAO 기획서
 - **Technical_Specs**: [08_DAO_IMPLEMENTATION_SPEC.md](../03_Technical_Specs/08_DAO_IMPLEMENTATION_SPEC.md) - DAO 구현 명세서
