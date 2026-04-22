@@ -1,1 +1,0 @@
-/Users/namhyeongseog/Documents/solmate-skills/AGENTS.md
