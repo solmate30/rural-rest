@@ -13,6 +13,7 @@ dist/
 
 # Misc
 .DS_Store
+*Zone.Identifier
 .env
 .env.*
 !.env.example
