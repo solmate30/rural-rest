@@ -7,7 +7,6 @@ import { db } from "~/db/index.server";
 import { listings } from "~/db/schema";
 import { and, lte, like } from "drizzle-orm";
 import { detectLocale } from "~/lib/i18n.server";
-import { applyListingLocale } from "~/data/listing-translations";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -64,8 +63,11 @@ export async function loader({ request }: Route.LoaderArgs) {
     const rows = await db
         .select({
             id: listings.id,
+            nodeNumber: listings.nodeNumber,
             title: listings.title,
             description: listings.description,
+            titleEn: listings.titleEn,
+            descriptionEn: listings.descriptionEn,
             location: listings.location,
             pricePerNight: listings.pricePerNight,
             maxGuests: listings.maxGuests,
@@ -74,17 +76,18 @@ export async function loader({ request }: Route.LoaderArgs) {
         .from(listings)
         .where(and(...conditions));
 
-    const result = rows.map((row) => applyListingLocale({
+    const result = rows.map((row) => ({
         id: row.id,
-        title: row.title,
-        description: row.description,
+        nodeNumber: row.nodeNumber ?? null,
+        title: locale === "en" && row.titleEn ? row.titleEn : row.title,
+        description: locale === "en" && row.descriptionEn ? row.descriptionEn : row.description,
         cityLabel: toCityLabel(row.location, locale),
         locationLabel: toCityLabel(row.location, locale),
         pricePerNight: row.pricePerNight,
         maxGuests: row.maxGuests,
         image: (row.images as string[])[0] ?? "/house.png",
         rating: null as number | null,
-    }, locale));
+    }));
 
     return {
         listings: result,
@@ -214,7 +217,7 @@ export default function SearchResults() {
                                 <Card
                                     key={listing.id}
                                     className="overflow-hidden group cursor-pointer border-none shadow-lg"
-                                    onClick={() => navigate(`/property/${listing.id}`)}
+                                    onClick={() => navigate(`/property/${listing.nodeNumber ?? listing.id}`)}
                                 >
                                     <div className="aspect-[4/3] overflow-hidden">
                                         <img
@@ -247,7 +250,7 @@ export default function SearchResults() {
                                             <Button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    navigate(`/property/${listing.id}`);
+                                                    navigate(`/property/${listing.nodeNumber ?? listing.id}`);
                                                 }}
                                             >
                                                 {t("featured.viewDetail")}

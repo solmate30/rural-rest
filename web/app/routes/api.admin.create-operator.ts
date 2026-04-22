@@ -18,6 +18,7 @@ import { db } from "~/db/index.server";
 import { user as userTable } from "~/db/schema";
 import { eq } from "drizzle-orm";
 import { requireUser } from "~/lib/auth.server";
+import { issueCouncilToken } from "~/lib/council-token.server";
 import type { Route } from "./+types/api.admin.create-operator";
 
 export async function action({ request }: Route.ActionArgs) {
@@ -105,6 +106,17 @@ export async function action({ request }: Route.ActionArgs) {
             createdAt: now,
             updatedAt: now,
         });
+
+        // Council Token 자동 발급 (운영자 = 제안 생성 자격)
+        if (walletAddress) {
+            try {
+                await issueCouncilToken(walletAddress, 1);
+            } catch (e: any) {
+                console.error("[create-operator] Council Token 발급 실패:", e?.message ?? e);
+                // Council Token 실패는 운영자 생성을 막지 않음
+            }
+        }
+
         return Response.json({ ok: true, userId, created: true });
     } catch (dbErr: any) {
         console.error("[create-operator] DB INSERT 실패:", dbErr);

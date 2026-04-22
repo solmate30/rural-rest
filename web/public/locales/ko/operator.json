@@ -33,7 +33,7 @@
     "noSettlements": "정산 내역이 없어요.",
     "pendingRelease": "정산 대기",
     "settlementWallet": "정산 지갑",
-    "walletDesc": "배당금과 정산액을 받을 Solana 지갑을 연결하세요.",
+    "walletDesc": "정산액과 배당금이 아래 지갑 주소로 자동 입금돼요.",
     "listings": "담당 매물",
     "noListings": "배정된 매물이 없어요."
   },

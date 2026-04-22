@@ -4,7 +4,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 // RWA 프로그램의 account 구조를 직접 역직렬화하기 위해 import
 use rural_rest_rwa::{InvestorPosition, PropertyStatus, PropertyToken};
 
-declare_id!("142FMJgEw2H4EYzqHk1mEsLoT4aDkfLJJ4UR5ELxmTU1");
+declare_id!("HUbLVSmSLfmrzQrecqq2HP6hpBc6jegZbfV4Kjrx8cqD");
 
 // =====================
 // Constants
@@ -108,11 +108,6 @@ pub mod rural_rest_dao {
                 .checked_add(property_token.tokens_sold)
                 .ok_or(DaoError::MathOverflow)?;
         }
-
-        // Council Token 총 공급량도 total_eligible_weight에 포함
-        total_eligible_weight = total_eligible_weight
-            .checked_add(ctx.accounts.council_mint.supply)
-            .ok_or(DaoError::MathOverflow)?;
 
         let config = &mut ctx.accounts.dao_config;
         let proposal_id = config.proposal_count;
@@ -245,21 +240,6 @@ pub mod rural_rest_dao {
 
             raw_weight = raw_weight
                 .checked_add(position.amount)
-                .ok_or(DaoError::MathOverflow)?;
-        }
-
-        // Council Token 잔액 합산 (Optional — council member가 아니면 None)
-        if let Some(ref council_ata) = ctx.accounts.voter_council_ata {
-            require!(
-                council_ata.mint == ctx.accounts.dao_config.council_mint,
-                DaoError::InvalidCouncilAta
-            );
-            require!(
-                council_ata.owner == voter_key,
-                DaoError::InvalidCouncilAtaOwner
-            );
-            raw_weight = raw_weight
-                .checked_add(council_ata.amount)
                 .ok_or(DaoError::MathOverflow)?;
         }
 

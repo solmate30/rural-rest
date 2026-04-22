@@ -1,6 +1,6 @@
 # 00. Product Backlog & Implementation Status
 > Created: 2026-02-07 17:34
-> Last Updated: 2026-04-09 00:00
+> Last Updated: 2026-04-21 00:00
 
 This document tracks the entire development progress. Tasks are moved from **Backlog** to **Current Sprint** and finally to **Completed** (archived).
 
@@ -26,8 +26,10 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 | 여행자 | 예약 승인 알림 (이메일/푸시) | Phase 1 |
 | 여행자 | 디지털 키(QR) 체크인 | Phase 2 |
 | 투자자 | KYC 실제 신원 확인 (현재 시뮬레이션) | Phase 2 |
-| 투자자 | DAO 투표 온체인 연동 (현재 UI 목업) | Phase 1 |
 | 마을운영자 | 디지털 키 발송 연동 | Phase 2 |
+| 어드민 | 숙소 등록 시 Google Geocoding API로 lat/lng 자동 저장 (현재 null → 지도 기본 좌표 표시) | Phase 1 |
+| 어드민 | `api.admin.monthly-settlement.ts` 실제 `settle_listing_monthly` CPI 호출 + `settlements` 레코드 저장 | Phase 1 |
+| 인프라 | devnet 배포 시 CRANK_SECRET_KEY 등 서버 키 관리 전략 수립 (mainnet 전 Squads multisig 전환 포함) | devnet 배포 전 |
 
 ---
 
@@ -56,7 +58,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] **Task 2.12**: Implement AI Global Concierge Chat UI. → 구현 완료 (Floating Chat UI, Global Layout 연동)
 *   [x] Implement Admin Dashboard Data Fetching (Revenue/Occupancy). → 코드 구현 완료 (`admin-dashboard.server.ts`, `admin.dashboard.tsx` loader 연동)
 *   [x] **Listing Create to DB**: `/admin/listing/new` — Daum 주소 검색, region 자동추출, DB INSERT, `/host/edit/:id` redirect. (`admin.listing.new.tsx`)
-*   [ ] **Listing Update to DB**: Admin Edit 페이지에서 폼 제출 시 `listings` 테이블에 update. (현재 admin.edit.tsx는 UI만 있으며 action·loader 미구현)
+*   [x] **Listing Update to DB**: Admin Edit 페이지에서 폼 제출 시 `listings` 테이블에 update. (`admin.edit.tsx` loader + action + DB update 완료)
 
 ### Design System
 *   [x] **Task 2.13**: Setup Shadcn/UI Components (Button, Card, Input, Dialog, ScrollArea, Avatar). → Button, Card, Input, Dialog, ScrollArea, Avatar, Toast 설치 완료 (`app/components/ui/`)
@@ -64,11 +66,11 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 
 ### Roadmap NOW (04_ROADMAP)
 *   [x] **PayPal 결제 연동**: PayPal 인증 → 어드민 capture 구조 완료 (`api.paypal.create-order.ts`, `api.paypal.capture-auth.ts`, `book.tsx`)
-*   [ ] **Auto-Translation Chat**: 외국인 게스트용 자동 번역 채팅 (언어 장벽 제거)
+*   [x] **Auto-Translation Chat**: 외국인 게스트용 자동 번역 채팅 (언어 장벽 제거) → Gemini 2.0 Flash 번역, `BookingChatPanel` 컴포넌트, `api/chat/messages` API 완료
 *   [ ] **Transport Request (수동)**: Last Mile 교통 요청 기능, 초기에는 관리자 수동 처리
 
 ### Admin / Editor 보강
-*   [ ] **Admin Edit: 실시간 검증 및 미저장 경고**: 가격·최대 인원 등 Zod 실시간 검증, 이탈 시 미저장 경고 모달. → [05_ADMIN_EDITOR_REVIEW](../02_UI_Screens/05_ADMIN_EDITOR_REVIEW.md) §3.2
+*   [x] **Admin Edit: 실시간 검증 및 미저장 경고**: 가격·최대 인원 등 Zod 실시간 검증, 이탈 시 미저장 경고 모달. → [05_ADMIN_EDITOR_REVIEW](../02_UI_Screens/05_ADMIN_EDITOR_REVIEW.md) §3.2
 
 ### RWA
 
@@ -88,6 +90,14 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] **배당 분배/수령 UI**: MonthlySettlementButton (온체인), ClaimButton
 *   [x] **3자 정산 아키텍처**: 지자체 40% + 운영자 30% + 투자자 30%
 
+#### 완료 (2026-04-09) — 예약 플로우 버그 수정
+*   [x] **USDC 예약 거절 시 에스크로 환불**: `api.booking.reject.ts` — `cancelBookingEscrow` CPI 추가 (기존: DB만 cancelled, 에스크로 자금 방치)
+*   [x] **USDC 결제 완료 후 redirect**: `book.tsx` — `txState="done"` 인라인 화면 제거, `/book/success` redirect로 통일
+*   [x] **게스트 pending 취소**: `api.booking.guest-cancel.ts` 신규 + `my-bookings.tsx` "신청 취소" 버튼 추가
+*   [x] **취소 상태 환불 안내**: `my-bookings.tsx` — cancelled 예약에 "카드 환불 완료" / "USDC 에스크로 환불 완료" 표시
+*   [x] **카드 예약 completed 전환**: `api.booking.release-escrow.ts` — 카드 결제도 처리 (기존: USDC 전용, 카드 예약은 confirmed에서 stuck)
+*   [x] **정산 완료 버튼**: `host.bookings.tsx` confirmed 탭 — 체크아웃 지난 예약에 "정산 완료" 버튼 추가
+
 #### 완료 (2026-04-09)
 *   [x] **`/invest` loader DB 전환**: listings JOIN rwa_tokens 쿼리 완료
 *   [x] **`/invest/:id` loader DB 전환**: 개별 토큰 상세 + 투자 현황 쿼리 완료
@@ -95,9 +105,59 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] **어드민 운영자 관리**: 목록·생성·이름수정·삭제 (`admin.operators.tsx`)
 *   [x] **어드민 정산 현황 목록**: 토큰화 매물별 정산 현황 페이지 (`admin.settlements.tsx`)
 
+#### 완료 (2026-04-17) — Treasury / 에스크로 정산 / 환불 정책
+*   [x] **setup-devnet.ts `setTreasury()` 누락 수정 (P0)**: `rwa_config.treasury` 미설정으로 에스크로 릴리스 불가 버그 수정
+*   [x] **Admin Treasury UI** (`/admin/treasury`): Treasury pubkey, 누적 수수료, 내역 테이블
+*   [x] **Anchor `cancelBookingEscrowPartial` instruction**: 50% 부분환불 온체인 분배 (guest_bps, error 6025 InvalidRefundBps)
+*   [x] **확정 예약 취소 환불 정책**: 7일↑ 100% / 3~7일 50% / 3일↓ 0% (`api.booking.cancel-confirmed.ts`)
+*   [x] **USDC 에스크로 취소**: cancelBookingEscrow(100%) / cancelBookingEscrowPartial(50%) / releaseBookingEscrow(0%)
+*   [x] **카드(PayPal) 부분환불**: `paypalCaptureId` DB 저장 + `refundPayPalCapture()` 전액/부분 환불 API
+*   [x] **게스트 / 호스트 확정 예약 취소 버튼 UI**: `my.bookings.tsx`, `host.bookings.tsx`
+*   [x] **`escrow-release.server.ts` 공통 함수**: 수동 API + Cron 공유
+*   [x] **Vercel Cron Jobs**: 매일 12:00 KST 에스크로 자동 릴리스 + RWA 활성화 (`vercel.json`)
+*   [x] **Vitest 환불 정책 테스트**: 16개 경계값 포함 100% 통과
+*   [x] **Anchor 시나리오 F 테스트**: create / cancel(100%) / cancelPartial(50%) / 에러케이스 추가
+
 #### 다음 단계
+*   [ ] **Anchor 테스트 F-1~F-6 통과 확인**: `rm -rf test-ledger && anchor test -- --features rural-rest-rwa/skip-oracle`
 *   [ ] **Anchor Devnet 배포**: devnet E2E 테스트 (발행→구매→수익→배당)
+*   [ ] **Vercel 배포 후 Cron Job 등록 확인**: Vercel 대시보드 → Settings → Cron Jobs
 *   [x] **RWA Entry Hooks**: 숙소 상세 "이 집의 한 조각 소유하기" 배너/버튼 → `/invest/:id` 연결 완료
+
+#### Phase 1 — Treasury 구조 전환 (정책: `15_REFUND_AND_TREASURY_POLICY.md`)
+
+**완료 (2026-04-21)**
+*   [x] **`cancel-confirmed.ts` 0% 환불 status 버그**: `refundBps===0`일 때 `completed`로 저장
+*   [x] **Anchor `ListingVault` PDA + `settle_listing_monthly`**: 90% → listing_vault 전송, 월정산 시 40/30/30 분배. IDL 재생성
+*   [x] **`release_booking_escrow` 체크아웃 시점 버그**: `check_in` → `check_out` 비교로 수정
+*   [x] **`cancel_booking_escrow_partial` listing_vault 전환**: 호스트 직접 수령 → `listing_vault_ata`로 교체 (40/30/30 분배 포함)
+*   [x] **`escrow-release.server.ts` listing_vault 전환**: `hostUsdc` → `listingVault` + `listingVaultAta`
+*   [x] **`cancel-confirmed.ts` listing_vault 전환**: 50% 부분취소 호스트 몫도 `listing_vault_ata`로 교체
+*   [x] **DB 마이그레이션**: `listings.govWalletAddress`, `settlements` 테이블 신규 (`drizzle-kit push` 완료)
+*   [x] **Anchor 테스트 G 시나리오**: `settle_listing_monthly` 5개 케이스 (정상/AlreadySettled/InsufficientVault/Unauthorized/InvalidBpsSum)
+*   [x] **시나리오 스크립트 06-booking.ts**: listing_vault 전환 + `initializeListingVault` 추가
+
+**남은 작업 (Phase 1 완료 조건)**
+*   [ ] **Anchor 빌드·테스트 통과**: `anchor build && anchor test -- --features skip-oracle`
+*   [ ] **`api.admin.monthly-settlement.ts` 실 CPI 호출**: 현재 계산만 존재 → 실제 `settle_listing_monthly` 호출 + `settlements` 레코드 저장
+*   [ ] **환불 3단계 E2E**: 100%/50%/0% USDC 경로 검증 (`06-booking.ts` 재실행)
+*   [ ] **월정산 E2E**: `settlements` 레코드 생성 + 투자자 `claim_dividend` 수령 금액 일치 확인
+
+---
+
+## Phase 2 — devnet 이후 (MVP 이후 확장)
+
+| 항목 | 설명 |
+|------|------|
+| 디지털 키(QR) 체크인 | 스마트락 연동, 마을운영자 발송 UI |
+| KYC 실제 신원 확인 | 현재 시뮬레이션 → 실제 인증 서비스 연동 |
+| Squads Multisig | Authority → M-of-N multisig 전환 (mainnet 전) |
+| Transport Request | 라스트 마일 교통 수동 요청 기능 |
+| 예약 승인 알림 | 이메일/푸시 알림 (게스트 체크인 알림 포함) |
+| Helius Webhook | Blinks 투자 DB 자동 기록 (현재 수동 동기화) |
+| 지자체 KRW 정산 | USDC → KRW 출금 프로세스 (거래소 연동 or 수동) |
+
+---
 
 ### DAO (커스텀 Anchor -- Realms 대체, 08_DAO_IMPLEMENTATION_SPEC)
 *   [x] **Anchor DAO 프로그램**: `rural-rest-dao` 5개 instruction 구현 완료 (Program ID: `3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX`)

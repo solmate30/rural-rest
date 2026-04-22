@@ -58,8 +58,8 @@ export const verification = sqliteTable("verification", {
 
 export const listings = sqliteTable("listings", {
     id: text("id").primaryKey(), // UUID v4
-    hostId: text("host_id").notNull().references(() => user.id), // SPV 계정 (법적 주체)
-    operatorId: text("operator_id").references(() => user.id),   // 마을 운영자 계정 (실제 운영·정산)
+    nodeNumber: integer("node_number").unique(), // localhost://3000 형태의 노드 번호 (자동 채번)
+    hostId: text("host_id").notNull().references(() => user.id), // 마을 운영자 계정 (실제 운영·정산)
     title: text("title").notNull(),
     description: text("description").notNull(),
     pricePerNight: integer("price_per_night").notNull(), // Stored in KRW/USD base unit (e.g., Won)
@@ -71,9 +71,12 @@ export const listings = sqliteTable("listings", {
     images: text("images", { mode: "json" }).notNull().default("[]"), // Array of URLs
     lat: real("lat"),  // GPS 위도 (nullable)
     lng: real("lng"),  // GPS 경도 (nullable)
+    titleEn: text("title_en"),              // 영어 제목 (DeepL 자동 번역)
+    descriptionEn: text("description_en"), // 영어 설명 (DeepL 자동 번역)
     renovationHistory: text("renovation_history", { mode: "json" }).default("[]"), // [{ date: "2025.06", desc: "..." }]
     transportSupport: integer("transport_support", { mode: "boolean" }).notNull().default(false),
     smartLockEnabled: integer("smart_lock_enabled", { mode: "boolean" }).notNull().default(false),
+    govWalletAddress: text("gov_wallet_address"),  // 지자체 USDC 지갑. null이면 환경변수 전역값 사용
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });
 
@@ -90,6 +93,8 @@ export const bookings = sqliteTable("bookings", {
     status: text("status", { enum: ["pending", "confirmed", "cancelled", "completed"] }).notNull().default("pending"),
     paymentIntentId: text("payment_intent_id"),             // PayPal Order ID
     paypalAuthorizationId: text("paypal_authorization_id"), // PayPal Authorization ID (capture/void용)
+    paypalCaptureId: text("paypal_capture_id"),              // PayPal Capture ID (환불용)
+    platformFeeKrw: integer("platform_fee_krw"),            // 플랫폼 수수료 10% (KRW, 카드 결제 시 기록)
     qrCodeToken: text("qr_code_token"),
     qrCodeExpiresAt: integer("qr_code_expires_at", { mode: "timestamp" }),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
@@ -220,6 +225,20 @@ export const operatorSettlements = sqliteTable("operator_settlements", {
     settlementUsdc: integer("settlement_usdc").notNull(),    // 운영자 몫 micro-USDC (영업이익 × 30%)
     payoutTx: text("payout_tx"),                             // Solana 전송 tx 서명 (null = 미전송)
     paidAt: integer("paid_at", { mode: "timestamp" }),       // 자동 지급 시각
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
+});
+
+// 온체인 settle_listing_monthly 실행 감사 기록 (USDC 기반, 매물×월 단위)
+export const settlements = sqliteTable("settlements", {
+    id: text("id").primaryKey(), // UUID v4
+    listingId: text("listing_id").notNull().references(() => listings.id),
+    month: text("month").notNull(),                            // "2026-03" 형식 (YYYY-MM)
+    totalRevenueUsdc: integer("total_revenue_usdc").notNull(), // 정산 전 listing_vault 잔액 (micro-USDC)
+    operatingCostUsdc: integer("operating_cost_usdc").notNull().default(0),
+    govShareUsdc: integer("gov_share_usdc").notNull(),         // 지자체 40%
+    operatorShareUsdc: integer("operator_share_usdc").notNull(), // 운영자 30%
+    investorShareUsdc: integer("investor_share_usdc").notNull(), // 투자자 30%
+    onchainTxSignature: text("onchain_tx_signature"),          // settle_listing_monthly tx 서명
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });
 

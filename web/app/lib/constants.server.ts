@@ -6,6 +6,7 @@ export const RPC_URL = process.env.VITE_SOLANA_RPC ?? "http://127.0.0.1:8899";
 export const SERVER_PROGRAM_ID = process.env.VITE_RWA_PROGRAM_ID ?? "EmtyjF4cDpTN6gZYsDPrFJBdAP8G2Ap3hsZ46SgmTpnR";
 export const SERVER_DAO_PROGRAM_ID = process.env.VITE_DAO_PROGRAM_ID ?? "3JfNNdbhrvtc6tzXwp2R2K51grjiHMT1bLKSqAnV9bqX";
 export const SERVER_USDC_MINT = process.env.VITE_USDC_MINT ?? "";
+export const TREASURY_PUBKEY = process.env.VITE_TREASURY_PUBKEY ?? "9uAQniNkxo4zvxLVgrardFUnJdrafMod76GJiNG5T3Zc";
 export const COUNCIL_MINT = process.env.VITE_COUNCIL_MINT ?? "";
 export const PRIVY_APP_ID = process.env.VITE_PRIVY_APP_ID ?? "";
 

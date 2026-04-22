@@ -33,7 +33,7 @@
     "noSettlements": "No settlement records yet.",
     "pendingRelease": "Pending Release",
     "settlementWallet": "Settlement Wallet",
-    "walletDesc": "Connect your Solana wallet to receive dividends and settlements.",
+    "walletDesc": "Settlements and dividends are automatically sent to the wallet address below.",
     "listings": "Assigned Properties",
     "noListings": "No properties assigned yet."
   },

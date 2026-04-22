@@ -8,17 +8,27 @@
  * Availability 캘린더: 정적 목업 유지
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Form, useLoaderData, useActionData, useNavigation, redirect } from "react-router";
+import { RichTextEditor } from "~/components/ui/rich-text-editor";
+import { Form, useLoaderData, useActionData, useNavigation, useBlocker, redirect } from "react-router";
+import { z } from "zod";
 import type { Route } from "./+types/admin.edit";
 import { requireUser } from "~/lib/auth.server";
 import { db } from "~/db/index.server";
-import { listings } from "~/db/schema";
+import { listings, user as userTable } from "~/db/schema";
+import { translateText } from "~/lib/translation.server";
 import { eq } from "drizzle-orm";
 import { Header, Button, Card } from "../components/ui-mockup";
 import { useCloudinaryUpload } from "~/hooks/use-cloudinary-upload";
 import { AMENITY_OPTIONS } from "~/lib/listing-constants";
+
+const listingSchema = z.object({
+    title:        z.string().min(2, "validation.titleMin").max(100, "validation.titleMax"),
+    description:  z.string().min(10, "validation.descMin"),
+    pricePerNight: z.number({ error: "validation.requiredPrice" }).min(1, "validation.requiredPrice"),
+    maxGuests:    z.number({ error: "validation.requiredMaxGuests" }).min(1, "validation.requiredMaxGuests").max(20, "validation.maxGuestsMax"),
+});
 
 // ────────────────────────────────────────────────────────────
 // loader
@@ -31,7 +41,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
         .from(listings)
         .where(eq(listings.id, params.id));
     if (!listing) throw new Response("Not Found", { status: 404 });
-    return { listing };
+    const operators = await db
+        .select({ id: userTable.id, name: userTable.name, email: userTable.email })
+        .from(userTable)
+        .where(eq(userTable.role, "operator"))
+        .orderBy(userTable.name);
+    return { listing, operators };
 }
 
 // ────────────────────────────────────────────────────────────
@@ -50,6 +65,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     const smartLockEnabled = fd.get("smartLockEnabled") === "true";
     const amenities = fd.getAll("amenities").map(String);
     const images = fd.getAll("images").map(String).filter(Boolean);
+    const operatorId = fd.get("operatorId")?.toString().trim() ?? "";
 
     const errors: Record<string, string> = {};
     if (!title) errors.title = "validation.requiredTitle";
@@ -60,12 +76,30 @@ export async function action({ request, params }: Route.ActionArgs) {
     if (Object.keys(errors).length > 0)
         return Response.json({ errors }, { status: 422 });
 
+    // DeepL 자동 번역 (실패 시 원문 저장)
+    const [titleEnResult, descriptionEnResult] = await Promise.all([
+        translateText(title, "en"),
+        translateText(description, "en"),
+    ]);
+
     await db
         .update(listings)
-        .set({ title, description, pricePerNight, maxGuests, amenities, images, transportSupport, smartLockEnabled })
+        .set({
+            title,
+            description,
+            titleEn: titleEnResult.translated,
+            descriptionEn: descriptionEnResult.translated,
+            pricePerNight,
+            maxGuests,
+            amenities,
+            images,
+            transportSupport,
+            smartLockEnabled,
+            ...(operatorId ? { hostId: operatorId } : {}),
+        })
         .where(eq(listings.id, params.id));
 
-    return Response.json({ ok: true });
+    return redirect("/admin");
 }
 
 // ────────────────────────────────────────────────────────────
@@ -75,31 +109,96 @@ export async function action({ request, params }: Route.ActionArgs) {
 const INPUT_CLS = "w-full h-10 rounded-xl border border-input bg-background px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
 
 export default function AdminEdit() {
-    const { listing } = useLoaderData<typeof loader>();
+    const { listing, operators } = useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const navigation = useNavigation();
     const { t } = useTranslation("admin");
     const isSaving = navigation.state === "submitting";
-    const rawErrors = (actionData as { errors?: Record<string, string> } | undefined)?.errors;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const errors = rawErrors
-        ? Object.fromEntries(Object.entries(rawErrors).map(([k, v]) => [k, (t as (k: string) => string)(v)]))
-        : undefined;
+    const serverErrors = (actionData as { errors?: Record<string, string> } | undefined)?.errors;
     const saved = (actionData as { ok?: boolean } | undefined)?.ok;
 
+    const initialImages = (() => {
+        const raw = listing.images;
+        if (!raw) return [] as string[];
+        if (typeof raw === "string") { try { return JSON.parse(raw) as string[]; } catch { return [] as string[]; } }
+        return raw as unknown as string[];
+    })();
+
+    const [operatorId, setOperatorId] = useState(listing.hostId ?? "");
     const [title, setTitle] = useState(listing.title);
     const [description, setDescription] = useState(listing.description);
     const [pricePerNight, setPricePerNight] = useState(listing.pricePerNight);
     const [maxGuests, setMaxGuests] = useState(listing.maxGuests);
     const [amenities, setAmenities] = useState<string[]>((listing.amenities as unknown as string[]) ?? []);
-    const [images, setImages] = useState<string[]>(() => {
-        const raw = listing.images;
-        if (!raw) return [];
-        if (typeof raw === "string") { try { return JSON.parse(raw) as string[]; } catch { return []; } }
-        return raw as unknown as string[];
-    });
+    const [images, setImages] = useState<string[]>(initialImages);
     const [transportSupport, setTransportSupport] = useState(listing.transportSupport);
     const [smartLockEnabled, setSmartLockEnabled] = useState(listing.smartLockEnabled);
+
+    // ── 실시간 검증
+    const [fieldErrors, setFieldErrors] = useState<Partial<Record<string, string>>>({});
+
+    function validateField(name: string, value: unknown) {
+        const partial = listingSchema.pick({ [name]: true } as never).safeParse({ [name]: value });
+        if (!partial.success) {
+            const msg = partial.error.issues[0]?.message ?? "";
+            setFieldErrors((prev) => ({ ...prev, [name]: t(msg as any) }));
+        } else {
+            setFieldErrors((prev) => { const next = { ...prev }; delete next[name]; return next; });
+        }
+    }
+
+    // 서버 에러와 클라이언트 에러 병합 (클라이언트 우선)
+    const errors = {
+        ...(serverErrors ? Object.fromEntries(Object.entries(serverErrors).map(([k, v]) => [k, t(v as any)])) : {}),
+        ...fieldErrors,
+    };
+
+    // ── 미저장 감지: 저장 성공 시 베이스라인을 현재 상태로 갱신
+    const savedBaseline = useRef({
+        title: listing.title,
+        description: listing.description,
+        pricePerNight: listing.pricePerNight,
+        maxGuests: listing.maxGuests,
+        transportSupport: listing.transportSupport,
+        smartLockEnabled: listing.smartLockEnabled,
+        amenities: (listing.amenities as unknown as string[]) ?? [],
+        images: initialImages,
+    });
+    useEffect(() => {
+        if (saved) {
+            savedBaseline.current = { title, description, pricePerNight, maxGuests, transportSupport, smartLockEnabled, amenities: [...amenities], images: [...images] };
+        }
+    }, [saved]);
+
+    const bl = savedBaseline.current;
+    const isDirty =
+        title !== bl.title ||
+        description !== bl.description ||
+        pricePerNight !== bl.pricePerNight ||
+        maxGuests !== bl.maxGuests ||
+        transportSupport !== bl.transportSupport ||
+        smartLockEnabled !== bl.smartLockEnabled ||
+        JSON.stringify([...amenities].sort()) !== JSON.stringify([...bl.amenities].sort()) ||
+        JSON.stringify(images) !== JSON.stringify(bl.images);
+
+    // 브라우저 새로고침/탭 닫기 경고
+    useEffect(() => {
+        function handleBeforeUnload(e: BeforeUnloadEvent) {
+            if (isDirty && !saved) {
+                e.preventDefault();
+            }
+        }
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [isDirty, saved]);
+
+    // React Router 내비게이션 차단 (같은 경로 POST = 저장 액션은 제외)
+    const blocker = useBlocker(({ nextLocation, currentLocation }) => {
+        if (nextLocation.pathname === currentLocation.pathname) return false;
+        return isDirty && !saved;
+    });
+    const handleBlockerProceed = useCallback(() => { blocker.proceed(); }, [blocker]);
+    const handleBlockerReset   = useCallback(() => { blocker.reset(); },   [blocker]);
 
     // ── 사진 업로드
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -126,12 +225,15 @@ export default function AdminEdit() {
     }
 
     return (
+        <>
         <Form method="post">
             {/* hidden fields */}
             {images.map((url) => <input key={url} type="hidden" name="images" value={url} />)}
             {amenities.map((a) => <input key={a} type="hidden" name="amenities" value={a} />)}
             <input type="hidden" name="transportSupport" value={String(transportSupport)} />
             <input type="hidden" name="smartLockEnabled" value={String(smartLockEnabled)} />
+            <input type="hidden" name="operatorId" value={operatorId} />
+            <input type="hidden" name="description" value={description} />
 
             <div className="min-h-screen bg-stone-50/50">
                 <Header />
@@ -191,28 +293,80 @@ export default function AdminEdit() {
                             </Card>
                         </section>
 
+                        {/* 담당 운영자 */}
+                        <section className="space-y-4">
+                            <SectionTitle>담당 운영자</SectionTitle>
+                            <Card className="p-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-foreground">
+                                        운영자 계정
+                                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                            예약 승인·거절, 월 정산 수령
+                                        </span>
+                                    </label>
+                                    <select
+                                        value={operatorId}
+                                        onChange={(e) => setOperatorId(e.target.value)}
+                                        className="w-full h-10 rounded-xl border border-input bg-background px-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    >
+                                        <option value="">미지정 (운영자 없음)</option>
+                                        {operators.map((op) => (
+                                            <option key={op.id} value={op.id}>
+                                                {op.name ?? op.email} — {op.email}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {operators.length === 0 && (
+                                        <p className="text-xs text-amber-600">
+                                            등록된 운영자가 없습니다.{" "}
+                                            <a href="/admin/operators" className="underline">운영자 관리</a>에서 먼저 계정을 생성하세요.
+                                        </p>
+                                    )}
+                                </div>
+                            </Card>
+                        </section>
+
                         {/* 기본 정보 */}
                         <section className="space-y-4">
                             <SectionTitle>{t("edit.basicInfoSection")}</SectionTitle>
                             <Card className="p-8 space-y-6">
                                 <Field label={t("edit.propertyTitle")} error={errors?.title} required>
-                                    <input name="title" value={title} onChange={(e) => setTitle(e.target.value)} className={INPUT_CLS} maxLength={100} />
+                                    <input
+                                        name="title"
+                                        value={title}
+                                        onChange={(e) => { setTitle(e.target.value); validateField("title", e.target.value); }}
+                                        className={INPUT_CLS}
+                                        maxLength={100}
+                                    />
                                 </Field>
                                 <Field label={t("edit.description")} error={errors?.description} required>
-                                    <textarea
-                                        name="description"
-                                        rows={6}
+                                    <RichTextEditor
                                         value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
-                                        className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                                        onChange={(html) => { setDescription(html); validateField("description", html); }}
+                                        className="w-full"
                                     />
                                 </Field>
                                 <div className="grid grid-cols-2 gap-4">
                                     <Field label={t("edit.basePrice")} error={errors?.pricePerNight} required>
-                                        <input name="pricePerNight" type="number" min="1" value={pricePerNight} onChange={(e) => setPricePerNight(Number(e.target.value))} className={INPUT_CLS} />
+                                        <input
+                                            name="pricePerNight"
+                                            type="number"
+                                            min="1"
+                                            value={pricePerNight}
+                                            onChange={(e) => { setPricePerNight(Number(e.target.value)); validateField("pricePerNight", Number(e.target.value)); }}
+                                            className={INPUT_CLS}
+                                        />
                                     </Field>
                                     <Field label={t("edit.maxGuests")} error={errors?.maxGuests} required>
-                                        <input name="maxGuests" type="number" min="1" max="20" value={maxGuests} onChange={(e) => setMaxGuests(Number(e.target.value))} className={INPUT_CLS} />
+                                        <input
+                                            name="maxGuests"
+                                            type="number"
+                                            min="1"
+                                            max="20"
+                                            value={maxGuests}
+                                            onChange={(e) => { setMaxGuests(Number(e.target.value)); validateField("maxGuests", Number(e.target.value)); }}
+                                            className={INPUT_CLS}
+                                        />
                                     </Field>
                                 </div>
                             </Card>
@@ -260,33 +414,6 @@ export default function AdminEdit() {
                             </Card>
                         </section>
 
-                        {/* Availability — 정적 목업 */}
-                        <section className="space-y-4">
-                            <SectionTitle>{t("edit.availabilitySection")}</SectionTitle>
-                            <Card className="p-8 flex flex-col items-center">
-                                <div className="w-full max-w-sm border rounded-2xl p-6 bg-white overflow-hidden shadow-inner">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <span className="font-bold">May 2026</span>
-                                        <div className="flex gap-2">
-                                            <Button type="button" variant="ghost" className="h-8 w-8 p-0 border">←</Button>
-                                            <Button type="button" variant="ghost" className="h-8 w-8 p-0 border">→</Button>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-bold text-muted-foreground uppercase mb-2">
-                                        {["일","월","화","수","목","금","토"].map((d) => <span key={d}>{d}</span>)}
-                                    </div>
-                                    <div className="grid grid-cols-7 gap-2">
-                                        {Array.from({ length: 31 }).map((_, i) => (
-                                            <div key={i} className={`h-10 rounded-lg flex flex-col items-center justify-center text-xs ${i + 1 === 15 ? "bg-primary text-white" : "hover:bg-primary/5 cursor-pointer border border-transparent hover:border-primary/20"}`}>
-                                                <span>{i + 1}</span>
-                                                <span className="text-[8px] opacity-70">120k</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <p className="mt-4 text-xs text-muted-foreground">{t("edit.availabilityPhase")}</p>
-                            </Card>
-                        </section>
                     </div>
                 </main>
 
@@ -304,6 +431,35 @@ export default function AdminEdit() {
                 </div>
             </div>
         </Form>
+
+        {/* 미저장 변경사항 내비게이션 차단 모달 */}
+        {blocker.state === "blocked" && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+                <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-[360px] space-y-5">
+                    <div className="space-y-1.5">
+                        <h2 className="text-base font-bold text-foreground">{t("edit.blockerTitle")}</h2>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{t("edit.blockerMessage")}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            type="button"
+                            onClick={handleBlockerReset}
+                            className="h-10 rounded-xl text-sm font-medium border border-border hover:bg-muted/40 transition-colors"
+                        >
+                            {t("edit.blockerStay")}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleBlockerProceed}
+                            className="h-10 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
+                        >
+                            {t("edit.blockerLeave")}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     );
 }
 
@@ -347,9 +503,9 @@ function ToggleRow({ label, description, value, onChange }: {
             <button
                 type="button"
                 onClick={() => onChange(!value)}
-                className={`relative h-6 w-11 rounded-full transition-colors ${value ? "bg-primary" : "bg-muted"}`}
+                className={`relative h-6 w-11 rounded-full transition-colors ${value ? "bg-[#4a3b2c]" : "bg-muted"}`}
             >
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${value ? "translate-x-5" : "translate-x-0.5"}`} />
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all duration-200 ${value ? "left-[22px]" : "left-0.5"}`} />
             </button>
         </div>
     );

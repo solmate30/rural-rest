@@ -19,6 +19,7 @@
     "methodUsdc": "USDC",
     "approve": "승인",
     "reject": "거절 및 환불",
+    "complete": "정산 완료",
     "processing": "처리 중...",
     "actionError": "처리 실패",
     "status": {

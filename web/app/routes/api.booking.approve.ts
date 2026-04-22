@@ -29,23 +29,27 @@ export async function action({ request }: { request: Request }) {
     // operator는 자신이 담당하는 매물의 예약만 승인 가능
     if ((currentUser as any).role === "operator") {
         const [listing] = await db
-            .select({ operatorId: listings.operatorId })
+            .select({ hostId: listings.hostId })
             .from(listings)
             .where(eq(listings.id, booking.listingId));
 
-        if (!listing || listing.operatorId !== currentUser.id) {
+        if (!listing || listing.hostId !== currentUser.id) {
             return Response.json({ error: "담당 매물이 아닙니다" }, { status: 403 });
         }
     }
 
     // PayPal authorization capture (카드 결제인 경우)
+    let platformFeeKrw: number | null = null;
+    let paypalCaptureId: string | null = null;
     if (booking.paypalAuthorizationId) {
         try {
-            await capturePayPalAuth(booking.paypalAuthorizationId);
-            const platformFee = Math.round(booking.totalPrice * PLATFORM_FEE_RATE);
-            const hostPayout = booking.totalPrice - platformFee;
+            paypalCaptureId = await capturePayPalAuth(booking.paypalAuthorizationId);
+            platformFeeKrw = Math.round(booking.totalPrice * PLATFORM_FEE_RATE);
+            const hostPayout = booking.totalPrice - platformFeeKrw;
+            // PayPal Commerce Platform 파트너 승인 전까지 수수료는 DB에만 기록
+            // 실제 차감은 추후 파트너 계정 활성화 후 capturePayPalAuth에 payment_instruction.platform_fees 추가
             console.info(
-                `[approve] booking=${bookingId} total=₩${booking.totalPrice} platformFee=₩${platformFee} hostPayout=₩${hostPayout}`
+                `[approve] booking=${bookingId} total=₩${booking.totalPrice} platformFee=₩${platformFeeKrw} hostPayout=₩${hostPayout}`
             );
         } catch (err) {
             console.error("[paypal capture]", err);
@@ -53,9 +57,22 @@ export async function action({ request }: { request: Request }) {
         }
     }
 
-    await db.update(bookings)
-        .set({ status: "confirmed" })
-        .where(eq(bookings.id, bookingId));
+    // PayPal capture 성공 후 DB 업데이트는 별도 try/catch.
+    // DB 실패 시 capture는 이미 완료됐으므로 ok:true 반환해야 재승인 시 PayPal 이중 capture 시도를 막는다.
+    try {
+        await db.update(bookings)
+            .set({
+                status: "confirmed",
+                ...(platformFeeKrw !== null && { platformFeeKrw }),
+                ...(paypalCaptureId !== null && { paypalCaptureId }),
+            })
+            .where(eq(bookings.id, bookingId));
+    } catch (dbErr: any) {
+        console.error(
+            `[approve] CRITICAL: paypalCaptureId=${paypalCaptureId} 성공이나 DB status 업데이트 실패. 수동 처리 필요. booking=${bookingId}`,
+            dbErr?.message ?? dbErr,
+        );
+    }
 
     return Response.json({ ok: true });
 }

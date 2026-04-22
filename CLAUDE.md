@@ -75,7 +75,24 @@ Key routes:
 
 - **Server**: `requireUser(request, allowedRoles?)` in `app/lib/auth.server.ts` for protected routes
 - **Client**: `signIn`, `signUp`, `signOut`, `useSession` from `app/lib/auth.client.ts`
-- Roles: `guest`, `host`, `admin`
+- Roles: `guest`, `operator`, `admin`
+
+### Role 정의
+
+| role | 주체 | 설명 |
+|------|------|------|
+| `guest` | 여행자 / RWA 투자자 | 예약, 투자, DAO 투표 |
+| `operator` | 마을운영자 | 현장 운영, 게스트 대면, 정산 수령. `listings.hostId`로 참조됨 |
+| `admin` | 루랄레스트 (플랫폼) | 매물 등록, RWA 발행, 전체 관리. listings에 별도 필드 없음 |
+
+### listings.hostId 규칙
+
+`listings.hostId` = **마을운영자** (`operator` role) 계정 ID.
+- 게스트가 메시지를 보내는 상대
+- 숙소 상세 페이지에 표시되는 "호스트"
+- 월 정산 수령자 (영업이익 30%)
+
+admin(플랫폼)은 listings에 별도 필드 없이 role로만 구분. `operatorId` 컬럼은 존재하지 않음.
 
 ### Database Schema
 

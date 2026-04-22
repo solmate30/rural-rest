@@ -36,6 +36,7 @@ export function ClaimButton({ listingId, rwaTokenId, tokenMint, walletAddress, o
             const { SystemProgram } = await import("@solana/web3.js");
 
             const program = await getProgram(connection, wallet);
+            const seedId = listingId.replace(/-/g, "");
             const { propertyToken, investorPosition } = await derivePdas(listingId, investor);
 
             const usdcMint = new PublicKey(USDC_MINT);
@@ -47,7 +48,7 @@ export function ClaimButton({ listingId, rwaTokenId, tokenMint, walletAddress, o
             );
 
             const signature = await program.methods
-                .claimDividend(listingId)
+                .claimDividend(seedId)
                 .accounts({
                     investor,
                     propertyToken,

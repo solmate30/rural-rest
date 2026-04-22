@@ -40,6 +40,7 @@ export async function loader() {
     const rows = await db
         .select({
             id: listings.id,
+            nodeNumber: listings.nodeNumber,
             title: listings.title,
             location: listings.location,
             region: listings.region,
@@ -100,6 +101,7 @@ export async function loader() {
         const remainingKrw = row.valuationKrw! - raisedKrw;
         return {
             id: row.id,
+            nodeNumber: row.nodeNumber ?? null,
             title: row.title,
             location: row.location,
             region: row.region,
@@ -437,7 +439,7 @@ export default function InvestDashboard() {
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            navigate(`/invest/${property.id}`);
+                                                            navigate(`/invest/${property.nodeNumber ?? property.id}`);
                                                         }}
                                                         className="mt-5 w-full rounded-lg border border-invest py-2.5 text-sm font-semibold text-invest hover:bg-invest/10 transition-colors"
                                                     >
@@ -447,7 +449,7 @@ export default function InvestDashboard() {
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            navigate(`/invest/${property.id}`);
+                                                            navigate(`/invest/${property.nodeNumber ?? property.id}`);
                                                         }}
                                                         className="mt-5 w-full rounded-lg bg-invest hover:bg-invest-hover py-2.5 text-sm font-semibold text-white transition-colors shadow-sm flex items-center justify-center gap-1"
                                                     >

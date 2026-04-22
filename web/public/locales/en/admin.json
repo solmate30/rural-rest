@@ -1,4 +1,14 @@
 {
+  "nav": {
+    "dashboard": "Dashboard",
+    "bookings": "Bookings",
+    "newListing": "New Listing",
+    "operators": "Operators",
+    "settlements": "Settlements",
+    "councilToken": "Issue Token",
+    "treasury": "Treasury",
+    "community": "Community"
+  },
   "dashboard": {
     "status": {
       "funding": "Funding",
@@ -110,7 +120,7 @@
     "basePriceEx": "120000",
     "maxGuests": "Max Guests",
     "maxGuestsEx": "4",
-    "availability": "Availability & Dynamic Pricing",
+    "availability": "Pricing & Options",
     "days": {
       "sun": "Sun", "mon": "Mon", "tue": "Tue", "wed": "Wed",
       "thu": "Thu", "fri": "Fri", "sat": "Sat"
@@ -136,7 +146,11 @@
     "savedState": "Saved",
     "saving": "Saving...",
     "save": "Save",
-    "uploadError": "Upload failed"
+    "uploadError": "Upload failed",
+    "blockerTitle": "Unsaved Changes",
+    "blockerMessage": "You have unsaved changes. Are you sure you want to leave?",
+    "blockerStay": "Keep Editing",
+    "blockerLeave": "Leave"
   },
   "tokenize": {
     "status": {
@@ -228,7 +242,13 @@
       "issuing": "Issuing...",
       "issue": "Issue Token",
       "error": "Issuance failed",
-      "success": "Issued — tx: {{sig}}"
+      "success": "Issued — tx: {{sig}}",
+      "cardTitle": "Issue Token",
+      "cardDesc": "Token will be sent to the operator's connected wallet address",
+      "operatorLabel": "Select Operator",
+      "operatorPlaceholder": "Select an operator",
+      "operatorEmpty": "No operators registered",
+      "noWallet": "No wallet connected"
     }
   },
   "settlements": {
@@ -321,12 +341,33 @@
       "txGovPayout": "Municipality USDC transfer (40%)"
     }
   },
+  "treasury": {
+    "title": "Treasury",
+    "subtitle": "Platform fee revenue",
+    "addressLabel": "Treasury Address",
+    "usdcTotal": "Total USDC Fees",
+    "usdcHint": "10% of escrow payments",
+    "krwTotal": "Total KRW Fees",
+    "krwHint": "10% of card payments",
+    "historyTitle": "Fee History (last 50)",
+    "empty": "No completed bookings.",
+    "colProperty": "Property",
+    "colFee": "Fee",
+    "colMethod": "Payment",
+    "colDate": "Date",
+    "methodCard": "Card",
+    "methodUsdc": "USDC"
+  },
   "validation": {
     "requiredTitle": "Please enter a property name",
+    "titleMin": "Property name must be at least 2 characters",
+    "titleMax": "Property name must be 100 characters or less",
     "titleTooLong": "Property name must be 100 characters or less",
     "requiredDescription": "Please enter a property description",
+    "descMin": "Description must be at least 10 characters",
     "requiredPrice": "Please enter a nightly price",
     "requiredMaxGuests": "Please enter the maximum number of guests",
+    "maxGuestsMax": "Maximum guests cannot exceed 20",
     "requiredLocation": "Please search for an address",
     "invalidRegion": "Could not determine region from address"
   },

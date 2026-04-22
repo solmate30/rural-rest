@@ -5,13 +5,13 @@ package_manager = "yarn"
 resolution = true
 skip-lint = false
 
-[programs.localnet]
-rural_rest_rwa = "BAJ2fSZGZMkt6dFs4Rn5u8CCSsaVtgKbr5Jfca659iZr"
-rural_rest_dao = "142FMJgEw2H4EYzqHk1mEsLoT4aDkfLJJ4UR5ELxmTU1"
-
 [programs.devnet]
-rural_rest_rwa = "BAJ2fSZGZMkt6dFs4Rn5u8CCSsaVtgKbr5Jfca659iZr"
-rural_rest_dao = "142FMJgEw2H4EYzqHk1mEsLoT4aDkfLJJ4UR5ELxmTU1"
+rural_rest_dao = "HUbLVSmSLfmrzQrecqq2HP6hpBc6jegZbfV4Kjrx8cqD"
+rural_rest_rwa = "F5ZAPhk9Yw65WzEisS6SsAtXQd3xyUFwsMdWvA3QYSDE"
+
+[programs.localnet]
+rural_rest_dao = "HUbLVSmSLfmrzQrecqq2HP6hpBc6jegZbfV4Kjrx8cqD"
+rural_rest_rwa = "F5ZAPhk9Yw65WzEisS6SsAtXQd3xyUFwsMdWvA3QYSDE"
 
 [registry]
 url = "https://api.apr.dev"
@@ -20,8 +20,15 @@ url = "https://api.apr.dev"
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
-[test]
-startup_wait = 5000
-
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\""
+
+[test]
+startup_wait = 5000
+shutdown_wait = 2000
+upgradeable = false
+
+[test.validator]
+bind_address = "0.0.0.0"
+ledger = ".anchor/test-ledger"
+rpc_port = 8899

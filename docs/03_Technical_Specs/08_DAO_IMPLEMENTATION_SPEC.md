@@ -205,11 +205,11 @@ pub enum VoteType {
   - `title` 길이 <= 128 bytes
   - `description_uri` 길이 <= 256 bytes
 - **Remaining Accounts**: 모든 Active 상태 PropertyToken 계정 (readonly)
-- **추가 Account**: `council_mint` — Council Token Mint (supply 조회)
+- **추가 Account**: `council_mint` — Council Token ATA 검증용 (supply는 사용하지 않음)
   ```
-  total_eligible_weight = sum(property_token.tokens_sold for each active property) + council_mint.supply
+  total_eligible_weight = sum(property_token.tokens_sold for each active property)
   ```
-- **스냅샷**: 생성 시점의 `total_eligible_weight` 기록 → 정족수/캡 계산 기준 (RWA + Council 합산)
+- **스냅샷**: 생성 시점의 `total_eligible_weight` 기록 → 정족수/캡 계산 기준 (RWA만)
 
 ### 4.3. `cast_vote`
 
@@ -217,22 +217,17 @@ pub enum VoteType {
 - **동작**: VoteRecord PDA 생성, Proposal 투표수 업데이트
 - **투표권 계산**:
   ```
-  rwa_weight = sum(investor_position.amount for each property where owner == voter)
-  council_weight = voter_council_ata.amount (Optional, Council Token 보유 시)
-  raw_weight = rwa_weight + council_weight
+  raw_weight = sum(investor_position.amount for each property where owner == voter)
   cap = total_eligible_weight * voting_cap_bps / 10000
   weight = min(raw_weight, cap)
   ```
 - **Remaining Accounts**: voter의 모든 InvestorPosition PDA (readonly)
   - 각 position의 `owner == voter.key()` 검증
-- **Optional Account**: `voter_council_ata` — Council Token ATA (Council member가 아니면 None)
-  - `mint == dao_config.council_mint` 검증
-  - `owner == voter.key()` 검증
 - **검증**:
   - `voting_starts_at <= now <= voting_ends_at`
   - `status == Voting`
   - VoteRecord PDA 미존재 (중복 투표 방지)
-  - `raw_weight > 0` (RWA + Council 합산 투표권 없는 사용자 차단)
+  - `raw_weight > 0` (RWA 미보유자 차단 — Council Token만 보유 시 투표 불가)
 
 ### 4.4. `finalize_proposal`
 
@@ -280,25 +275,22 @@ pub enum VoteType {
 
 ### 6.1. 규칙
 
-- **투표권 = RWA 보유량 + Council Token 잔액 합산**
+- **투표권 = RWA 보유량만 (1:1)**
   - RWA: InvestorPosition.amount across all properties
-  - Council: voter_council_ata.amount (Council Token 보유 시)
+  - Council Token은 투표권에 포함되지 않음
 - **10% 하드 캡**: 온체인 네이티브 적용. `min(raw_weight, total_eligible_weight * 10%)`
-- **스냅샷**: `total_eligible_weight`는 제안 생성 시점에 기록 (PropertyToken.tokens_sold 합산 + Council Token supply)
-- **개인 투표권**: cast_vote 시점의 InvestorPosition 잔액 + Council Token 잔액 조회
+- **스냅샷**: `total_eligible_weight`는 제안 생성 시점에 기록 (PropertyToken.tokens_sold 합산만)
+- **개인 투표권**: cast_vote 시점의 InvestorPosition 잔액 합산
 
-### 6.2. 토큰 이중 구조 (권한 분리 + 공동 투표)
+### 6.2. 토큰 역할 구분
 
 | 토큰 | 대상 | 역할 | 표준 |
 |------|------|------|------|
-| **RWA Token** | 투자자 전체 | 투표권 (보유량 비례, 1:1) | Token-2022 NonTransferable |
-| **Council Token** | 마을 대표/지방정부 | 제안 생성 권한 + 투표권 (1:1) | Token-2022 NonTransferable |
+| **RWA Token** | 투자자 | 투표권 (보유량 비례, 1:1) | Token-2022 NonTransferable |
+| **Council Token** | 마을 대표/지방정부 | 제안 생성 자격만 | Token-2022 NonTransferable |
 
-- Council Token은 Squads multisig만 발급 가능 (Mint Authority → multisig)
-- 투자자는 RWA Token으로 투표만 가능, 제안 생성 불가
-- **마을/지자체도 Council Token으로 투표 참여** — 투표 가중치 = Council Token 수량 (1:1)
-- Council Token은 소수(1~5개)만 발행되므로, 투자자 다수의 의결을 뒤집을 수준은 아님
-- 운영 주체가 안건에 대해 공식적으로 찬반 의사를 표현할 수 있도록 하는 것이 목적
+- 마을/지자체는 RWA 미구매 → 투표권 없음
+- 역할 분리: 현장을 아는 주체(마을/지자체)가 안건 제안 → 경제적 이해관계자(투자자)가 결정
 
 ### 6.3. Remaining Accounts 패턴
 
@@ -309,10 +301,8 @@ remaining_accounts: [
   investor_position_property_2 (readonly),
   ...
 ]
-+ voter_council_ata (Optional account)
 ```
-각 InvestorPosition 역직렬화 → `owner == voter` 검증 → `amount` 합산.
-Council Token ATA 있으면 → `mint/owner` 검증 → `amount` 추가 합산 → 캡 적용.
+각 InvestorPosition 역직렬화 → `owner == voter` 검증 → `amount` 합산 → 캡 적용.
 
 **`create_proposal`에서 전체 유통량 스냅샷:**
 ```
@@ -541,48 +531,17 @@ Solana Realms의 방식을 참고하여 **GitHub Gist**를 사용한다.
 
 > Updated: 2026-04-01
 
-### 15.1. Council Token 투표권 부여 여부
+### 15.1. Council Token 역할 결정
 
-**결정: Council Token 보유자도 투표 가능 (1:1 가중치, 10% 캡 동일 적용)**
+**결정: Council Token = 제안 생성 자격만. 투표권 없음.**
 
-검토 당시 두 가지 선택지를 비교함:
+마을대표/지방정부는 RWA를 구매하지 않으므로 투표권이 없다. Council Token은 제안을 올릴 수 있는 자격증 역할만 한다.
 
-| 논점 | RWA만 투표 | Council도 투표 (채택) |
-|------|-----------|---------------------|
-| 돈 넣은 사람이 결정 | 맞음 | Council이 투자자 이익에 반하는 투표 가능 |
-| 마을 운영 현실 | 마을 협조 없으면 사업 자체가 안 됨 | 마을 목소리 직접 반영 |
-| 이해충돌 | 없음 | 있음 |
-| 운영 정보 비대칭 | 투자자는 현장을 모름 | 마을 사람이 현장 상황 알려줌 |
-
-**Council도 투표를 채택한 이유:**
-
-1. **사업 특성**: 부동산 투자가 아니라 마을 운영. 숙소 운영 규칙, 체험 프로그램, 난방비 등 현장 기반 안건이 대부분
-2. **비중 자연 희석**: Council supply는 authority가 통제하며, 투자자 증가에 따라 자연 희석 (E2E 기준 4.4%, 실서비스 예상 1% 이하)
-3. **10% 캡 방어**: Council 멤버 개인이 아무리 많은 토큰을 보유해도 1인당 10% 캡 적용
-4. **제안권만 부여 시 문제**: 제안만 하고 결과에 영향력 0이면 참여 동기 없음. 마을 협조 저하 우려
-
-**기각된 대안: 가산 가중치 (Council 투표 시 x2 배율)**
-- 기각 이유: "같은 1표인데 왜 Council은 2배인가" → 투자자 불만, 구조 복잡성 증가. 가중치 조절보다 supply 조절이 더 투명
-
-**레퍼런스 모델: RWA 특화 거버넌스**
-
-DeFi DAO(Compound, Uniswap)는 토큰 홀더만 투표하는 단순 구조. 하지만 실물 자산 기반 프로토콜은 오프체인 운영 주체가 반드시 존재하므로 다르게 설계:
-
-| 프로토콜 | 구조 |
-|---------|------|
-| Centrifuge | 투자자(LP) + 자산 발행자(Issuer) 모두 투표권 |
-| RealT | 토큰 홀더 투표 + 운영사 의견 반영 |
-| **Rural Rest** | **RWA 투자자 + Council(지자체/마을) 모두 투표권** |
-
-Rural Rest는 Centrifuge/RealT 모델을 따름. 실물 자산 거버넌스에서 운영 주체(마을)의 온체인 참여는 필수.
-
-### 15.2. Council Token과 RWA Token 역할 분리
-
-**결정: Council Token = 제안 + 투표, RWA Token = 투표만**
+**설계 원칙**: 현장을 아는 주체(마을/지자체)가 안건을 제안하고, 경제적 이해관계자(투자자)가 투표로 결정한다.
 
 | 토큰 | 제안 생성 | 투표 | 발행 방식 |
 |------|---------|------|----------|
-| Council Token | O (1개 이상 필수) | O (1:1) | authority가 무료 발급 |
+| Council Token | O (1개 이상 필수) | X | authority가 무료 발급 |
 | RWA Token | X | O (보유량 기반) | USDC로 구매 |
 
 - 제안은 마을/지자체만 가능: 현장 상황을 아는 주체가 안건을 올리는 구조

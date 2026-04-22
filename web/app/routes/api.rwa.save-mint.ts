@@ -43,7 +43,7 @@ export async function action({ request }: { request: Request }) {
     const fundingDeadline = new Date(fundingDeadlineTs * 1000);
 
     const listing = await db
-        .select({ pricePerNight: listings.pricePerNight })
+        .select({ pricePerNight: listings.pricePerNight, nodeNumber: listings.nodeNumber })
         .from(listings)
         .where(eq(listings.id, listingId))
         .then((r) => r[0]);
@@ -52,7 +52,10 @@ export async function action({ request }: { request: Request }) {
         ? calcApyBps(listing.pricePerNight, valuationKrw)
         : 0;
 
-    const symbol = `RURAL-${listingId}`;
+    // nodeNumber가 있으면 RURAL-3005, 없으면 UUID 앞 8자리로 폴백
+    const symbol = listing?.nodeNumber
+        ? `RURAL-${listing.nodeNumber}`
+        : `RURAL-${listingId.slice(0, 8)}`;
 
     const existing = await db
         .select({ id: rwaTokens.id })

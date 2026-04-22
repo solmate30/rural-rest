@@ -123,8 +123,9 @@ pub struct BookingEscrow {
 | Instruction | 서명자 | 조건 | CPI |
 |-------------|--------|------|-----|
 | `create_booking_escrow(listing_id, booking_id, amount_krw, check_in, check_out)` | guest | check_in > now, amount_krw > 0 | guest_usdc → escrow_vault |
-| `release_booking_escrow(booking_id)` | authority or crank_authority | status==Pending, now >= check_out | escrow_vault → authority_usdc |
-| `cancel_booking_escrow(booking_id)` | guest | status==Pending, now < check_in | escrow_vault → guest_usdc |
+| `release_booking_escrow(booking_id)` | authority or crank_authority | status==Pending, now >= check_out | escrow_vault → host 90% + treasury 10% |
+| `cancel_booking_escrow(booking_id)` | guest / authority / crank | status==Pending, (guest: now < check_in) | escrow_vault → guest_usdc 100% |
+| `cancel_booking_escrow_partial(booking_id, guest_bps)` | authority or crank_authority | status==Pending, guest_bps 1~9999 | escrow_vault → guest guest_bps% + host 나머지 |
 
 ### Pyth KRW→USDC 변환 수학
 
@@ -177,7 +178,8 @@ skip-oracle = []  # Pyth 우회, amount_usdc = amount_krw * 1_000_000 / 1350
 | 6021 | PythConfidenceTooWide | 신뢰도 구간 > 2% (불안정한 시장) |
 | 6022 | InvalidPythPrice | 가격 음수 또는 zero |
 | 6023 | BookingNotPending | status != Pending |
-| 6024 | CheckInNotPassed | now < check_out (체크아웃 전 release 시도) |
+| 6024 | CheckOutNotPassed | now < check_out (체크아웃 전 release 시도) |
+| 6025 | InvalidRefundBps | guest_bps가 1~9999 범위 밖 |
 
 ---
 
@@ -264,7 +266,7 @@ approval = votes_for >= (votes_for + votes_against) * approval_threshold_bps / 1
 
 | 결정 | 내용 | 이유 |
 |------|------|------|
-| Council Token 투표권 | Council Token 보유자도 cast_vote로 투표 가능 (1:1 가중치) | 마을/지자체는 RWA 미보유, 운영 주체의 공식 의사 표현 필요 |
+| Council Token 투표권 | Council Token = 제안 생성 자격만. 투표권은 RWA 보유량만 (기획서 14번 원칙) | 마을대표/지자체도 RWA 직접 보유로 투표권 확보. Council supply는 total_eligible_weight 미포함 |
 | RWA 토큰 양도 불가 | `non_transferable` extension 적용 | 2차 시장 미지원, investor_position PDA 불일치 버그 방지 |
 | `open_position` 분리 | `init_if_needed` → `open_position` + `purchase_tokens` 분리 | 재초기화 공격 방지, 명시적 constraint |
 | `funds_released: bool` | `PropertyToken`에 필드 추가 | `release_funds` 중복 호출 방지 |

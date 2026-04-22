@@ -35,7 +35,10 @@ describe("rural-rest-dao", () => {
   };
 
   // -- 지갑 --
-  const authority = Keypair.generate();     // RWA authority + DAO authority
+  // provider.wallet.payer를 authority로 사용.
+  // rural-rest-rwa.ts도 같은 키를 쓰므로, 두 파일이 공유하는 rwaConfig.authority가
+  // 항상 일치한다. (두 파일 모두 같은 validator에서 순차 실행됨)
+  const authority = (provider.wallet as any).payer as Keypair; // RWA authority + DAO authority
   const councilMember = Keypair.generate(); // Council Token 보유 (제안 생성)
   const investor1 = Keypair.generate();     // RWA 보유 (투표)
   const investor2 = Keypair.generate();     // RWA 보유 (투표)
@@ -882,7 +885,10 @@ describe("rural-rest-dao", () => {
       // VotingEnded 또는 시뮬레이션 실패 (투표 기간 만료로 인한 거부)
       const errStr = err.toString();
       assert.ok(
-        errStr.includes("VotingEnded") || errStr.includes("6008") || errStr.includes("Unknown action"),
+        errStr.includes("VotingEnded") ||
+        errStr.includes("6008") ||
+        errStr.includes("Unknown action") ||
+        errStr.includes("Voting period has ended"),
         `Expected VotingEnded error, got: ${errStr}`
       );
       console.log("    투표 기간 만료 후 투표 차단 확인");

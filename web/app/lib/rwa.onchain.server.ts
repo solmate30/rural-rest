@@ -50,11 +50,12 @@ function parseStatus(raw: any): OnchainPropertyStatus {
 }
 
 export async function fetchPropertyOnchain(listingId: string): Promise<OnchainProperty | null> {
-    if (Buffer.from(listingId).length > 32) return null;
+    // UUID 하이픈 제거 후 길이 체크 (36바이트 UUID → 32바이트 seedId)
+    const seedId = listingId.replace(/-/g, "");
+    if (Buffer.from(seedId).length > 32) return null;
     try {
         const program = getProgram();
         const programId = new PublicKey(SERVER_PROGRAM_ID);
-        const seedId = listingId.replace(/-/g, "");
 
         const [propertyToken] = PublicKey.findProgramAddressSync(
             [Buffer.from("property"), Buffer.from(seedId)],
@@ -114,7 +115,7 @@ export async function tryAutoActivate(listingId: string): Promise<boolean> {
         // crank 키페어 로드
         const crank = Keypair.fromSecretKey(bs58.decode(CRANK_SECRET_KEY));
 
-        // propertyToken 조회
+        // propertyToken은 initializeProperty 때 seedId(대시 없음)로 생성됨
         const [propertyTokenPda] = PublicKey.findProgramAddressSync(
             [Buffer.from("property"), Buffer.from(seedId)],
             programId
@@ -124,6 +125,10 @@ export async function tryAutoActivate(listingId: string): Promise<boolean> {
 
         const isFunding = !!ptData.status?.funding;
         const isFunded  = !!ptData.status?.funded;
+
+        const nowSec = Math.floor(Date.now() / 1000);
+        const deadlineSec = Number(ptData.fundingDeadline ?? ptData.funding_deadline ?? 0);
+        console.log(`[rwa.onchain] onchain status: ${JSON.stringify(ptData.status)}, deadline: ${deadlineSec} (${new Date(deadlineSec * 1000).toISOString()}), now: ${nowSec} (${new Date(nowSec * 1000).toISOString()}), passed: ${nowSec > deadlineSec}`);
 
         if (!isFunding && !isFunded) {
             console.warn(`[rwa.onchain] tryAutoActivate: ${listingId} 상태가 funding/funded 아님 — skip`);
@@ -168,7 +173,7 @@ export async function tryAutoActivate(listingId: string): Promise<boolean> {
         // funding 상태면 releaseFunds 먼저 호출
         if (isFunding) {
             await (crankProgram.methods as any)
-                .releaseFunds(listingId)
+                .releaseFunds(seedId)
                 .accounts({
                     operator: crank.publicKey,
                     propertyToken: propertyTokenPda,
@@ -185,7 +190,7 @@ export async function tryAutoActivate(listingId: string): Promise<boolean> {
 
         // activateProperty (funded → active)
         await (crankProgram.methods as any)
-            .activateProperty(listingId)
+            .activateProperty(seedId)
             .accounts({
                 operator: crank.publicKey,
                 propertyToken: propertyTokenPda,

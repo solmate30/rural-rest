@@ -1,4 +1,4 @@
-import { useLoaderData, Link, useNavigate } from "react-router";
+import { useLoaderData, Link, useNavigate, useRevalidator } from "react-router";
 import { useTranslation } from "react-i18next";
 import { requireUser } from "../lib/auth.server";
 import { db } from "../db/index.server";
@@ -38,11 +38,7 @@ import { cn } from "~/lib/utils";
 /* ------------------------------------------------------------------ */
 
 function defaultMonth() {
-    const now = new Date();
-    const m = now.getMonth();
-    const y = m === 0 ? now.getFullYear() - 1 : now.getFullYear();
-    const pm = m === 0 ? 12 : m;
-    return `${y}-${String(pm).padStart(2, "0")}`;
+    return DateTime.now().toFormat("yyyy-MM");
 }
 
 function recentMonths(n = 12) {
@@ -79,7 +75,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
             title: listings.title,
             location: listings.location,
             images: listings.images,
-            operatorId: listings.operatorId,
+            hostId: listings.hostId,
         })
         .from(listings)
         .where(eq(listings.id, listingId));
@@ -312,6 +308,7 @@ export default function AdminSettlementsDetail() {
         monthSummaries, selectedData, investors, tokenInfo,
     } = useLoaderData<typeof loader>();
     const navigate = useNavigate();
+    const { revalidate } = useRevalidator();
 
     const images = Array.isArray(listing.images) ? listing.images as string[] : [];
     const totalDistributedUsdc =
@@ -321,7 +318,7 @@ export default function AdminSettlementsDetail() {
 
     return (
         <div className="font-sans">
-            <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8">
+            <main className="pb-16">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8 flex-wrap">
                     <Link
@@ -432,7 +429,7 @@ export default function AdminSettlementsDetail() {
                                 )}
                                 {!selectedData.settled && selectedData.grossRevenueKrw > 0 && selectedMonth < currentMonth && (
                                     <div className="mt-2">
-                                        <MonthlySettlementButton listingId={listing.id} listingTitle={listing.title} month={selectedMonth} />
+                                        <MonthlySettlementButton listingId={listing.id} listingTitle={listing.title} month={selectedMonth} onSuccess={revalidate} />
                                     </div>
                                 )}
                             </CardContent>

@@ -49,18 +49,18 @@ export async function action({ request }: { request: Request }) {
 
     // 매물 정보
     const [listing] = await db
-        .select({ operatorId: listings.operatorId })
+        .select({ hostId: listings.hostId })
         .from(listings)
         .where(eq(listings.id, listingId));
     if (!listing) return Response.json({ error: "매물 없음" }, { status: 404 });
 
     // 운영자 지갑 주소 조회 (DB 우선, MVP fallback: 환경변수)
     let operatorWalletAddress: string | null = null;
-    if (listing.operatorId) {
+    if (listing.hostId) {
         const [operator] = await db
             .select({ walletAddress: user.walletAddress })
             .from(user)
-            .where(eq(user.id, listing.operatorId));
+            .where(eq(user.id, listing.hostId));
         operatorWalletAddress = operator?.walletAddress ?? null;
     }
     if (!operatorWalletAddress && OPERATOR_WALLET) {
@@ -137,14 +137,14 @@ export async function action({ request }: { request: Request }) {
             operatorUsdc,
             investorUsdc,
             investorCount,
-            hasOperator: !!listing.operatorId,
+            hasOperator: !!listing.hostId,
             hasActiveToken: !!(token && token.status === "active"),
             operatorWalletAddress,
         });
     }
 
     // 운영자가 있는데 지갑 미등록이면 차단
-    if (listing.operatorId && !operatorWalletAddress) {
+    if (listing.hostId && !operatorWalletAddress) {
         return Response.json({ error: "운영자 지갑 미등록 — 운영자 대시보드에서 먼저 지갑을 등록해야 합니다" }, { status: 400 });
     }
 
@@ -190,7 +190,7 @@ export async function action({ request }: { request: Request }) {
     }
 
     // 2. 운영자 정산 (영업이익 30%) — 어드민 push, 운영자 지갑으로 자동 전송
-    if (listing.operatorId) {
+    if (listing.hostId) {
         const existing = await db
             .select({ id: operatorSettlements.id })
             .from(operatorSettlements)
@@ -200,7 +200,7 @@ export async function action({ request }: { request: Request }) {
             const validOpTx = isValidSolanaTx(opPayoutTx) ? opPayoutTx : null;
             await db.insert(operatorSettlements).values({
                 id: uuidv4(),
-                operatorId: listing.operatorId,
+                operatorId: listing.hostId,
                 listingId,
                 month,
                 grossRevenueKrw,

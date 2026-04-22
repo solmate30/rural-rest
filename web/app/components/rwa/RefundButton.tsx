@@ -58,6 +58,7 @@ export function RefundButton({ listingId, rwaTokenId }: Props) {
 
             const investor = wallet!.publicKey;
             const program = await getProgram(connection, wallet!);
+            const seedId = listingId.replace(/-/g, "");
             const { propertyToken, fundingVault, investorPosition } = await derivePdas(listingId, investor);
 
             const usdcMint = new PublicKey(USDC_MINT);
@@ -66,7 +67,7 @@ export function RefundButton({ listingId, rwaTokenId }: Props) {
             );
 
             const signature = await program.methods
-                .refund(listingId)
+                .refund(seedId)
                 .accounts({
                     investor,
                     propertyToken,

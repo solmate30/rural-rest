@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link, useLoaderData } from "react-router";
+import { Link, useLoaderData, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Header } from "../components/ui-mockup";
 import { requireUser } from "../lib/auth.server";
@@ -36,7 +36,7 @@ import { Separator } from "~/components/ui/separator";
 import { Input } from "~/components/ui/input";
 import {
     Sheet,
-    SheetClose,
+
     SheetContent,
     SheetHeader,
     SheetTitle,
@@ -172,7 +172,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 
     const [userCountRow] = await db
         .select({ count: sql<number>`count(*)` })
-        .from(userTable);
+        .from(userTable)
+        .where(inArray(userTable.role, ["guest", "operator"]));
 
     // 데드라인 경과 시 목표 달성 여부에 따라 표시 상태 보정 (DB 업데이트와 별개)
     const now = Date.now();
@@ -431,6 +432,7 @@ function ListingSheet({
     isUnsettled: boolean;
 }) {
     const statusLabel = useStatusLabel();
+    const navigate = useNavigate();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { t, i18n } = useTranslation("admin") as any;
     const { rate: krwPerUsdc } = usePythRate();
@@ -691,13 +693,17 @@ function ListingSheet({
                                 </div>
                             )}
 
-                            <SheetClose asChild>
-                                <Button variant="outline" size="sm" className="w-full" asChild>
-                                    <Link to={`/invest/${listing.id}`}>
-{t("dashboard.sheet.viewInvestPage")}
-                                    </Link>
-                                </Button>
-                            </SheetClose>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                                onClick={() => {
+                                    onOpenChange(false);
+                                    navigate(`/invest/${listing.nodeNumber ?? listing.id}`);
+                                }}
+                            >
+                                {t("dashboard.sheet.viewInvestPage")}
+                            </Button>
                         </>
                     ) : (
                         /* ---- Pre-tokenization content ---- */
@@ -824,13 +830,17 @@ function ListingSheet({
                     )}
 
                     {/* 공통 하단 액션 */}
-                    <SheetClose asChild>
-                        <Button variant="outline" size="sm" className="w-full" asChild>
-                            <Link to={`/host/edit/${listing.id}`}>
-                                숙소 수정
-                            </Link>
-                        </Button>
-                    </SheetClose>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                            onOpenChange(false);
+                            navigate(`/host/edit/${listing.id}`);
+                        }}
+                    >
+                        숙소 수정
+                    </Button>
                 </div>
             </SheetContent>
         </Sheet>
@@ -1008,94 +1018,6 @@ function PendingBookingsSection({ pendingBookings }: { pendingBookings: PendingB
 }
 
 /* ------------------------------------------------------------------ */
-/*  Helper: CouncilTokenSheet                                          */
-/* ------------------------------------------------------------------ */
-
-function CouncilTokenSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-    const { t } = useTranslation("admin");
-    const [wallet, setWallet] = useState("");
-    const [amount, setAmount] = useState("1");
-    const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-    const [resultMsg, setResultMsg] = useState("");
-
-    async function handleIssue() {
-        const parsed = parseInt(amount, 10);
-        if (!wallet.trim() || isNaN(parsed) || parsed < 1) return;
-        setStatus("loading");
-        setResultMsg("");
-        try {
-            const res = await fetch("/api/admin/issue-council-token", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ walletAddress: wallet.trim(), amount: parsed }),
-            });
-            const text = await res.text();
-            let data: any = {};
-            try { data = JSON.parse(text); } catch { throw new Error(text.slice(0, 200)); }
-            if (!res.ok) throw new Error(data.error ?? t("rwa.council.error"));
-            setStatus("done");
-            setResultMsg(t("rwa.council.success", { sig: data.signature }));
-            setWallet("");
-            setAmount("1");
-        } catch (e: any) {
-            setStatus("error");
-            setResultMsg(e.message);
-        }
-    }
-
-    return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="w-full sm:max-w-md bg-[#fcfaf7]">
-                <SheetHeader className="mb-6">
-                    <SheetTitle className="text-base font-bold text-[#4a3b2c]">
-                        {t("rwa.council.title")}
-                    </SheetTitle>
-                    <SheetDescription>
-                        {t("rwa.council.desc")}
-                    </SheetDescription>
-                </SheetHeader>
-                <div className="flex flex-col gap-4">
-                    <div>
-                        <label className="text-xs text-stone-400 font-medium mb-1.5 block">{t("rwa.council.walletLabel")}</label>
-                        <Input
-                            placeholder={t("rwa.council.walletPlaceholder")}
-                            value={wallet}
-                            onChange={(e) => setWallet(e.target.value)}
-                            className="rounded-xl font-mono text-sm"
-                            disabled={status === "loading"}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs text-stone-400 font-medium mb-1.5 block">{t("rwa.council.amountLabel")}</label>
-                        <Input
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            className="rounded-xl text-sm w-32"
-                            disabled={status === "loading"}
-                        />
-                    </div>
-                    <Button
-                        onClick={handleIssue}
-                        disabled={status === "loading" || !wallet.trim()}
-                        className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white"
-                    >
-                        {status === "loading" ? t("rwa.council.issuing") : t("rwa.council.issue")}
-                    </Button>
-                    {resultMsg && (
-                        <p className={`text-xs font-mono break-all ${status === "done" ? "text-emerald-600" : "text-red-500"}`}>
-                            {resultMsg}
-                        </p>
-                    )}
-                </div>
-            </SheetContent>
-        </Sheet>
-    );
-}
-
-/* ------------------------------------------------------------------ */
 /*  Page component                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -1113,7 +1035,6 @@ export default function AdminDashboard() {
     // --- sheet state ---
     const [sheetOpen, setSheetOpen] = useState(false);
     const [selectedListing, setSelectedListing] = useState<HostListingRow | null>(null);
-    const [councilSheetOpen, setCouncilSheetOpen] = useState(false);
 
     const openSheet = (listing: HostListingRow) => {
         setSelectedListing(listing);
@@ -1144,7 +1065,7 @@ export default function AdminDashboard() {
 
     return (
         <div className="font-sans">
-            <main className="container mx-auto pt-10 pb-16 px-4 sm:px-8">
+            <main className="pb-16">
                 {/* ====== Section 1: 페이지 헤더 ====== */}
                 <div className="mb-10">
                     <h1 className="text-2xl font-bold text-[#4a3b2c]">
@@ -1156,16 +1077,21 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* ====== Section 2: 핵심 지표 ====== */}
-                <div className="grid grid-cols-4 border border-[#e8e0d6] rounded-2xl overflow-hidden bg-[#fcfaf7] mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-4 border border-[#e8e0d6] rounded-2xl overflow-hidden bg-[#fcfaf7] mb-8">
                     {[
                         { label: t("dashboard.stats.totalListings"), value: String(stats.totalListings), sub: `운영중 ${stats.activeCount}` },
                         { label: t("dashboard.stats.totalInvested"), value: fmtUsdc(stats.totalInvestedUsdc), sub: `투자자 ${stats.totalInvestors}명`, accent: true },
                         { label: t("dashboard.stats.totalUsers"), value: String(stats.totalUsers), sub: `투자자 포함` },
                         { label: t("dashboard.stats.tokenized"), value: String(stats.tokenizedCount), sub: `펀딩중 ${stats.fundingCount}` },
                     ].map(({ label, value, sub, accent }, i) => (
-                        <div key={label} className={cn("px-6 py-5", i > 0 && "border-l border-[#e8e0d6]")}>
+                        <div key={label} className={cn(
+                            "px-5 py-5",
+                            i % 2 !== 0 && "border-l border-[#e8e0d6]",
+                            i >= 2 && "border-t border-[#e8e0d6] sm:border-t-0",
+                            i > 0 && "sm:border-l sm:border-[#e8e0d6]",
+                        )}>
                             <p className="text-xs text-[#a0856c] mb-2 font-medium">{label}</p>
-                            <p className={cn("text-3xl font-bold tracking-tight leading-none", accent ? "text-[#17cf54]" : "text-[#4a3b2c]")}>
+                            <p className={cn("text-2xl sm:text-3xl font-bold tracking-tight leading-none", accent ? "text-[#17cf54]" : "text-[#4a3b2c]")}>
                                 {value}
                             </p>
                             <p className="text-xs text-[#c4aa92] mt-2">{sub}</p>
@@ -1178,7 +1104,7 @@ export default function AdminDashboard() {
                     <p className="text-xs font-semibold text-[#a0856c] uppercase tracking-widest mb-6">
                         매물 진행 단계
                     </p>
-                    <div className="flex items-start">
+                    <div className="flex items-start overflow-x-auto pb-1">
                         {[
                             { label: t("dashboard.pipeline.notTokenized"), count: notTokenizedCount, active: notTokenizedCount > 0 },
                             { label: t("dashboard.pipeline.funding"), count: stats.fundingCount, active: stats.fundingCount > 0 },
@@ -1213,68 +1139,37 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* ====== Section 4: Council Token 발급 ====== */}
-                <div className="flex items-center justify-between border border-[#e8e0d6] rounded-2xl bg-[#fcfaf7] px-6 py-4 mb-8">
-                    <div>
-                        <p className="text-sm font-semibold text-[#4a3b2c]">Council Token 발급</p>
-                        <p className="text-xs text-[#a0856c] mt-0.5">거버넌스 참여권 토큰을 특정 주소로 발급합니다</p>
-                    </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCouncilSheetOpen(true)}
-                        className="text-[#6b5744] border-[#e8e0d6] hover:bg-[#f0ebe4]"
-                    >
-                        {t("rwa.council.title")}
-                    </Button>
-                </div>
-
-                {/* ====== Section 5: 매물 목록 ====== */}
+                {/* ====== Section 4: 매물 목록 ====== */}
                 <Card className="rounded-3xl border-stone-100 shadow-sm">
                     <CardHeader>
-                        <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <CardTitle className="text-base font-bold text-[#4a3b2c]">
                                 {t("dashboard.sections.allListings")}
                             </CardTitle>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 flex-wrap">
                                 {/* Search */}
-                                <div className="relative">
+                                <div className="relative flex-1 sm:flex-none">
                                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-300 text-[18px]">
                                         search
                                     </span>
                                     <Input
                                         placeholder={t("dashboard.table.search")}
                                         value={searchQuery}
-                                        onChange={(e) =>
-                                            setSearchQuery(e.target.value)
-                                        }
-                                        className="pl-9 w-56 h-9 rounded-xl text-sm"
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pl-9 w-full sm:w-48 h-9 rounded-xl text-sm"
                                     />
                                 </div>
                                 {/* Status filter */}
-                                <Select
-                                    value={statusFilter}
-                                    onValueChange={setStatusFilter}
-                                >
-                                    <SelectTrigger className="w-32 rounded-xl h-9">
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger className="w-28 rounded-xl h-9 shrink-0">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">
-                                            {t("dashboard.table.filterAll")}
-                                        </SelectItem>
-                                        <SelectItem value="none">
-                                            {t("dashboard.table.filterNone")}
-                                        </SelectItem>
-                                        <SelectItem value="funding">
-                                            {t("dashboard.table.filterFunding")}
-                                        </SelectItem>
-                                        <SelectItem value="funded">
-                                            {t("dashboard.table.filterFunded")}
-                                        </SelectItem>
-                                        <SelectItem value="active">
-                                            {t("dashboard.table.filterActive")}
-                                        </SelectItem>
+                                        <SelectItem value="all">{t("dashboard.table.filterAll")}</SelectItem>
+                                        <SelectItem value="none">{t("dashboard.table.filterNone")}</SelectItem>
+                                        <SelectItem value="funding">{t("dashboard.table.filterFunding")}</SelectItem>
+                                        <SelectItem value="funded">{t("dashboard.table.filterFunded")}</SelectItem>
+                                        <SelectItem value="active">{t("dashboard.table.filterActive")}</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 {/* Count */}
@@ -1435,8 +1330,6 @@ export default function AdminDashboard() {
                 isUnsettled={selectedListing ? unsettledSet.has(selectedListing.id) : false}
             />
 
-            {/* Right slide sheet — Council Token 발급 */}
-            <CouncilTokenSheet open={councilSheetOpen} onOpenChange={setCouncilSheetOpen} />
         </div>
     );
 }

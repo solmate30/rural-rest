@@ -38,11 +38,11 @@ export async function action({ request }: Route.ActionArgs) {
             // operator는 자신이 담당하는 매물만 업로드 가능
             if (role === "operator") {
                 const [listing] = await db
-                    .select({ operatorId: listings.operatorId })
+                    .select({ hostId: listings.hostId })
                     .from(listings)
                     .where(eq(listings.id, listingId));
 
-                if (!listing || listing.operatorId !== user.id) {
+                if (!listing || listing.hostId !== user.id) {
                     return new Response("Forbidden", { status: 403 });
                 }
             }

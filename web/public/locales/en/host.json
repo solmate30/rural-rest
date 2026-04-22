@@ -19,6 +19,7 @@
     "methodUsdc": "USDC",
     "approve": "Approve",
     "reject": "Reject & Refund",
+    "complete": "Mark Complete",
     "processing": "Processing...",
     "actionError": "Action failed",
     "status": {
