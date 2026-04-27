@@ -18,6 +18,9 @@ export default defineConfig(({ mode }) => {
   return {
     customLogger: logger,
     plugins: [reactRouter(), tsconfigPaths()],
+    build: {
+      target: "es2020",
+    },
     resolve: {
       dedupe: ["react", "react-dom"],
     },
