@@ -1,7 +1,7 @@
 {
   "title": "Community",
   "subtitle": "Vote on community policies and fund allocation.",
-  "daoNotReady": "DAO has not been initialized yet.",
+  "daoNotReady": "Settlement Party has not been initialized yet.",
   "newProposal": "Submit a Proposal",
   "tabs": {
     "active": "Active",
@@ -38,7 +38,7 @@
     "breadcrumb": "Community",
     "title": "Submit a Proposal",
     "desc": "Your proposal will be recorded on-chain and voting will begin immediately.",
-    "validatorWarning": "Local validator is not running. DAO data cannot be loaded. Please start the validator and refresh.",
+    "validatorWarning": "Local validator is not running. Data cannot be loaded. Please start the validator and refresh.",
     "preview": "Preview",
     "voting": "Voting",
     "deadline": "Ends {{date}}",
@@ -98,7 +98,7 @@
     "submitting": "Processing...",
     "uploadingIssue": "Creating issue...",
     "errorTitle": "Please enter a title.",
-    "errorDaoNotInit": "DAO is not initialized on-chain. Please start the local validator and refresh.",
+    "errorDaoNotInit": "On-chain data is not initialized. Please start the local validator and refresh.",
     "errorDeadlineTooShort": "Voting deadline must be at least 1 day from now."
   },
   "card": {

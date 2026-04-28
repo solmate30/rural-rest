@@ -55,7 +55,7 @@
 ### "빈집을 유동화하고, 수익을 온체인으로 나눕니다"
 
 - **RWA** — 빈집 온체인 토큰화. USDC 소액 투자. Token-2022 NonTransferable로 규제 준수 강제
-- **DAO** — RWA 보유자가 마을 발전 기금 운용·의사결정 직접 참여
+- **Settlement Party** — RWA 보유자가 마을 발전 기금 운용·의사결정 직접 참여
 - **Service** — AI 컨시어지 + IoT 무인 운영. 글로벌 여행자에게 'Real Local' 경험 제공
 
 > **예약 수익 → 투자자 30% · 운영자 30% · 지자체 40%**
@@ -102,9 +102,9 @@ Rural Rest의 숙소는 두 방향으로 손님을 맞이합니다.
 - **Digital Nomads** — 자연 속 몰입과 고속 인터넷을 동시에 원하는 리모트 워커
 - **School & Edu-Groups** — 학교·교육기관 단위의 단체 농촌 체험학습 수요층
 
-**투자자 & 거버넌스 참여자**
+**투자자 & Settlement Party**
 
-- **Impact Investors** — RWA 투자와 가치 소비로 지역 재생에 기여하는 액티브 거버넌스 층
+- **Impact Investors** — RWA 투자와 가치 소비로 지역 재생에 기여하는 액티브 투자·의사결정 참여층
 - **Crypto Newcomers** — Blinks를 통해 SNS에서 클릭 한 번으로 투자 완료. 크립토 경험 불필요
 
 ---
@@ -164,7 +164,7 @@ Airbnb는 중개 마켓플레이스. Rural Rest는 운영까지 책임지는 풀
 - **Tech OS** — AI·IoT 기반 무인 운영 'localhost'. 체크인 데이터가 쌓일수록 경쟁자 진입 비용 상승.
 - **Data Moat** — 로컬 물류·체크인·소비 패턴 데이터. 재현 불가능한 자산.
 - **Open Protocol** — 빈집 재생 표준 프로토콜 지향. 생태계 확장 → Rural Rest 레퍼런스 위치 강화.
-- **DAO Alignment** — 투자자 = 거버넌스 참여자. 이탈 유인 없는 이해관계 정렬 구조.
+- **Settlement Alignment** — 투자자 = 의사결정 참여자. 이탈 유인 없는 이해관계 정렬 구조.
 
 ---
 
