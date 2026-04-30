@@ -303,7 +303,9 @@ export async function action({ params, request }: Route.ActionArgs) {
         const serialized = tx.serialize({ requireAllSignatures: false });
         const base64Tx = Buffer.from(serialized).toString("base64");
 
-        // DB pre-insert: 슬롯 선점 (onchainPayTx는 Helius webhook/cron이 채움)
+        // DB pre-insert: 슬롯 선점 (onchainPayTx는 Helius webhook이 채움)
+        // 서명 포기 또는 tx 드롭으로 onchainPayTx가 null인 채 방치되는 건은
+        // /api/cron/expire-bookings (매일 KST 02:00)가 2시간 후 자동 취소
         await db.insert(bookings).values({
             id: bookingId,
             listingId: listing.id,
