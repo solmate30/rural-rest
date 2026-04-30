@@ -61,6 +61,7 @@ export default [
     route("api/cron/rwa-activate", "routes/api.cron.rwa-activate.ts"),
     route("api/booking/guest-cancel", "routes/api.booking.guest-cancel.ts"),
     route("api/actions/invest/:listingId", "routes/api.actions.invest.$listingId.ts"),
+    route("api/actions/book/:listingId", "routes/api.actions.book.$listingId.ts"),
     route("api/actions/governance/:proposalId", "routes/api.actions.governance.$proposalId.ts"),
     route("api/webhooks/helius", "routes/api.webhooks.helius.ts"),
     route("book/success", "routes/book.success.tsx"),
@@ -82,4 +83,5 @@ export default [
     route("governance/new", "routes/governance.new.tsx"),
     route("governance/:id", "routes/governance.$id.tsx"),
     route("sitemap.xml", "routes/sitemap[.xml].ts"),
+    route("actions.json", "routes/actions[.json].ts"),
 ] satisfies RouteConfig;

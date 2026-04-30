@@ -197,8 +197,8 @@ export default function AdminEdit() {
         if (nextLocation.pathname === currentLocation.pathname) return false;
         return isDirty && !saved;
     });
-    const handleBlockerProceed = useCallback(() => { blocker.proceed(); }, [blocker]);
-    const handleBlockerReset   = useCallback(() => { blocker.reset(); },   [blocker]);
+    const handleBlockerProceed = useCallback(() => { blocker.proceed?.(); }, [blocker]);
+    const handleBlockerReset   = useCallback(() => { blocker.reset?.(); },   [blocker]);
 
     // ── 사진 업로드
     const fileInputRef = useRef<HTMLInputElement>(null);

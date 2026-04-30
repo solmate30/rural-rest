@@ -166,5 +166,12 @@
     "empty": "배당 내역이 없습니다.",
     "statusCompleted": "완료",
     "statusPending": "대기 중"
+  },
+  "refund": {
+    "button": "환불 받기",
+    "processing": "환불 처리 중...",
+    "successTitle": "환불 완료",
+    "successDesc": "{{amount}} USDC가 지갑으로 반환되었습니다.",
+    "alreadyRefunded": "이미 환불 처리되었습니다."
   }
 }

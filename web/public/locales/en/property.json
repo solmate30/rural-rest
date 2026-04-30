@@ -52,5 +52,9 @@
     "selectDates": "Select dates",
     "nightCount": "{{count}} night",
     "guestOption": "{{count}} guest"
+  },
+  "share": {
+    "label": "Share via Blinks",
+    "copied": "Link copied!"
   }
 }

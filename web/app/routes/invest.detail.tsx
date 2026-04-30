@@ -92,13 +92,13 @@ function buildDividendChartData(
     });
 }
 
-function statusToLabel(status: string, fundingProgress: number): string {
+function statusToLabel(status: string, fundingProgress: number, deadlineExpired = false): string {
     switch (status) {
         case "funding": return "Funding";
-        case "funded": return fundingProgress >= 100 ? "Sold Out" : "Funded";
-        case "active": return "Active";
-        case "failed": return "Closed";
-        default: return status;
+        case "funded":  return deadlineExpired ? "Closed" : (fundingProgress >= 100 ? "Sold Out" : "Funded");
+        case "active":  return "Active";
+        case "failed":  return "Closed";
+        default:        return status;
     }
 }
 
@@ -250,6 +250,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const remainingKrw = row.valuationKrw - raisedKrw;
     const villageName = row.location.split(" ").at(-1);
 
+    const deadlineTs = row.fundingDeadline instanceof Date
+        ? row.fundingDeadline.getTime()
+        : Number(row.fundingDeadline) * 1000;
+    const deadlineExpired = Date.now() > deadlineTs;
+
     return {
         id: row.id,
         tokenId: row.tokenId,
@@ -271,7 +276,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         remaining: formatKrwLabel(remainingKrw),
         raisedUsdc: raisedKrw / krwPerUsdc,
         remainingUsdc: remainingKrw / krwPerUsdc,
-        status: statusToLabel(row.status, fundingProgress),
+        status: statusToLabel(row.status, fundingProgress, deadlineExpired),
         rawStatus: row.status,
         i18n: {
             ko: {

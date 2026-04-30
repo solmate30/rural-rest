@@ -22,6 +22,7 @@ import { ko as koLocale, enUS } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { cn } from "~/lib/utils";
 
+
 function toCityLabel(location: string): string {
     const m = location.match(/([가-힣]+)시/);
     return m ? `${m[1]} 근처` : location;
