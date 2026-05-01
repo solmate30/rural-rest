@@ -1,7 +1,7 @@
 {
   "title": "커뮤니티",
   "subtitle": "마을의 정책과 자금 운용을 함께 결정해요.",
-  "daoNotReady": "DAO가 아직 초기화되지 않았습니다.",
+  "daoNotReady": "Settlement Party가 아직 초기화되지 않았습니다.",
   "newProposal": "새 안건 상정하기",
   "tabs": {
     "active": "투표 중",
@@ -38,7 +38,7 @@
     "breadcrumb": "커뮤니티",
     "title": "새 안건 상정",
     "desc": "제안 내용을 작성하면 온체인에 기록되고 투표가 시작됩니다.",
-    "validatorWarning": "로컬 validator가 실행되지 않아 DAO 데이터를 불러올 수 없습니다. validator를 실행 후 새로고침하세요.",
+    "validatorWarning": "로컬 validator가 실행되지 않아 데이터를 불러올 수 없습니다. validator를 실행 후 새로고침하세요.",
     "preview": "미리보기",
     "voting": "투표 중",
     "deadline": "마감 {{date}}",
@@ -98,7 +98,7 @@
     "submitting": "트랜잭션 처리 중...",
     "uploadingIssue": "Issue 등록 중...",
     "errorTitle": "제목을 입력하세요.",
-    "errorDaoNotInit": "DAO가 온체인에 초기화되지 않았습니다. 로컬 validator를 실행한 후 새로고침하세요.",
+    "errorDaoNotInit": "온체인 데이터가 초기화되지 않았습니다. 로컬 validator를 실행한 후 새로고침하세요.",
     "errorDeadlineTooShort": "투표 마감일은 최소 1일 이후로 설정해야 합니다."
   },
   "card": {

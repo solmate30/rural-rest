@@ -52,5 +52,9 @@
     "selectDates": "날짜를 선택하세요",
     "nightCount": "{{count}}박",
     "guestOption": "{{count}}명"
+  },
+  "share": {
+    "label": "Blinks 공유",
+    "copied": "복사됨!"
   }
 }

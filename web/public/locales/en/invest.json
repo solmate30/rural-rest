@@ -166,5 +166,12 @@
     "empty": "No dividend records found.",
     "statusCompleted": "Completed",
     "statusPending": "Pending"
+  },
+  "refund": {
+    "button": "Get Refund",
+    "processing": "Processing Refund...",
+    "successTitle": "Refund Complete",
+    "successDesc": "{{amount}} USDC has been returned to your wallet.",
+    "alreadyRefunded": "This position has already been refunded."
   }
 }

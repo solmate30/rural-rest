@@ -19,6 +19,33 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import { ko as koLocale, enUS } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 
+function ShareBlinksButton({ listingId }: { listingId: string }) {
+    const [copied, setCopied] = useState(false);
+    const { t } = useTranslation("property");
+
+    function handleShare() {
+        const actionUrl = `${window.location.origin}/api/actions/book/${listingId}`;
+        const blinksUrl = `https://dial.to/?action=solana-action:${encodeURIComponent(actionUrl)}`;
+        navigator.clipboard.writeText(blinksUrl).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    }
+
+    return (
+        <button
+            type="button"
+            onClick={handleShare}
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-stone-200 text-xs font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-colors shrink-0"
+        >
+            <span className="material-symbols-outlined text-[16px]">
+                {copied ? "check_circle" : "share"}
+            </span>
+            {copied ? t("share.copied") : t("share.label")}
+        </button>
+    );
+}
+
 function toCityLabel(location: string): string {
     const m = location.match(/([가-힣]+)시/);
     return m ? `${m[1]} 근처` : location;
@@ -231,7 +258,10 @@ export default function PropertyDetail() {
                         </span>
                         <span className="text-sm text-muted-foreground">{listing.locationLabel}, South Korea</span>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">{listing.title}</h1>
+                    <div className="flex items-start justify-between gap-4">
+                        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">{listing.title}</h1>
+                        <ShareBlinksButton listingId={String(listing.nodeNumber ?? listing.id)} />
+                    </div>
                     <div className="flex items-center gap-4 text-sm font-medium">
                         {listing.rating != null && <span className="flex items-center gap-1">★ {listing.rating}</span>}
                         <span className="text-muted-foreground">

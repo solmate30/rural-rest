@@ -187,8 +187,8 @@ Files are numbered (e.g., `01_VISION.md`) and must include creation/update dates
 
 기능을 구현하거나 변경할 때 아래 문서를 참고한다:
 
-- `docs/01_Concept_Design/23_BUSINESS_AND_SERVICE_OVERVIEW.md` — 비즈니스 구조, 핵심 5단계 플로우, 역할별 화면 구조
-- `docs/01_Concept_Design/24_USER_JOURNEYS.md` — 역할별 유저 여정 (구현 대상이 어느 흐름에 속하는지 확인)
+- `docs/01_Concept_Design/16_BUSINESS_AND_SERVICE_OVERVIEW.md` — 비즈니스 구조, 핵심 5단계 플로우, 역할별 화면 구조
+- `docs/01_Concept_Design/17_USER_JOURNEYS.md` — 역할별 유저 여정 (구현 대상이 어느 흐름에 속하는지 확인)
 
 ### 문서 업데이트 규칙
 

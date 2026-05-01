@@ -1,4 +1,4 @@
-# 24. 유저 여정 (User Journeys)
+# 17. 유저 여정 (User Journeys)
 
 > Created: 2026-04-07 00:00
 > Updated: 2026-04-07 00:00
@@ -214,8 +214,8 @@ Rural Rest의 4가지 유저 타입별 핵심 여정을 정의한다.
 
 | 문서 | 내용 |
 |------|------|
-| [23_BUSINESS_AND_SERVICE_OVERVIEW.md](./23_BUSINESS_AND_SERVICE_OVERVIEW.md) | 비즈니스 구조 + 서비스 플로우 개요 |
+| [16_BUSINESS_AND_SERVICE_OVERVIEW.md](./16_BUSINESS_AND_SERVICE_OVERVIEW.md) | 비즈니스 구조 + 서비스 플로우 개요 |
 | [07_HAPPY_PATH_SCENARIOS.md](./07_HAPPY_PATH_SCENARIOS.md) | 여행자·호스트 스토리텔링 시나리오 (2026-02 기준) |
 | [01_BOOKING_STATE_MACHINE.md](../04_Logic_Progress/01_BOOKING_STATE_MACHINE.md) | 예약 상태 전환 로직 |
 | [13_SETTLEMENT_ARCHITECTURE.md](../04_Logic_Progress/13_SETTLEMENT_ARCHITECTURE.md) | 3자 정산 아키텍처 |
-| [15_RWA_ISSUANCE_PLAN.md](./15_RWA_ISSUANCE_PLAN.md) | RWA 토큰 발행 스펙 |
+| [10_RWA_ISSUANCE_PLAN.md](./10_RWA_ISSUANCE_PLAN.md) | RWA 토큰 발행 스펙 |

@@ -70,7 +70,7 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap",
   },
 ];
 
@@ -98,12 +98,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 // --- App ---
 
-import { AiConcierge } from "./components/AiConcierge";
+import { lazy, Suspense } from "react";
 import RwaWalletProvider from "./components/RwaWalletProvider";
 import { KycProvider } from "./components/KycProvider";
 import { PrivyProvider, usePrivy, useLogin } from "@privy-io/react-auth";
 import { createSolanaRpc, createSolanaRpcSubscriptions } from "@solana/kit";
 import { useEffect } from "react";
+
+const AiConcierge = lazy(() => import("./components/AiConcierge").then(m => ({ default: m.AiConcierge })));
 
 const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID as string;
 
@@ -207,7 +209,7 @@ export default function App() {
             <SessionCreator />
             <Outlet />
             <Toaster />
-            <AiConcierge />
+            <Suspense fallback={null}><AiConcierge /></Suspense>
           </RwaWalletProvider>
         </KycProvider>
       </I18nextProvider>

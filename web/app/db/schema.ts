@@ -77,6 +77,8 @@ export const listings = sqliteTable("listings", {
     transportSupport: integer("transport_support", { mode: "boolean" }).notNull().default(false),
     smartLockEnabled: integer("smart_lock_enabled", { mode: "boolean" }).notNull().default(false),
     govWalletAddress: text("gov_wallet_address"),  // 지자체 USDC 지갑. null이면 환경변수 전역값 사용
+    hostBio: text("host_bio"),    // 운영자 소개 (한국어)
+    hostBioEn: text("host_bio_en"), // 운영자 소개 (영어, DeepL 자동 번역)
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now'))`),
 });
 

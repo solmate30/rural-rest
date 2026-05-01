@@ -36,9 +36,9 @@ function auditLog(event: Record<string, unknown>) {
 // Blinks 필수 CORS 헤더
 const BLINKS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept-Encoding",
-    "X-Action-Version": "2.1.3",
+    "Access-Control-Allow-Methods": "GET, OPTIONS, POST",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "X-Action-Version": "2.4",
     "X-Blockchain-Ids": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1", // devnet
 };
 
@@ -66,6 +66,10 @@ async function getListingWithToken(param: string) {
     return rows[0] ?? null;
 }
 
+function isKo(request: Request) {
+    return (request.headers.get("Accept-Language") ?? "").toLowerCase().startsWith("ko");
+}
+
 // OPTIONS preflight
 export async function loader({ params, request }: Route.LoaderArgs) {
     if (request.method === "OPTIONS") {
@@ -74,41 +78,54 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
     const token = await getListingWithToken(params.listingId);
     if (!token) {
-        return Response.json({ message: "매물을 찾을 수 없습니다" }, { status: 404, headers: BLINKS_HEADERS });
+        const msg = isKo(request) ? "매물을 찾을 수 없습니다" : "Property not found";
+        return Response.json({ message: msg }, { status: 404, headers: BLINKS_HEADERS });
     }
 
+    const ko = isKo(request);
+    const reqUrl = new URL(request.url);
+    const proto = request.headers.get("x-forwarded-proto") ?? reqUrl.protocol.replace(":", "");
+    const origin = `${proto}://${reqUrl.host}`;
+
     const imgs = token.images as string[];
-    const icon = imgs?.[0] ?? "https://rural-rest.vercel.app/logo.png";
+    const iconPath = imgs?.[0] ?? "/ruralrest-logo.png";
+    const icon = iconPath.startsWith("http") ? iconPath : `${origin}${iconPath}`;
     const available = (token.totalSupply ?? 0) - (token.tokensSold ?? 0);
     const priceUsdc = ((token.pricePerTokenUsdc ?? 0) / 1_000_000).toFixed(2);
-
     return Response.json(
         {
+            type: "action",
             title: token.title,
             icon,
-            description: `${token.location} · 토큰 가격 $${priceUsdc} USDC · 잔여 ${available.toLocaleString()}개`,
-            label: "투자하기",
+            description: ko
+                ? `${token.location} · 토큰 가격 $${priceUsdc} USDC · 잔여 ${available.toLocaleString()}개`
+                : `${token.location} · Token price $${priceUsdc} USDC · ${available.toLocaleString()} remaining`,
+            label: ko ? "투자하기" : "Invest",
             links: {
                 actions: [
                     {
-                        label: "1 토큰 구매",
-                        href: `/api/actions/invest/${params.listingId}?tokens=1`,
+                        type: "transaction",
+                        label: ko ? "1 토큰 구매" : "Buy 1 token",
+                        href: `${origin}/api/actions/invest/${params.listingId}?tokens=1`,
                     },
                     {
-                        label: "5 토큰 구매",
-                        href: `/api/actions/invest/${params.listingId}?tokens=5`,
+                        type: "transaction",
+                        label: ko ? "5 토큰 구매" : "Buy 5 tokens",
+                        href: `${origin}/api/actions/invest/${params.listingId}?tokens=5`,
                     },
                     {
-                        label: "10 토큰 구매",
-                        href: `/api/actions/invest/${params.listingId}?tokens=10`,
+                        type: "transaction",
+                        label: ko ? "10 토큰 구매" : "Buy 10 tokens",
+                        href: `${origin}/api/actions/invest/${params.listingId}?tokens=10`,
                     },
                     {
-                        label: "직접 입력",
-                        href: `/api/actions/invest/${params.listingId}?tokens={tokens}`,
+                        type: "transaction",
+                        label: ko ? "직접 입력" : "Custom amount",
+                        href: `${origin}/api/actions/invest/${params.listingId}?tokens={tokens}`,
                         parameters: [
                             {
                                 name: "tokens",
-                                label: "구매할 토큰 수량",
+                                label: ko ? "구매할 토큰 수량" : "Number of tokens to buy",
                                 required: true,
                             },
                         ],
@@ -126,15 +143,20 @@ export async function action({ params, request }: Route.ActionArgs) {
         return new Response(null, { status: 204, headers: BLINKS_HEADERS });
     }
 
+    const ko = isKo(request);
+
     const url = new URL(request.url);
     const tokenAmount = Number(url.searchParams.get("tokens") ?? "1");
     if (!tokenAmount || tokenAmount < 1 || tokenAmount > 100_000) {
-        return Response.json({ message: "유효하지 않은 토큰 수량입니다" }, { status: 400, headers: BLINKS_HEADERS });
+        return Response.json(
+            { message: ko ? "유효하지 않은 토큰 수량입니다" : "Invalid token amount" },
+            { status: 400, headers: BLINKS_HEADERS }
+        );
     }
 
     const { account } = (await request.json()) as { account: string };
     if (!account) {
-        return Response.json({ message: "account 필드가 필요합니다" }, { status: 400, headers: BLINKS_HEADERS });
+        return Response.json({ message: "account field is required" }, { status: 400, headers: BLINKS_HEADERS });
     }
 
     // KYC 인증된 등록 사용자만 투자 가능
@@ -146,21 +168,24 @@ export async function action({ params, request }: Route.ActionArgs) {
     if (!investor) {
         auditLog({ action: "blinks_invest_rejected", reason: "unregistered", wallet: account, listingId: params.listingId, tokens: tokenAmount });
         return Response.json(
-            { message: "rural-rest.com에 회원가입 후 지갑을 연결해주세요." },
+            { message: ko ? "rural-rest.com에 회원가입 후 지갑을 연결해주세요." : "Please sign up at rural-rest.com and connect your wallet." },
             { status: 403, headers: BLINKS_HEADERS }
         );
     }
     if (!investor.kycVerified) {
         auditLog({ action: "blinks_invest_rejected", reason: "kyc_required", userId: investor.id, wallet: account, listingId: params.listingId, tokens: tokenAmount });
         return Response.json(
-            { message: "KYC 인증이 필요합니다. rural-rest.com에서 인증 후 투자하세요." },
+            { message: ko ? "KYC 인증이 필요합니다. rural-rest.com에서 인증 후 투자하세요." : "KYC verification required. Please verify at rural-rest.com before investing." },
             { status: 403, headers: BLINKS_HEADERS }
         );
     }
 
     const token = await getListingWithToken(params.listingId);
     if (!token?.tokenMint) {
-        return Response.json({ message: "매물 또는 토큰 정보를 찾을 수 없습니다" }, { status: 404, headers: BLINKS_HEADERS });
+        return Response.json(
+            { message: ko ? "매물 또는 토큰 정보를 찾을 수 없습니다" : "Property or token info not found" },
+            { status: 404, headers: BLINKS_HEADERS }
+        );
     }
 
     try {
@@ -259,18 +284,19 @@ export async function action({ params, request }: Route.ActionArgs) {
             amountUsdc: priceUsdc,
         });
 
+        const successMsg = ko
+            ? `${tokenAmount} RRT 토큰 구매 ($${priceUsdc} USDC)`
+            : `Buy ${tokenAmount} RRT token${tokenAmount > 1 ? "s" : ""} ($${priceUsdc} USDC)`;
+
         return Response.json(
-            {
-                transaction: base64Tx,
-                message: `${tokenAmount} RRT 토큰 구매 ($${priceUsdc} USDC)`,
-            },
+            { type: "transaction", transaction: base64Tx, message: successMsg },
             { headers: BLINKS_HEADERS }
         );
     } catch (err: any) {
         auditLog({ action: "blinks_invest_error", userId: investor.id, wallet: account, listingId: params.listingId, error: err?.message });
         console.error("[blinks/invest]", err?.message);
         return Response.json(
-            { message: err?.message ?? "트랜잭션 생성 실패" },
+            { message: err?.message ?? "Failed to build transaction" },
             { status: 500, headers: BLINKS_HEADERS }
         );
     }

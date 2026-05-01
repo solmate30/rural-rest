@@ -92,13 +92,13 @@ function buildDividendChartData(
     });
 }
 
-function statusToLabel(status: string, fundingProgress: number): string {
+function statusToLabel(status: string, fundingProgress: number, deadlineExpired = false): string {
     switch (status) {
         case "funding": return "Funding";
-        case "funded": return fundingProgress >= 100 ? "Sold Out" : "Funded";
-        case "active": return "Active";
-        case "failed": return "Closed";
-        default: return status;
+        case "funded":  return deadlineExpired ? "Closed" : (fundingProgress >= 100 ? "Sold Out" : "Funded");
+        case "active":  return "Active";
+        case "failed":  return "Closed";
+        default:        return status;
     }
 }
 
@@ -126,6 +126,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
                 lat: listings.lat,
                 lng: listings.lng,
                 renovationHistory: listings.renovationHistory,
+                hostBio: listings.hostBio,
+                hostBioEn: listings.hostBioEn,
                 tokenId: rwaTokens.id,
                 tokenMint: rwaTokens.tokenMint,
                 totalSupply: rwaTokens.totalSupply,
@@ -250,6 +252,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const remainingKrw = row.valuationKrw - raisedKrw;
     const villageName = row.location.split(" ").at(-1);
 
+    const deadlineTs = row.fundingDeadline instanceof Date
+        ? row.fundingDeadline.getTime()
+        : Number(row.fundingDeadline) * 1000;
+    const deadlineExpired = Date.now() > deadlineTs;
+
     return {
         id: row.id,
         tokenId: row.tokenId,
@@ -271,7 +278,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         remaining: formatKrwLabel(remainingKrw),
         raisedUsdc: raisedKrw / krwPerUsdc,
         remainingUsdc: remainingKrw / krwPerUsdc,
-        status: statusToLabel(row.status, fundingProgress),
+        status: statusToLabel(row.status, fundingProgress, deadlineExpired),
         rawStatus: row.status,
         i18n: {
             ko: {
@@ -280,7 +287,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
                 amenities: translateAmenities(rawAmenities, "ko"),
                 host: {
                     name: `${villageName} 마을지기`,
-                    bio: "우리 마을의 빈집을 되살려 여행자에게 특별한 경험을 제공하고 있습니다. 마을 주민들과 함께 숙소를 운영하며, 지역 문화와 자연을 나누는 일을 하고 있습니다.",
+                    bio: row.hostBio ?? "우리 마을의 빈집을 되살려 여행자에게 특별한 경험을 제공하고 있습니다. 마을 주민들과 함께 숙소를 운영하며, 지역 문화와 자연을 나누는 일을 하고 있습니다.",
                 },
             },
             en: {
@@ -289,7 +296,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
                 amenities: translateAmenities(rawAmenities, "en"),
                 host: {
                     name: `${villageName} Village Host`,
-                    bio: "We breathe new life into empty rural homes, giving travelers an authentic local experience. We manage the property together with village residents, sharing the culture and nature of our community.",
+                    bio: row.hostBioEn ?? "We breathe new life into empty rural homes, giving travelers an authentic local experience. We manage the property together with village residents, sharing the culture and nature of our community.",
                 },
             },
         },

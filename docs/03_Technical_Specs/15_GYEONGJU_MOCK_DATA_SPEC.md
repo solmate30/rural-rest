@@ -7,7 +7,7 @@
 
 **목적:** 경주 파일럿 5채의 Mock 데이터를 코드로 변환하기 위한 명확한 수치와 구조 제공
 
-**리서치 근거:** [18_GYEONGJU_PILOT_DATA_RESEARCH.md](../01_Concept_Design/18_GYEONGJU_PILOT_DATA_RESEARCH.md) 참조
+**리서치 근거:** [13_GYEONGJU_PILOT_DATA_RESEARCH.md](../01_Concept_Design/13_GYEONGJU_PILOT_DATA_RESEARCH.md) 참조
 
 ---
 
@@ -519,13 +519,13 @@ export const listings: Listing[] = GYEONGJU_PILOT_LISTINGS;
 ## 5. 리서치 근거 (상세 내용은 21번 문서 참조)
 
 ### 5.1. 가격 근거
-- **18_GYEONGJU_PILOT_DATA_RESEARCH.md Section 3**: 경주 한옥 숙박 시세 조사
+- **13_GYEONGJU_PILOT_DATA_RESEARCH.md Section 3**: 경주 한옥 숙박 시세 조사
 - 황리단길 한옥: 70,000~90,000원
 - 도미토리: 25,000원 (배낭족 타겟)
 - 농촌 지역: 55,000~65,000원 (농촌 할인)
 
 ### 5.2. 빈집 리서치 근거
-- **18_GYEONGJU_PILOT_DATA_RESEARCH.md Section 4**: 폐가정비사업 실제 기록
+- **13_GYEONGJU_PILOT_DATA_RESEARCH.md Section 4**: 폐가정비사업 실제 기록
 - 황오동 (2023년), 성건동/동천동/건천읍 (2024년), 안강읍 (2023~2024년)
 
 ---
@@ -548,6 +548,6 @@ export const listings: Listing[] = GYEONGJU_PILOT_LISTINGS;
 
 ## 7. Related Documents
 
-- [18_GYEONGJU_PILOT_DATA_RESEARCH.md](../01_Concept_Design/18_GYEONGJU_PILOT_DATA_RESEARCH.md) - 시장 조사 및 리서치 근거
+- [13_GYEONGJU_PILOT_DATA_RESEARCH.md](../01_Concept_Design/13_GYEONGJU_PILOT_DATA_RESEARCH.md) - 시장 조사 및 리서치 근거
 - `web/app/data/listings.ts` - 실제 코드 파일
 

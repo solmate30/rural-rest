@@ -31,9 +31,9 @@ import type { Route } from "./+types/api.actions.governance.$proposalId";
 // Blinks 필수 CORS 헤더
 const BLINKS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept-Encoding",
-    "X-Action-Version": "2.1.3",
+    "Access-Control-Allow-Methods": "GET, OPTIONS, POST",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "X-Action-Version": "2.4",
     "X-Blockchain-Ids": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1", // devnet
 };
 
@@ -115,16 +115,21 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         ? `찬성 ${proposal.votesFor} · 반대 ${proposal.votesAgainst} · 기권 ${proposal.votesAbstain} | 마감 ${endsAt}`
         : `투표 종료 · 찬성 ${proposal.votesFor} · 반대 ${proposal.votesAgainst} · 기권 ${proposal.votesAbstain}`;
 
+    const reqUrl = new URL(request.url);
+    const proto = request.headers.get("x-forwarded-proto") ?? reqUrl.protocol.replace(":", "");
+    const origin = `${proto}://${reqUrl.host}`;
+
     const actions = isVoting
         ? [
-            { label: "찬성", href: `/api/actions/governance/${proposalId}?voteType=for` },
-            { label: "반대", href: `/api/actions/governance/${proposalId}?voteType=against` },
-            { label: "기권", href: `/api/actions/governance/${proposalId}?voteType=abstain` },
+            { type: "transaction", label: "찬성", href: `${origin}/api/actions/governance/${proposalId}?voteType=for` },
+            { type: "transaction", label: "반대", href: `${origin}/api/actions/governance/${proposalId}?voteType=against` },
+            { type: "transaction", label: "기권", href: `${origin}/api/actions/governance/${proposalId}?voteType=abstain` },
           ]
-        : [{ label: "투표 종료됨", href: `/api/actions/governance/${proposalId}`, disabled: true }];
+        : [{ type: "transaction", label: "투표 종료됨", href: `${origin}/api/actions/governance/${proposalId}`, disabled: true }];
 
     return Response.json(
         {
+            type: "action",
             title: proposal.title,
             icon: "https://rural-rest.vercel.app/logo.png",
             description,
@@ -278,6 +283,7 @@ export async function action({ params, request }: Route.ActionArgs) {
 
         return Response.json(
             {
+                type: "transaction",
                 transaction: base64Tx,
                 message: `제안 #${proposalId + 1} "${proposal.title}"에 ${voteLabel} 투표`,
             },

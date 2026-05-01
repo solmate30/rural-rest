@@ -1,4 +1,4 @@
-# 20. DAO 투표권 독점 방어 로직 (Anti-Monopoly Logic)
+# 11. DAO 투표권 독점 방어 로직 (Anti-Monopoly Logic)
 
 > Created: 2026-03-16
 > Last Updated: 2026-03-16

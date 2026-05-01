@@ -4,7 +4,7 @@
 > Last Updated: 2026-04-03 00:00
 > Migration: Realms → Custom Anchor (2026-03-30). 이전 Realms 버전은 `docs/00_ARCHIVE/08_DAO_IMPLEMENTATION_SPEC_REALMS.md`에 보존.
 
-본 문서는 [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md) 기획서를 바탕으로 Rural Rest DAO의 1단계 기술 구현을 정의한다. RWA 1차 발행 직후 투표 기능만을 온체인으로 구현하는 범위를 기술한다.
+본 문서는 [09_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/09_DAO_GOVERNANCE_PLAN.md) 기획서를 바탕으로 Rural Rest DAO의 1단계 기술 구현을 정의한다. RWA 1차 발행 직후 투표 기능만을 온체인으로 구현하는 범위를 기술한다.
 
 ---
 
@@ -23,8 +23,8 @@
 
 ### 1.1. 기반 문서
 
-- **기획서**: [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md)
-- **투표 방어 로직**: [16_DAO_VOTING_DEFENSE_LOGIC.md](../01_Concept_Design/16_DAO_VOTING_DEFENSE_LOGIC.md)
+- **기획서**: [09_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/09_DAO_GOVERNANCE_PLAN.md)
+- **투표 방어 로직**: [11_DAO_VOTING_DEFENSE_LOGIC.md](../01_Concept_Design/11_DAO_VOTING_DEFENSE_LOGIC.md)
 - **핵심 가정**: RWA 1차 발행 직후 DAO 운영 시작, 1단계는 **투표만** 구현 (자동 온체인 실행 없음)
 
 ### 1.2. 착수 전 준비 체크리스트 (Pre-Implementation Checklist)
@@ -39,7 +39,7 @@
 
 #### B. Council Token 준비
 
-- [x] **Council Token Mint 생성** — `FEDWxrjgozxhXFN8N8fy4XhrAJEbdQQb9xRJpNwYbtKq` (devnet, SPL Token)
+- [x] **Council Token Mint 생성** — `8R419i6fFFMxneC2hEag6ZFh9qVomvvdGqwWiLRyKUBW` (devnet, SPL Token)
     - `COUNCIL_MINT` 환경 변수에 공개키 기입 완료
     - Mint Authority = Crank Authority (`6xwcyZ8gwbW6vXFbijSYeTkcrtGfXueU82LRsgsnk9nm`)
 - [x] **Admin 대시보드 발급 UI** — `/admin` 페이지 상단 "Council Token 발급" 버튼 → 사이드 패널
@@ -632,8 +632,8 @@ Solana Realms의 방식을 참고하여 **GitHub Gist**를 사용한다.
 
 ## 17. Related Documents
 
-- **기획서**: [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md) — DAO 기획 (본 명세의 기반)
-- **투표 방어 로직**: [16_DAO_VOTING_DEFENSE_LOGIC.md](../01_Concept_Design/16_DAO_VOTING_DEFENSE_LOGIC.md) — 10% 캡, KYC, Sybil 방어
+- **기획서**: [09_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/09_DAO_GOVERNANCE_PLAN.md) — DAO 기획 (본 명세의 기반)
+- **투표 방어 로직**: [11_DAO_VOTING_DEFENSE_LOGIC.md](../01_Concept_Design/11_DAO_VOTING_DEFENSE_LOGIC.md) — 10% 캡, KYC, Sybil 방어
 - **RWA 프로그램 명세**: [11_ANCHOR_PROGRAM_SPEC.md](./11_ANCHOR_PROGRAM_SPEC.md) — InvestorPosition/PropertyToken PDA 구조
 - **배당 로직**: [10_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/10_RWA_DIVIDEND_LOGIC.md) — DAO와 분리된 수익 배분
 - **QA 시나리오**: [07_DAO_TEST_SCENARIOS.md](../05_QA_Validation/07_DAO_TEST_SCENARIOS.md) — DAO 테스트 시나리오

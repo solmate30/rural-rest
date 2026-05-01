@@ -67,6 +67,12 @@ export async function action({ request, params }: Route.ActionArgs) {
     const images = fd.getAll("images").map(String).filter(Boolean);
     const operatorId = fd.get("operatorId")?.toString().trim() ?? "";
 
+    const renovationHistoryRaw = fd.get("renovationHistory")?.toString() ?? "[]";
+    let renovationHistory: { date: string; desc: string }[] = [];
+    try { renovationHistory = JSON.parse(renovationHistoryRaw); } catch {}
+
+    const hostBio = fd.get("hostBio")?.toString().trim() ?? "";
+
     const errors: Record<string, string> = {};
     if (!title) errors.title = "validation.requiredTitle";
     if (!description) errors.description = "validation.requiredDescription";
@@ -77,9 +83,10 @@ export async function action({ request, params }: Route.ActionArgs) {
         return Response.json({ errors }, { status: 422 });
 
     // DeepL 자동 번역 (실패 시 원문 저장)
-    const [titleEnResult, descriptionEnResult] = await Promise.all([
+    const [titleEnResult, descriptionEnResult, hostBioEnResult] = await Promise.all([
         translateText(title, "en"),
         translateText(description, "en"),
+        hostBio ? translateText(hostBio, "en") : Promise.resolve({ translated: "" }),
     ]);
 
     await db
@@ -95,6 +102,9 @@ export async function action({ request, params }: Route.ActionArgs) {
             images,
             transportSupport,
             smartLockEnabled,
+            renovationHistory,
+            hostBio: hostBio || null,
+            hostBioEn: hostBioEnResult.translated || null,
             ...(operatorId ? { hostId: operatorId } : {}),
         })
         .where(eq(listings.id, params.id));
@@ -134,6 +144,15 @@ export default function AdminEdit() {
     const [transportSupport, setTransportSupport] = useState(listing.transportSupport);
     const [smartLockEnabled, setSmartLockEnabled] = useState(listing.smartLockEnabled);
 
+    const initialRenovationHistory = (() => {
+        const rh = listing.renovationHistory;
+        if (Array.isArray(rh)) return rh as { date: string; desc: string }[];
+        if (typeof rh === "string") { try { return JSON.parse(rh) as { date: string; desc: string }[]; } catch { return []; } }
+        return [] as { date: string; desc: string }[];
+    })();
+    const [renovationHistory, setRenovationHistory] = useState(initialRenovationHistory);
+    const [hostBio, setHostBio] = useState((listing as any).hostBio ?? "");
+
     // ── 실시간 검증
     const [fieldErrors, setFieldErrors] = useState<Partial<Record<string, string>>>({});
 
@@ -163,10 +182,12 @@ export default function AdminEdit() {
         smartLockEnabled: listing.smartLockEnabled,
         amenities: (listing.amenities as unknown as string[]) ?? [],
         images: initialImages,
+        renovationHistory: initialRenovationHistory,
+        hostBio: (listing as any).hostBio ?? "",
     });
     useEffect(() => {
         if (saved) {
-            savedBaseline.current = { title, description, pricePerNight, maxGuests, transportSupport, smartLockEnabled, amenities: [...amenities], images: [...images] };
+            savedBaseline.current = { title, description, pricePerNight, maxGuests, transportSupport, smartLockEnabled, amenities: [...amenities], images: [...images], renovationHistory: [...renovationHistory], hostBio };
         }
     }, [saved]);
 
@@ -179,7 +200,9 @@ export default function AdminEdit() {
         transportSupport !== bl.transportSupport ||
         smartLockEnabled !== bl.smartLockEnabled ||
         JSON.stringify([...amenities].sort()) !== JSON.stringify([...bl.amenities].sort()) ||
-        JSON.stringify(images) !== JSON.stringify(bl.images);
+        JSON.stringify(images) !== JSON.stringify(bl.images) ||
+        JSON.stringify(renovationHistory) !== JSON.stringify(bl.renovationHistory) ||
+        hostBio !== bl.hostBio;
 
     // 브라우저 새로고침/탭 닫기 경고
     useEffect(() => {
@@ -197,8 +220,8 @@ export default function AdminEdit() {
         if (nextLocation.pathname === currentLocation.pathname) return false;
         return isDirty && !saved;
     });
-    const handleBlockerProceed = useCallback(() => { blocker.proceed(); }, [blocker]);
-    const handleBlockerReset   = useCallback(() => { blocker.reset(); },   [blocker]);
+    const handleBlockerProceed = useCallback(() => { blocker.proceed?.(); }, [blocker]);
+    const handleBlockerReset   = useCallback(() => { blocker.reset?.(); },   [blocker]);
 
     // ── 사진 업로드
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -234,6 +257,7 @@ export default function AdminEdit() {
             <input type="hidden" name="smartLockEnabled" value={String(smartLockEnabled)} />
             <input type="hidden" name="operatorId" value={operatorId} />
             <input type="hidden" name="description" value={description} />
+            <input type="hidden" name="renovationHistory" value={JSON.stringify(renovationHistory)} />
 
             <div className="min-h-screen bg-stone-50/50">
                 <Header />
@@ -410,6 +434,74 @@ export default function AdminEdit() {
                                     description={t("edit.smartLockDesc")}
                                     value={smartLockEnabled}
                                     onChange={setSmartLockEnabled}
+                                />
+                            </Card>
+                        </section>
+
+                        {/* 리노베이션 이력 */}
+                        <section className="space-y-4">
+                            <SectionTitle>리노베이션 이력</SectionTitle>
+                            <Card className="p-6 space-y-4">
+                                {renovationHistory.map((item, i) => (
+                                    <div key={i} className="flex items-start gap-3">
+                                        <div className="flex flex-col gap-2 flex-1">
+                                            <input
+                                                type="text"
+                                                placeholder="시기 (예: 2024.06)"
+                                                value={item.date}
+                                                onChange={(e) => {
+                                                    const next = [...renovationHistory];
+                                                    next[i] = { ...next[i], date: e.target.value };
+                                                    setRenovationHistory(next);
+                                                }}
+                                                className={INPUT_CLS + " w-36"}
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="내용 (예: 지붕 방수 공사)"
+                                                value={item.desc}
+                                                onChange={(e) => {
+                                                    const next = [...renovationHistory];
+                                                    next[i] = { ...next[i], desc: e.target.value };
+                                                    setRenovationHistory(next);
+                                                }}
+                                                className={INPUT_CLS}
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setRenovationHistory(renovationHistory.filter((_, j) => j !== i))}
+                                            className="mt-1 h-8 w-8 rounded-lg border border-border text-muted-foreground hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors flex items-center justify-center text-lg leading-none"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={() => setRenovationHistory([...renovationHistory, { date: "", desc: "" }])}
+                                    className="w-full h-10 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground hover:bg-muted/30 transition-colors"
+                                >
+                                    + 항목 추가
+                                </button>
+                                {renovationHistory.length === 0 && (
+                                    <p className="text-xs text-muted-foreground text-center">등록된 이력이 없습니다.</p>
+                                )}
+                            </Card>
+                        </section>
+
+                        {/* 운영자 소개 */}
+                        <section className="space-y-4">
+                            <SectionTitle>운영자 소개</SectionTitle>
+                            <Card className="p-6 space-y-2">
+                                <p className="text-xs text-muted-foreground">투자 상세 페이지에 표시됩니다. 저장 시 영어로 자동 번역됩니다.</p>
+                                <textarea
+                                    name="hostBio"
+                                    value={hostBio}
+                                    onChange={(e) => setHostBio(e.target.value)}
+                                    rows={4}
+                                    placeholder="이 숙소를 운영하는 마을지기를 소개해주세요."
+                                    className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                                 />
                             </Card>
                         </section>

@@ -4,7 +4,7 @@
 > Last Updated: 2026-03-30 16:00
 > Migration: Realms → Custom Anchor (2026-03-30). 이전 Realms 버전은 `docs/00_ARCHIVE/07_DAO_TEST_SCENARIOS_REALMS.md`에 보존.
 
-본 문서는 `08_DAO_IMPLEMENTATION_SPEC.md` 및 `14_DAO_GOVERNANCE_PLAN.md`에 정의된 Rural Rest 단일 DAO의 1단계를 검증하기 위한 통합 및 E2E(End-to-End) 테스트 시나리오를 정의한다.
+본 문서는 `08_DAO_IMPLEMENTATION_SPEC.md` 및 `09_DAO_GOVERNANCE_PLAN.md`에 정의된 Rural Rest 단일 DAO의 1단계를 검증하기 위한 통합 및 E2E(End-to-End) 테스트 시나리오를 정의한다.
 
 ---
 
@@ -280,7 +280,7 @@
 
 ## 11. Related Documents
 
-- **기획서**: [14_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/14_DAO_GOVERNANCE_PLAN.md) — DAO 기획
+- **기획서**: [09_DAO_GOVERNANCE_PLAN.md](../01_Concept_Design/09_DAO_GOVERNANCE_PLAN.md) — DAO 기획
 - **구현 명세**: [08_DAO_IMPLEMENTATION_SPEC.md](../03_Technical_Specs/08_DAO_IMPLEMENTATION_SPEC.md) — Custom Anchor DAO 구현 명세
-- **투표 방어 로직**: [16_DAO_VOTING_DEFENSE_LOGIC.md](../01_Concept_Design/16_DAO_VOTING_DEFENSE_LOGIC.md) — 10% 캡, Sybil 방어
+- **투표 방어 로직**: [11_DAO_VOTING_DEFENSE_LOGIC.md](../01_Concept_Design/11_DAO_VOTING_DEFENSE_LOGIC.md) — 10% 캡, Sybil 방어
 - **Archive**: [07_DAO_TEST_SCENARIOS_REALMS.md](../00_ARCHIVE/07_DAO_TEST_SCENARIOS_REALMS.md) — 이전 Realms 기반 테스트 시나리오

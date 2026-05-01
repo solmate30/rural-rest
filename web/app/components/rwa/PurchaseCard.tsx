@@ -152,10 +152,10 @@ export function PurchaseCard({
     }
 
     function handlePctClick(pct: number) {
-        if (!maxAffordable && maxAffordable !== 0) return;
+        if (maxBuyable <= 0) return;
         const target = pct >= 1
             ? maxBuyable
-            : Math.max(1, Math.floor((usdcBalance! * pct) / usdcPrice));
+            : Math.max(1, Math.floor(maxBuyable * pct));
         applyCount(target);
     }
 

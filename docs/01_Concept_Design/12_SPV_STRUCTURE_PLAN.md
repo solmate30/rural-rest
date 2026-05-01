@@ -1,4 +1,4 @@
-# 20. SPV 구조 설계 (숙소별 특수목적회사)
+# 12. SPV 구조 설계 (숙소별 특수목적회사)
 
 > Created: 2026-03-16 00:00
 > Last Updated: 2026-03-28 00:00
@@ -357,9 +357,9 @@ SPV-3000 법인 계좌 입금
 
 ## 10. Related Documents
 
-- [19_RWA_ISSUANCE_PLAN.md](./19_RWA_ISSUANCE_PLAN.md) - RWA 토큰 발행 기획
-- [18_DAO_GOVERNANCE_PLAN.md](./18_DAO_GOVERNANCE_PLAN.md) - DAO 거버넌스 (RWA = 투표권)
-- [18_GYEONGJU_PILOT_DATA_RESEARCH.md](./18_GYEONGJU_PILOT_DATA_RESEARCH.md) - 경주 파일럿 5채 정보
+- [10_RWA_ISSUANCE_PLAN.md](./10_RWA_ISSUANCE_PLAN.md) - RWA 토큰 발행 기획
+- [09_DAO_GOVERNANCE_PLAN.md](./09_DAO_GOVERNANCE_PLAN.md) - DAO 거버넌스 (RWA = 투표권)
+- [13_GYEONGJU_PILOT_DATA_RESEARCH.md](./13_GYEONGJU_PILOT_DATA_RESEARCH.md) - 경주 파일럿 5채 정보
 - **Technical_Specs**: [14_RWA_ISSUANCE_SPEC.md](../03_Technical_Specs/14_RWA_ISSUANCE_SPEC.md) - RWA 발행 구현 명세
 - **Logic_Progress**: [10_RWA_DIVIDEND_LOGIC.md](../04_Logic_Progress/10_RWA_DIVIDEND_LOGIC.md) - 배당 알고리즘
 

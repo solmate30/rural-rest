@@ -84,5 +84,5 @@ Rural Rest는 **지역주민**, **RWA 투자자**, **지방정부**를 연결하
 - **Business Model**: [02_LEAN_CANVAS.md](./02_LEAN_CANVAS.md)
 - **Execution Plan**: [04_ROADMAP.md](./04_ROADMAP.md)
 - **RWA Governance**: [11_RWA_DAO_GOVERNANCE_VISION.md](./11_RWA_DAO_GOVERNANCE_VISION.md)
-- **Guest Strategy**: [09_GUEST_ACQUISITION_CHANNELS.md](./09_GUEST_ACQUISITION_CHANNELS.md)
+- **Guest Strategy**: [08_GUEST_ACQUISITION_CHANNELS.md](./08_GUEST_ACQUISITION_CHANNELS.md)
 - **Technical OS**: [11_AI_BLOCKCHAIN_SYNERGY.md](./11_AI_BLOCKCHAIN_SYNERGY.md)
