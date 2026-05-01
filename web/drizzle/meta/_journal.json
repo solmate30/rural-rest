@@ -15,6 +15,13 @@
       "when": 1776759643728,
       "tag": "0001_loose_cloak",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1746057600000,
+      "tag": "0002_add_host_bio",
+      "breakpoints": true
     }
   ]
 }

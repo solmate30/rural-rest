@@ -59,6 +59,7 @@ export default [
     route("api/booking/cancel-confirmed", "routes/api.booking.cancel-confirmed.ts"),
     route("api/cron/release-escrow", "routes/api.cron.release-escrow.ts"),
     route("api/cron/rwa-activate", "routes/api.cron.rwa-activate.ts"),
+    route("api/cron/expire-bookings", "routes/api.cron.expire-bookings.ts"),
     route("api/booking/guest-cancel", "routes/api.booking.guest-cancel.ts"),
     route("api/actions/invest/:listingId", "routes/api.actions.invest.$listingId.ts"),
     route("api/actions/book/:listingId", "routes/api.actions.book.$listingId.ts"),
