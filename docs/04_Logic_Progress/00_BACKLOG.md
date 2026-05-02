@@ -139,7 +139,7 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 
 **남은 작업 (Phase 1 완료 조건)**
 *   [ ] **Anchor 빌드·테스트 통과**: `anchor build && anchor test -- --features skip-oracle`
-*   [ ] **`api.admin.monthly-settlement.ts` 실 CPI 호출**: 현재 계산만 존재 → 실제 `settle_listing_monthly` 호출 + `settlements` 레코드 저장
+*   [x] **`api.admin.monthly-settlement.ts` 실 CPI 호출**: `distributeMonthlyRevenue` Anchor CPI + SPL Transfer(운영자·지자체)로 구현. `settle_listing_monthly` 전환은 devnet 이후 Phase 2.
 *   [ ] **환불 3단계 E2E**: 100%/50%/0% USDC 경로 검증 (`06-booking.ts` 재실행)
 *   [ ] **월정산 E2E**: `settlements` 레코드 생성 + 투자자 `claim_dividend` 수령 금액 일치 확인
 

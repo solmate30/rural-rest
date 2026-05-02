@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rural Rest — Roadmap</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -180px; left: 50%;
+    transform: translateX(-50%);
+    width: 700px; height: 400px;
+    background: radial-gradient(ellipse, rgba(23,207,84,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .slide {
+    width: 100%;
+    max-width: 900px;
+    padding: 48px 64px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .tag {
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #8b949e; margin-bottom: 12px;
+    opacity: 0; animation: fadeUp 0.5s ease forwards; animation-delay: 0.1s;
+  }
+
+  h2 {
+    font-size: 48px; font-weight: 800; letter-spacing: -2px; color: #f0f6fc;
+    opacity: 0; animation: fadeUp 0.5s ease forwards; animation-delay: 0.25s;
+    text-align: center;
+  }
+  h2 .green { color: #17cf54; }
+
+  .sub {
+    font-size: 14px; color: #8b949e; margin-top: 8px; text-align: center;
+    opacity: 0; animation: fadeUp 0.5s ease forwards; animation-delay: 0.4s;
+  }
+
+  /* phase cards */
+  .phases {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    width: 100%;
+    margin-top: 32px;
+  }
+
+  .phase {
+    padding: 24px 20px;
+    border-radius: 12px;
+    opacity: 0;
+    animation: fadeUp 0.5s ease forwards;
+  }
+  .phase:nth-child(1) { animation-delay: 0.55s; }
+  .phase:nth-child(2) { animation-delay: 0.75s; }
+  .phase:nth-child(3) { animation-delay: 0.95s; }
+
+  .phase-live {
+    border: 1px solid rgba(23,207,84,0.45);
+    background: rgba(23,207,84,0.04);
+  }
+  .phase-next {
+    border: 1px solid #30363d;
+    background: rgba(255,255,255,0.02);
+  }
+
+  .phase-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .phase-live .phase-label { color: #17cf54; }
+  .phase-next .phase-label { color: #8b949e; }
+
+  .phase-title {
+    font-size: 18px; font-weight: 800; color: #f0f6fc;
+    margin-bottom: 12px; line-height: 1.2;
+  }
+  .phase-next .phase-title { color: #8b949e; }
+
+  .phase-items {
+    font-size: 12.5px; color: #8b949e; line-height: 2;
+    list-style: none;
+  }
+  .phase-items li::before {
+    content: '—  ';
+    color: #30363d;
+  }
+  .phase-live .phase-items { color: #adbac7; }
+  .phase-live .phase-items li::before { color: rgba(23,207,84,0.5); }
+
+  /* revenue bar */
+  .revenue {
+    width: 100%;
+    margin-top: 14px;
+    padding: 16px 24px;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    opacity: 0;
+    animation: fadeUp 0.5s ease forwards;
+    animation-delay: 1.15s;
+  }
+
+  .rev-label { font-size: 12px; font-weight: 600; color: #8b949e; }
+  .rev-items { display: flex; gap: 40px; }
+  .rev-item { text-align: center; }
+  .rev-item-title { font-size: 13px; font-weight: 700; color: #e6edf3; }
+  .rev-item-sub { font-size: 11px; color: #8b949e; margin-top: 2px; }
+
+  /* cta */
+  .cta-row {
+    display: flex; gap: 10px; margin-top: 20px;
+    opacity: 0; animation: fadeUp 0.5s ease forwards; animation-delay: 1.3s;
+  }
+  .cta-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 9px 20px; border-radius: 9px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; text-decoration: none;
+  }
+  .cta-primary   { background: #17cf54; color: #0d1117; }
+  .cta-secondary { background: transparent; border: 1px solid #30363d; color: #8b949e; }
+  .cta-btn svg   { width: 13px; height: 13px; }
+</style>
+</head>
+<body>
+
+<div class="slide">
+  <p class="tag">Roadmap & Closing</p>
+  <h2>Regeneration <span class="green">OS</span></h2>
+  <p class="sub">Not just a platform — a Regeneration OS for rural assets, anywhere in the world.</p>
+
+  <div class="phases">
+
+    <div class="phase phase-live">
+      <div class="phase-label">Phase 1 · Now</div>
+      <div class="phase-title">Gyeongju Pilot</div>
+      <ul class="phase-items">
+        <li>5 properties live on Devnet</li>
+        <li>On-chain settlement proven</li>
+        <li>Korea-standard model complete</li>
+      </ul>
+    </div>
+
+    <div class="phase phase-next">
+      <div class="phase-label">Phase 2 · Y2–3</div>
+      <div class="phase-title">Japan Expansion</div>
+      <ul class="phase-items">
+        <li>Akiya market JV / partnership</li>
+        <li>B2B SaaS launch</li>
+        <li>Protocol licensing begins</li>
+      </ul>
+    </div>
+
+    <div class="phase phase-next">
+      <div class="phase-label">Phase 3 · Y3+</div>
+      <div class="phase-title">Global OS</div>
+      <ul class="phase-items">
+        <li>Europe €1-house program</li>
+        <li>Worldwide vacant-home standard</li>
+        <li>Regeneration OS licensing</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="revenue">
+    <div class="rev-label">Revenue Model</div>
+    <div class="rev-items">
+      <div class="rev-item">
+        <div class="rev-item-title">Booking Fee</div>
+        <div class="rev-item-sub">10–15%</div>
+      </div>
+      <div class="rev-item">
+        <div class="rev-item-title">Token Issuance Fee</div>
+        <div class="rev-item-sub">Per property onboarding</div>
+      </div>
+      <div class="rev-item">
+        <div class="rev-item-title">B2B SaaS Licensing</div>
+        <div class="rev-item-sub">Phase 2+</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-row">
+    <a class="cta-btn cta-primary" href="https://github.com" target="_blank">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub Repo
+    </a>
+    <a class="cta-btn cta-secondary" href="#" target="_blank">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5v3.75L10.5 10"/></svg>
+      Devnet Demo
+    </a>
+  </div>
+</div>
+
+</body>
+</html>
