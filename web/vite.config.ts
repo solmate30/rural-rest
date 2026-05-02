@@ -17,6 +17,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     customLogger: logger,
+    server: {
+      allowedHosts: true,
+    },
     plugins: [reactRouter(), tsconfigPaths()],
     build: {
       target: "es2020",
