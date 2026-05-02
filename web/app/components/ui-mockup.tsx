@@ -181,7 +181,7 @@ export function Header({ onMenuOpen }: { onMenuOpen?: () => void } = {}) {
                     <nav className="hidden md:flex items-center gap-5">
                         {isAdmin ? (
                             <>
-                                <a href="/admin" className="text-sm font-medium hover:text-primary transition-colors">대시보드</a>
+                                <a href="/admin" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.adminDashboard")}</a>
                                 <a href="/governance" className="text-sm font-medium hover:text-primary transition-colors">{t("nav.governance")}</a>
                             </>
                         ) : isOperator || isHost ? (
