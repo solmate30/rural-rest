@@ -137,6 +137,9 @@ This document tracks the entire development progress. Tasks are moved from **Bac
 *   [x] **Anchor 테스트 G 시나리오**: `settle_listing_monthly` 5개 케이스 (정상/AlreadySettled/InsufficientVault/Unauthorized/InvalidBpsSum)
 *   [x] **시나리오 스크립트 06-booking.ts**: listing_vault 전환 + `initializeListingVault` 추가
 
+**완료 (2026-04-22)**
+*   [x] **PR #24 Merge & DB Sync**: 신규 스키마(KYC, AI Agent, RWA, 정산 등) 반영 및 Turso 실운영 환경 동기화 완료. 마이그레이션 이슈 해결 및 전체 초기화 수행.
+
 **남은 작업 (Phase 1 완료 조건)**
 *   [ ] **Anchor 빌드·테스트 통과**: `anchor build && anchor test -- --features skip-oracle`
 *   [x] **`api.admin.monthly-settlement.ts` 실 CPI 호출**: `distributeMonthlyRevenue` Anchor CPI + SPL Transfer(운영자·지자체)로 구현. `settle_listing_monthly` 전환은 devnet 이후 Phase 2.

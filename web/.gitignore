@@ -17,3 +17,4 @@ build.log
 
 # Local test keypairs
 scripts/investor-keypair.json
+.vercel
