@@ -172,6 +172,7 @@
     "processing": "환불 처리 중...",
     "successTitle": "환불 완료",
     "successDesc": "{{amount}} USDC가 지갑으로 반환되었습니다.",
-    "alreadyRefunded": "이미 환불 처리되었습니다."
+    "alreadyRefunded": "이미 환불 처리되었습니다.",
+    "notAvailable": "환불 불가 (펀딩 진행 중이거나 목표가 이미 달성되었습니다)"
   }
 }

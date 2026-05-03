@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
   return {
     customLogger: logger,
     server: {
-      allowedHosts: true,
+      allowedHosts: ["localhost", "127.0.0.1"],
     },
     plugins: [reactRouter(), tsconfigPaths()],
     build: {

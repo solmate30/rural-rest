@@ -1,6 +1,7 @@
 /**
  * 정산 데모용 예약 시드 스크립트
  * 실행: cd web && npx tsx scripts/seed-demo-booking.ts
+ * 선행 조건: seed-test-listing.ts 실행 완료 (listingId 3001~3005 필요)
  */
 process.env.TURSO_DATABASE_URL = "file:./local.db";
 process.env.TURSO_AUTH_TOKEN = "";

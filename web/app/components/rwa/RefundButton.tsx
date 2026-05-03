@@ -13,16 +13,15 @@ interface Props {
     rwaTokenId: string;
 }
 
-const REFUND_ERRORS: Record<string, string> = {
-    "RefundNotAvailable": "Refund not available (funding in progress or goal already met)",
-    "AlreadyRefunded": "This position has already been refunded.",
-};
-
 export function RefundButton({ listingId, rwaTokenId }: Props) {
     const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
     const { toast } = useToast();
     const { t } = useTranslation("invest");
+    const REFUND_ERRORS: Record<string, string> = {
+        "RefundNotAvailable": t("refund.notAvailable"),
+        "AlreadyRefunded": t("refund.alreadyRefunded"),
+    };
     const [txStatus, setTxStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
     const [errorMsg, setErrorMsg] = useState("");
 
