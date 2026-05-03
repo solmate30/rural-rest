@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dividend Formula</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .label {
+    font-size: 13px;
+    color: #8b949e;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+    animation-delay: 0.2s;
+  }
+
+  .formula-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  /* Row: tokens × acc − debt */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    opacity: 0;
+  }
+
+  .term {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .term-value {
+    font-size: 42px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .term-label {
+    font-size: 11px;
+    color: #8b949e;
+    letter-spacing: 0.05em;
+  }
+  .op {
+    font-size: 36px;
+    color: #8b949e;
+    font-weight: 300;
+    padding-top: 4px;
+  }
+
+  .tokens  { color: #60a5fa; }
+  .acc     { color: #a78bfa; }
+  .debt    { color: #f472b6; }
+
+  /* Arrow */
+  .arrow {
+    font-size: 28px;
+    color: #30363d;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+  }
+
+  /* Result */
+  .result-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+  }
+  .result-value {
+    font-size: 72px;
+    font-weight: 800;
+    color: #17cf54;
+    letter-spacing: -2px;
+  }
+  .result-label {
+    font-size: 13px;
+    color: #8b949e;
+    letter-spacing: 0.08em;
+  }
+
+  /* Highlight pill */
+  .pill {
+    margin-top: 24px;
+    padding: 8px 20px;
+    border: 1px solid #17cf54;
+    border-radius: 999px;
+    font-size: 12px;
+    color: #17cf54;
+    letter-spacing: 0.05em;
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .row-1  { animation: slideUp 0.5s ease forwards; animation-delay: 0.6s; }
+  .arrow  { animation-delay: 1.2s; }
+  .result-wrap { animation: slideUp 0.6s ease forwards; animation-delay: 1.5s; }
+  .pill   { animation-delay: 2.2s; }
+</style>
+</head>
+<body>
+
+<p class="label">Masterchef Dividend Formula</p>
+
+<div class="formula-wrap">
+
+  <!-- tokens × acc_dividend_per_share − reward_debt -->
+  <div class="row row-1">
+    <div class="term">
+      <span class="term-value tokens">1,000,000</span>
+      <span class="term-label">tokens held</span>
+    </div>
+    <span class="op">×</span>
+    <div class="term">
+      <span class="term-value acc">0.004200</span>
+      <span class="term-label">acc_dividend_per_share</span>
+    </div>
+    <span class="op">−</span>
+    <div class="term">
+      <span class="term-value debt">3,000</span>
+      <span class="term-label">reward_debt</span>
+    </div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <!-- Result -->
+  <div class="result-wrap">
+    <span class="result-value">1,200 USDC</span>
+    <span class="result-label">claimable dividend</span>
+  </div>
+
+</div>
+
+<div class="pill">No double-claim. No retroactive gain.</div>
+
+</body>
+</html>

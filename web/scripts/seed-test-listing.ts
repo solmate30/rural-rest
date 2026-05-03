@@ -11,115 +11,115 @@ const LISTINGS = [
     {
         id: "3001",
         nodeNumber: 3001,
-        title: "황오동 청송재",
+        title: "Hwango Cheongsongjae",
         titleEn: "Hwango Cheongsongjae",
-        description: "1960년대 한옥을 리모델링한 뉴트로 감성 숙소입니다. 황리단길까지 도보 8분 거리로 편리하며, 마당에서 황남빵 티타임을 즐기실 수 있습니다.",
+        description: "A restored 1960s hanok with a retro-modern sensibility. Just 8 minutes on foot from Hwangnidan-gil, with a traditional courtyard perfect for afternoon tea.",
         descriptionEn: "A restored 1960s hanok with a retro-modern sensibility. Just 8 minutes on foot from Hwangnidan-gil, with a traditional courtyard perfect for afternoon tea.",
-        location: "경상북도 경주시 황오동",
+        location: "Gyeongju, North Gyeongsang",
         region: "경상",
         pricePerNight: 70_000,
         valuationKrw: 150_000_000,
         maxGuests: 4,
         lat: 35.8320,
         lng: 129.2150,
-        amenities: ["Wi-Fi", "에어컨", "온돌 난방", "개별 화장실", "간이 주방", "주차 1대"],
+        amenities: ["Wi-Fi", "Air Conditioning", "Ondol Heating", "Private Bathroom", "Kitchenette", "Parking x1"],
         images: ["/hwango.webp"],
         renovationHistory: [
-            { date: "2024.03", desc: "지붕 기와 교체 및 방수 처리" },
-            { date: "2024.06", desc: "온돌 난방 시스템 현대화" },
-            { date: "2024.09", desc: "내부 인테리어 뉴트로 감성 리모델링" },
-            { date: "2025.01", desc: "마당 조경 및 외부 조명 설치" },
+            { date: "2024.03", desc: "Roof tile replacement and waterproofing" },
+            { date: "2024.06", desc: "Ondol heating system modernization" },
+            { date: "2024.09", desc: "Interior retro-modern remodeling" },
+            { date: "2025.01", desc: "Garden landscaping and exterior lighting" },
         ],
     },
     {
         id: "3002",
         nodeNumber: 3002,
-        title: "성건동 충재댁",
+        title: "Sunggeon Chungjae Manor",
         titleEn: "Sunggeon Chungjae Manor",
-        description: "100년 된 종택을 리모델링한 전통 한옥 숙소입니다. 전통 다도 체험과 한복 대여가 포함되어 있으며, 첨성대까지 도보 5분 거리입니다.",
+        description: "A century-old clan house lovingly restored. Traditional tea ceremony and hanbok rental included, just a 5-minute walk from Cheomseongdae Observatory.",
         descriptionEn: "A century-old clan house lovingly restored. Traditional tea ceremony and hanbok rental included, just a 5-minute walk from Cheomseongdae Observatory.",
-        location: "경상북도 경주시 성건동",
+        location: "Gyeongju, North Gyeongsang",
         region: "경상",
         pricePerNight: 90_000,
         valuationKrw: 200_000_000,
         maxGuests: 4,
         lat: 35.8360,
         lng: 129.2270,
-        amenities: ["Wi-Fi", "에어컨", "온돌 난방", "공용 화장실", "주차 1대"],
+        amenities: ["Wi-Fi", "Air Conditioning", "Ondol Heating", "Shared Bathroom", "Parking x1"],
         images: ["/seonggon.webp"],
         renovationHistory: [
-            { date: "2023.11", desc: "종택 구조 안전 진단 및 보강" },
-            { date: "2024.02", desc: "전통 한옥 외관 복원" },
-            { date: "2024.05", desc: "다도실 및 한복 체험 공간 조성" },
-            { date: "2024.10", desc: "화장실 현대화 및 편의시설 보강" },
+            { date: "2023.11", desc: "Structural safety inspection and reinforcement" },
+            { date: "2024.02", desc: "Traditional hanok exterior restoration" },
+            { date: "2024.05", desc: "Tea ceremony room and hanbok experience space" },
+            { date: "2024.10", desc: "Bathroom modernization and amenity upgrades" },
         ],
     },
     {
         id: "3003",
         nodeNumber: 3003,
-        title: "동천동 신라숲",
+        title: "Dongcheon Silla Forest Hostel",
         titleEn: "Dongcheon Silla Forest Hostel",
-        description: "배낭족과 청년 여행자를 위한 저가 도미토리입니다. 공용 주방과 불멍존, 자전거 무료 대여 등 편의시설이 갖춰져 있습니다.",
+        description: "Budget-friendly dormitory for backpackers and young explorers. Shared kitchen, bonfire corner, and complimentary bicycle rental included.",
         descriptionEn: "Budget-friendly dormitory for backpackers and young explorers. Shared kitchen, bonfire corner, and complimentary bicycle rental included.",
-        location: "경상북도 경주시 동천동",
+        location: "Gyeongju, North Gyeongsang",
         region: "경상",
         pricePerNight: 25_000,
         valuationKrw: 120_000_000,
         maxGuests: 4,
         lat: 35.8550,
         lng: 129.2100,
-        amenities: ["Wi-Fi", "에어컨", "공용 샤워실", "공용 주방", "세탁기", "주차 3대"],
+        amenities: ["Wi-Fi", "Air Conditioning", "Shared Shower", "Shared Kitchen", "Laundry", "Parking x3"],
         images: ["/dongcheon.webp"],
         renovationHistory: [
-            { date: "2024.04", desc: "빈집 철거 후 도미토리 신축" },
-            { date: "2024.07", desc: "공용 주방 및 불멍존 시공" },
-            { date: "2024.11", desc: "자전거 보관소 및 세탁실 설치" },
+            { date: "2024.04", desc: "Demolished vacant building, new dormitory built" },
+            { date: "2024.07", desc: "Shared kitchen and bonfire area constructed" },
+            { date: "2024.11", desc: "Bicycle storage and laundry room installed" },
         ],
     },
     {
         id: "3004",
         nodeNumber: 3004,
-        title: "건천읍 월성",
+        title: "Geoncheon Wolseong Farm Stay",
         titleEn: "Geoncheon Wolseong Farm Stay",
-        description: "농가주택을 리모델링한 농촌 체험 숙소입니다. 텃밭 체험과 워케이션 전용 책상이 마련되어 있어 디지털 노마드에게 적합합니다.",
+        description: "A renovated farmhouse with a kitchen garden and dedicated workation desk. The perfect retreat for digital nomads seeking slow living.",
         descriptionEn: "A renovated farmhouse with a kitchen garden and dedicated workation desk. The perfect retreat for digital nomads seeking slow living.",
-        location: "경상북도 경주시 건천읍",
+        location: "Gyeongju, North Gyeongsang",
         region: "경상",
         pricePerNight: 55_000,
         valuationKrw: 100_000_000,
         maxGuests: 4,
         lat: 35.9250,
         lng: 129.1980,
-        amenities: ["Wi-Fi", "에어컨", "온돌 난방", "개별 화장실", "주방", "작업 책상", "주차 2대"],
+        amenities: ["Wi-Fi", "Air Conditioning", "Ondol Heating", "Private Bathroom", "Kitchen", "Work Desk", "Parking x2"],
         images: ["/geoncheon.webp"],
         renovationHistory: [
-            { date: "2024.01", desc: "농가주택 구조 보강 및 단열 공사" },
-            { date: "2024.05", desc: "워케이션 전용 작업 공간 조성" },
-            { date: "2024.08", desc: "텃밭 체험 구역 정비" },
-            { date: "2025.02", desc: "온돌 난방 및 에어컨 설치" },
+            { date: "2024.01", desc: "Structural reinforcement and insulation work" },
+            { date: "2024.05", desc: "Dedicated workation workspace set up" },
+            { date: "2024.08", desc: "Kitchen garden area landscaped" },
+            { date: "2025.02", desc: "Ondol heating and air conditioning installed" },
         ],
     },
     {
         id: "3005",
         nodeNumber: 3005,
-        title: "안강읍 석굴재",
+        title: "Angang Seokguljae Country House",
         titleEn: "Angang Seokguljae Country House",
-        description: "가족 여행객과 시니어를 위한 농촌 힐링 숙소입니다. 계절별 농작물 수확 체험과 시골 밥상 조식, 마당 바베큐를 즐길 수 있습니다.",
+        description: "A rural healing escape for families and seniors. Seasonal harvest activities, wholesome country breakfast, and backyard barbecue await.",
         descriptionEn: "A rural healing escape for families and seniors. Seasonal harvest activities, wholesome country breakfast, and backyard barbecue await.",
-        location: "경상북도 경주시 안강읍",
+        location: "Gyeongju, North Gyeongsang",
         region: "경상",
         pricePerNight: 65_000,
         valuationKrw: 130_000_000,
         maxGuests: 6,
         lat: 35.9500,
         lng: 129.1850,
-        amenities: ["Wi-Fi", "에어컨", "온돌 난방", "개별 화장실", "주방", "바베큐 그릴", "주차 3대"],
+        amenities: ["Wi-Fi", "Air Conditioning", "Ondol Heating", "Private Bathroom", "Kitchen", "BBQ Grill", "Parking x3"],
         images: ["/angang.webp"],
         renovationHistory: [
-            { date: "2024.02", desc: "농가주택 리모델링 착공" },
-            { date: "2024.06", desc: "마당 바베큐 시설 및 조경 공사" },
-            { date: "2024.09", desc: "객실 내부 마감 및 가구 배치" },
-            { date: "2025.01", desc: "조식 주방 설비 및 수확 체험장 완공" },
+            { date: "2024.02", desc: "Farmhouse remodeling commenced" },
+            { date: "2024.06", desc: "Backyard BBQ facility and landscaping" },
+            { date: "2024.09", desc: "Interior finishing and furniture setup" },
+            { date: "2025.01", desc: "Breakfast kitchen and harvest experience area completed" },
         ],
     },
 ];
@@ -139,6 +139,42 @@ async function main() {
 
     const admin = allUsers.find(u => u.role === "admin") ?? allUsers[0];
     console.log(`\nhostId: ${admin.name} (${admin.id})\n`);
+
+    // 기존 데이터 삭제 후 재삽입 (FK 순서: 자식 → 부모)
+    const { inArray } = await import("drizzle-orm");
+    const {
+        bookings, reviews, activities, messages, transportRequests,
+        rwaTokens, rwaInvestments, rwaDividends,
+        operatorSettlements, settlements, localGovSettlements,
+    } = await import("../app/db/schema");
+    const ids = LISTINGS.map(l => l.id);
+
+    // rwaTokens의 id를 먼저 수집해서 rwaDividends/rwaInvestments 삭제
+    // rwaTokens id 수집 → rwaDividends, rwaInvestments 삭제
+    const tokenRows = await db.select({ id: rwaTokens.id }).from(rwaTokens).where(inArray(rwaTokens.listingId, ids));
+    const tokenIds = tokenRows.map(r => r.id);
+    if (tokenIds.length > 0) {
+        await db.delete(rwaDividends).where(inArray(rwaDividends.rwaTokenId, tokenIds));
+        await db.delete(rwaInvestments).where(inArray(rwaInvestments.rwaTokenId, tokenIds));
+    }
+
+    // bookings id 수집 → messages, transportRequests 삭제
+    const bookingRows = await db.select({ id: bookings.id }).from(bookings).where(inArray(bookings.listingId, ids));
+    const bookingIds = bookingRows.map(r => r.id);
+    if (bookingIds.length > 0) {
+        await db.delete(transportRequests).where(inArray(transportRequests.bookingId, bookingIds));
+        await db.delete(messages).where(inArray(messages.bookingId, bookingIds));
+        await db.delete(reviews).where(inArray(reviews.bookingId, bookingIds));
+    }
+
+    await db.delete(localGovSettlements).where(inArray(localGovSettlements.listingId, ids));
+    await db.delete(settlements).where(inArray(settlements.listingId, ids));
+    await db.delete(operatorSettlements).where(inArray(operatorSettlements.listingId, ids));
+    await db.delete(rwaTokens).where(inArray(rwaTokens.listingId, ids));
+    await db.delete(activities).where(inArray(activities.listingId, ids));
+    await db.delete(bookings).where(inArray(bookings.listingId, ids));
+    await db.delete(listings).where(inArray(listings.id, ids));
+    console.log("기존 매물 및 연관 데이터 삭제 완료\n");
 
     for (const listing of LISTINGS) {
         await db.insert(listings).values({

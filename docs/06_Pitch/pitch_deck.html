@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rural Rest — Pitch Deck</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #FAF9F6;
+    --text: #3E2723;
+    --muted: #7a6e60;
+    --brown: #8D6E63;
+    --green: #17cf54;
+    --border: #e8e0d8;
+  }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: #1a1210;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .deck {
+    width: 960px;
+    height: 540px;
+    position: relative;
+  }
+
+  .slide {
+    display: none;
+    width: 960px;
+    height: 540px;
+    background: var(--bg);
+    padding: 56px 64px;
+    position: absolute;
+    top: 0; left: 0;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .slide.active { display: flex; }
+
+  /* 슬라이드 번호 */
+  .slide-num {
+    position: absolute;
+    bottom: 24px;
+    right: 32px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* 로고/브랜드 */
+  .brand {
+    position: absolute;
+    top: 24px;
+    left: 32px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brown);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* 타이포그래피 */
+  .label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--brown);
+    margin-bottom: 16px;
+  }
+
+  .label.green { color: var(--green); }
+
+  h1 {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  p {
+    font-size: 16px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .sub {
+    font-size: 18px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-top: 12px;
+  }
+
+  /* 구분선 */
+  .divider {
+    width: 40px;
+    height: 3px;
+    background: var(--green);
+    margin: 20px 0;
+    border-radius: 2px;
+  }
+
+  /* 불릿 리스트 */
+  .bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .bullets li {
+    font-size: 16px;
+    color: var(--text);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    line-height: 1.5;
+  }
+
+  .bullets li::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  /* 카드 그리드 */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 8px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+
+  .card-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brown);
+    margin-bottom: 8px;
+  }
+
+  .card h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .card p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* 강조 숫자 */
+  .stat {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 48px;
+    margin-top: 24px;
+  }
+
+  /* 흐름도 */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .flow-box {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .flow-box.green {
+    background: #f0fdf4;
+    border-color: var(--green);
+    color: #166534;
+  }
+
+  .flow-arrow {
+    color: var(--muted);
+    font-size: 18px;
+  }
+
+  /* 배지 */
+  .badge {
+    display: inline-block;
+    background: #f0fdf4;
+    border: 1px solid var(--green);
+    color: #166534;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+
+  /* 레이아웃 분할 */
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  .split-left { }
+  .split-right { }
+
+  /* 큰 인용 */
+  .quote {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.5;
+    border-left: 3px solid var(--green);
+    padding-left: 20px;
+    margin-top: 16px;
+  }
+
+  /* 네비게이션 */
+  .nav {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .nav-dot {
+    width: 8px;
+    height: 8px;
+    background: #555;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .nav-dot.active { background: var(--green); }
+
+  /* 키 힌트 */
+  .key-hint {
+    position: fixed;
+    bottom: 32px;
+    right: 40px;
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 0.08em;
+  }
+
+  /* Slide별 특수 스타일 */
+
+  /* Slide 1: Hook */
+  .hook-tag {
+    display: inline-block;
+    background: var(--green);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  /* Slide 2: Problem */
+  .before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .before-box {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .after-box {
+    background: #fff8f8;
+    border: 1px solid #fca5a5;
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .box-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .before-box .box-label { color: var(--brown); }
+  .after-box .box-label { color: #dc2626; }
+
+  .before-box p, .after-box p {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* 정산 흐름 */
+  .settlement {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .settlement-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pct-box {
+    width: 56px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .pct-box.inv { background: #f0fdf4; color: #166534; border: 1px solid var(--green); }
+  .pct-box.op  { background: #fffbeb; color: #92400e; border: 1px solid #fbbf24; }
+  .pct-box.gov { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+
+  .pct-label {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .pct-sub {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* Why Solana 아이템 */
+  .solana-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .solana-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+
+  .solana-item .key {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 4px;
+  }
+
+  .solana-item p {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  /* 로드맵 */
+  .roadmap {
+    display: flex;
+    gap: 0;
+    margin-top: 24px;
+    position: relative;
+  }
+
+  .roadmap::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: var(--border);
+  }
+
+  .phase {
+    flex: 1;
+    padding-top: 48px;
+    padding-right: 16px;
+    position: relative;
+  }
+
+  .phase-dot {
+    position: absolute;
+    top: 12px;
+    left: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--border);
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 2px var(--border);
+  }
+
+  .phase-dot.active {
+    background: var(--green);
+    box-shadow: 0 0 0 2px var(--green);
+  }
+
+  .phase-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--brown);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .phase p {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- Slide 1: Hook -->
+  <div class="slide active" id="s1">
+    <div class="brand">Rural Rest</div>
+    <div class="hook-tag">Seoulana 2026</div>
+    <h1>빈집을 글로벌 숙소로.<br>수익을 Solana 온체인으로.</h1>
+    <div class="divider"></div>
+    <p class="sub">
+      1,200만 채 빈집 · 진짜 현지를 원하는 여행자 · 실물 수익을 원하는 투자자<br>
+      세 가지 수요가 있었지만 — <strong style="color:var(--text)">연결하는 구조가 없었습니다.</strong>
+    </p>
+    <div class="stats-row">
+      <div>
+        <div class="stat">$69B</div>
+        <div class="stat-label">잠겨 있는 자산 가치</div>
+      </div>
+      <div>
+        <div class="stat" style="color:var(--brown)">12M</div>
+        <div class="stat-label">전 세계 방치 빈집</div>
+      </div>
+    </div>
+    <div class="slide-num">01 / 10</div>
+  </div>
+
+  <!-- Slide 2: Problem -->
+  <div class="slide" id="s2">
+    <div class="brand">Rural Rest</div>
+    <div class="label">Problem</div>
+    <h2>문제는 집이 아니라<br>운영 OS의 부재입니다</h2>
+    <div class="before-after">
+      <div class="before-box">
+        <div class="box-label">Before — 복원 후</div>
+        <p>수억 원의 세금 투입<br>번듯한 한옥 숙소 완성<br><strong style="color:var(--text)">관광객 기대</strong></p>
+      </div>
+      <div class="after-box">
+        <div class="box-label" style="color:#dc2626">After — 현실</div>
+        <p>관리 인력 없음<br>수익 배분 불투명<br><strong style="color:#dc2626">다시 폐가</strong></p>
+      </div>
+    </div>
+    <div class="quote">
+      "일회성 예산은 있다. 지속 운영할 OS가 없다."
+    </div>
+    <div class="slide-num">02 / 10</div>
+  </div>
+
+  <!-- Slide 3: Solution -->
+  <div class="slide" id="s3">
+    <div class="brand">Rural Rest</div>
+    <div class="label green">Solution</div>
+    <h2>온체인 정산 엔진으로<br>빈집에 심장을 달아줍니다</h2>
+    <div class="flow">
+      <div class="flow-box">게스트 결제</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">에스크로</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">리스팅 볼트</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">월 정산</div>
+    </div>
+    <div class="settlement">
+      <div class="settlement-row">
+        <div class="pct-box inv">30%</div>
+        <div>
+          <div class="pct-label">투자자 트레저리</div>
+          <div class="pct-sub">USDC 배당 — 언제든 청구</div>
+        </div>
+      </div>
+      <div class="settlement-row">
+        <div class="pct-box op">30%</div>
+        <div>
+          <div class="pct-label">운영자 트레저리</div>
+          <div class="pct-sub">마을 운영자 실시간 보상</div>
+        </div>
+      </div>
+      <div class="settlement-row">
+        <div class="pct-box gov">40%</div>
+        <div>
+          <div class="pct-label">지자체 트레저리</div>
+          <div class="pct-sub">온체인 세수 — 투명한 정산</div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:16px; font-size:13px;">인간의 개입 없이 — 코드가 돈을 쪼개줍니다</p>
+    <div class="slide-num">03 / 10</div>
+  </div>
+
+  <!-- Slide 4: Tech -->
+  <div class="slide" id="s4">
+    <div class="brand">Rural Rest</div>
+    <div class="label green">Built, Not Pitched</div>
+    <h2>투자부터 배당까지<br>Devnet에서 지금 동작 중</h2>
+    <div class="grid-2" style="margin-top:20px; gap:12px;">
+      <div class="card">
+        <div class="card-label">01 발행</div>
+        <p>부동산 온체인 등록 · RWA 토큰 발행</p>
+      </div>
+      <div class="card">
+        <div class="card-label">02 투자</div>
+        <p>USDC 납입 → Token-2022 NonTransferable 수령</p>
+      </div>
+      <div class="card">
+        <div class="card-label">03 정산</div>
+        <p>체크아웃 → 에스크로 해제 → 월 분배</p>
+      </div>
+      <div class="card">
+        <div class="card-label">04 수령</div>
+        <p>투자자 지갑에 USDC 도착 · Helius webhook 기록</p>
+      </div>
+    </div>
+    <div class="stats-row" style="margin-top:20px;">
+      <div>
+        <div class="stat" style="font-size:36px;">15</div>
+        <div class="stat-label">온체인 프로그램</div>
+      </div>
+      <div>
+        <div class="stat" style="font-size:36px;">62</div>
+        <div class="stat-label">테스트 통과</div>
+      </div>
+    </div>
+    <div class="slide-num">04 / 10</div>
+  </div>
+
+  <!-- Slide 5: Target -->
+  <div class="slide" id="s5">
+    <div class="brand">Rural Rest</div>
+    <div class="label">Who We Serve</div>
+    <h2>두 방향으로<br>손님을 맞이합니다</h2>
+    <div class="grid-2" style="margin-top:20px;">
+      <div>
+        <h3 style="font-size:16px; color:var(--brown); margin-bottom:12px;">여행자</h3>
+        <ul class="bullets">
+          <li>Global Authentic Explorers — 'Real Korea'를 찾는 MZ세대</li>
+          <li>Digital Nomads — 자연 + 고속 인터넷</li>
+          <li>Active Experience Seekers — 하이퍼 로컬 체험</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="font-size:16px; color:var(--green); margin-bottom:12px;">투자자 & Settlement Party</h3>
+        <ul class="bullets">
+          <li>Impact Investors — RWA 투자 + 지역 재생 기여</li>
+          <li>Crypto Newcomers — Blinks로 SNS에서 클릭 한 번</li>
+        </ul>
+      </div>
+    </div>
+    <div class="slide-num">05 / 10</div>
+  </div>
+
+  <!-- Slide 6: Advantage -->
+  <div class="slide" id="s6">
+    <div class="brand">Rural Rest</div>
+    <div class="label">Strategic Advantage</div>
+    <h2>Zero-CAPEX.<br>정부가 먼저 나서고 있습니다.</h2>
+    <div class="grid-2" style="margin-top:20px;">
+      <div>
+        <ul class="bullets">
+          <li><strong>이탈리아</strong> 무소멜리: 빈집 500채 → 관광객 10배</li>
+          <li><strong>일본</strong> 아키야 보조금 투입 중</li>
+          <li><strong>한국</strong> 2025 빈집정비특별법 · 공사비 70% 지원</li>
+        </ul>
+      </div>
+      <div>
+        <div class="card" style="border-color:var(--green);">
+          <div class="card-label" style="color:var(--green);">우리의 제안</div>
+          <p style="font-size:14px; color:var(--text); font-weight:600; line-height:1.6;">
+            "열쇠를 주시면,<br>온체인 세수 수입으로 바꿔드립니다."
+          </p>
+          <p style="margin-top:10px; font-size:13px;">집 매입 없음 · 에어비앤비가 확보 못한 독점 인벤토리</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">06 / 10</div>
+  </div>
+
+  <!-- Slide 7: Why Solana -->
+  <div class="slide" id="s7">
+    <div class="brand">Rural Rest</div>
+    <div class="label green">Why Solana</div>
+    <h2>이 모델은 Solana 없이<br>불가능합니다</h2>
+    <div class="solana-grid">
+      <div class="solana-item">
+        <div class="key">400ms</div>
+        <p>배당 클릭 → 1초 안에 USDC 도착<br>은행 D+1 없음</p>
+      </div>
+      <div class="solana-item">
+        <div class="key">Sub-cent</div>
+        <p>수수료 $0.00025<br>Ethereum이라면 가스비 > 투자금</p>
+      </div>
+      <div class="solana-item">
+        <div class="key">Blinks</div>
+        <p>X 피드에서 "투자하기" 클릭 한 번<br>지갑 없이 · 다음 백만 명의 진입로</p>
+      </div>
+      <div class="solana-item">
+        <div class="key">Token-2022</div>
+        <p>NonTransferable — 부동산 규제를<br>코드로 강제. Solana에만 존재.</p>
+      </div>
+    </div>
+    <div class="slide-num">07 / 10</div>
+  </div>
+
+  <!-- Slide 8: Defensibility -->
+  <div class="slide" id="s8">
+    <div class="brand">Rural Rest</div>
+    <div class="label">Defensibility</div>
+    <h2>에어비앤비가 넘볼 수 없는<br>세 가지 해자</h2>
+    <div class="grid-3" style="margin-top:24px;">
+      <div class="card">
+        <div class="card-label">독점 인벤토리</div>
+        <h4>지자체 직접 협약</h4>
+        <p>목표 20년 장기 위탁 · 대형 플랫폼 복제 불가</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Tech OS</div>
+        <h4>AI·IoT 무인 운영</h4>
+        <p>체크인 데이터 축적 → 진입 장벽 상승</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Settlement Alignment</div>
+        <h4>이해관계 정렬</h4>
+        <p>투자자 = 의사결정 참여자 · 이탈 유인 없음</p>
+      </div>
+    </div>
+    <div class="slide-num">08 / 10</div>
+  </div>
+
+  <!-- Slide 9: Roadmap -->
+  <div class="slide" id="s9">
+    <div class="brand">Rural Rest</div>
+    <div class="label">Roadmap</div>
+    <h2>한국에서 증명하고,<br>세계로</h2>
+    <div class="roadmap">
+      <div class="phase">
+        <div class="phase-dot active"></div>
+        <div class="phase-title">Phase 1 · Y1~2</div>
+        <p>경주 파일럿 → 경북 확장<br>온체인 정산 실증</p>
+      </div>
+      <div class="phase">
+        <div class="phase-dot"></div>
+        <div class="phase-title">Phase 2 · Y2~3</div>
+        <p>일본 아키야 진출<br>B2B SaaS 런칭</p>
+      </div>
+      <div class="phase">
+        <div class="phase-dot"></div>
+        <div class="phase-title">Phase 3 · Y3+</div>
+        <p>유럽 1유로 주택<br>글로벌 라이선싱</p>
+      </div>
+    </div>
+    <div class="slide-num">09 / 10</div>
+  </div>
+
+  <!-- Slide 10: Team -->
+  <div class="slide" id="s10">
+    <div class="brand">Rural Rest</div>
+    <div class="label">Team</div>
+    <div class="split" style="align-items:center;">
+      <div>
+        <h2 style="font-size:26px; margin-bottom:8px;">한수연</h2>
+        <p style="color:var(--muted); font-size:14px; margin-bottom:4px;">Full-stack Developer · Blockchain & RWA</p>
+        <div style="height:1px; background:var(--border); margin:16px 0;"></div>
+        <h2 style="font-size:26px; margin-bottom:8px;">Person 2</h2>
+        <p style="color:var(--muted); font-size:14px;">Full-stack Developer · 30+ years in tech<br>Blockchain Hackathon Prize Winner</p>
+      </div>
+      <div>
+        <div class="quote" style="font-size:17px; margin-top:0;">
+          "누군가는 아이디어를 말할 때,<br>저희는 시스템을 완성했습니다."
+        </div>
+        <div style="margin-top:20px;">
+          <div class="badge" style="margin-right:8px;">15 Programs</div>
+          <div class="badge" style="margin-right:8px;">62 Tests</div>
+          <div class="badge">Devnet Live</div>
+        </div>
+        <p style="margin-top:16px; font-size:13px; line-height:1.6;">
+          RWA 시장 3년 만에 5배 성장.<br>
+          각국 정부 빈집 활용 본격화.<br>
+          <strong style="color:var(--text)">아직 아무도 없습니다.</strong>
+        </p>
+      </div>
+    </div>
+    <div class="slide-num">10 / 10</div>
+  </div>
+
+</div>
+
+<!-- 네비게이션 닷 -->
+<nav class="nav" id="nav"></nav>
+<div class="key-hint">← → 키로 이동</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const nav = document.getElementById('nav');
+  let current = 0;
+
+  // 닷 생성
+  slides.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => goTo(i);
+    nav.appendChild(dot);
+  });
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    nav.children[current].classList.remove('active');
+    current = Math.max(0, Math.min(n, slides.length - 1));
+    slides[current].classList.add('active');
+    nav.children[current].classList.add('active');
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(current - 1);
+  });
+</script>
+</body>
+</html>

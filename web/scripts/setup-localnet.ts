@@ -39,8 +39,8 @@ const RPC_URL = "http://127.0.0.1:8899";
 const ENV_PATH = path.join(__dirname, "../.env");
 const KEYPAIR_PATH = path.join(process.env.HOME!, ".config/solana/id.json");
 
-const RWA_PROGRAM_ID = new PublicKey("BAJ2fSZGZMkt6dFs4Rn5u8CCSsaVtgKbr5Jfca659iZr");
-const DAO_PROGRAM_ID = new PublicKey("142FMJgEw2H4EYzqHk1mEsLoT4aDkfLJJ4UR5ELxmTU1");
+const RWA_PROGRAM_ID = new PublicKey("F5ZAPhk9Yw65WzEisS6SsAtXQd3xyUFwsMdWvA3QYSDE");
+const DAO_PROGRAM_ID = new PublicKey("HUbLVSmSLfmrzQrecqq2HP6hpBc6jegZbfV4Kjrx8cqD");
 
 const VOTING_PERIOD = new BN(7 * 24 * 60 * 60); // 7일
 const QUORUM_BPS = 1000;                          // 10%

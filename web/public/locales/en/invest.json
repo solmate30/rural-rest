@@ -172,6 +172,7 @@
     "processing": "Processing Refund...",
     "successTitle": "Refund Complete",
     "successDesc": "{{amount}} USDC has been returned to your wallet.",
-    "alreadyRefunded": "This position has already been refunded."
+    "alreadyRefunded": "This position has already been refunded.",
+    "notAvailable": "Refund not available (funding in progress or goal already met)"
   }
 }

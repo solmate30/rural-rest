@@ -3,6 +3,7 @@ import { useConnection } from "@solana/wallet-adapter-react";
 import { usePrivyAnchorWallet } from "~/lib/privy-wallet";
 import { Button } from "~/components/ui/button";
 import { useToast } from "~/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 import { PROGRAM_ID, USDC_MINT } from "~/lib/constants";
 import { getProgram, derivePdas, parseAnchorError } from "~/lib/anchor-client";
@@ -12,15 +13,15 @@ interface Props {
     rwaTokenId: string;
 }
 
-const REFUND_ERRORS: Record<string, string> = {
-    "RefundNotAvailable": "환불 조건 미충족 (펀딩 기간 중이거나 목표가 달성됨)",
-    "AlreadyRefunded": "이미 환불 완료된 포지션입니다",
-};
-
 export function RefundButton({ listingId, rwaTokenId }: Props) {
     const wallet = usePrivyAnchorWallet();
     const { connection } = useConnection();
     const { toast } = useToast();
+    const { t } = useTranslation("invest");
+    const REFUND_ERRORS: Record<string, string> = {
+        "RefundNotAvailable": t("refund.notAvailable"),
+        "AlreadyRefunded": t("refund.alreadyRefunded"),
+    };
     const [txStatus, setTxStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
     const [errorMsg, setErrorMsg] = useState("");
 
@@ -91,7 +92,7 @@ export function RefundButton({ listingId, rwaTokenId }: Props) {
                 setTxStatus("error");
                 return;
             }
-            toast({ title: "환불 완료", description: `${displayUsdc.toFixed(2)} USDC가 지갑으로 반환되었습니다.`, variant: "success" });
+            toast({ title: t("refund.successTitle"), description: t("refund.successDesc", { amount: displayUsdc.toFixed(2) }), variant: "success" });
             setTimeout(() => window.location.reload(), 1000);
             return;
         } catch (err: any) {
@@ -109,7 +110,7 @@ export function RefundButton({ listingId, rwaTokenId }: Props) {
                 } catch (markErr) {
                     console.warn("[RefundButton] mark-refunded 요청 실패:", markErr);
                 }
-                toast({ title: "환불 완료", description: "이미 환불 처리되었습니다.", variant: "success" });
+                toast({ title: t("refund.successTitle"), description: t("refund.alreadyRefunded"), variant: "success" });
                 setTimeout(() => window.location.reload(), 1500);
                 return;
             } else {
@@ -119,23 +120,18 @@ export function RefundButton({ listingId, rwaTokenId }: Props) {
         }
     }
 
-    // 지갑 미준비
     if (!wallet) {
         return (
-            <p className="text-sm text-stone-400 text-center py-2">지갑 준비 중...</p>
+            <p className="text-sm text-stone-400 text-center py-2">{t("purchase.walletLoading")}</p>
         );
     }
 
-    // 투자 정보 로딩 중
     if (fetchingInvestment) {
-        return <p className="text-sm text-stone-400 text-center py-2">투자 내역 확인 중...</p>;
+        return <p className="text-sm text-stone-400 text-center py-2">{t("purchase.balanceLoading")}</p>;
     }
 
-    // 투자 내역 없음
     if (!myInvestment || myInvestment.investedUsdc == null) {
-        return (
-            <p className="text-sm text-stone-400 text-center py-2">이 지갑으로 투자한 내역이 없습니다.</p>
-        );
+        return null;
     }
 
     // 이미 환불 완료 — 목록에서 사라지기 전 잠깐 보일 수 있음
@@ -154,8 +150,8 @@ export function RefundButton({ listingId, rwaTokenId }: Props) {
                 className="w-full py-3"
             >
                 {txStatus === "loading"
-                    ? "환불 처리 중..."
-                    : `환불 받기 (${displayUsdc < 0.01 ? displayUsdc.toFixed(6) : displayUsdc.toFixed(2)} USDC)`}
+                    ? t("refund.processing")
+                    : `${t("refund.button")} (${displayUsdc < 0.01 ? displayUsdc.toFixed(6) : displayUsdc.toFixed(2)} USDC)`}
             </Button>
             {txStatus === "error" && (
                 <p className="text-sm text-red-500 text-center">{errorMsg}</p>

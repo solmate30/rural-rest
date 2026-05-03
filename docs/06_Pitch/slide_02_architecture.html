@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rural Rest — Architecture</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  .slide {
+    width: 100%;
+    height: 100vh;
+    padding: 32px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .tag {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #f0f6fc;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  .arch-wrapper {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(22,27,34,0.3);
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 20px;
+    overflow: hidden;
+  }
+  .arch-wrapper .mermaid { display: flex; justify-content: center; width: 100%; }
+  .arch-wrapper .mermaid svg {
+    max-width: 100% !important;
+    max-height: calc(100vh - 120px) !important;
+    height: auto !important;
+  }
+</style>
+</head>
+<body>
+
+<div class="slide">
+  <p class="tag">System Overview</p>
+  <div class="arch-wrapper">
+    <div class="mermaid">
+flowchart LR
+    subgraph INPUT [INPUT]
+        direction TB
+        Investor["Investor\nFunds / Claims"]
+        Guest["Guest\nBooks / Pays"]
+        Operator["Operator\nManages"]
+    end
+    subgraph ORCHESTRATOR [APP & ORCHESTRATOR]
+        direction TB
+        App["React Web App\nVite + Privy"]
+        API["Serverless API\nReact Router v7"]
+        Cron["Cron Jobs\nEscrow Release"]
+    end
+    subgraph EXTERNAL [EXTERNAL & DB]
+        direction TB
+        DB[("Turso SQLite\nOff-chain State")]
+        AI["Gemini 2.0\nAI Concierge"]
+        Pay["PayPal REST\nFiat Payments"]
+        Pyth["Pyth Oracle\nKRW/USD Feed"]
+        Helius["Helius Webhook\nTx Sync"]
+    end
+    subgraph ONCHAIN [SOLANA DEVNET]
+        direction TB
+        Prog{"Rural Rest Program\nAnchor · 18 Instructions"}
+        Tok["Property Tokens\nSPL Token-2022"]
+        Vault["USDC Vaults\nFunding & Dividend"]
+    end
+    Investor -->|Privy login| App
+    Guest -->|Privy login| App
+    Operator -->|Privy login| App
+    App -->|Reads/Writes| API
+    Cron -->|Triggers| API
+    API -->|State Sync| DB
+    API -->|Prompts| AI
+    API -->|Webhooks| Pay
+    API -->|Tx Instructions| Prog
+    Helius -->|Blinks Tx| DB
+    Prog -.->|Reads Price| Pyth
+    Prog -->|Mints/Burns| Tok
+    Prog -->|Escrow/Release| Vault
+    Prog -.->|Events| Helius
+    classDef inputNode fill:#161008,stroke:#92400e,stroke-width:2px,color:#fbbf24
+    classDef orchestratorNode fill:#0c1a2e,stroke:#3b82f6,stroke-width:2px,color:#60a5fa
+    classDef externalNode fill:#1a0811,stroke:#9d174d,stroke-width:2px,color:#f472b6
+    classDef dbNode fill:#111827,stroke:#374151,stroke-width:2px,color:#9ca3af
+    classDef onchainNode fill:#1e1040,stroke:#8b5cf6,stroke-width:2px,color:#a78bfa
+    class Investor,Guest,Operator inputNode
+    class App,API,Cron orchestratorNode
+    class DB dbNode
+    class AI,Pay,Pyth,Helius externalNode
+    class Prog,Tok,Vault onchainNode
+    style INPUT fill:transparent,stroke:#30363d,stroke-width:1px,stroke-dasharray: 5 5,color:#6e7681
+    style ORCHESTRATOR fill:transparent,stroke:#30363d,stroke-width:1px,stroke-dasharray: 5 5,color:#6e7681
+    style EXTERNAL fill:transparent,stroke:#30363d,stroke-width:1px,stroke-dasharray: 5 5,color:#6e7681
+    style ONCHAIN fill:transparent,stroke:#30363d,stroke-width:1px,stroke-dasharray: 5 5,color:#6e7681
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      darkMode: true,
+      background: 'transparent',
+      primaryColor: '#161008',
+      primaryBorderColor: '#78350f',
+      primaryTextColor: '#f0f6fc',
+      lineColor: '#8b949e',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", sans-serif',
+      fontSize: '12px'
+    },
+    flowchart: { curve: 'basis', padding: 10, nodeSpacing: 28, rankSpacing: 50, useMaxWidth: true }
+  });
+</script>
+
+</body>
+</html>

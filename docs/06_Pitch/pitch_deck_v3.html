@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Rural Rest — Pitch Deck | Seoulana 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"/>
+<style>
+:root {
+  --bg: #F8F7F4;
+  --bg2: #F1EFE9;
+  --fg: #111111;
+  --fg2: #555555;
+  --fg3: #999999;
+  --line: #E0DDD8;
+  --green: #0DBF78;
+  --sans: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: var(--sans); background: #E8E6E0; }
+
+#deck { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+.S {
+  position: absolute; width: 1280px; height: 720px;
+  border-radius: 12px; overflow: hidden;
+  opacity: 0; pointer-events: none; transform: translateX(40px);
+  transition: opacity .3s ease, transform .3s ease;
+  background: var(--bg); color: var(--fg);
+  display: flex; flex-direction: column;
+}
+.S.on  { opacity: 1; transform: none; pointer-events: all; }
+.S.out { opacity: 0; transform: translateX(-40px); }
+
+.sn  { position: absolute; top: 24px; right: 32px; font-size: 10px; color: var(--fg3); font-weight: 500; }
+.tag { display: block; font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--fg3); margin-bottom: 12px; }
+h1   { font-size: 58px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5px; }
+h2   { font-size: 44px; font-weight: 800; line-height: 1.15; letter-spacing: -2px; }
+.g   { color: var(--green); }
+.bar { width: 28px; height: 2px; background: var(--line); margin: 20px 0; }
+
+/* Nav */
+#nav {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(248,247,244,.96); backdrop-filter: blur(12px);
+  border-radius: 100px; padding: 6px 16px; z-index: 100;
+  border: 1px solid var(--line); box-shadow: 0 2px 16px rgba(0,0,0,.06);
+}
+.nb { background: none; border: none; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--fg3); font-size: 13px; transition: all .15s; }
+.nb:hover { background: rgba(0,0,0,.06); color: var(--fg); }
+.nb:disabled { opacity: .25; cursor: not-allowed; }
+#pg { font-size: 10px; color: var(--fg3); min-width: 36px; text-align: center; }
+.ds { display: flex; gap: 4px; }
+.d { width: 5px; height: 5px; border-radius: 50%; background: var(--line); transition: all .3s; cursor: pointer; }
+.d.on { background: var(--fg); width: 16px; border-radius: 3px; }
+#keys { position: fixed; top: 14px; right: 18px; font-size: 9px; color: var(--fg3); background: rgba(248,247,244,.9); padding: 3px 10px; border-radius: 100px; border: 1px solid var(--line); z-index: 100; }
+
+@media print {
+  @page { size: 1280px 720px; margin: 0; }
+  *, *::before, *::after { -webkit-print-color-adjust: exact!important; print-color-adjust: exact!important; }
+  html, body { width: 1280px; height: 720px; overflow: visible; }
+  #nav, #keys { display: none!important; }
+  #deck { position: static; width: 1280px; height: auto; display: block; }
+  .S { position: static!important; opacity: 1!important; transform: none!important; pointer-events: all!important; display: flex!important; width: 1280px; height: 720px; page-break-after: always; break-after: page; border-radius: 0; }
+}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- S1 HOOK -->
+<div class="S on" id="s1">
+  <div class="sn">01 / 10</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%;">
+
+    <div style="padding: 72px 64px; display: flex; flex-direction: column; justify-content: center; border-right: 1px solid var(--line);">
+      <span class="tag">Rural Rest · Seoulana 2026</span>
+      <h1>빈집을<br>수익형 자산으로.</h1>
+      <div class="bar"></div>
+      <p style="font-size: 16px; color: var(--fg2); line-height: 1.9; max-width: 380px;">
+        세계 최초 3자 RWA 호스피탈리티 프로토콜.<br>
+        지자체 · 운영자 · 투자자.<br>
+        Solana 온체인 자동 정산.
+      </p>
+    </div>
+
+    <div style="display: flex; flex-direction: column;">
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border-bottom: 1px solid var(--line);">
+        <div style="font-size: 60px; font-weight: 900; letter-spacing: -3px; line-height: 1;">12M<span style="font-size: 22px; font-weight: 600; color: var(--fg3);">+</span></div>
+        <div style="font-size: 12px; color: var(--fg3); margin-top: 8px; letter-spacing: .04em;">전 세계 방치 빈집</div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border-bottom: 1px solid var(--line);">
+        <div style="font-size: 60px; font-weight: 900; letter-spacing: -3px; line-height: 1;">$69<span style="font-size: 22px; font-weight: 600; color: var(--fg3);">B</span></div>
+        <div style="font-size: 12px; color: var(--fg3); margin-top: 8px; letter-spacing: .04em;">잠겨있는 자산 가치</div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <div style="font-size: 44px; font-weight: 900; letter-spacing: -2px; line-height: 1; color: var(--green);">30·30·40</div>
+        <div style="font-size: 12px; color: var(--fg3); margin-top: 8px; letter-spacing: .04em;">3-Party Settlement</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- S2 PROBLEM -->
+<div class="S" id="s2" style="padding: 72px 96px;">
+  <div class="sn">02 / 10</div>
+  <span class="tag">Problem</span>
+  <h2>수억 원을 복원하고도,<br>다시 폐가가 됩니다.</h2>
+  <div class="bar"></div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; align-items: stretch; margin-top: 4px;">
+
+    <div style="padding: 32px; border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 10px; font-weight: 700; letter-spacing: .14em; color: var(--fg3);">BEFORE — 재정비 직후</div>
+      <div style="font-size: 18px; font-weight: 700;">번듯한 한옥, 높은 기대</div>
+      <div style="font-size: 14px; color: var(--fg2); line-height: 1.9;">정부 예산 <strong style="color: var(--fg);">1억 원</strong> 투입 완료.<br>관광객 기대감 최고조.</div>
+    </div>
+
+    <div style="padding: 32px; border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 10px; font-weight: 700; letter-spacing: .14em; color: var(--fg3);">AFTER — 현실</div>
+      <div style="font-size: 18px; font-weight: 700;">관리 인력 없음 · 수익 불투명</div>
+      <div style="font-size: 14px; color: var(--fg2); line-height: 1.9;">운영 시스템 부재.<br>자물쇠, 잡초만 무성.</div>
+    </div>
+
+  </div>
+
+  <div style="margin-top: 20px; padding: 20px 28px; border-top: 1px solid var(--line);">
+    <p style="font-size: 16px; color: var(--fg2); line-height: 1.9;">
+      문제는 집이 아닙니다. <strong style="color: var(--fg);">운영 OS의 부재</strong>입니다.<br>
+      시설 예산은 있어도, <span class="g" style="font-weight: 700;">지속 운영할 시스템</span>이 없다는 것이 지방 소멸의 진짜 원인입니다.
+    </p>
+  </div>
+</div>
+
+
+<!-- S3 SOLUTION -->
+<div class="S" id="s3" style="padding: 72px 96px;">
+  <div class="sn">03 / 10</div>
+  <span class="tag">Solution</span>
+  <h2>Rural Rest는 빈집에<br><span class="g">운영 OS</span>를 설치합니다.</h2>
+  <div class="bar"></div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; flex: 1; align-items: stretch; margin-top: 4px;">
+
+    <div style="padding: 28px 24px; border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--fg3);">01</div>
+      <div style="font-size: 18px; font-weight: 700;">RWA 토큰화</div>
+      <div style="font-size: 14px; color: var(--fg2); line-height: 1.9; flex: 1;">빈집 운영권을 온체인 등록.<br>USDC 소액 투자.<br>Token-2022 NonTransferable.</div>
+    </div>
+
+    <div style="padding: 28px 24px; border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--fg3);">02</div>
+      <div style="font-size: 18px; font-weight: 700;">자동 정산</div>
+      <div style="font-size: 14px; color: var(--fg2); line-height: 1.9; flex: 1;">체크아웃 → 에스크로 해제.<br>월 정산 시 온체인 프로그램이<br>3자 트레저리로 자동 분배.</div>
+    </div>
+
+    <div style="padding: 28px 24px; border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--fg3);">03</div>
+      <div style="font-size: 18px; font-weight: 700;">투명성</div>
+      <div style="font-size: 14px; color: var(--fg2); line-height: 1.9; flex: 1;">지자체·운영자·투자자<br>트레저리 실시간 공개.<br>서류도, 30일 대기도 없음.</div>
+    </div>
+
+  </div>
+
+  <div style="margin-top: 20px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg3);">
+    <span>방치된 빈집</span><span style="color: var(--line); margin: 0 2px;">—</span>
+    <span>RWA 토큰화</span><span style="color: var(--line); margin: 0 2px;">—</span>
+    <span>예약·체크아웃</span><span style="color: var(--line); margin: 0 2px;">—</span>
+    <span>에스크로 해제</span><span style="color: var(--line); margin: 0 2px;">—</span>
+    <span>월 정산</span><span style="color: var(--line); margin: 0 2px;">—</span>
+    <span style="font-weight: 700; color: var(--green);">지속 가능한 수익형 자산</span>
+  </div>
+</div>
+
+
+<!-- S4 BUSINESS MODEL -->
+<div class="S" id="s4">
+  <div class="sn">04 / 10</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%;">
+
+    <div style="padding: 72px 64px; display: flex; flex-direction: column; justify-content: center; border-right: 1px solid var(--line);">
+      <span class="tag">Business Model</span>
+      <h2 style="font-size: 38px;">신뢰 비용을<br><span class="g">0</span>으로 만드는<br>정산 프로토콜</h2>
+      <div class="bar"></div>
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: baseline; gap: 14px;">
+          <span style="font-size: 10px; font-weight: 700; color: var(--fg3); min-width: 18px;">01</span>
+          <span style="font-size: 15px; color: var(--fg2);">게스트 결제 → <strong style="color: var(--fg);">에스크로 락업</strong></span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 14px;">
+          <span style="font-size: 10px; font-weight: 700; color: var(--fg3); min-width: 18px;">02</span>
+          <span style="font-size: 15px; color: var(--fg2);">체크아웃 → <strong style="color: var(--fg);">에스크로 자동 해제</strong></span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 14px;">
+          <span style="font-size: 10px; font-weight: 700; color: var(--fg3); min-width: 18px;">03</span>
+          <span style="font-size: 15px; color: var(--fg2);">월 정산 → <strong style="color: var(--fg);">온체인 프로그램이 자동 분배</strong></span>
+        </div>
+      </div>
+      <p style="font-size: 11px; color: var(--fg3); margin-top: 24px;">* 지자체가 온체인 지갑으로 세수를 직접 받는 세계 최초 모델</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; justify-content: center; padding: 64px 56px; gap: 12px;">
+      <div style="font-size: 10px; font-weight: 700; letter-spacing: .14em; color: var(--fg3); margin-bottom: 8px;">REVENUE SPLIT</div>
+
+      <div style="display: flex; align-items: center; gap: 20px; padding: 20px 24px; border: 1px solid var(--line); border-radius: 10px;">
+        <div style="font-size: 52px; font-weight: 900; letter-spacing: -3px; line-height: 1; color: var(--green);">30<span style="font-size: 18px; font-weight: 600;">%</span></div>
+        <div>
+          <div style="font-size: 14px; font-weight: 700;">투자자 트레저리</div>
+          <div style="font-size: 12px; color: var(--fg3); margin-top: 2px;">USDC 배당</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 20px; padding: 20px 24px; border: 1px solid var(--line); border-radius: 10px;">
+        <div style="font-size: 52px; font-weight: 900; letter-spacing: -3px; line-height: 1; color: var(--green);">30<span style="font-size: 18px; font-weight: 600;">%</span></div>
+        <div>
+          <div style="font-size: 14px; font-weight: 700;">운영자 트레저리</div>
+          <div style="font-size: 12px; color: var(--fg3); margin-top: 2px;">마을 운영자 보상</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 20px; padding: 20px 24px; border: 1px solid var(--line); border-radius: 10px;">
+        <div style="font-size: 52px; font-weight: 900; letter-spacing: -3px; line-height: 1; color: var(--green);">40<span style="font-size: 18px; font-weight: 600;">%</span></div>
+        <div>
+          <div style="font-size: 14px; font-weight: 700;">지자체 트레저리</div>
+          <div style="font-size: 12px; color: var(--fg3); margin-top: 2px;">온체인 세수 정산</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- S5 TECH PROOF -->
+<div class="S" id="s5" style="padding: 72px 96px;">
+  <div class="sn">05 / 10</div>
+  <span class="tag">Tech Proof</span>
+  <h2>비전이 아닙니다.<br>Devnet에서 <span class="g">지금 동작합니다.</span></h2>
+  <div class="bar"></div>
+
+  <div style="display: flex; gap: 56px; margin-bottom: 28px; align-items: flex-end;">
+    <div>
+      <div style="font-size: 72px; font-weight: 900; letter-spacing: -4px; line-height: 1; color: var(--green);">15</div>
+      <div style="font-size: 13px; color: var(--fg3); margin-top: 6px; font-weight: 500;">On-chain Programs</div>
+    </div>
+    <div>
+      <div style="font-size: 72px; font-weight: 900; letter-spacing: -4px; line-height: 1; color: var(--green);">62</div>
+      <div style="font-size: 13px; color: var(--fg3); margin-top: 6px; font-weight: 500;">Tests Passing</div>
+    </div>
+    <div style="padding-bottom: 10px;">
+      <div style="font-size: 18px; font-weight: 800;">Devnet Live</div>
+      <div style="font-size: 13px; color: var(--fg3); margin-top: 4px;">Deployed & Running</div>
+    </div>
+  </div>
+
+  <div style="display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; flex: 1;">
+    <div style="flex: 1; padding: 20px 16px; border-right: 1px solid var(--line); text-align: center; display: flex; flex-direction: column; justify-content: center; gap: 8px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--fg3); letter-spacing: .1em;">01</div>
+      <div style="font-size: 15px; font-weight: 700;">발행</div>
+      <div style="font-size: 12px; color: var(--fg2); line-height: 1.7;">빈집 온체인 등록<br>RWA 토큰 발행</div>
+    </div>
+    <div style="flex: 1; padding: 20px 16px; border-right: 1px solid var(--line); text-align: center; display: flex; flex-direction: column; justify-content: center; gap: 8px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--fg3); letter-spacing: .1em;">02</div>
+      <div style="font-size: 15px; font-weight: 700;">투자</div>
+      <div style="font-size: 12px; color: var(--fg2); line-height: 1.7;">USDC 납입<br>Token-2022 수령</div>
+    </div>
+    <div style="flex: 1; padding: 20px 16px; border-right: 1px solid var(--line); text-align: center; display: flex; flex-direction: column; justify-content: center; gap: 8px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--fg3); letter-spacing: .1em;">03</div>
+      <div style="font-size: 15px; font-weight: 700;">예약·체크아웃</div>
+      <div style="font-size: 12px; color: var(--fg2); line-height: 1.7;">에스크로 락업<br>체크아웃 후 해제</div>
+    </div>
+    <div style="flex: 1; padding: 20px 16px; border-right: 1px solid var(--line); text-align: center; display: flex; flex-direction: column; justify-content: center; gap: 8px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--fg3); letter-spacing: .1em;">04</div>
+      <div style="font-size: 15px; font-weight: 700;">월 정산</div>
+      <div style="font-size: 12px; color: var(--fg2); line-height: 1.7;">settle_listing_monthly<br>트레저리 자동 분배</div>
+    </div>
+    <div style="flex: 1; padding: 20px 16px; text-align: center; display: flex; flex-direction: column; justify-content: center; gap: 8px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--fg3); letter-spacing: .1em;">05</div>
+      <div style="font-size: 15px; font-weight: 700;">배당 수령</div>
+      <div style="font-size: 12px; color: var(--fg2); line-height: 1.7;">claim_dividend<br>USDC 지갑 도착</div>
+    </div>
+  </div>
+
+  <p style="margin-top: 14px; font-size: 12px; color: var(--fg3);">Token-2022 NonTransferable — 부동산 규제를 코드로 강제 &nbsp;·&nbsp; Helius Webhook — 이벤트 자동 DB 기록</p>
+</div>
+
+
+<!-- S6 UX INNOVATION -->
+<div class="S" id="s6">
+  <div class="sn">06 / 10</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%;">
+
+    <div style="padding: 72px 64px; display: flex; flex-direction: column; justify-content: center; border-right: 1px solid var(--line);">
+      <span class="tag">UX Innovation</span>
+      <h2 style="font-size: 40px;">지갑 없이.<br>SNS <span class="g">클릭 한 번</span>으로.</h2>
+      <div class="bar"></div>
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div>
+          <div style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">Solana Blinks</div>
+          <div style="font-size: 14px; color: var(--fg2); line-height: 1.9;">X(트위터) 피드 안에 투자 버튼 임베드.<br>SNS 링크 클릭 한 번으로 투자 완료.</div>
+        </div>
+        <div>
+          <div style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">Privy 지갑 추상화</div>
+          <div style="font-size: 14px; color: var(--fg2); line-height: 1.9;">소셜 계정으로 즉시 로그인.<br>지갑 설치 없음. 니모닉 없음.</div>
+        </div>
+      </div>
+      <div style="margin-top: 28px; padding: 16px 20px; border: 1px solid var(--line); border-radius: 10px; font-size: 13px; color: var(--fg2); line-height: 1.9;">
+        대부분의 RWA 프로젝트는 복잡한 대시보드 안에 갇혀 있다.<br>
+        Rural Rest는 <strong class="g">유저가 있는 곳에 있다.</strong>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: center; align-items: center; background: var(--bg2);">
+      <div style="position: relative; width: 215px; height: 430px;">
+        <div style="position: absolute; inset: 0; border: 1.5px solid #D0CEC9; border-radius: 32px; background: #fff; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.07);">
+          <div style="height: 28px; background: #F5F5F5; display: flex; align-items: center; justify-content: space-between; padding: 0 16px;">
+            <div style="font-size: 9px; color: #999;">9:41</div>
+            <div style="font-size: 9px; color: #999;">●●●</div>
+          </div>
+          <div style="padding: 12px 16px 8px; border-bottom: 1px solid #F0F0F0;">
+            <div style="font-size: 13px; font-weight: 700; color: #111;">𝕏 For You</div>
+          </div>
+          <div style="padding: 14px 14px 10px;">
+            <div style="display: flex; gap: 8px; align-items: flex-start;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: #E6FAF2; border: 1px solid #0DBF78; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #0DBF78; flex-shrink: 0;">RR</div>
+              <div style="flex: 1;">
+                <div style="font-size: 10px; font-weight: 700; color: #111;">Rural Rest</div>
+                <div style="font-size: 10px; color: #999;">@rural_rest_rwa</div>
+                <div style="font-size: 11px; color: #555; margin-top: 6px; line-height: 1.6;">경주 한옥 #003 투자 오픈<br>예상 APY 2.6% USDC</div>
+                <div style="margin-top: 10px; padding: 8px 14px; background: #0DBF78; border-radius: 20px; text-align: center; font-size: 11px; font-weight: 700; color: #fff;">투자하기 →</div>
+                <div style="margin-top: 6px; font-size: 9px; color: #aaa; text-align: center;">powered by Solana Blinks</div>
+              </div>
+            </div>
+          </div>
+          <div style="height: 1px; background: #F0F0F0; margin: 0 14px;"></div>
+          <div style="padding: 14px; text-align: center;">
+            <div style="font-size: 20px; color: #0DBF78;">✓</div>
+            <div style="font-size: 11px; font-weight: 700; color: #0DBF78; margin-top: 4px;">투자 완료!</div>
+            <div style="font-size: 10px; color: #999; margin-top: 2px;">지갑 없이 · 30초</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- S7 STRATEGIC ADVANTAGE -->
+<div class="S" id="s7" style="padding: 72px 96px;">
+  <div class="sn">07 / 10</div>
+  <span class="tag">Strategic Advantage</span>
+  <h2>에어비앤비가<br>넘볼 수 없는 <span class="g">해자</span>.</h2>
+  <div class="bar"></div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 48px; flex: 1; align-items: center; margin-top: 4px;">
+
+    <div style="border: 1px solid var(--line); border-radius: 10px; overflow: hidden;">
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr;">
+        <div style="padding: 12px 16px; font-size: 11px; font-weight: 700; color: var(--fg3); letter-spacing: .08em; background: var(--bg2);">구분</div>
+        <div style="padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--fg2); text-align: center; border-left: 1px solid var(--line); background: var(--bg2);">Airbnb</div>
+        <div style="padding: 12px 16px; font-size: 12px; font-weight: 700; color: var(--green); text-align: center; border-left: 1px solid var(--line); background: var(--bg2);">Rural Rest</div>
+
+        <div style="padding: 12px 16px; font-size: 13px; color: var(--fg2); border-top: 1px solid var(--line);">비즈니스 모델</div>
+        <div style="padding: 12px 16px; font-size: 13px; color: var(--fg2); text-align: center; border-top: 1px solid var(--line); border-left: 1px solid var(--line);">중개</div>
+        <div style="padding: 12px 16px; font-size: 13px; font-weight: 600; text-align: center; border-top: 1px solid var(--line); border-left: 1px solid var(--line);">풀스택 OS</div>
+
+        <div style="padding: 12px 16px; font-size: 13px; color: var(--fg2); border-top: 1px solid var(--line);">자산 취득</div>
+        <div style="padding: 12px 16px; font-size: 13px; color: var(--fg2); text-align: center; border-top: 1px solid var(--line); border-left: 1px solid var(--line);">불가</div>
+        <div style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: var(--green); text-align: center; border-top: 1px solid var(--line); border-left: 1px solid var(--line);">Zero-CAPEX</div>
+
+        <div style="padding: 12px 16px; font-size: 13px; color: var(--fg2); border-top: 1px solid var(--line);">정산 투명성</div>
+        <div style="padding: 12px 16px; font-size: 13px; color: var(--fg2); text-align: center; border-top: 1px solid var(--line); border-left: 1px solid var(--line);">블랙박스</div>
+        <div style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: var(--green); text-align: center; border-top: 1px solid var(--line); border-left: 1px solid var(--line);">온체인 공개</div>
+
+        <div style="padding: 12px 16px; font-size: 13px; color: var(--fg2); border-top: 1px solid var(--line);">지자체 관계</div>
+        <div style="padding: 12px 16px; font-size: 13px; color: var(--fg2); text-align: center; border-top: 1px solid var(--line); border-left: 1px solid var(--line);">없음</div>
+        <div style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: var(--green); text-align: center; border-top: 1px solid var(--line); border-left: 1px solid var(--line);">독점 협약</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <div>
+        <div style="font-size: 14px; font-weight: 700; margin-bottom: 4px;">Zero-CAPEX</div>
+        <div style="font-size: 13px; color: var(--fg2); line-height: 1.9;">지자체 협약으로 무상 운영권 확보.<br>자산 매입 비용 0.</div>
+      </div>
+      <div style="height: 1px; background: var(--line);"></div>
+      <div>
+        <div style="font-size: 14px; font-weight: 700; margin-bottom: 4px;">Exclusive Inventory</div>
+        <div style="font-size: 13px; color: var(--fg2); line-height: 1.9;">복제 불가능한 독점 숙소.<br>목표 20년 장기 위탁 계약.</div>
+      </div>
+      <div style="height: 1px; background: var(--line);"></div>
+      <div>
+        <div style="font-size: 14px; font-weight: 700; margin-bottom: 4px;">Data Moat</div>
+        <div style="font-size: 13px; color: var(--fg2); line-height: 1.9;">체크인 패턴 · 소비 데이터 축적.<br>재현 불가능한 운영 지식.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- S8 MARKET -->
+<div class="S" id="s8" style="padding: 72px 96px;">
+  <div class="sn">08 / 10</div>
+  <span class="tag">Market Opportunity</span>
+  <h2>$69B 시장.<br><span class="g">아직 아무도 없습니다.</span></h2>
+  <div class="bar"></div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 48px; flex: 1; align-items: center; margin-top: 4px;">
+
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 18px 0; border-bottom: 1px solid var(--line);">
+        <div>
+          <div style="font-size: 10px; font-weight: 700; color: var(--fg3); letter-spacing: .12em; margin-bottom: 4px;">TAM</div>
+          <div style="font-size: 14px; color: var(--fg2);">한국+일본+유럽 1,200만 채</div>
+        </div>
+        <div style="font-size: 28px; font-weight: 900; letter-spacing: -1px;">$690억</div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 18px 0; border-bottom: 1px solid var(--line);">
+        <div>
+          <div style="font-size: 10px; font-weight: 700; color: var(--fg3); letter-spacing: .12em; margin-bottom: 4px;">SAM</div>
+          <div style="font-size: 14px; color: var(--fg2);">한국 15만 채 활성화 가능분</div>
+        </div>
+        <div style="font-size: 28px; font-weight: 900; letter-spacing: -1px;">$40억</div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 18px 0;">
+        <div>
+          <div style="font-size: 10px; font-weight: 700; color: var(--fg3); letter-spacing: .12em; margin-bottom: 4px;">SOM (Y1→Y2)</div>
+          <div style="font-size: 14px; color: var(--fg2);">파일럿 5채 → 100채</div>
+        </div>
+        <div style="font-size: 28px; font-weight: 900; letter-spacing: -1px; color: var(--green);">$17K → $334K</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="padding: 18px 22px; border: 1px solid var(--line); border-radius: 10px; display: flex; align-items: center; gap: 16px;">
+        <div style="font-size: 22px;">🇰🇷</div>
+        <div>
+          <div style="font-size: 14px; font-weight: 700;">한국 — Now</div>
+          <div style="font-size: 12px; color: var(--fg2); margin-top: 2px;">경주 파일럿 · 134,000채</div>
+        </div>
+      </div>
+      <div style="padding: 18px 22px; border: 1px solid var(--line); border-radius: 10px; display: flex; align-items: center; gap: 16px;">
+        <div style="font-size: 22px;">🇯🇵</div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--fg2);">일본 — Phase 2</div>
+          <div style="font-size: 12px; color: var(--fg3); margin-top: 2px;">아키야 900만 채 · B2B SaaS</div>
+        </div>
+      </div>
+      <div style="padding: 18px 22px; border: 1px solid var(--line); border-radius: 10px; display: flex; align-items: center; gap: 16px;">
+        <div style="font-size: 22px;">🇪🇺</div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--fg2);">유럽 — Phase 3</div>
+          <div style="font-size: 12px; color: var(--fg3); margin-top: 2px;">1유로 주택 · 글로벌 라이선싱</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- S9 ROADMAP -->
+<div class="S" id="s9" style="padding: 72px 96px;">
+  <div class="sn">09 / 10</div>
+  <span class="tag">Roadmap</span>
+  <h2>경주에서 증명하고,<br><span class="g">전 세계</span>로 확장합니다.</h2>
+  <div class="bar"></div>
+
+  <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 20px; margin-top: 4px;">
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+      <div style="padding: 28px 24px; border: 1px solid var(--green); border-radius: 10px;">
+        <div style="font-size: 10px; font-weight: 700; letter-spacing: .14em; color: var(--green); margin-bottom: 8px;">PHASE 1 · Y1~2</div>
+        <div style="font-size: 18px; font-weight: 800; margin-bottom: 12px;">경주 파일럿</div>
+        <div style="font-size: 13px; color: var(--fg2); line-height: 1.9;">경주 5채 운영 시작<br>온체인 정산 실증<br>한국형 표준 모델 완성</div>
+      </div>
+      <div style="padding: 28px 24px; border: 1px solid var(--line); border-radius: 10px;">
+        <div style="font-size: 10px; font-weight: 700; letter-spacing: .14em; color: var(--fg3); margin-bottom: 8px;">PHASE 2 · Y2~3</div>
+        <div style="font-size: 18px; font-weight: 800; color: var(--fg2); margin-bottom: 12px;">일본 진출</div>
+        <div style="font-size: 13px; color: var(--fg3); line-height: 1.9;">아키야 시장 JV/파트너십<br>B2B SaaS 런칭<br>프로토콜 라이선싱 시작</div>
+      </div>
+      <div style="padding: 28px 24px; border: 1px solid var(--line); border-radius: 10px;">
+        <div style="font-size: 10px; font-weight: 700; letter-spacing: .14em; color: var(--fg3); margin-bottom: 8px;">PHASE 3 · Y3+</div>
+        <div style="font-size: 18px; font-weight: 800; color: var(--fg2); margin-bottom: 12px;">글로벌 OS</div>
+        <div style="font-size: 13px; color: var(--fg3); line-height: 1.9;">유럽 1유로 주택 확장<br>전 세계 빈집 재생 표준<br>Regeneration OS 라이선스</div>
+      </div>
+    </div>
+
+    <div style="padding: 20px 28px; border: 1px solid var(--line); border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 14px; font-weight: 600;">수익 모델</div>
+      <div style="display: flex; gap: 36px;">
+        <div>
+          <div style="font-size: 13px; font-weight: 700;">예약 수수료</div>
+          <div style="font-size: 11px; color: var(--fg3); margin-top: 2px;">10~15%</div>
+        </div>
+        <div>
+          <div style="font-size: 13px; font-weight: 700;">토큰 발행 수수료</div>
+          <div style="font-size: 11px; color: var(--fg3); margin-top: 2px;">숙소 1채 온보딩 시</div>
+        </div>
+        <div>
+          <div style="font-size: 13px; font-weight: 700;">B2B SaaS 라이선싱</div>
+          <div style="font-size: 11px; color: var(--fg3); margin-top: 2px;">Phase 2+</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- S10 TEAM & CLOSING -->
+<div class="S" id="s10">
+  <div class="sn">10 / 10</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; height: 100%;">
+
+    <div style="padding: 72px 64px; display: flex; flex-direction: column; justify-content: center; border-right: 1px solid var(--line);">
+      <span class="tag">Team</span>
+      <h2 style="font-size: 36px;">현장의 비효율을<br>기술로 해결할 준비가 된 팀.</h2>
+      <div class="bar"></div>
+
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: #E6FAF2; border: 1.5px solid #0DBF78; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #0DBF78; flex-shrink: 0;">한</div>
+          <div>
+            <div style="font-size: 15px; font-weight: 700;">한수연</div>
+            <div style="font-size: 12px; color: var(--fg2); margin-top: 2px;">Full-stack Developer · Blockchain & RWA</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--bg2); border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: var(--fg3); flex-shrink: 0;">P2</div>
+          <div>
+            <div style="font-size: 15px; font-weight: 700;">Person 2</div>
+            <div style="font-size: 12px; color: var(--fg2); margin-top: 2px;">Full-stack Developer · 30+ yrs · Hackathon Prize</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 24px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <span style="padding: 4px 12px; border: 1px solid var(--line); border-radius: 100px; font-size: 11px; font-weight: 600; color: var(--green);">15 Programs</span>
+        <span style="padding: 4px 12px; border: 1px solid var(--line); border-radius: 100px; font-size: 11px; font-weight: 600; color: var(--green);">62 Tests ✓</span>
+        <span style="padding: 4px 12px; border: 1px solid var(--line); border-radius: 100px; font-size: 11px; font-weight: 600; color: var(--fg2);">Devnet Live</span>
+      </div>
+    </div>
+
+    <div style="padding: 72px 64px; display: flex; flex-direction: column; justify-content: center;">
+      <div style="font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--fg3); margin-bottom: 24px;">Why Now</div>
+
+      <div style="font-size: 26px; font-weight: 800; line-height: 1.5; letter-spacing: -1px; margin-bottom: 28px;">
+        "누군가는 아이디어를 말할 때,<br>저희는 <span class="g">시스템을 완성했습니다.</span>"
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px;">
+        <div style="font-size: 13px; color: var(--fg2);">✓ RWA 시장 3년 만에 5배 성장</div>
+        <div style="font-size: 13px; color: var(--fg2);">✓ 각국 정부 빈집 활용 정책 본격화</div>
+        <div style="font-size: 13px; font-weight: 700; color: var(--green);">✓ 아직 아무도 없습니다</div>
+      </div>
+
+      <div style="padding: 20px 24px; border: 1px solid var(--line); border-radius: 10px;">
+        <div style="font-size: 16px; font-weight: 700; line-height: 1.6;">Rural Rest와 함께<br>지방의 미래를 바꾸십시오.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<nav id="nav">
+  <button class="nb" id="prev" disabled>&#8592;</button>
+  <div class="ds" id="dots"></div>
+  <span id="pg">1 / 10</span>
+  <button class="nb" id="next">&#8594;</button>
+</nav>
+<div id="keys">← → 키로 이동 &nbsp;|&nbsp; 클릭 가능</div>
+
+<script>
+const slides = Array.from(document.querySelectorAll('.S'));
+const dotsEl = document.getElementById('dots');
+const pg    = document.getElementById('pg');
+const prev  = document.getElementById('prev');
+const next  = document.getElementById('next');
+let cur = 0;
+
+slides.forEach((_,i) => {
+  const d = document.createElement('div');
+  d.className = 'd' + (i===0?' on':'');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+});
+
+function goTo(n) {
+  if (n < 0 || n >= slides.length) return;
+  slides[cur].classList.remove('on');
+  slides[cur].classList.add('out');
+  setTimeout(() => slides[cur].classList.remove('out'), 400);
+  dotsEl.children[cur].classList.remove('on');
+  cur = n;
+  slides[cur].classList.add('on');
+  dotsEl.children[cur].classList.add('on');
+  pg.textContent = (cur+1) + ' / ' + slides.length;
+  prev.disabled = cur === 0;
+  next.disabled = cur === slides.length - 1;
+}
+
+prev.onclick = () => goTo(cur - 1);
+next.onclick = () => goTo(cur + 1);
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key==='ArrowDown') goTo(cur+1);
+  if (e.key==='ArrowLeft' ||e.key==='ArrowUp')   goTo(cur-1);
+});
+</script>
+</body>
+</html>
