@@ -76,13 +76,22 @@ export default function HostMessagesPage() {
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "instant" });
         inputRef.current?.focus();
     }, []);
 
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [msgs]);
+        const id = setInterval(async () => {
+            const res = await fetch(`/api/chat/messages?bookingId=${booking.id}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            setMsgs(prev => {
+                const existingIds = new Set(prev.map((m) => m.id));
+                const next = (data.messages as ChatMessage[]).filter((m) => !existingIds.has(m.id));
+                return next.length > 0 ? [...prev, ...next] : prev;
+            });
+        }, 3000);
+        return () => clearInterval(id);
+    }, [booking.id]);
 
     async function handleSend() {
         const text = input.trim();

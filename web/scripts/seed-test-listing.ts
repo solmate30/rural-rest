@@ -18,7 +18,7 @@ const LISTINGS = [
         location: "Gyeongju, North Gyeongsang",
         region: "경상",
         pricePerNight: 70_000,
-        valuationKrw: 150_000_000,
+        valuationKrw: 75_000_000, // ~$54K → $0.000543/token, $50 ≈ 92K tokens
         maxGuests: 4,
         lat: 35.8320,
         lng: 129.2150,
@@ -41,7 +41,7 @@ const LISTINGS = [
         location: "Gyeongju, North Gyeongsang",
         region: "경상",
         pricePerNight: 90_000,
-        valuationKrw: 200_000_000,
+        valuationKrw: 88_000_000, // ~$63.7K → $0.000637/token, $50 ≈ 78K tokens
         maxGuests: 4,
         lat: 35.8360,
         lng: 129.2270,
@@ -64,7 +64,7 @@ const LISTINGS = [
         location: "Gyeongju, North Gyeongsang",
         region: "경상",
         pricePerNight: 25_000,
-        valuationKrw: 120_000_000,
+        valuationKrw: 69_000_000, // 50,000 USDC @ 1,380 KRW/USDC — token price 0.0005 USDC, 500 USDC = 1,000,000 tokens
         maxGuests: 4,
         lat: 35.8550,
         lng: 129.2100,
@@ -86,7 +86,7 @@ const LISTINGS = [
         location: "Gyeongju, North Gyeongsang",
         region: "경상",
         pricePerNight: 55_000,
-        valuationKrw: 100_000_000,
+        valuationKrw: 60_000_000, // ~$43.5K → $0.000435/token, $50 ≈ 115K tokens
         maxGuests: 4,
         lat: 35.9250,
         lng: 129.1980,
@@ -109,7 +109,7 @@ const LISTINGS = [
         location: "Gyeongju, North Gyeongsang",
         region: "경상",
         pricePerNight: 65_000,
-        valuationKrw: 130_000_000,
+        valuationKrw: 95_000_000, // ~$68.8K → $0.000688/token, $50 ≈ 73K tokens
         maxGuests: 6,
         lat: 35.9500,
         lng: 129.1850,

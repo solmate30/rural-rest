@@ -33,7 +33,7 @@ function ShareBlinksButton({ listingId }: { listingId: string }) {
     const { t } = useTranslation("invest");
 
     function handleShare() {
-        const actionUrl = `${window.location.origin}/api/actions/invest/${listingId}`;
+        const actionUrl = `https://rural-rest.vercel.app/api/actions/invest/${listingId}`;
         const blinksUrl = `https://dial.to/?action=solana-action:${encodeURIComponent(actionUrl)}`;
         navigator.clipboard.writeText(blinksUrl).then(() => {
             setCopied(true);

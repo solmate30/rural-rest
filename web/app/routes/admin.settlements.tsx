@@ -34,6 +34,7 @@ export async function loader({ request }: Route.LoaderArgs) {
         .from(listings)
         .innerJoin(rwaTokens, eq(rwaTokens.listingId, listings.id))
         .leftJoin(operatorSettlements, eq(operatorSettlements.listingId, listings.id))
+        .where(eq(rwaTokens.status, "active"))
         .groupBy(listings.id, rwaTokens.id)
         .orderBy(rwaTokens.status);
 

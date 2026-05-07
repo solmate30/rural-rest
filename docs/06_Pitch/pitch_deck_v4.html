@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
@@ -19,7 +19,7 @@
   --line:  rgba(242,240,236,.1);
   --green: #0DBF78;
   --green-bg: rgba(13,191,120,.1);
-  --sans:  'Pretendard','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --sans:  'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; font-family: var(--sans); background: #080808; }
@@ -68,7 +68,7 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
 @media print {
   @page { size: 1280px 720px; margin: 0; }
   *, *::before, *::after { -webkit-print-color-adjust: exact!important; print-color-adjust: exact!important; }
-  html, body { width: 1280px; height: 720px; overflow: visible; background: #0C0C0C; }
+  html, body { width: 1280px; height: auto; overflow: visible; background: #0C0C0C; }
   #nav, #keys { display: none!important; }
   #deck { position: static; width: 1280px; height: auto; display: block; }
   .S { position: static!important; opacity: 1!important; transform: none!important; pointer-events: all!important; display: flex!important; width: 1280px; height: 720px; page-break-after: always; break-after: page; border-radius: 0; }
@@ -81,16 +81,17 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
 <!-- S1 HOOK -->
 <div class="S on" id="s1" style="padding:0 120px;display:flex;flex-direction:column;justify-content:center;">
   <div class="sn">01 / 08</div>
-  <span class="tag">Rural Rest · Seoulana 2026</span>
-  <h1 style="font-size:68px;margin-bottom:32px;">비어 있는 집.<br><span class="g">비어 있는 기회.</span></h1>
+  <span class="tag">Rural Rest · Solana 2026</span>
+  <h1 style="font-size:68px;margin-bottom:32px;">Empty houses.<br><span class="g">Empty opportunity.</span></h1>
   <div class="div"></div>
   <p class="lead" style="max-width:600px;font-size:17px;">
-    관광객은 많은데, 마을 안쪽에는 다시 비어 가는 집들이 있습니다.<br>
-    고쳐도 다시 방치됩니다. 수년간 반복된 패턴입니다.<br><br>
-    문제는 집이 아니라,<br>
-    <span class="g" style="font-weight:600;">최소한의 비용으로 지속 운영할 구조의 부재</span>입니다.<br><br>
-    Rural Rest는 방치 부동산을 온체인 수익형 숙박 자산으로 전환하는<br>
-    <span class="g" style="font-weight:600;">RWA 운영·정산 인프라</span>입니다.
+    Tourists are everywhere — yet deep inside the villages,<br>
+    houses are emptying again. Fixed, then abandoned.<br>
+    A pattern repeated for years.<br><br>
+    The problem isn't the house.<br>
+    It's <span class="g" style="font-weight:600;">the absence of a structure to sustain operations at minimal cost.</span><br><br>
+    Rural Rest is the <span class="g" style="font-weight:600;">RWA operations &amp; settlement infrastructure</span><br>
+    that converts neglected properties into on-chain income-generating hospitality assets.
   </p>
   <div style="margin-top:40px;font-size:12px;font-weight:600;color:var(--fg3);letter-spacing:.12em;">
     Global problem &nbsp;·&nbsp; Korea-first execution &nbsp;·&nbsp; Solana-native settlement
@@ -102,42 +103,42 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
 <div class="S" id="s2" style="padding:64px 80px;">
   <div class="sn">02 / 08</div>
   <span class="tag">Problem</span>
-  <h2 style="font-size:44px;">빈집은 많지만,<br><span class="g">지속 운영되는 자산은 없습니다.</span></h2>
+  <h2 style="font-size:44px;">Vacant houses everywhere,<br><span class="g">but none that sustain operations.</span></h2>
   <div class="div"></div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;flex:1;align-items:center;">
     <div style="display:flex;flex-direction:column;gap:10px;">
       <div style="background:var(--bg2);border-radius:8px;padding:18px 22px;">
         <div class="cap" style="margin-bottom:8px;">Local Government</div>
-        <div style="font-size:15px;font-weight:700;color:var(--fg);margin-bottom:4px;">고치지만 굴릴 방법이 없습니다</div>
-        <div style="font-size:13px;color:var(--fg2);">정비 예산은 있어도 지속 운영 구조가 없습니다.</div>
+        <div style="font-size:15px;font-weight:700;color:var(--fg);margin-bottom:4px;">Fixed, but no way to operate</div>
+        <div style="font-size:13px;color:var(--fg2);">Budget to repair exists, but no structure for ongoing operations.</div>
       </div>
       <div style="background:var(--bg2);border-radius:8px;padding:18px 22px;">
         <div class="cap" style="margin-bottom:8px;">Operator</div>
-        <div style="font-size:15px;font-weight:700;color:var(--fg);margin-bottom:4px;">높은 운영 비용에 막힙니다</div>
-        <div style="font-size:13px;color:var(--fg2);">인건비·예약 대응·관리 비용이 수익을 초과합니다.</div>
+        <div style="font-size:15px;font-weight:700;color:var(--fg);margin-bottom:4px;">Blocked by high operating costs</div>
+        <div style="font-size:13px;color:var(--fg2);">Labor, reservation handling, and management costs exceed revenue.</div>
       </div>
       <div style="background:var(--bg2);border-radius:8px;padding:18px 22px;">
         <div class="cap" style="margin-bottom:8px;">Global Investor</div>
-        <div style="font-size:15px;font-weight:700;color:var(--fg);margin-bottom:4px;">접근할 방법이 없습니다</div>
-        <div style="font-size:13px;color:var(--fg2);">지방 부동산 수익에 글로벌 소액 자본이 들어올 창구가 없습니다.</div>
+        <div style="font-size:15px;font-weight:700;color:var(--fg);margin-bottom:4px;">No way to access</div>
+        <div style="font-size:13px;color:var(--fg2);">No channel for global micro-capital to enter rural real estate yields.</div>
       </div>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:0;">
       <div style="padding:0 0 28px 0;border-bottom:1px solid var(--line);">
         <div class="cap" style="margin-bottom:12px;">Before</div>
-        <div style="font-size:18px;font-weight:700;color:var(--fg);margin-bottom:8px;">예산으로 고친 숙소</div>
-        <div style="font-size:13px;color:var(--fg2);">지역의 기대. 새로운 관광 자원. 지자체의 성과.</div>
+        <div style="font-size:18px;font-weight:700;color:var(--fg);margin-bottom:8px;">Renovated with public budget</div>
+        <div style="font-size:13px;color:var(--fg2);">Regional hopes. New tourism asset. Local government achievement.</div>
       </div>
       <div style="padding:28px 0 28px 0;border-bottom:1px solid var(--line);">
-        <div class="cap" style="margin-bottom:12px;color:var(--green);">After — 6개월 뒤</div>
-        <div style="font-size:18px;font-weight:700;color:var(--fg);margin-bottom:8px;">다시 방치된 숙소</div>
-        <div style="font-size:13px;color:var(--fg2);line-height:1.8;">예약 대응 없음. 운영자 없음.<br>문은 다시 잠겼습니다.</div>
+        <div class="cap" style="margin-bottom:12px;color:var(--green);">After — 6 months later</div>
+        <div style="font-size:18px;font-weight:700;color:var(--fg);margin-bottom:8px;">Abandoned again</div>
+        <div style="font-size:13px;color:var(--fg2);line-height:1.8;">No reservation handling. No operator.<br>The door is locked again.</div>
       </div>
       <div style="padding-top:28px;">
         <div style="font-size:18px;font-weight:800;line-height:1.5;color:var(--fg);">
-          문제는 <span class="g">최소한의 비용으로<br>지속 운영할 구조의 부재</span>입니다.
+          The problem is <span class="g">the absence of a structure<br>to sustain operations at minimal cost.</span>
         </div>
       </div>
     </div>
@@ -149,23 +150,23 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
 <div class="S" id="s3" style="padding:64px 80px;">
   <div class="sn">03 / 08</div>
   <span class="tag">Why Now · Why Korea</span>
-  <h2 style="font-size:40px;">수요는 있습니다.<br><span class="g">자산이 방치돼 있을 뿐입니다.</span></h2>
+  <h2 style="font-size:40px;">Demand exists.<br><span class="g">The assets are just sitting idle.</span></h2>
   <div class="div"></div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;flex:1;align-items:center;">
     <div style="display:flex;flex-direction:column;gap:20px;">
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div style="padding:14px 20px;border-left:2px solid var(--green);background:var(--bg2);border-radius:0 6px 6px 0;">
-          <div style="font-size:14px;font-weight:700;color:var(--fg);margin-bottom:4px;">취득·활용 비용이 낮은 자산</div>
-          <div style="font-size:13px;color:var(--fg2);">한국 농촌 빈집은 방치돼 있지만 숙박 수요는 실재합니다.</div>
+          <div style="font-size:14px;font-weight:700;color:var(--fg);margin-bottom:4px;">Low-cost asset acquisition &amp; utilization</div>
+          <div style="font-size:13px;color:var(--fg2);">Korean rural vacant houses sit idle, but hospitality demand is real.</div>
         </div>
         <div style="padding:14px 20px;border-left:2px solid var(--green);background:var(--bg2);border-radius:0 6px 6px 0;">
-          <div style="font-size:14px;font-weight:700;color:var(--fg);margin-bottom:4px;">K-culture 글로벌 여행 수요</div>
-          <div style="font-size:13px;color:var(--fg2);">한국 로컬을 찾는 글로벌 여행자가 있습니다.</div>
+          <div style="font-size:14px;font-weight:700;color:var(--fg);margin-bottom:4px;">K-culture global travel demand</div>
+          <div style="font-size:13px;color:var(--fg2);">Global travelers are seeking authentic Korean local experiences.</div>
         </div>
         <div style="padding:14px 20px;border-left:2px solid var(--green);background:var(--bg2);border-radius:0 6px 6px 0;">
-          <div style="font-size:14px;font-weight:700;color:var(--fg);margin-bottom:4px;">정책 + 규제 방향</div>
-          <div style="font-size:13px;color:var(--fg2);">방치 주택 특별법 · 토큰증권 가이드라인 발표 중</div>
+          <div style="font-size:14px;font-weight:700;color:var(--fg);margin-bottom:4px;">Policy + regulatory tailwind</div>
+          <div style="font-size:13px;color:var(--fg2);">Vacant Housing Special Act · Token Securities guidelines being announced</div>
         </div>
       </div>
     </div>
@@ -174,12 +175,12 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
       <div>
         <div class="cap" style="margin-bottom:10px;">RWA Market</div>
         <div style="font-size:56px;font-weight:900;letter-spacing:-3px;line-height:1;color:var(--green);">$24B</div>
-        <div style="font-size:13px;color:var(--fg2);margin-top:8px;">3년 만에 5배 성장</div>
+        <div style="font-size:13px;color:var(--fg2);margin-top:8px;">5x growth in 3 years</div>
       </div>
       <div style="height:1px;background:var(--line);"></div>
       <div style="padding:18px 22px;background:var(--green-bg);border-radius:8px;">
-        <div style="font-size:14px;font-weight:800;color:var(--green);margin-bottom:6px;">부동산 RWA 인프라 표준 — 아직 없습니다.</div>
-        <div style="font-size:13px;color:var(--fg2);">지금이 선점할 타이밍입니다.</div>
+        <div style="font-size:14px;font-weight:800;color:var(--green);margin-bottom:6px;">Real estate RWA infrastructure standard — doesn't exist yet.</div>
+        <div style="font-size:13px;color:var(--fg2);">Now is the time to move first.</div>
       </div>
     </div>
   </div>
@@ -190,45 +191,44 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
 <div class="S" id="s4" style="padding:56px 80px;">
   <div class="sn">04 / 08</div>
   <span class="tag">Solution</span>
-  <h2 style="font-size:40px;">빈집을 <span class="g">운영 가능한 온체인 수익 자산</span>으로.</h2>
+  <h2 style="font-size:40px;">Turning vacant houses into <span class="g">operable on-chain income assets.</span></h2>
   <div class="div"></div>
 
   <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:0;flex:1;align-items:center;">
 
-    <!-- LEFT: 3단계 세로 플로우 -->
+    <!-- LEFT: 3-step vertical flow -->
     <div style="display:flex;flex-direction:column;gap:8px;">
       <div style="background:var(--bg2);border-radius:10px;padding:16px 20px;text-align:center;">
         <div class="cap" style="margin-bottom:8px;">Guest</div>
-        <div style="font-size:15px;font-weight:700;color:var(--fg);">체크아웃</div>
-        <div style="font-size:12px;color:var(--fg2);margin-top:5px;">예약 결제 완료</div>
+        <div style="font-size:15px;font-weight:700;color:var(--fg);">Checkout</div>
+        <div style="font-size:12px;color:var(--fg2);margin-top:5px;">Booking payment complete</div>
       </div>
       <div style="text-align:center;color:var(--green);font-size:16px;">↓</div>
       <div style="background:var(--bg2);border-radius:10px;padding:16px 20px;text-align:center;">
         <div class="cap" style="margin-bottom:8px;">Escrow</div>
-        <div style="font-size:15px;font-weight:700;color:var(--fg);">자동 해제</div>
-        <div style="font-size:12px;color:var(--fg2);margin-top:5px;">코드가 실행됩니다</div>
+        <div style="font-size:15px;font-weight:700;color:var(--fg);">Auto release</div>
+        <div style="font-size:12px;color:var(--fg2);margin-top:5px;">Code executes</div>
       </div>
       <div style="text-align:center;color:var(--green);font-size:16px;">↓</div>
       <div style="background:var(--bg2);border-radius:10px;padding:16px 20px;text-align:center;">
         <div class="cap" style="margin-bottom:8px;">Vault</div>
-        <div style="font-size:15px;font-weight:700;color:var(--fg);">수익 적립</div>
-        <div style="font-size:12px;color:var(--fg2);margin-top:5px;">리스팅 볼트</div>
+        <div style="font-size:15px;font-weight:700;color:var(--fg);">Revenue accrued</div>
+        <div style="font-size:12px;color:var(--fg2);margin-top:5px;">Listing vault</div>
       </div>
     </div>
 
     <!-- CENTER: → -->
     <div style="padding:0 20px;color:var(--green);font-size:24px;font-weight:300;">→</div>
 
-    <!-- RIGHT: 분배 박스 + 포크 + 3카드 -->
+    <!-- RIGHT: distribution box + fork + 3 cards -->
     <div style="display:flex;flex-direction:column;gap:0;">
-      <!-- 분배 박스 -->
       <div style="background:var(--green-bg);border:1px solid rgba(13,191,120,.3);border-radius:10px;padding:18px 20px;text-align:center;margin-bottom:0;">
         <div class="cap" style="margin-bottom:8px;color:var(--green);">Monthly</div>
-        <div style="font-size:16px;font-weight:700;color:var(--fg);">3자 자동 분배</div>
-        <div style="font-size:12px;color:var(--fg2);margin-top:5px;">온체인 프로그램 실행</div>
+        <div style="font-size:16px;font-weight:700;color:var(--fg);">3-way auto distribution</div>
+        <div style="font-size:12px;color:var(--fg2);margin-top:5px;">On-chain program execution</div>
       </div>
 
-      <!-- SVG 포크 커넥터 -->
+      <!-- SVG fork connector -->
       <svg width="100%" height="36" viewBox="0 0 300 36" preserveAspectRatio="none">
         <line x1="150" y1="0" x2="150" y2="14" stroke="#0DBF78" stroke-opacity="0.5" stroke-width="1.5"/>
         <line x1="50"  y1="14" x2="250" y2="14" stroke="#0DBF78" stroke-opacity="0.5" stroke-width="1.5"/>
@@ -237,22 +237,22 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
         <line x1="250" y1="14" x2="250" y2="36" stroke="#0DBF78" stroke-opacity="0.5" stroke-width="1.5"/>
       </svg>
 
-      <!-- 3카드 -->
+      <!-- 3 cards -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
         <div style="background:var(--bg3);border-radius:8px;padding:16px 14px;text-align:center;">
-          <div class="cap" style="margin-bottom:6px;">투자자</div>
+          <div class="cap" style="margin-bottom:6px;">Investor</div>
           <div style="font-size:28px;font-weight:900;letter-spacing:-1.5px;color:var(--green);">30%</div>
-          <div style="font-size:11px;color:var(--fg2);margin-top:5px;">USDC 배당 수령</div>
+          <div style="font-size:11px;color:var(--fg2);margin-top:5px;">USDC dividend</div>
         </div>
         <div style="background:var(--bg3);border-radius:8px;padding:16px 14px;text-align:center;">
-          <div class="cap" style="margin-bottom:6px;">운영자</div>
+          <div class="cap" style="margin-bottom:6px;">Operator</div>
           <div style="font-size:28px;font-weight:900;letter-spacing:-1.5px;color:var(--green);">30%</div>
-          <div style="font-size:11px;color:var(--fg2);margin-top:5px;">운영 수익 정산</div>
+          <div style="font-size:11px;color:var(--fg2);margin-top:5px;">Operating revenue</div>
         </div>
         <div style="background:var(--bg3);border-radius:8px;padding:16px 14px;text-align:center;">
-          <div class="cap" style="margin-bottom:6px;">지자체</div>
+          <div class="cap" style="margin-bottom:6px;">Municipality</div>
           <div style="font-size:28px;font-weight:900;letter-spacing:-1.5px;color:var(--green);">40%</div>
-          <div style="font-size:11px;color:var(--fg2);margin-top:5px;">공공 파트너 정산</div>
+          <div style="font-size:11px;color:var(--fg2);margin-top:5px;">Public partner share</div>
         </div>
       </div>
     </div>
@@ -265,22 +265,22 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
 <div class="S" id="s5" style="padding:64px 80px;">
   <div class="sn">05 / 08</div>
   <span class="tag">Why Solana</span>
-  <h2 style="font-size:42px;">이 구조는<br><span class="g">Solana라서 가능합니다.</span></h2>
+  <h2 style="font-size:42px;">This structure is<br><span class="g">only possible on Solana.</span></h2>
   <div class="div"></div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;flex:1;align-items:center;">
     <div style="display:flex;flex-direction:column;gap:28px;">
       <div>
         <div style="font-size:22px;font-weight:900;letter-spacing:-1px;color:var(--green);margin-bottom:6px;">400ms &nbsp;·&nbsp; Sub-cent</div>
-        <div style="font-size:13px;color:var(--fg2);">소액 투자와 반복 정산이 경제적으로 가능합니다. 3자 정산이 단일 블록에서 완결됩니다.</div>
+        <div style="font-size:13px;color:var(--fg2);">Micro-investments and recurring settlements are economically viable. 3-way settlement completes in a single block.</div>
       </div>
       <div>
         <div style="font-size:22px;font-weight:900;letter-spacing:-1px;color:var(--green);margin-bottom:6px;">Blinks</div>
-        <div style="font-size:13px;color:var(--fg2);">SNS에서 클릭 한 번으로 투자 진입. 지갑 설치 장벽을 낮춥니다. 소비자가 투자자가 됩니다.</div>
+        <div style="font-size:13px;color:var(--fg2);">One-click investment entry from social media. Lowers the wallet barrier. Consumers become investors.</div>
       </div>
       <div>
         <div style="font-size:22px;font-weight:900;letter-spacing:-1px;color:var(--green);margin-bottom:6px;">Token-2022</div>
-        <div style="font-size:13px;color:var(--fg2);">양도 제한 토큰 구조로 투자자 이전을 코드로 강제. 규제 친화적으로 시작합니다.</div>
+        <div style="font-size:13px;color:var(--fg2);">Transfer-restricted token structure enforces investor transfers in code. Starts regulation-friendly.</div>
       </div>
     </div>
 
@@ -295,7 +295,7 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
 <div class="S" id="s6" style="padding:64px 80px;">
   <div class="sn">06 / 08</div>
   <span class="tag">Strategy</span>
-  <h2 style="font-size:40px;">시장도 열렸고,<br><span class="g">저희도 준비됐습니다.</span></h2>
+  <h2 style="font-size:40px;">The market is open,<br><span class="g">and we're ready.</span></h2>
   <div class="div"></div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;flex:1;align-items:center;">
@@ -306,8 +306,8 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
       <div style="display:flex;gap:20px;align-items:flex-start;padding-bottom:28px;">
         <div style="width:32px;height:32px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#000;flex-shrink:0;margin-top:2px;">1</div>
         <div>
-          <div style="font-size:17px;font-weight:800;color:var(--fg);margin-bottom:6px;">파일럿 운영</div>
-          <div style="font-size:13px;color:var(--fg2);line-height:1.7;">한국 농촌 빈집을 선정해 RWA 토큰 발행 · 예약 · 정산 전 사이클을 실증합니다.</div>
+          <div style="font-size:17px;font-weight:800;color:var(--fg);margin-bottom:6px;">Pilot Operations</div>
+          <div style="font-size:13px;color:var(--fg2);line-height:1.7;">Select Korean rural vacant houses to demonstrate the full cycle: RWA token issuance, booking, and settlement.</div>
         </div>
       </div>
 
@@ -316,8 +316,8 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
       <div style="display:flex;gap:20px;align-items:flex-start;padding-bottom:28px;">
         <div style="width:32px;height:32px;border-radius:50%;background:var(--bg2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--fg2);flex-shrink:0;margin-top:2px;">2</div>
         <div>
-          <div style="font-size:17px;font-weight:800;color:var(--fg);margin-bottom:6px;">지자체 파트너십 + 정책 진입</div>
-          <div style="font-size:13px;color:var(--fg2);line-height:1.7;">빈집정비특별법 예산을 활용해 지자체와 공동 운영 구조를 구축합니다. 40% 정산 지분이 진입 레버리지입니다.</div>
+          <div style="font-size:17px;font-weight:800;color:var(--fg);margin-bottom:6px;">Municipal Partnership + Policy Entry</div>
+          <div style="font-size:13px;color:var(--fg2);line-height:1.7;">Leverage Vacant Housing Special Act budgets to build a joint operations structure with municipalities. The 40% settlement share is the entry lever.</div>
         </div>
       </div>
 
@@ -326,8 +326,8 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
       <div style="display:flex;gap:20px;align-items:flex-start;">
         <div style="width:32px;height:32px;border-radius:50%;background:var(--bg2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--fg2);flex-shrink:0;margin-top:2px;">3</div>
         <div>
-          <div style="font-size:17px;font-weight:800;color:var(--fg);margin-bottom:6px;">RWA 투자자 모집</div>
-          <div style="font-size:13px;color:var(--fg2);line-height:1.7;">Blinks로 SNS에서 소액 투자 진입. 파일럿 수익 데이터를 기반으로 점진 확장합니다.</div>
+          <div style="font-size:17px;font-weight:800;color:var(--fg);margin-bottom:6px;">RWA Investor Onboarding</div>
+          <div style="font-size:13px;color:var(--fg2);line-height:1.7;">Micro-investment entry via Blinks on social media. Scale gradually based on pilot revenue data.</div>
         </div>
       </div>
 
@@ -336,7 +336,7 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
     <!-- RIGHT: proof + TAM -->
     <div style="display:flex;flex-direction:column;gap:28px;padding-left:32px;border-left:1px solid var(--line);">
       <div>
-        <div class="cap" style="margin-bottom:16px;">기술 준비도</div>
+        <div class="cap" style="margin-bottom:16px;">Tech Readiness</div>
         <div style="display:flex;gap:40px;margin-bottom:20px;">
           <div>
             <div style="font-size:56px;font-weight:900;letter-spacing:-3px;line-height:1;color:var(--green);">15</div>
@@ -357,7 +357,7 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
       <div>
         <div class="cap" style="margin-bottom:8px;">TAM</div>
         <div style="font-size:56px;font-weight:900;letter-spacing:-3px;line-height:1;color:var(--green);">$69B</div>
-        <div style="font-size:13px;color:var(--fg2);margin-top:8px;">한국 → 일본 → 유럽 · 부동산 RWA 인프라 표준</div>
+        <div style="font-size:13px;color:var(--fg2);margin-top:8px;">Korea → Japan → Europe · Real estate RWA infrastructure standard</div>
       </div>
     </div>
 
@@ -371,7 +371,7 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
   <div style="display:flex;flex-direction:column;height:100%;padding:64px;">
     <div style="margin-bottom:40px;">
       <span class="tag">Roadmap</span>
-      <h2 style="font-size:36px;margin-top:16px;">한국에서 증명하고, <span class="g">글로벌로 확장합니다.</span></h2>
+      <h2 style="font-size:36px;margin-top:16px;">Prove in Korea. <span class="g">Expand globally.</span></h2>
     </div>
     <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:24px;">
 
@@ -397,9 +397,9 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
           <div style="height:1px;background:rgba(13,191,120,.2);"></div>
           <div style="display:flex;flex-direction:column;gap:7px;">
             <div style="font-size:13px;color:var(--fg2);">✓ Devnet live · 62 tests passing</div>
-            <div style="font-size:13px;color:var(--fg2);">✓ 빈집정비특별법 정책 진입</div>
-            <div style="font-size:13px;color:var(--fg2);">✓ K-culture 글로벌 여행 수요</div>
-            <div style="font-size:13px;font-weight:700;color:var(--green);margin-top:2px;">파일럿 운영 후 점진 확장</div>
+            <div style="font-size:13px;color:var(--fg2);">✓ Vacant Housing Special Act policy entry</div>
+            <div style="font-size:13px;color:var(--fg2);">✓ K-culture global travel demand</div>
+            <div style="font-size:13px;font-weight:700;color:var(--green);margin-top:2px;">Gradual expansion after pilot</div>
           </div>
         </div>
 
@@ -422,9 +422,9 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
           </div>
           <div style="height:1px;background:var(--line);"></div>
           <div style="display:flex;flex-direction:column;gap:7px;">
-            <div style="font-size:13px;color:var(--fg2);">아키야(空き家) 800만 채</div>
-            <div style="font-size:13px;color:var(--fg2);">동일 구조 · 동일 프로토콜</div>
-            <div style="font-size:13px;color:var(--fg2);">한국 증명 사례 기반 진입</div>
+            <div style="font-size:13px;color:var(--fg2);">8 million akiya (空き家)</div>
+            <div style="font-size:13px;color:var(--fg2);">Same structure · Same protocol</div>
+            <div style="font-size:13px;color:var(--fg2);">Entry based on Korea proof case</div>
           </div>
         </div>
 
@@ -447,9 +447,9 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
           </div>
           <div style="height:1px;background:var(--line);"></div>
           <div style="display:flex;flex-direction:column;gap:7px;">
-            <div style="font-size:13px;color:var(--fg2);">유럽 방치 주택 수백만 채</div>
-            <div style="font-size:13px;color:var(--fg2);">부동산 RWA 글로벌 표준화</div>
-            <div style="font-size:13px;color:var(--fg2);">TAM $69B 전체 어드레싱</div>
+            <div style="font-size:13px;color:var(--fg2);">Millions of abandoned houses in Europe</div>
+            <div style="font-size:13px;color:var(--fg2);">Real estate RWA global standardization</div>
+            <div style="font-size:13px;color:var(--fg2);">Addressing full $69B TAM</div>
           </div>
         </div>
 
@@ -465,15 +465,15 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
   <div style="display:grid;grid-template-columns:1fr 1fr;height:100%;">
     <div style="padding:64px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--line);">
       <span class="tag">Team</span>
-      <h2 style="font-size:34px;">누군가는 아이디어를 말할 때,<br>우리는 <span class="g">시스템을 만들었습니다.</span></h2>
+      <h2 style="font-size:34px;">While others talk about the idea,<br>we <span class="g">built the system.</span></h2>
       <div class="div"></div>
 
       <div style="display:flex;flex-direction:column;gap:0;margin-bottom:28px;">
         <div style="display:flex;gap:16px;align-items:center;padding:18px 0;">
-          <div style="width:44px;height:44px;border-radius:50%;background:var(--green-bg);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--green);flex-shrink:0;">한</div>
+          <div style="width:44px;height:44px;border-radius:50%;background:var(--green-bg);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--green);flex-shrink:0;">H</div>
           <div>
-            <div style="font-size:15px;font-weight:800;color:var(--fg);">한수연</div>
-            <div style="font-size:12px;color:var(--fg2);margin-top:3px;">Full-stack Developer · Blockchain & RWA systems</div>
+            <div style="font-size:15px;font-weight:800;color:var(--fg);">Han Suyeon</div>
+            <div style="font-size:12px;color:var(--fg2);margin-top:3px;">Full-stack Developer · Blockchain &amp; RWA systems</div>
           </div>
         </div>
       </div>
@@ -487,10 +487,10 @@ h2   { font-size: 46px; font-weight: 800; line-height: 1.1; letter-spacing: -2.5
 
     <div style="padding:64px;display:flex;flex-direction:column;justify-content:center;background:var(--bg2);">
       <div style="font-size:36px;font-weight:800;line-height:1.4;letter-spacing:-1.5px;color:var(--fg);margin-bottom:28px;">
-        한국은 시작점입니다.<br>
-        문제는 글로벌합니다.
+        Korea is the starting point.<br>
+        The problem is global.
       </div>
-      <p class="lead" style="margin-bottom:40px;">Rural Rest는 한국에서 먼저 증명하고, 전 세계 방치 부동산을 온체인 수익형 숙박 자산으로 전환하겠습니다.</p>
+      <p class="lead" style="margin-bottom:40px;">Rural Rest will prove it in Korea first, then convert the world's neglected real estate into on-chain income-generating hospitality assets.</p>
       <div style="padding-top:28px;border-top:1px solid var(--line);">
         <div style="font-size:17px;font-weight:800;line-height:2;color:var(--green);">
           Global problem.<br>

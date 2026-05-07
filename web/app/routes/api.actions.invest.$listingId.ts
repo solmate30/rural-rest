@@ -37,7 +37,8 @@ function auditLog(event: Record<string, unknown>) {
 const BLINKS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS, POST",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, Content-Encoding, Accept-Encoding, X-Accept-Action-Version, X-Accept-Blockchain-Ids",
+    "Access-Control-Expose-Headers": "X-Action-Version, X-Blockchain-Ids",
     "X-Action-Version": "2.4",
     "X-Blockchain-Ids": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1", // devnet
 };
@@ -67,6 +68,9 @@ async function getListingWithToken(param: string) {
 }
 
 function isKo(request: Request) {
+    const lang = new URL(request.url).searchParams.get("lang");
+    if (lang === "en") return false;
+    if (lang === "ko") return true;
     return (request.headers.get("Accept-Language") ?? "").toLowerCase().startsWith("ko");
 }
 
@@ -91,33 +95,35 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const iconPath = imgs?.[0] ?? "/ruralrest-logo.png";
     const icon = iconPath.startsWith("http") ? iconPath : `${origin}${iconPath}`;
     const available = (token.totalSupply ?? 0) - (token.tokensSold ?? 0);
-    const priceUsdc = ((token.pricePerTokenUsdc ?? 0) / 1_000_000).toFixed(2);
+    const pricePerTokenMicro = token.pricePerTokenUsdc ?? 0;
+    const priceUsdc = (pricePerTokenMicro / 1_000_000).toFixed(6);
+
+    // USDC 금액 → 토큰 수 변환 (소수점 가격이라 큰 토큰 수량 필요)
+    function usdcToTokens(usd: number): number {
+        if (pricePerTokenMicro <= 0) return 0;
+        return Math.round((usd * 1_000_000) / pricePerTokenMicro);
+    }
+    const presetUsd = [50, 250, 1000];
+    const presets = presetUsd
+        .map(usd => ({ usd, tokens: usdcToTokens(usd) }))
+        .filter(p => p.tokens > 0 && p.tokens <= available);
+
     return Response.json(
         {
             type: "action",
             title: token.title,
             icon,
             description: ko
-                ? `${token.location} · 토큰 가격 $${priceUsdc} USDC · 잔여 ${available.toLocaleString()}개`
-                : `${token.location} · Token price $${priceUsdc} USDC · ${available.toLocaleString()} remaining`,
+                ? `${token.location} · 토큰 단가 $${priceUsdc} USDC · 잔여 ${available.toLocaleString()}개`
+                : `${token.location} · Unit price $${priceUsdc} USDC · ${available.toLocaleString()} remaining`,
             label: ko ? "투자하기" : "Invest",
             links: {
                 actions: [
-                    {
-                        type: "transaction",
-                        label: ko ? "1 토큰 구매" : "Buy 1 token",
-                        href: `${origin}/api/actions/invest/${params.listingId}?tokens=1`,
-                    },
-                    {
-                        type: "transaction",
-                        label: ko ? "5 토큰 구매" : "Buy 5 tokens",
-                        href: `${origin}/api/actions/invest/${params.listingId}?tokens=5`,
-                    },
-                    {
-                        type: "transaction",
-                        label: ko ? "10 토큰 구매" : "Buy 10 tokens",
-                        href: `${origin}/api/actions/invest/${params.listingId}?tokens=10`,
-                    },
+                    ...presets.map(p => ({
+                        type: "transaction" as const,
+                        label: ko ? `$${p.usd} 투자` : `Invest $${p.usd}`,
+                        href: `${origin}/api/actions/invest/${params.listingId}?tokens=${p.tokens}`,
+                    })),
                     {
                         type: "transaction",
                         label: ko ? "직접 입력" : "Custom amount",
@@ -125,8 +131,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
                         parameters: [
                             {
                                 name: "tokens",
+                                type: "number",
                                 label: ko ? "구매할 토큰 수량" : "Number of tokens to buy",
                                 required: true,
+                                min: 1,
                             },
                         ],
                     },
