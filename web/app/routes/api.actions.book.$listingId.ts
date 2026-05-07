@@ -35,6 +35,9 @@ const PYTH_USD_KRW_FEED = process.env.VITE_PYTH_USD_KRW_FEED ?? "Gnt27xtC473ZT2M
 const KRW_PER_USDC_FALLBACK = 1350;
 
 function isKo(request: Request) {
+    const lang = new URL(request.url).searchParams.get("lang");
+    if (lang === "en") return false;
+    if (lang === "ko") return true;
     return (request.headers.get("Accept-Language") ?? "").toLowerCase().startsWith("ko");
 }
 
@@ -45,7 +48,8 @@ function auditLog(event: Record<string, unknown>) {
 const BLINKS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS, POST",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, Content-Encoding, Accept-Encoding, X-Accept-Action-Version, X-Accept-Blockchain-Ids",
+    "Access-Control-Expose-Headers": "X-Action-Version, X-Blockchain-Ids",
     "X-Action-Version": "2.4",
     "X-Blockchain-Ids": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1", // devnet
 };
@@ -109,18 +113,23 @@ export async function loader({ params, request }: Route.LoaderArgs) {
                         parameters: [
                             {
                                 name: "checkIn",
-                                label: ko ? "체크인 날짜 (YYYY-MM-DD)" : "Check-in date (YYYY-MM-DD)",
+                                type: "date",
+                                label: ko ? "체크인" : "Check-in",
                                 required: true,
                             },
                             {
                                 name: "checkOut",
-                                label: ko ? "체크아웃 날짜 (YYYY-MM-DD)" : "Check-out date (YYYY-MM-DD)",
+                                type: "date",
+                                label: ko ? "체크아웃" : "Check-out",
                                 required: true,
                             },
                             {
                                 name: "guests",
-                                label: ko ? `인원 수 (최대 ${listing.maxGuests}명)` : `Number of guests (max ${listing.maxGuests})`,
+                                type: "number",
+                                label: ko ? `인원 (최대 ${listing.maxGuests}명)` : `Guests (max ${listing.maxGuests})`,
                                 required: true,
+                                min: 1,
+                                max: listing.maxGuests,
                             },
                         ],
                     },

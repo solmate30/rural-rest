@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
   return {
     customLogger: logger,
     server: {
-      allowedHosts: ["localhost", "127.0.0.1"],
+      allowedHosts: ["localhost", "127.0.0.1", ".ngrok-free.app", ".ngrok.io"],
     },
     plugins: [reactRouter(), tsconfigPaths()],
     build: {
