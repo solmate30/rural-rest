@@ -18,6 +18,8 @@ interface Message {
 export function AiConcierge() {
     const { t } = useTranslation("concierge");
     const location = useLocation();
+    // /blink/* 경로에서는 카드만 보여야 하므로 채팅 버튼 숨김
+    if (location.pathname.startsWith("/blink/")) return null;
     // invest/:id 페이지는 하단에 MobileInvestBar가 있어서 FAB을 위로 올림 (lg 이상에서는 bar가 없으므로 원위치)
     const hasMobileBar = /^\/invest\/[^/]+/.test(location.pathname);
     const [isOpen, setIsOpen] = useState(false);
