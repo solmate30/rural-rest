@@ -1,6 +1,6 @@
 # E2E Full Flow Test
 > Created: 2026-04-16 00:00
-> Last Updated: 2026-04-21 20:00
+> Last Updated: 2026-05-05 00:00
 
 전체 플로우를 처음부터 끝까지 검증하는 E2E 테스트 시나리오.  
 **로컬 노드(localnet) 기준**으로 작성됨. devnet 전환 방법은 맨 아래 참고.
@@ -8,6 +8,29 @@
 ---
 
 ## 0. 로컬 환경 셋업 (최초 1회 + validator 리셋 후마다)
+
+### 0-0. validator 리셋 전 DB 온체인 데이터 초기화
+
+validator를 `--reset`하면 온체인 상태가 날아가므로, DB의 온체인 참조 데이터도 먼저 비워야 한다.
+계정(`user`, `session`, `account`) 테이블은 건드리지 않는다.
+
+```bash
+cd ~/solana/rural-rest/web
+node -e "
+const { createClient } = require('@libsql/client');
+const db = createClient({ url: 'file:./local.db' });
+db.executeMultiple(\`
+  DELETE FROM rwa_dividends;
+  DELETE FROM rwa_investments;
+  DELETE FROM settlements;
+  DELETE FROM local_gov_settlements;
+  DELETE FROM operator_settlements;
+  DELETE FROM bookings;
+  DELETE FROM rwa_tokens;
+\`).then(() => { console.log('done'); process.exit(0); })
+  .catch(e => { console.error(e.message); process.exit(1); });
+"
+```
 
 ### 0-1. Solana Test Validator 시작
 
