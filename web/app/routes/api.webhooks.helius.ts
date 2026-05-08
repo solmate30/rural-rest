@@ -18,6 +18,22 @@ const HELIUS_WEBHOOK_SECRET = process.env.HELIUS_WEBHOOK_SECRET;
 
 const coder = new BorshInstructionCoder(IDL as any);
 
+async function findRwaTokenByListingSeed(listingId: string) {
+    const [direct] = await db
+        .select({ id: rwaTokens.id, pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc })
+        .from(rwaTokens)
+        .where(eq(rwaTokens.listingId, listingId));
+
+    if (direct) return direct;
+
+    const [bySeed] = await db
+        .select({ id: rwaTokens.id, pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc })
+        .from(rwaTokens)
+        .where(sql`replace(${rwaTokens.listingId}, '-', '') = ${listingId}`);
+
+    return bySeed ?? null;
+}
+
 export async function action({ request }: { request: Request }) {
     // Helius authorization 검증
     if (HELIUS_WEBHOOK_SECRET) {
@@ -88,11 +104,8 @@ async function processTransaction(tx: any): Promise<boolean> {
             return false;
         }
 
-        // rwaToken 조회
-        const [rwaToken] = await db
-            .select({ id: rwaTokens.id, pricePerTokenUsdc: rwaTokens.pricePerTokenUsdc })
-            .from(rwaTokens)
-            .where(eq(rwaTokens.listingId, listingId));
+        // Blinks purchaseTokens uses the 32-byte PDA seed, while DB rows keep UUID hyphens.
+        const rwaToken = await findRwaTokenByListingSeed(listingId);
 
         if (!rwaToken) {
             console.warn(`[helius-webhook] rwaToken 없음: listingId=${listingId}`);

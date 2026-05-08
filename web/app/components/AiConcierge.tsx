@@ -18,6 +18,7 @@ interface Message {
 export function AiConcierge() {
     const { t } = useTranslation("concierge");
     const location = useLocation();
+    const isBlink = location.pathname.startsWith("/blink/");
     // invest/:id 페이지는 하단에 MobileInvestBar가 있어서 FAB을 위로 올림 (lg 이상에서는 bar가 없으므로 원위치)
     const hasMobileBar = /^\/invest\/[^/]+/.test(location.pathname);
     const [isOpen, setIsOpen] = useState(false);
@@ -84,6 +85,9 @@ export function AiConcierge() {
             setIsLoading(false);
         }
     };
+
+    // /blink/* 경로에서는 모든 hooks 호출 후 null 반환 (hooks 순서 규칙 준수)
+    if (isBlink) return null;
 
     return (
         <div className={cn("fixed right-6 z-50 flex flex-col items-end", hasMobileBar ? "bottom-24 lg:bottom-6" : "bottom-6")}>
