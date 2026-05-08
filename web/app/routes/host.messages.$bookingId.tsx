@@ -80,6 +80,10 @@ export default function HostMessagesPage() {
     }, []);
 
     useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [msgs]);
+
+    useEffect(() => {
         const id = setInterval(async () => {
             const res = await fetch(`/api/chat/messages?bookingId=${booking.id}`);
             if (!res.ok) return;
