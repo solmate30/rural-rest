@@ -258,7 +258,9 @@ export function PurchaseCard({
             setTimeout(() => window.location.reload(), 1500);
         } catch (err: any) {
             console.error("[PurchaseCard] tx error:", err);
-            const msg = parseAnchorError(err);
+            const msg = parseAnchorError(err, {
+                "0x1": "USDC 잔액이 부족합니다",
+            });
             toast({ title: t("purchase.processing"), description: msg, variant: "destructive" });
         } finally {
             setIsProcessing(false);
@@ -526,3 +528,4 @@ export function PurchaseCard({
         </Card>
     );
 }
+
