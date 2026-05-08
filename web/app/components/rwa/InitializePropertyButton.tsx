@@ -38,8 +38,19 @@ export function InitializePropertyButton({ listingId, values, disabled, onStatus
 
         try {
             const { BN } = await import("@coral-xyz/anchor");
-            const { Keypair, PublicKey } = await import("@solana/web3.js");
+            const { Keypair, PublicKey, LAMPORTS_PER_SOL } = await import("@solana/web3.js");
             const { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } = await import("@solana/spl-token");
+
+            // initialize_property는 여러 계정 생성이 포함되어 SOL(수수료+렌트)이 필요하다.
+            // 0 SOL 상태에서 "USDC 부족"으로 오인되는 케이스를 줄이기 위해 사전 점검한다.
+            // property_token PDA + funding_vault PDA + USDC vault ATA + token mint
+            // 계정 rent 합산 약 0.01 SOL + tx fee 버퍼를 반영한 최소 권장치
+            const minSolRequired = 0.02;
+            const lamports = await connection.getBalance(wallet.publicKey, "confirmed");
+            const solBalance = lamports / LAMPORTS_PER_SOL;
+            if (solBalance < minSolRequired) {
+                throw new Error(`SOL 잔액이 부족합니다. 최소 ${minSolRequired} SOL 이상 필요합니다. (현재 ${solBalance.toFixed(4)} SOL)`);
+            }
 
             const program = await getProgram(connection, wallet!);
             const seedId = listingId.replace(/-/g, ""); // UUID 36 → 32 bytes
@@ -128,3 +139,4 @@ export function InitializePropertyButton({ listingId, values, disabled, onStatus
         </div>
     );
 }
+

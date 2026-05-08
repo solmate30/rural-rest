@@ -111,7 +111,8 @@ const COMMON_ERRORS: Record<string, string> = {
     "ExceedsInvestorCap": "인당 구매 상한을 초과합니다",
     "ConstraintHasOne": "권한이 없습니다",
     "has_one": "권한이 없습니다",
-    "0x1": "USDC 잔액이 부족합니다",
+    // custom program error 0x1은 상황에 따라 SOL(수수료/렌트) 부족 등으로도 나타날 수 있어 단정하지 않는다.
+    "0x1": "잔액이 부족합니다 (SOL 수수료 또는 토큰 잔액을 확인하세요).",
     "Attempt to debit an account but found no record of a prior credit": "USDC 잔액이 부족합니다. 지갑에 USDC를 충전하세요.",
     "no record of a prior credit": "USDC 잔액이 부족합니다. 지갑에 USDC를 충전하세요.",
     "StalePythPrice": "환율 데이터가 오래되었습니다. 잠시 후 다시 시도하세요.",
