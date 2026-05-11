@@ -58,6 +58,7 @@ const PCT_BTNS = [
     { label: "75%", pct: 0.75 },
     { label: "MAX", pct: 1 },
 ];
+// tx base fee(~0.000005 SOL) + ATA 생성 rent(~0.002 SOL) + 여유분. rent-exempt 별도 불포함.
 const MIN_SOL_REQUIRED = 0.003;
 
 export function PurchaseCard({
@@ -266,12 +267,13 @@ export function PurchaseCard({
         } catch (err: any) {
             console.error("[PurchaseCard] tx error:", err);
             const raw = String(err?.message ?? "");
+            // parseAnchorError 내부 COMMON_ERRORS에 "0x1" 키 포함 — Anchor SDK가 raw message를 가공해도 1차 커버됨
             const parsed = parseAnchorError(err);
             let msg = parsed;
 
             if (/SOL 잔액이 부족합니다/.test(raw)) {
                 msg = raw;
-            } else if (/0x1|insufficient funds|custom program error/i.test(raw)) {
+            } else if (/0x1|insufficient funds/i.test(raw)) {
                 msg = "USDC 또는 SOL 잔액이 부족합니다. devnet USDC(4zMMC...) 보유와 SOL 수수료 잔액을 확인해주세요.";
             } else if (/blockhash|network|timeout|fetch|429|503/i.test(raw)) {
                 msg = "네트워크 상태가 불안정합니다. 잠시 후 다시 시도해주세요.";
