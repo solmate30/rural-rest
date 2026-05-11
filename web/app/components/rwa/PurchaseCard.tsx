@@ -58,6 +58,8 @@ const PCT_BTNS = [
     { label: "75%", pct: 0.75 },
     { label: "MAX", pct: 1 },
 ];
+// tx base fee(~0.000005 SOL) + ATA 생성 rent(~0.002 SOL) + 여유분. rent-exempt 별도 불포함.
+const MIN_SOL_REQUIRED = 0.003;
 
 export function PurchaseCard({
     listingId, tokenMint, tokenId,
@@ -185,6 +187,12 @@ export function PurchaseCard({
                 TOKEN_PROGRAM_ID,
             } = await import("@solana/spl-token");
 
+            const solBalanceLamports = await connection.getBalance(publicKey);
+            const solBalance = solBalanceLamports / 1_000_000_000;
+            if (solBalance < MIN_SOL_REQUIRED) {
+                throw new Error(`SOL 잔액이 부족합니다. 최소 ${MIN_SOL_REQUIRED} SOL 이상 필요합니다. (현재 ${solBalance.toFixed(4)} SOL)`);
+            }
+
             const program = await getProgram(connection, wallet);
             const seedId = listingId.replace(/-/g, "");
             const { propertyToken, fundingVault, investorPosition } = await derivePdas(listingId, publicKey);
@@ -258,9 +266,19 @@ export function PurchaseCard({
             setTimeout(() => window.location.reload(), 1500);
         } catch (err: any) {
             console.error("[PurchaseCard] tx error:", err);
-            const msg = parseAnchorError(err, {
-                "0x1": "USDC 잔액이 부족합니다",
-            });
+            const raw = String(err?.message ?? "");
+            // parseAnchorError 내부 COMMON_ERRORS에 "0x1" 키 포함 — Anchor SDK가 raw message를 가공해도 1차 커버됨
+            const parsed = parseAnchorError(err);
+            let msg = parsed;
+
+            if (/SOL 잔액이 부족합니다/.test(raw)) {
+                msg = raw;
+            } else if (/0x1|insufficient funds/i.test(raw)) {
+                msg = "USDC 또는 SOL 잔액이 부족합니다. devnet USDC(4zMMC...) 보유와 SOL 수수료 잔액을 확인해주세요.";
+            } else if (/blockhash|network|timeout|fetch|429|503/i.test(raw)) {
+                msg = "네트워크 상태가 불안정합니다. 잠시 후 다시 시도해주세요.";
+            }
+
             toast({ title: t("purchase.processing"), description: msg, variant: "destructive" });
         } finally {
             setIsProcessing(false);
